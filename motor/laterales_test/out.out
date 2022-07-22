@@ -1,0 +1,1236 @@
+../removidas/seguro_frente/
+analizando:121.jpg
+x1,y1 izq: 53.0,70.0
+x2,y2 izq: 68.0,70.0
+x1,y1 der: 90.0,69.0
+x2,y2 der: 104.0,66.0
+largoizq:15.0
+largoder:14.0
+diferencia ojos largo:1.0
+altoizq:0.0
+altoder:-3.0
+diferencia ojos alto:3.0
+
+
+analizando:1005.jpg
+x1,y1 izq: 63.0,70.0
+x2,y2 izq: 76.0,70.0
+x1,y1 der: 94.0,67.0
+x2,y2 der: 105.0,65.0
+largoizq:13.0
+largoder:11.0
+diferencia ojos largo:2.0
+altoizq:0.0
+altoder:-2.0
+diferencia ojos alto:2.0
+
+
+analizando:1_2021-09-01_13:16:05.050224.avi_0.32346558570861816.jpg
+x1,y1 izq: 69.0,67.0
+x2,y2 izq: 75.0,66.0
+x1,y1 der: 85.0,65.0
+x2,y2 der: 92.0,65.0
+largoizq:6.0
+largoder:7.0
+diferencia ojos largo:1.0
+altoizq:-1.0
+altoder:0.0
+diferencia ojos alto:1.0
+
+
+analizando:919.jpg
+x1,y1 izq: 61.0,76.0
+x2,y2 izq: 74.0,76.0
+x1,y1 der: 93.0,75.0
+x2,y2 der: 106.0,73.0
+largoizq:13.0
+largoder:13.0
+diferencia ojos largo:0.0
+altoizq:0.0
+altoder:-2.0
+diferencia ojos alto:2.0
+
+
+analizando:20.jpg
+x1,y1 izq: 55.0,68.0
+x2,y2 izq: 69.0,66.0
+x1,y1 der: 91.0,65.0
+x2,y2 der: 104.0,63.0
+largoizq:14.0
+largoder:13.0
+diferencia ojos largo:1.0
+altoizq:-2.0
+altoder:-2.0
+diferencia ojos alto:0.0
+
+
+analizando:1053.jpg
+x1,y1 izq: 85.0,49.0
+x2,y2 izq: 94.0,50.0
+x1,y1 der: 108.0,50.0
+x2,y2 der: 116.0,50.0
+largoizq:9.0
+largoder:8.0
+diferencia ojos largo:1.0
+altoizq:1.0
+altoder:0.0
+diferencia ojos alto:1.0
+
+
+analizando:852.jpg
+x1,y1 izq: 62.0,69.0
+x2,y2 izq: 71.0,69.0
+x1,y1 der: 86.0,70.0
+x2,y2 der: 96.0,70.0
+largoizq:9.0
+largoder:10.0
+diferencia ojos largo:1.0
+altoizq:0.0
+altoder:0.0
+diferencia ojos alto:0.0
+
+
+analizando:1069.jpg
+x1,y1 izq: 54.0,33.0
+x2,y2 izq: 62.0,37.0
+x1,y1 der: 76.0,38.0
+x2,y2 der: 85.0,39.0
+largoizq:8.0
+largoder:9.0
+diferencia ojos largo:1.0
+altoizq:4.0
+altoder:1.0
+diferencia ojos alto:3.0
+
+
+analizando:12.jpg
+x1,y1 izq: 63.0,67.0
+x2,y2 izq: 70.0,68.0
+x1,y1 der: 84.0,68.0
+x2,y2 der: 92.0,69.0
+largoizq:7.0
+largoder:8.0
+diferencia ojos largo:1.0
+altoizq:1.0
+altoder:1.0
+diferencia ojos alto:0.0
+
+
+analizando:647.jpg
+x1,y1 izq: 52.0,49.0
+x2,y2 izq: 74.0,51.0
+x1,y1 der: 104.0,53.0
+x2,y2 der: 122.0,55.0
+largoizq:22.0
+largoder:18.0
+diferencia ojos largo:4.0
+altoizq:2.0
+altoder:2.0
+diferencia ojos alto:0.0
+
+
+analizando:035.jpg
+x1,y1 izq: 66.0,68.0
+x2,y2 izq: 73.0,68.0
+x1,y1 der: 83.0,66.0
+x2,y2 der: 89.0,65.0
+largoizq:7.0
+largoder:6.0
+diferencia ojos largo:1.0
+altoizq:0.0
+altoder:-1.0
+diferencia ojos alto:1.0
+
+
+analizando:1_2021-09-01_13:16:05.050224.avi_0.3412773609161377.jpg
+x1,y1 izq: 68.0,69.0
+x2,y2 izq: 75.0,68.0
+x1,y1 der: 84.0,67.0
+x2,y2 der: 90.0,67.0
+largoizq:7.0
+largoder:6.0
+diferencia ojos largo:1.0
+altoizq:-1.0
+altoder:0.0
+diferencia ojos alto:1.0
+
+
+analizando:00154.jpg
+x1,y1 izq: 32.0,69.0
+x2,y2 izq: 42.0,71.0
+x1,y1 der: 58.0,71.0
+x2,y2 der: 69.0,68.0
+largoizq:10.0
+largoder:11.0
+diferencia ojos largo:1.0
+altoizq:2.0
+altoder:-3.0
+diferencia ojos alto:5.0
+
+
+----------------
+../removidas/seguro_canto/
+analizando:210.jpg
+x1,y1 izq: 68.0,58.0
+x2,y2 izq: 81.0,65.0
+x1,y1 der: 101.0,69.0
+x2,y2 der: 112.0,71.0
+largoizq:13.0
+largoder:11.0
+diferencia ojos largo:2.0
+altoizq:7.0
+altoder:2.0
+diferencia ojos alto:5.0
+
+
+analizando:97.jpg
+x1,y1 izq: 50.0,70.0
+x2,y2 izq: 58.0,70.0
+x1,y1 der: 72.0,68.0
+x2,y2 der: 82.0,68.0
+largoizq:8.0
+largoder:10.0
+diferencia ojos largo:2.0
+altoizq:0.0
+altoder:0.0
+diferencia ojos alto:0.0
+
+
+analizando:1_2021-09-01_13:16:28.763353.avi_0.30152273178100586.jpg
+x1,y1 izq: 63.0,39.0
+x2,y2 izq: 73.0,44.0
+x1,y1 der: 87.0,48.0
+x2,y2 der: 95.0,53.0
+largoizq:10.0
+largoder:8.0
+diferencia ojos largo:2.0
+altoizq:5.0
+altoder:5.0
+diferencia ojos alto:0.0
+
+
+analizando:46.jpg
+x1,y1 izq: 52.0,69.0
+x2,y2 izq: 58.0,68.0
+x1,y1 der: 67.0,66.0
+x2,y2 der: 74.0,65.0
+largoizq:6.0
+largoder:7.0
+diferencia ojos largo:1.0
+altoizq:-1.0
+altoder:-1.0
+diferencia ojos alto:0.0
+
+
+analizando:1746.jpg
+x1,y1 izq: 75.0,58.0
+x2,y2 izq: 94.0,60.0
+x1,y1 der: 123.0,66.0
+x2,y2 der: 138.0,68.0
+largoizq:19.0
+largoder:15.0
+diferencia ojos largo:4.0
+altoizq:2.0
+altoder:2.0
+diferencia ojos alto:0.0
+
+
+analizando:224.jpg
+x1,y1 izq: 75.0,61.0
+x2,y2 izq: 86.0,63.0
+x1,y1 der: 101.0,66.0
+x2,y2 der: 109.0,69.0
+largoizq:11.0
+largoder:8.0
+diferencia ojos largo:3.0
+altoizq:2.0
+altoder:3.0
+diferencia ojos alto:1.0
+
+
+analizando:1775.jpg
+x1,y1 izq: 39.0,68.0
+x2,y2 izq: 47.0,69.0
+x1,y1 der: 62.0,69.0
+x2,y2 der: 74.0,68.0
+largoizq:8.0
+largoder:12.0
+diferencia ojos largo:4.0
+altoizq:1.0
+altoder:-1.0
+diferencia ojos alto:2.0
+
+
+analizando:1344.jpg
+x1,y1 izq: 76.0,56.0
+x2,y2 izq: 88.0,60.0
+x1,y1 der: 103.0,66.0
+x2,y2 der: 111.0,67.0
+largoizq:12.0
+largoder:8.0
+diferencia ojos largo:4.0
+altoizq:4.0
+altoder:1.0
+diferencia ojos alto:3.0
+
+
+analizando:1654.jpg
+x1,y1 izq: 80.0,53.0
+x2,y2 izq: 96.0,59.0
+x1,y1 der: 117.0,72.0
+x2,y2 der: 128.0,79.0
+largoizq:16.0
+largoder:11.0
+diferencia ojos largo:5.0
+altoizq:6.0
+altoder:7.0
+diferencia ojos alto:1.0
+
+
+analizando:1_2021-09-01_13:21:00.343304.avi_0.33136701583862305.jpg
+x1,y1 izq: 59.0,73.0
+x2,y2 izq: 64.0,74.0
+x1,y1 der: 72.0,72.0
+x2,y2 der: 79.0,71.0
+largoizq:5.0
+largoder:7.0
+diferencia ojos largo:2.0
+altoizq:1.0
+altoder:-1.0
+diferencia ojos alto:2.0
+
+
+----------------
+../removidas/seguro_perfil/
+analizando:1568.jpg
+x1,y1 izq: 37.0,78.0
+x2,y2 izq: 36.0,75.0
+x1,y1 der: 39.0,71.0
+x2,y2 der: 43.0,66.0
+largoizq:-1.0
+largoder:4.0
+diferencia ojos largo:5.0
+altoizq:-3.0
+altoder:-5.0
+diferencia ojos alto:2.0
+
+
+analizando:1_2021-09-01_13:16:45.569419.avi_1.2749459743499756.jpg
+x1,y1 izq: 95.0,75.0
+x2,y2 izq: 89.0,71.0
+x1,y1 der: 95.0,70.0
+x2,y2 der: 70.0,61.0
+largoizq:-6.0
+largoder:-25.0
+diferencia ojos largo:19.0
+altoizq:-4.0
+altoder:-9.0
+diferencia ojos alto:5.0
+
+
+analizando:1420.jpg
+x1,y1 izq: 98.0,77.0
+x2,y2 izq: 104.0,78.0
+x1,y1 der: 111.0,78.0
+x2,y2 der: 114.0,76.0
+largoizq:6.0
+largoder:3.0
+diferencia ojos largo:3.0
+altoizq:1.0
+altoder:-2.0
+diferencia ojos alto:3.0
+
+
+analizando:019.jpg
+x1,y1 izq: 60.0,74.0
+x2,y2 izq: 60.0,73.0
+x1,y1 der: 63.0,70.0
+x2,y2 der: 67.0,68.0
+largoizq:0.0
+largoder:4.0
+diferencia ojos largo:4.0
+altoizq:-1.0
+altoder:-2.0
+diferencia ojos alto:1.0
+
+
+analizando:1694.jpg
+x1,y1 izq: 54.0,73.0
+x2,y2 izq: 57.0,74.0
+x1,y1 der: 65.0,76.0
+x2,y2 der: 72.0,76.0
+largoizq:3.0
+largoder:7.0
+diferencia ojos largo:4.0
+altoizq:1.0
+altoder:0.0
+diferencia ojos alto:1.0
+
+
+analizando:1343.jpg
+x1,y1 izq: 40.0,65.0
+x2,y2 izq: 45.0,66.0
+x1,y1 der: 55.0,68.0
+x2,y2 der: 66.0,66.0
+largoizq:5.0
+largoder:11.0
+diferencia ojos largo:6.0
+altoizq:1.0
+altoder:-2.0
+diferencia ojos alto:3.0
+
+
+analizando:17.jpg
+x1,y1 izq: 87.0,27.0
+x2,y2 izq: 89.0,33.0
+x1,y1 der: 89.0,42.0
+x2,y2 der: 83.0,64.0
+largoizq:2.0
+largoder:-6.0
+diferencia ojos largo:8.0
+altoizq:6.0
+altoder:22.0
+diferencia ojos alto:16.0
+
+
+analizando:876.jpg
+x1,y1 izq: 51.0,61.0
+x2,y2 izq: 55.0,64.0
+x1,y1 der: 56.0,69.0
+x2,y2 der: 55.0,71.0
+largoizq:4.0
+largoder:-1.0
+diferencia ojos largo:5.0
+altoizq:3.0
+altoder:2.0
+diferencia ojos alto:1.0
+
+
+analizando:1045.jpg
+x1,y1 izq: 67.0,67.0
+x2,y2 izq: 72.0,69.0
+x1,y1 der: 77.0,72.0
+x2,y2 der: 77.0,72.0
+largoizq:5.0
+largoder:0.0
+diferencia ojos largo:5.0
+altoizq:2.0
+altoder:0.0
+diferencia ojos alto:2.0
+
+
+analizando:99.jpg
+x1,y1 izq: 53.0,74.0
+x2,y2 izq: 55.0,74.0
+x1,y1 der: 61.0,72.0
+x2,y2 der: 67.0,70.0
+largoizq:2.0
+largoder:6.0
+diferencia ojos largo:4.0
+altoizq:0.0
+altoder:-2.0
+diferencia ojos alto:2.0
+
+
+analizando:034.jpg
+x1,y1 izq: 57.0,71.0
+x2,y2 izq: 55.0,72.0
+x1,y1 der: 56.0,72.0
+x2,y2 der: 58.0,71.0
+largoizq:-2.0
+largoder:2.0
+diferencia ojos largo:4.0
+altoizq:1.0
+altoder:-1.0
+diferencia ojos alto:2.0
+
+
+analizando:1669.jpg
+x1,y1 izq: 54.0,73.0
+x2,y2 izq: 57.0,74.0
+x1,y1 der: 65.0,76.0
+x2,y2 der: 72.0,76.0
+largoizq:3.0
+largoder:7.0
+diferencia ojos largo:4.0
+altoizq:1.0
+altoder:0.0
+diferencia ojos alto:1.0
+
+
+analizando:04.jpg
+x1,y1 izq: 54.0,106.0
+x2,y2 izq: 57.0,105.0
+x1,y1 der: 63.0,96.0
+x2,y2 der: 68.0,88.0
+largoizq:3.0
+largoder:5.0
+diferencia ojos largo:2.0
+altoizq:-1.0
+altoder:-8.0
+diferencia ojos alto:7.0
+
+
+analizando:1_2021-09-01_13:16:45.569419.avi_0.394054651260376.jpg
+x1,y1 izq: 51.0,71.0
+x2,y2 izq: 61.0,83.0
+x1,y1 der: 50.0,74.0
+x2,y2 der: 54.0,73.0
+largoizq:10.0
+largoder:4.0
+diferencia ojos largo:6.0
+altoizq:12.0
+altoder:-1.0
+diferencia ojos alto:13.0
+
+
+analizando:1_2021-09-01_13:21:00.343304.avi_0.4544711112976074.jpg
+x1,y1 izq: 53.0,75.0
+x2,y2 izq: 55.0,77.0
+x1,y1 der: 59.0,77.0
+x2,y2 der: 63.0,74.0
+largoizq:2.0
+largoder:4.0
+diferencia ojos largo:2.0
+altoizq:2.0
+altoder:-3.0
+diferencia ojos alto:5.0
+
+
+analizando:014.jpg
+x1,y1 izq: 96.0,74.0
+x2,y2 izq: 96.0,78.0
+x1,y1 der: 98.0,81.0
+x2,y2 der: 83.0,97.0
+largoizq:0.0
+largoder:-15.0
+diferencia ojos largo:15.0
+altoizq:4.0
+altoder:16.0
+diferencia ojos alto:12.0
+
+
+analizando:104.jpg
+x1,y1 izq: 49.0,66.0
+x2,y2 izq: 53.0,69.0
+x1,y1 der: 60.0,75.0
+x2,y2 der: 67.0,77.0
+largoizq:4.0
+largoder:7.0
+diferencia ojos largo:3.0
+altoizq:3.0
+altoder:2.0
+diferencia ojos alto:1.0
+
+
+----------------
+
+
+
+
+----------------
+----------------
+----------------
+../removidas/seguro_perfil/104.jpg
+x1,y1 izq: 49.0,66.0
+x2,y2 izq: 53.0,69.0
+x1,y1 der: 60.0,75.0
+x2,y2 der: 67.0,77.0
+largoizq:4.0
+largoder:7.0
+diferencia ojos largo:3.0
+altoizq:3.0
+altoder:2.0
+diferencia ojos alto:1.0
+
+
+----------------
+----------------
+----------------
+../removidas/seguro_perfil/014.jpg
+x1,y1 izq: 96.0,74.0
+x2,y2 izq: 96.0,78.0
+x1,y1 der: 98.0,81.0
+x2,y2 der: 83.0,97.0
+largoizq:0.0
+largoder:-15.0
+diferencia ojos largo:15.0
+altoizq:4.0
+altoder:16.0
+diferencia ojos alto:12.0
+
+
+----------------
+----------------
+----------------
+../removidas/seguro_perfil/014.jpg
+(x[0][0],x[0][1]):(92.0,90.0)
+(x[1][0],x[1][1]):(68.0,66.0)
+(x[2][0],x[2][1]):(66.0,69.0)
+(x[3][0],x[3][1]):(65.0,70.0)
+(x[4][0],x[4][1]):(64.0,75.0)
+(x[5][0],x[5][1]):(108.0,63.0)
+(x[6][0],x[6][1]):(69.0,89.0)
+(x[7][0],x[7][1]):(75.0,93.0)
+(x[8][0],x[8][1]):(77.0,96.0)
+(x[9][0],x[9][1]):(78.0,98.0)
+(x[10][0],x[10][1]):(79.0,99.0)
+(x[11][0],x[11][1]):(81.0,97.0)
+(x[12][0],x[12][1]):(92.0,93.0)
+(x[13][0],x[13][1]):(100.0,94.0)
+(x[14][0],x[14][1]):(92.0,85.0)
+(x[15][0],x[15][1]):(100.0,84.0)
+(x[16][0],x[16][1]):(98.0,83.0)
+(x[17][0],x[17][1]):(96.0,72.0)
+(x[18][0],x[18][1]):(102.0,72.0)
+(x[19][0],x[19][1]):(104.0,73.0)
+(x[20][0],x[20][1]):(104.0,73.0)
+(x[21][0],x[21][1]):(89.0,96.0)
+(x[22][0],x[22][1]):(90.0,85.0)
+(x[23][0],x[23][1]):(104.0,75.0)
+(x[24][0],x[24][1]):(104.0,74.0)
+(x[25][0],x[25][1]):(103.0,91.0)
+(x[26][0],x[26][1]):(88.0,77.0)
+(x[27][0],x[27][1]):(100.0,84.0)
+(x[28][0],x[28][1]):(102.0,88.0)
+(x[29][0],x[29][1]):(104.0,90.0)
+(x[30][0],x[30][1]):(103.0,93.0)
+(x[31][0],x[31][1]):(97.0,89.0)
+(x[32][0],x[32][1]):(98.0,89.0)
+(x[33][0],x[33][1]):(98.0,90.0)
+(x[34][0],x[34][1]):(98.0,89.0)
+(x[35][0],x[35][1]):(97.0,89.0)
+(x[36][0],x[36][1]):(96.0,74.0)
+(x[37][0],x[37][1]):(97.0,76.0)
+(x[38][0],x[38][1]):(97.0,77.0)
+(x[39][0],x[39][1]):(96.0,78.0)
+(x[40][0],x[40][1]):(96.0,78.0)
+(x[41][0],x[41][1]):(96.0,76.0)
+(x[42][0],x[42][1]):(98.0,81.0)
+(x[43][0],x[43][1]):(100.0,80.0)
+(x[44][0],x[44][1]):(102.0,79.0)
+(x[45][0],x[45][1]):(83.0,97.0)
+(x[46][0],x[46][1]):(100.0,81.0)
+(x[47][0],x[47][1]):(99.0,82.0)
+(x[48][0],x[48][1]):(83.0,90.0)
+(x[49][0],x[49][1]):(92.0,85.0)
+(x[50][0],x[50][1]):(100.0,89.0)
+(x[51][0],x[51][1]):(100.0,89.0)
+(x[52][0],x[52][1]):(100.0,89.0)
+(x[53][0],x[53][1]):(93.0,93.0)
+(x[54][0],x[54][1]):(89.0,96.0)
+(x[55][0],x[55][1]):(89.0,95.0)
+(x[56][0],x[56][1]):(86.0,95.0)
+(x[57][0],x[57][1]):(85.0,94.0)
+(x[58][0],x[58][1]):(85.0,93.0)
+(x[59][0],x[59][1]):(83.0,93.0)
+(x[60][0],x[60][1]):(85.0,89.0)
+(x[61][0],x[61][1]):(97.0,89.0)
+(x[62][0],x[62][1]):(88.0,93.0)
+(x[63][0],x[63][1]):(92.0,93.0)
+(x[64][0],x[64][1]):(89.0,96.0)
+(x[65][0],x[65][1]):(88.0,94.0)
+(x[66][0],x[66][1]):(88.0,94.0)
+(x[67][0],x[67][1]):(87.0,93.0)
+
+
+----------------
+----------------
+----------------
+../removidas/seguro_perfil/04.jpg
+(x[0][0],x[0][1]):(57.0,110.0)
+(x[1][0],x[1][1]):(66.0,119.0)
+(x[2][0],x[2][1]):(74.0,124.0)
+(x[3][0],x[3][1]):(83.0,130.0)
+(x[4][0],x[4][1]):(91.0,131.0)
+(x[5][0],x[5][1]):(97.0,136.0)
+(x[6][0],x[6][1]):(101.0,138.0)
+(x[7][0],x[7][1]):(104.0,138.0)
+(x[8][0],x[8][1]):(111.0,133.0)
+(x[9][0],x[9][1]):(116.0,125.0)
+(x[10][0],x[10][1]):(121.0,111.0)
+(x[11][0],x[11][1]):(125.0,99.0)
+(x[12][0],x[12][1]):(125.0,85.0)
+(x[13][0],x[13][1]):(122.0,74.0)
+(x[14][0],x[14][1]):(116.0,66.0)
+(x[15][0],x[15][1]):(108.0,58.0)
+(x[16][0],x[16][1]):(97.0,50.0)
+(x[17][0],x[17][1]):(46.0,100.0)
+(x[18][0],x[18][1]):(40.0,102.0)
+(x[19][0],x[19][1]):(38.0,102.0)
+(x[20][0],x[20][1]):(38.0,103.0)
+(x[21][0],x[21][1]):(41.0,103.0)
+(x[22][0],x[22][1]):(46.0,96.0)
+(x[23][0],x[23][1]):(48.0,92.0)
+(x[24][0],x[24][1]):(49.0,88.0)
+(x[25][0],x[25][1]):(55.0,82.0)
+(x[26][0],x[26][1]):(65.0,75.0)
+(x[27][0],x[27][1]):(54.0,110.0)
+(x[28][0],x[28][1]):(58.0,117.0)
+(x[29][0],x[29][1]):(62.0,125.0)
+(x[30][0],x[30][1]):(65.0,130.0)
+(x[31][0],x[31][1]):(74.0,124.0)
+(x[32][0],x[32][1]):(74.0,125.0)
+(x[33][0],x[33][1]):(76.0,125.0)
+(x[34][0],x[34][1]):(77.0,122.0)
+(x[35][0],x[35][1]):(79.0,119.0)
+(x[36][0],x[36][1]):(54.0,106.0)
+(x[37][0],x[37][1]):(51.0,106.0)
+(x[38][0],x[38][1]):(52.0,105.0)
+(x[39][0],x[39][1]):(57.0,105.0)
+(x[40][0],x[40][1]):(55.0,108.0)
+(x[41][0],x[41][1]):(55.0,108.0)
+(x[42][0],x[42][1]):(63.0,96.0)
+(x[43][0],x[43][1]):(60.0,94.0)
+(x[44][0],x[44][1]):(62.0,92.0)
+(x[45][0],x[45][1]):(68.0,88.0)
+(x[46][0],x[46][1]):(66.0,92.0)
+(x[47][0],x[47][1]):(65.0,96.0)
+(x[48][0],x[48][1]):(87.0,127.0)
+(x[49][0],x[49][1]):(83.0,130.0)
+(x[50][0],x[50][1]):(82.0,130.0)
+(x[51][0],x[51][1]):(83.0,128.0)
+(x[52][0],x[52][1]):(85.0,127.0)
+(x[53][0],x[53][1]):(90.0,124.0)
+(x[54][0],x[54][1]):(96.0,119.0)
+(x[55][0],x[55][1]):(93.0,125.0)
+(x[56][0],x[56][1]):(91.0,130.0)
+(x[57][0],x[57][1]):(90.0,131.0)
+(x[58][0],x[58][1]):(90.0,131.0)
+(x[59][0],x[59][1]):(88.0,130.0)
+(x[60][0],x[60][1]):(87.0,127.0)
+(x[61][0],x[61][1]):(87.0,128.0)
+(x[62][0],x[62][1]):(87.0,128.0)
+(x[63][0],x[63][1]):(88.0,127.0)
+(x[64][0],x[64][1]):(94.0,119.0)
+(x[65][0],x[65][1]):(88.0,127.0)
+(x[66][0],x[66][1]):(87.0,128.0)
+(x[67][0],x[67][1]):(85.0,130.0)
+
+
+----------------
+----------------
+----------------
+../removidas/seguro_perfil/04.jpg
+x1,y1 izq: 54.0,106.0
+x2,y2 izq: 57.0,105.0
+x1,y1 der: 63.0,96.0
+x2,y2 der: 68.0,88.0
+largoizq:3.0
+largoder:5.0
+diferencia ojos largo:2.0
+altoizq:-1.0
+altoder:-8.0
+diferencia ojos alto:7.0
+
+
+----------------
+----------------
+----------------
+../removidas/seguro_perfil/99.jpg
+(x[0][0],x[0][1]):(52.0,76.0)
+(x[1][0],x[1][1]):(51.0,84.0)
+(x[2][0],x[2][1]):(52.0,90.0)
+(x[3][0],x[3][1]):(56.0,95.0)
+(x[4][0],x[4][1]):(59.0,104.0)
+(x[5][0],x[5][1]):(58.0,111.0)
+(x[6][0],x[6][1]):(58.0,114.0)
+(x[7][0],x[7][1]):(60.0,116.0)
+(x[8][0],x[8][1]):(64.0,118.0)
+(x[9][0],x[9][1]):(72.0,114.0)
+(x[10][0],x[10][1]):(81.0,109.0)
+(x[11][0],x[11][1]):(89.0,103.0)
+(x[12][0],x[12][1]):(95.0,96.0)
+(x[13][0],x[13][1]):(98.0,87.0)
+(x[14][0],x[14][1]):(99.0,80.0)
+(x[15][0],x[15][1]):(99.0,72.0)
+(x[16][0],x[16][1]):(98.0,64.0)
+(x[17][0],x[17][1]):(52.0,69.0)
+(x[18][0],x[18][1]):(49.0,67.0)
+(x[19][0],x[19][1]):(48.0,66.0)
+(x[20][0],x[20][1]):(48.0,66.0)
+(x[21][0],x[21][1]):(48.0,67.0)
+(x[22][0],x[22][1]):(54.0,65.0)
+(x[23][0],x[23][1]):(56.0,63.0)
+(x[24][0],x[24][1]):(60.0,62.0)
+(x[25][0],x[25][1]):(65.0,62.0)
+(x[26][0],x[26][1]):(71.0,63.0)
+(x[27][0],x[27][1]):(52.0,73.0)
+(x[28][0],x[28][1]):(51.0,79.0)
+(x[29][0],x[29][1]):(49.0,84.0)
+(x[30][0],x[30][1]):(49.0,88.0)
+(x[31][0],x[31][1]):(55.0,89.0)
+(x[32][0],x[32][1]):(55.0,90.0)
+(x[33][0],x[33][1]):(56.0,90.0)
+(x[34][0],x[34][1]):(58.0,89.0)
+(x[35][0],x[35][1]):(60.0,88.0)
+(x[36][0],x[36][1]):(53.0,74.0)
+(x[37][0],x[37][1]):(51.0,73.0)
+(x[38][0],x[38][1]):(53.0,73.0)
+(x[39][0],x[39][1]):(55.0,74.0)
+(x[40][0],x[40][1]):(53.0,75.0)
+(x[41][0],x[41][1]):(52.0,75.0)
+(x[42][0],x[42][1]):(61.0,72.0)
+(x[43][0],x[43][1]):(61.0,70.0)
+(x[44][0],x[44][1]):(63.0,70.0)
+(x[45][0],x[45][1]):(67.0,70.0)
+(x[46][0],x[46][1]):(64.0,72.0)
+(x[47][0],x[47][1]):(62.0,73.0)
+(x[48][0],x[48][1]):(61.0,97.0)
+(x[49][0],x[49][1]):(57.0,95.0)
+(x[50][0],x[50][1]):(56.0,93.0)
+(x[51][0],x[51][1]):(57.0,93.0)
+(x[52][0],x[52][1]):(58.0,93.0)
+(x[53][0],x[53][1]):(64.0,93.0)
+(x[54][0],x[54][1]):(70.0,95.0)
+(x[55][0],x[55][1]):(65.0,100.0)
+(x[56][0],x[56][1]):(62.0,103.0)
+(x[57][0],x[57][1]):(60.0,104.0)
+(x[58][0],x[58][1]):(58.0,104.0)
+(x[59][0],x[59][1]):(59.0,101.0)
+(x[60][0],x[60][1]):(61.0,97.0)
+(x[61][0],x[61][1]):(58.0,96.0)
+(x[62][0],x[62][1]):(59.0,96.0)
+(x[63][0],x[63][1]):(61.0,95.0)
+(x[64][0],x[64][1]):(70.0,95.0)
+(x[65][0],x[65][1]):(61.0,99.0)
+(x[66][0],x[66][1]):(60.0,100.0)
+(x[67][0],x[67][1]):(59.0,99.0)
+
+
+----------------
+----------------
+----------------
+../removidas/seguro_perfil/99.jpg
+(x[0][0],x[0][1]):(52.0,76.0)
+(x[1][0],x[1][1]):(51.0,84.0)
+(x[2][0],x[2][1]):(52.0,90.0)
+(x[3][0],x[3][1]):(56.0,95.0)
+(x[4][0],x[4][1]):(59.0,104.0)
+(x[5][0],x[5][1]):(58.0,111.0)
+(x[6][0],x[6][1]):(58.0,114.0)
+(x[7][0],x[7][1]):(60.0,116.0)
+(x[8][0],x[8][1]):(64.0,118.0)
+(x[9][0],x[9][1]):(72.0,114.0)
+(x[10][0],x[10][1]):(81.0,109.0)
+(x[11][0],x[11][1]):(89.0,103.0)
+(x[12][0],x[12][1]):(95.0,96.0)
+(x[13][0],x[13][1]):(98.0,87.0)
+(x[14][0],x[14][1]):(99.0,80.0)
+(x[15][0],x[15][1]):(99.0,72.0)
+(x[16][0],x[16][1]):(98.0,64.0)
+(x[17][0],x[17][1]):(52.0,69.0)
+(x[18][0],x[18][1]):(49.0,67.0)
+(x[19][0],x[19][1]):(48.0,66.0)
+(x[20][0],x[20][1]):(48.0,66.0)
+(x[21][0],x[21][1]):(48.0,67.0)
+(x[22][0],x[22][1]):(54.0,65.0)
+(x[23][0],x[23][1]):(56.0,63.0)
+(x[24][0],x[24][1]):(60.0,62.0)
+(x[25][0],x[25][1]):(65.0,62.0)
+(x[26][0],x[26][1]):(71.0,63.0)
+(x[27][0],x[27][1]):(52.0,73.0)
+(x[28][0],x[28][1]):(51.0,79.0)
+(x[29][0],x[29][1]):(49.0,84.0)
+(x[30][0],x[30][1]):(49.0,88.0)
+(x[31][0],x[31][1]):(55.0,89.0)
+(x[32][0],x[32][1]):(55.0,90.0)
+(x[33][0],x[33][1]):(56.0,90.0)
+(x[34][0],x[34][1]):(58.0,89.0)
+(x[35][0],x[35][1]):(60.0,88.0)
+(x[36][0],x[36][1]):(53.0,74.0)
+(x[37][0],x[37][1]):(51.0,73.0)
+(x[38][0],x[38][1]):(53.0,73.0)
+(x[39][0],x[39][1]):(55.0,74.0)
+(x[40][0],x[40][1]):(53.0,75.0)
+(x[41][0],x[41][1]):(52.0,75.0)
+(x[42][0],x[42][1]):(61.0,72.0)
+(x[43][0],x[43][1]):(61.0,70.0)
+(x[44][0],x[44][1]):(63.0,70.0)
+(x[45][0],x[45][1]):(67.0,70.0)
+(x[46][0],x[46][1]):(64.0,72.0)
+(x[47][0],x[47][1]):(62.0,73.0)
+(x[48][0],x[48][1]):(61.0,97.0)
+(x[49][0],x[49][1]):(57.0,95.0)
+(x[50][0],x[50][1]):(56.0,93.0)
+(x[51][0],x[51][1]):(57.0,93.0)
+(x[52][0],x[52][1]):(58.0,93.0)
+(x[53][0],x[53][1]):(64.0,93.0)
+(x[54][0],x[54][1]):(70.0,95.0)
+(x[55][0],x[55][1]):(65.0,100.0)
+(x[56][0],x[56][1]):(62.0,103.0)
+(x[57][0],x[57][1]):(60.0,104.0)
+(x[58][0],x[58][1]):(58.0,104.0)
+(x[59][0],x[59][1]):(59.0,101.0)
+(x[60][0],x[60][1]):(61.0,97.0)
+(x[61][0],x[61][1]):(58.0,96.0)
+(x[62][0],x[62][1]):(59.0,96.0)
+(x[63][0],x[63][1]):(61.0,95.0)
+(x[64][0],x[64][1]):(70.0,95.0)
+(x[65][0],x[65][1]):(61.0,99.0)
+(x[66][0],x[66][1]):(60.0,100.0)
+(x[67][0],x[67][1]):(59.0,99.0)
+
+
+----------------
+----------------
+----------------
+../removidas/seguro_perfil/99.jpg
+x1,y1 izq: 52.0,76.0
+x1,y1 der: 98.0,64.0
+
+
+----------------
+----------------
+----------------
+../removidas/seguro_perfil/99.jpg
+x1,y1 izq: 52.0,76.0
+x1,y1 der: 98.0,64.0
+x1,y1 piconariz: 49.0,88.0
+
+
+----------------
+----------------
+----------------
+../removidas/seguro_perfil/99.jpg
+x1,y1 izq: 52.0,76.0
+x1,y1 der: 98.0,64.0
+x1,y1 piconariz: 49.0,88.0
+
+
+----------------
+----------------
+----------------
+../removidas/seguro_perfil/04.jpg
+x1,y1 izq: 57.0,110.0
+x1,y1 der: 97.0,50.0
+x1,y1 piconariz: 65.0,130.0
+
+
+----------------
+----------------
+----------------
+../removidas/seguro_perfil/1694.jpg
+x1,y1 izq: 53.0,77.0
+x1,y1 der: 105.0,74.0
+x1,y1 piconariz: 45.0,92.0
+
+
+----------------
+----------------
+----------------
+../removidas/seguro_perfil/876.jpg
+x1,y1 izq: 19.0,52.0
+x1,y1 der: 58.0,73.0
+x1,y1 piconariz: 66.0,88.0
+
+
+----------------
+----------------
+----------------
+../removidas/seguro_perfil/014.jpg
+x1,y1 izq: 92.0,90.0
+x1,y1 der: 98.0,83.0
+x1,y1 piconariz: 103.0,93.0
+
+
+----------------
+----------------
+----------------
+../removidas/seguro_perfil/04.jpg
+x1,y1 izq: 57.0,110.0
+x1,y1 der: 97.0,50.0
+x1,y1 piconariz: 65.0,130.0
+
+
+----------------
+----------------
+----------------
+../removidas/seguro_perfil/04.jpg
+x1,y1 izq: 57.0,110.0
+x1,y1 der: 97.0,50.0
+x1,y1 piconariz: 65.0,130.0
+
+
+../removidas/seguro_perfil/04.jpg
+x1,y1 izq: 57.0,110.0
+x1,y1 der: 97.0,50.0
+x1,y1 piconariz: 65.0,130.0
+x1,y1 barbilla: 111.0,133.0
+
+
+../removidas/seguro_perfil/04.jpg
+x1,y1 izq: 57.0,110.0
+x1,y1 der: 97.0,50.0
+x1,y1 piconariz: 65.0,130.0
+x1,y1 barbilla: 111.0,133.0
+
+
+../removidas/seguro_perfil/04.jpg
+x1,y1 izq: 57.0,110.0
+x1,y1 der: 97.0,50.0
+x1,y1 piconariz: 65.0,130.0
+x1,y1 barbilla: 111.0,133.0
+
+
+../removidas/seguro_perfil/04.jpg
+x1,y1 izq: 57.0,110.0
+x1,y1 der: 97.0,50.0
+x1,y1 piconariz: 65.0,130.0
+x1,y1 barbilla: 111.0,133.0
+
+
+../removidas/seguro_canto/1654.jpg
+x1,y1 izq: 29.0,55.0
+x1,y1 der: 130.0,87.0
+x1,y1 piconariz: 124.0,85.0
+x1,y1 barbilla: 100.0,137.0
+
+
+../removidas/seguro_canto/1775.jpg
+x1,y1 izq: 38.0,72.0
+x1,y1 der: 117.0,66.0
+x1,y1 piconariz: 44.0,90.0
+x1,y1 barbilla: 67.0,133.0
+
+
+../removidas/cara/1_2021-09-01_13:16:45.569419.avi_0.34273266792297363.jpg
+x1,y1 izq: 49.0,73.0
+x1,y1 der: 94.0,58.0
+x1,y1 piconariz: 53.0,88.0
+x1,y1 barbilla: 71.0,101.0
+
+
+../removidas/cara/1_2021-09-01_13:16:45.569419.avi_0.34273266792297363.jpg
+x1,y1 izq: 49.0,73.0
+x1,y1 der: 94.0,58.0
+x1,y1 piconariz: 53.0,88.0
+x1,y1 barbilla: 71.0,101.0
+
+
+../removidas/seguro_perfil/04.jpg
+x1,y1 izq: 57.0,110.0
+x1,y1 der: 97.0,50.0
+x1,y1 piconariz: 65.0,130.0
+x1,y1 barbilla: 111.0,133.0
+
+
+../removidas/seguro_perfil/04.jpg
+x1,y1 izq: 57.0,110.0
+x1,y1 der: 97.0,50.0
+x1,y1 piconariz: 65.0,130.0
+x1,y1 barbilla: 111.0,133.0
+
+
+../removidas/seguro_canto/1_2021-09-01_13:16:28.763353.avi_0.30152273178100586.jpg
+x1,y1 izq: 30.0,29.0
+x1,y1 der: 96.0,58.0
+x1,y1 piconariz: 83.0,67.0
+x1,y1 barbilla: 55.0,104.0
+
+
+../removidas/seguro_canto/1344.jpg
+x1,y1 izq: 40.0,44.0
+x1,y1 der: 114.0,73.0
+x1,y1 piconariz: 103.0,83.0
+x1,y1 barbilla: 74.0,118.0
+
+
+../removidas/seguro_perfil/04.jpg
+x1,y1 izq: 57.0,110.0
+x1,y1 der: 97.0,50.0
+x1,y1 piconariz: 65.0,130.0
+x1,y1 barbilla: 111.0,133.0
+
+
+../removidas/seguro_canto/1344.jpg
+../removidas/seguro_perfil/04.jpg
+x1,y1 izq: 57.0,110.0
+x1,y1 der: 97.0,50.0
+x1,y1 piconariz: 65.0,130.0
+x1,y1 barbilla: 111.0,133.0
+
+
+../removidas/cara/1_2021-09-01_13:16:45.569419.avi_0.394054651260376.jpg
+../removidas/cara/1_2021-09-01_13:16:45.569419.avi_0.394054651260376.jpg
+x1,y1 izq: 36.0,77.0
+x1,y1 der: 60.0,88.0
+x1,y1 piconariz: 46.0,87.0
+x1,y1 barbilla: 63.0,38.0
+
+
+../removidas/cara/854.jpg
+x1,y1 izq: 43.0,49.0
+x1,y1 der: 109.0,72.0
+x1,y1 piconariz: 107.0,88.0
+x1,y1 barbilla: 74.0,120.0
+
+
+../removidas/perfil/04.jpg
+x1,y1 izq: 57.0,110.0
+x1,y1 der: 97.0,50.0
+x1,y1 piconariz: 65.0,130.0
+x1,y1 barbilla: 111.0,133.0
+
+
+../removidas/perfil/1_2021-09-01_13:21:00.343304.avi_0.38600921630859375.jpg
+x1,y1 izq: 57.0,80.0
+x1,y1 der: 91.0,65.0
+x1,y1 piconariz: 59.0,89.0
+x1,y1 barbilla: 74.0,100.0
+
+
+../removidas/perfil/1_2021-09-01_13:21:00.343304.avi_0.38600921630859375.jpg
+x1,y1 izq: 57.0,80.0
+x1,y1 der: 91.0,65.0
+x1,y1 piconariz: 59.0,89.0
+x1,y1 barbilla: 74.0,100.0
+
+
+../removidas/perfil/1_2021-09-01_13:21:00.343304.avi_0.38600921630859375.jpg
+../removidas/perfil/00106.jpg
+x1,y1 izq: 16.0,39.0
+x1,y1 der: 124.0,62.0
+x1,y1 piconariz: 79.0,91.0
+x1,y1 barbilla: 61.0,132.0
+
+
+../removidas/cara/1_2021-09-01_13:16:45.569419.avi_0.394054651260376.jpg
+x1,y1 izq: 36.0,77.0
+x1,y1 der: 60.0,88.0
+x1,y1 piconariz: 46.0,87.0
+x1,y1 barbilla: 63.0,38.0
+
+
+../removidas/cara/1_2021-09-01_13:16:45.569419.avi_0.34273266792297363.jpg
+x1,y1 izq: 49.0,73.0
+x1,y1 der: 94.0,58.0
+x1,y1 piconariz: 53.0,88.0
+x1,y1 barbilla: 71.0,101.0
+
+
+../removidas/cara/1_2021-09-01_13:16:45.569419.avi_0.41242361068725586.jpg
+x1,y1 izq: 44.0,64.0
+x1,y1 der: 94.0,57.0
+x1,y1 piconariz: 50.0,88.0
+x1,y1 barbilla: 68.0,102.0
+
+
+../removidas/cara/1_2021-09-01_13:16:45.569419.avi_1.499715805053711.jpg
+x1,y1 izq: 63.0,68.0
+x1,y1 der: 102.0,68.0
+x1,y1 piconariz: 99.0,67.0
+x1,y1 barbilla: 92.0,98.0
+
+
+../removidas/cara/6.jpg
+x1,y1 izq: 69.0,75.0
+x1,y1 der: 113.0,81.0
+x1,y1 piconariz: 108.0,78.0
+x1,y1 barbilla: 95.0,104.0
+
+
+../removidas/cara/6.jpg
+x1,y1 izq: 69.0,75.0
+x1,y1 der: 113.0,81.0
+x1,y1 piconariz: 108.0,78.0
+x1,y1 barbilla: 95.0,104.0
+
+
+../removidas/cara/89.jpg
+x1,y1 izq: 63.0,69.0
+x1,y1 der: 92.0,58.0
+x1,y1 piconariz: 66.0,79.0
+x1,y1 barbilla: 79.0,91.0
+
+
+../removidas/perfil/1_2021-09-01_13:16:28.763353.avi_0.30152273178100586.jpg
+x1,y1 izq: 30.0,29.0
+x1,y1 der: 96.0,58.0
+x1,y1 piconariz: 83.0,67.0
+x1,y1 barbilla: 55.0,104.0
+
+
+../removidas/perfil/1_2021-09-01_13:21:00.343304.avi_0.33136701583862305.jpg
+x1,y1 izq: 57.0,73.0
+x1,y1 der: 92.0,63.0
+x1,y1 piconariz: 67.0,85.0
+x1,y1 barbilla: 75.0,94.0
+
+
+../removidas/perfil/06.jpg
+x1,y1 izq: 100.0,86.0
+x1,y1 der: 106.0,77.0
+x1,y1 piconariz: 62.0,65.0
+x1,y1 barbilla: 90.0,36.0
+
+
+../removidas/perfil/045.jpg
+x1,y1 izq: 54.0,61.0
+x1,y1 der: 93.0,61.0
+x1,y1 piconariz: 75.0,84.0
+x1,y1 barbilla: 76.0,90.0
+
+
+../removidas/perfil/00148.jpg
+x1,y1 izq: 73.0,45.0
+x1,y1 der: 108.0,50.0
+x1,y1 piconariz: 93.0,66.0
+x1,y1 barbilla: 92.0,71.0
+
+
+x1,y1 izq: 64.0,33.0
+x1,y1 der: 44.0,57.0
+x1,y1 piconariz: 47.0,37.0
+x1,y1 barbilla: 44.0,23.0
+
+
+../removidas/perfil/206.jpg
+x1,y1 izq: 31.0,44.0
+x1,y1 der: 124.0,75.0
+x1,y1 piconariz: 89.0,70.0
+x1,y1 barbilla: 68.0,114.0
+
+
+../removidas/perfil/691.jpg
+x1,y1 izq: 50.0,53.0
+x1,y1 der: 111.0,83.0
+x1,y1 piconariz: 91.0,102.0
+x1,y1 barbilla: 65.0,122.0
+
+
+../removidas/perfil/853.jpg
+x1,y1 izq: 47.0,51.0
+x1,y1 der: 117.0,82.0
+x1,y1 piconariz: 89.0,108.0
+x1,y1 barbilla: 69.0,125.0
+
+
+../removidas/perfil/886.jpg
+x1,y1 izq: 42.0,47.0
+x1,y1 der: 117.0,71.0
+x1,y1 piconariz: 94.0,95.0
+x1,y1 barbilla: 73.0,121.0
+
+
+../removidas/perfil/1950.jpg
+x1,y1 izq: 35.0,74.0
+x1,y1 der: 113.0,68.0
+x1,y1 piconariz: 41.0,95.0
+x1,y1 barbilla: 62.0,131.0
+
+
+../removidas/perfil/1950.jpg
+x1,y1 izq: 35.0,74.0
+x1,y1 der: 113.0,68.0
+x1,y1 piconariz: 41.0,95.0
+x1,y1 barbilla: 62.0,131.0
+
+
+../removidas/perfil/2023.jpg
+x1,y1 izq: 27.0,54.0
+x1,y1 der: 123.0,85.0
+x1,y1 piconariz: 103.0,82.0
+x1,y1 barbilla: 75.0,127.0
+
+

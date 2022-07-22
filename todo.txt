@@ -1,0 +1,112 @@
+
+TODO:
+
+-ok-revisar si van las camras luna azul
+-poner en marcha para luna azul
+-lo de las lineas
+
+
+-programa:
+-ok-unir usuarios
+-ok-mover fotos a algun user
+--lo de mover fotos el tamaño del select mas pequño
+-ok-al crear local y crear camara qe cree las carpetas necesarias y el diccionario
+-ok-qe desde el programa se pueda encender y parar el motor de cada camara
+--para calcular las rutas, qe hayan puntos en los qe se unan las camaras para no crear lineas rectas, + revisar algoritmo de rutas
+
+
+
+-motor:
+-revisar si al mover foto de usuario, realmente en el diccionario se modifica..
+-aplicar formula de mediana media para quitar desviaciones en el calculo
+-hacer qe los umbrales sean proporcionales al numero de fotos..
+-ajustar sensor movimiento
+-ajustar el algoritmo qe detecta cara, los umbrales y tal vez si hay pocas caras, reajustar los umbrales..
+-ok-poner el capturador en el servidor cambiando la ip de las camras por el duckdns
+
+-ok-qe de las X caras juntas qe al final solo se qeda con 1 qe guarde tambien los 2 encoder a esta mas cercanos 
+-ok-el diccionario qe solo guarde X veces como maximo, cada cara esto lo are guardando en bbdd el encoder en si, y la puntuacion qe le dio de proximidad y cuantos abia ya antes qe el asi voy eliminando unos mas antiguos y se van qedando los mas nuevos qe ya abia muxos y mas proximos
+-ok-revisar el clasificador de caras por qe no las clasifca bien  (revisar umbrales, y alguna traza en fichero log para saber qe umbrales o qe paso con dicha cara qe clasifico mal)
+-ok-acceso simultaneo al fichero de caras, y que no se corrompa si cierro con ctrl+Z o otra forma de cerrar estos procesos
+-ok-afinar el detector de movimiento
+-ok-File "motor/procesa_videosV2.py", line 127, in <module>
+    rostro = cv2.resize(rostro, (150, 150), interpolation=cv2.INTER_CUBIC)
+cv2.error: OpenCV(4.5.2) /tmp/pip-req-build-947ayiyu/opencv/modules/imgproc/src/resize.cpp:4051: error: (-215:Assertion failed) !ssize.empty() in function 'resize'
+-ok-PHP Warning:  file_get_contents(): Filename cannot be empty in /var/www/html/reconocimientoFacial/proyecto_definitivo/libs/Jos_thread.class.php on line 80
+-ok-si detecta 2 caras peta..
+
+
+-ok-reiniciar las camaras cada X minutos
+-el detector de movimiento que pille mas objetos pequeños.
+-ok-el detector de movimiento que grabe X segundos antes y X despues del movimiento
+-?-ajustar los parametros de los cruces de lineas, y tal vez redibujarlas, ver las horizontales pillar un video y analizar
+-ok-ajustar 1 poco mas los parametros del clasificador de caras
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+revision final:
+-ok-al crear camara desde config si la marco como encendida no lo pilla, tengoq e editarla y darle encendido
+-ok-al crear las lineas tieien qe ser enteros
+-ok-desde el perfil de una persona los desplegables muy grandes
+-ok-cerrar las conexiones sql en el webservice
+-ok-hacer lo del aforo qe sume y reste cuando enre y salga en las camaras de entrada y salida
+-ok-lo de mover que tambien haya una opcion qe sea crear nuevo
+-ok-filtrar lineas por direccion de cruce
+-ok-qe funcione el listado de ver cruxes de lneas
+-ok-dashboard
+-ok-lo de rutas creo qe va mal
+--ver camaras en directo (pagar tarifa)
+-?deberia ir-el aforo por cada entrada como hay 2 imagenes parece qe suma 2 (esto parece qe va bien)
+-ok-al crear nueva persona desaparece
+-creo q si hay 2 juntos sigue sin pillar bien
+-ke no duplike tanto las personas
+-ok-los cruces de lineas no aparecen las fotos..
+-ok-los logs van muy sobrecargados, reducirlos para poderlos estudiar
+
+
+
+------------------------------------------
+-corrigiendo errores finales:
+
+
+ok--reiniciar server 1 vez al dia
+
+--ke pille + caras:-luz camara, osea ajustes de brillo etc desde el panel (kitar brillo un poco, ya e conseguido qe enfoque algo mas
+buscar en google cual seria la configuracion wena para poca luz o noche)
+
+
+-ok-se acumulan muxos videos sin procesar, es por qe no los borra bien, o es qe no los procesa
+-ok-qe se procesen los videos solo cuando esten enteros
+basicamente es un controlador qe el procesavideosV3 solo procesara los videos que lleven mas de 10 segundos con el mismo tamaño
+se iran guardando en un array para ir comparando, para no saturar la ram, se reiniciará el proceso X veces al dia
+
+-ok-ke pille + caras:-el 1º captador mas sensible
+
+
+-ok-ke pille + caras:-kitar borrosidad
+-ok-ke pille + caras:-menos frontales
+-ok-ke pille + caras:-a ver si puedo enfocar
+ok?-se confunde bastante el clasificador, los umbrales mas ajustados
+
+
+ok?-los cruces linea se duplican muxo
+-ok?-los cruces lineas pillan la luz
+-ok?-no pone bien la fecha en las fotos de cruce de lineas
+
+
+-ok-al mover fotos desde admin no elimina o modificar bien las instancias
+
+
+
+
