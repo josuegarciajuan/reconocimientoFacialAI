@@ -34,7 +34,7 @@ time_ini = time.time()
 def printLog(*args, **kwargs):
     print(*args, **kwargs)
     
-    with open('/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/procesa_videos_registro.out','a') as file:
+    with open('/var/www/html/reconocimientofacialV2/motor/procesa_videos_registro.out','a') as file:
        print(*args, **kwargs, file=file)
 
 
@@ -52,12 +52,12 @@ sacar imagenes con posibles caras de un video
 
 
 
-modelFile = "/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/models/res10_300x300_ssd_iter_140000.caffemodel"
-configFile = "/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/models/deploy.prototxt.txt"
+modelFile = "/var/www/html/reconocimientofacialV2/motor/models/res10_300x300_ssd_iter_140000.caffemodel"
+configFile = "/var/www/html/reconocimientofacialV2/motor/models/deploy.prototxt.txt"
 net = cv2.dnn.readNetFromCaffe(configFile, modelFile)
 
 
-name_file=os.path.join('/var/www/html/reconocimientoFacial/proyecto_definitivo/admin/files/videos_registro/', FICHERO)
+name_file=os.path.join('/var/www/html/reconocimientofacialV2/admin/files/videos_registro/', FICHERO)
 
 
 printLog("tenemos este video:"+name_file)
@@ -139,7 +139,7 @@ while(cap.isOpened()):
                 if sigue:
                     segs_elapsed = time.time() - segundos_ini
                     nombrefinal=FICHERO+'_'+str(segs_elapsed)
-                    cv2.imwrite('/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/sinclasificar/'+nombrefinal+'.jpg', rostro)
+                    cv2.imwrite('/var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/'+nombrefinal+'.jpg', rostro)
                         
 
                     printLog("cara guardada en /"+nombrefinal+".jpg con esta confidence:"+str(confidence))
@@ -219,7 +219,7 @@ def comprueba_enfocada(imagePath,name_file):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)        
         fm = variance_of_laplacian(gray)
         printLog("el fm de la imagen es: "+str(fm))
-        # copyfile(imagePath+"_tmp.jpg" , "/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/removidas/tmp/"+name_file)
+        # copyfile(imagePath+"_tmp.jpg" , "/var/www/html/reconocimientofacialV2/motor/removidas/tmp/"+name_file)
         os.remove(imagePath+"_tmp.jpg")
         if fm > UMBRAL_ENFOQUE_MAXIMO_CARA:    
             printLog("Ademas esta enfocada")
@@ -244,13 +244,13 @@ def escara(imagePath):
 
 
     
-    face1 = "/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/models/haarcascade_frontalface2.xml"
-    face2 = "/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/models/haarcascade_frontalface_alt.xml"
-    face3 = "/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/models/haarcascade_frontalface_alt2.xml"
-    face4 = "/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/models/haarcascade_frontalface_alt_tree.xml"
-    face5 = "/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/models/haarcascade_frontalface_default.xml"
-    face6 = "/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/models/haarcascade_profileface.xml"
-    face7 = "/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/cosas_en_la_cara/models/haarcascade_frontalface_default.xml"
+    face1 = "/var/www/html/reconocimientofacialV2/motor/models/haarcascade_frontalface2.xml"
+    face2 = "/var/www/html/reconocimientofacialV2/motor/models/haarcascade_frontalface_alt.xml"
+    face3 = "/var/www/html/reconocimientofacialV2/motor/models/haarcascade_frontalface_alt2.xml"
+    face4 = "/var/www/html/reconocimientofacialV2/motor/models/haarcascade_frontalface_alt_tree.xml"
+    face5 = "/var/www/html/reconocimientofacialV2/motor/models/haarcascade_frontalface_default.xml"
+    face6 = "/var/www/html/reconocimientofacialV2/motor/models/haarcascade_profileface.xml"
+    face7 = "/var/www/html/reconocimientofacialV2/motor/cosas_en_la_cara/models/haarcascade_frontalface_default.xml"
 
     face_cascade1 = cv2.CascadeClassifier(face1)
     face_cascade2 = cv2.CascadeClassifier(face2)
@@ -359,7 +359,7 @@ def anyade_datos_def(maximo,count,knownEncoding,knownName,knownPoint,ganador_nam
     knownIdentificadorunico_def.append(knownIdentificadorunic)
     knownEnfoque_def.append(knownEnfoque)
 
-    data = pickle.loads(open('/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/bbdd_reconocimiento/'+LOCAL_ID+'/face_enc', "rb").read())
+    data = pickle.loads(open('/var/www/html/reconocimientofacialV2/motor/bbdd_reconocimiento/'+LOCAL_ID+'/face_enc', "rb").read())
 
     for ff in range(0,len(data["encodings"])):
         knownEncodings_def.append(data["encodings"][ff])
@@ -372,8 +372,8 @@ def anyade_datos_def(maximo,count,knownEncoding,knownName,knownPoint,ganador_nam
 
     #printLog("anyado todo lo recabado")
     data = {"encodings": knownEncodings_def, "names": knownNames_def, "points": knownPoints_def, "identificadoresunicos": knownIdentificadorunico_def, "enfoque": knownEnfoque_def}
-    with FileLock('/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/bbdd_reconocimiento/'+LOCAL_ID+'/face_enc'):
-        f = open('/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/bbdd_reconocimiento/'+LOCAL_ID+'/face_enc', "wb")
+    with FileLock('/var/www/html/reconocimientofacialV2/motor/bbdd_reconocimiento/'+LOCAL_ID+'/face_enc'):
+        f = open('/var/www/html/reconocimientofacialV2/motor/bbdd_reconocimiento/'+LOCAL_ID+'/face_enc', "wb")
         f.write(pickle.dumps(data))
         f.close()
 
@@ -392,7 +392,7 @@ def anyade_datos_def(maximo,count,knownEncoding,knownName,knownPoint,ganador_nam
 # UMBRAL_ENFOQUE_MAXIMO=300 # menos de este desenfoque , se descartan
 UMBRAL_ENFOQUE_MAXIMO_CARA=120 #menos de este enfoque se descartan ,pero solo actuando sobre la cara
 
-path_imgs='/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/sinclasificar/'
+path_imgs='/var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/'
 
 
 
@@ -406,7 +406,7 @@ knownIdentificadorunico = []
 knownEnfoque = []
 
 
-proc = subprocess.Popen("php /var/www/html/reconocimientoFacial/proyecto_definitivo/ws.php nombreunico", shell=True, stdout=subprocess.PIPE)
+proc = subprocess.Popen("php /var/www/html/reconocimientofacialV2/ws.php nombreunico", shell=True, stdout=subprocess.PIPE)
 ganador_name = str(proc.stdout.read())
 ganador_name = ganador_name.replace("'", "")
 printLog("Como es nuevo, le voy a asignar un random: "+ganador_name)
@@ -446,7 +446,7 @@ for (i, imagePath) in enumerate(imagePaths):
                         knownEncodings.append(encoding)  
 
                         
-                    proc = subprocess.Popen("php /var/www/html/reconocimientoFacial/proyecto_definitivo/ws.php fotos_identificadorunico", shell=True, stdout=subprocess.PIPE)
+                    proc = subprocess.Popen("php /var/www/html/reconocimientofacialV2/ws.php fotos_identificadorunico", shell=True, stdout=subprocess.PIPE)
                     fotos_identificadorunico = str(proc.stdout.read())
                     fotos_identificadorunico = fotos_identificadorunico.replace("'", "")
 
@@ -471,14 +471,14 @@ for (i, imagePath) in enumerate(imagePaths):
 
     if not insertada:
         printLog('remuevo la imagen pues no supero los filtros y no se va a usar: '+imagePath)
-        copyfile(imagePath , "/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/removidas/nopasafiltros/"+name_file)
+        copyfile(imagePath , "/var/www/html/reconocimientofacialV2/motor/removidas/nopasafiltros/"+name_file)
     else:
         printLog('La imagen es buena, voy a ponerla en su correspondiente carpeta, para conservarla: '+imagePath)
 
-        if not os.path.exists('/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name):
-            os.makedirs('/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name)
+        if not os.path.exists('/var/www/html/reconocimientofacialV2/motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name):
+            os.makedirs('/var/www/html/reconocimientofacialV2/motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name)
 
-        copyfile(imagePath, '/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name+'/'+name_file+'_'+fotos_identificadorunico+".jpg") 
+        copyfile(imagePath, '/var/www/html/reconocimientofacialV2/motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name+'/'+name_file+'_'+fotos_identificadorunico+".jpg") 
         printLog("He copiado de aki: "+imagePath+ " a aki: "+ganador_name+'/'+name_file+'_'+fotos_identificadorunico+".jpg")
     os.remove(imagePath)
 
