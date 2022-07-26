@@ -90,7 +90,6 @@ while(cap.isOpened()):
 
 
         blob = cv2.dnn.blobFromImage(cv2.resize(img_original, (300, 300)),1.0, (353, 353), (104.0, 117.0, 123.0))
-        #blob = cv2.dnn.blobFromImage(cv2.resize(img, (300, 300)),1.0, (351, 353), (104.0, 117.0, 123.0))
         net.setInput(blob)
         faces3 = net.forward()
         
@@ -121,7 +120,6 @@ while(cap.isOpened()):
 
 
                 rostro = img_original[ydef:y1def, xdef:x1def]
-                # rostro = img[y-50:y1+50, x-50:x1+50]
 
 
                 sigue=True
@@ -130,7 +128,8 @@ while(cap.isOpened()):
                 else:
                     
                     try:
-                        rostro = cv2.resize(rostro, (150, 150), interpolation=cv2.INTER_CUBIC)
+                        # rostro = cv2.resize(rostro, (150, 150), interpolation=cv2.INTER_CUBIC)
+                        rostro = cv2.resize(rostro, (250, 250), interpolation=cv2.INTER_CUBIC)
                     except Exception as e:
                         printLog(str(e))
                         sigue=False
@@ -140,15 +139,8 @@ while(cap.isOpened()):
                 if sigue:
                     segs_elapsed = time.time() - segundos_ini
                     nombrefinal=FICHERO+'_'+str(segs_elapsed)
-
-                    alineado=False
-
-
-
-                    if not alineado:
-                        printLog("No se puede alinear")
-                        cv2.imwrite('/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/sinclasificar/'+nombrefinal+'.jpg', rostro)
-
+                    cv2.imwrite('/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/sinclasificar/'+nombrefinal+'.jpg', rostro)
+                        
 
                     printLog("cara guardada en /"+nombrefinal+".jpg con esta confidence:"+str(confidence))
 
@@ -167,12 +159,6 @@ cv2.destroyAllWindows()
 
 printLog("Llego al final y remuevo el video!")
     
-
-
-
-
-
-
 
 
 
@@ -202,13 +188,17 @@ def variance_of_laplacian(image):
 detector = dlib.get_frontal_face_detector()
 def comprueba_enfocada(imagePath,name_file):
 
+    printLog("Voy a comprobar si enfocada, y si pilla cara a la vez")
+
     image = cv2.imread(imagePath)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
 
     recortada=False
-    rects = detector(gray, 2)
+    # rects = detector(gray, 2)
+    rects = detector(gray, 1)
     for rect in rects:
+        printLog("Tiene rect a analizar")
         (x, y, w, h) = rect_to_bb(rect)
         printLog("x:" + str(x))
         printLog("y:" + str(y))
@@ -216,14 +206,15 @@ def comprueba_enfocada(imagePath,name_file):
         printLog("h:" + str(h))
 
         if (x + w)>100 and (y + h )>100 and x>0 and y>0:
+            printLog("Se hace un recorte para analizar")
             recorte = imutils.resize(image[y:y + h, x:x + w], width=100)
             recortada=True
             cv2.imwrite(imagePath+"_tmp.jpg", recorte)
 
-    devolver=0
 
+    devolver=0
     if recortada:
-        printLog("se puede recortar la face")
+        printLog("SI se puede recortar la face")
         image = cv2.imread(imagePath+"_tmp.jpg")
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)        
         fm = variance_of_laplacian(gray)
@@ -231,12 +222,17 @@ def comprueba_enfocada(imagePath,name_file):
         # copyfile(imagePath+"_tmp.jpg" , "/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/removidas/tmp/"+name_file)
         os.remove(imagePath+"_tmp.jpg")
         if fm > UMBRAL_ENFOQUE_MAXIMO_CARA:    
+            printLog("Ademas esta enfocada")
             devolver=fm
+         
     else:
         fm = variance_of_laplacian(gray)
-        printLog("NO se puede recortar la face, por lo que aplico el umbral de la foto completa y su fm es:"+str(fm)+" y el umbral que considero:"+str(UMBRAL_ENFOQUE_MAXIMO))
+        #printLog("NO se puede recortar la face, por lo que aplico el umbral de la foto completa y su fm es:"+str(fm)+" y el umbral que considero:"+str(UMBRAL_ENFOQUE_MAXIMO))
+        printLog("No se puede recortar la face")
+        """
         if fm > UMBRAL_ENFOQUE_MAXIMO:
            devolver=fm
+        """   
 
     printLog("Lo que estoy devolviendo al final:"+str(devolver))
     return devolver
@@ -390,8 +386,11 @@ def anyade_datos_def(maximo,count,knownEncoding,knownName,knownPoint,ganador_nam
 
 
 
-UMBRAL_ENFOQUE_MAXIMO=120 # menos de este desenfoque , se descartan
-UMBRAL_ENFOQUE_MAXIMO_CARA=90 #menos de este enfoque se descartan ,pero solo actuando sobre la cara
+# UMBRAL_ENFOQUE_MAXIMO=120 # menos de este desenfoque , se descartan
+# UMBRAL_ENFOQUE_MAXIMO_CARA=90 #menos de este enfoque se descartan ,pero solo actuando sobre la cara
+
+# UMBRAL_ENFOQUE_MAXIMO=300 # menos de este desenfoque , se descartan
+UMBRAL_ENFOQUE_MAXIMO_CARA=120 #menos de este enfoque se descartan ,pero solo actuando sobre la cara
 
 path_imgs='/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/sinclasificar/'
 
@@ -422,50 +421,49 @@ for (i, imagePath) in enumerate(imagePaths):
     enfoque=comprueba_enfocada(imagePath,name_file)
     if enfoque>0:
         printLog('Es enfocada de momento:'+imagePath)
-        #if esfrontal(imagePath):
-        if escara(imagePath):
+        #if escara(imagePath):
 
-            printLog('es cara1 y enfocada:'+imagePath)
+        printLog('es cara1 y enfocada:'+imagePath)
 
-            image = cv2.imread(imagePath)
-            rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            boxes = face_recognition.face_locations(rgb,model='cnn')
-            encodings = face_recognition.face_encodings(rgb, boxes)
+        image = cv2.imread(imagePath)
+        rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        boxes = face_recognition.face_locations(rgb,model='cnn')
+        encodings = face_recognition.face_encodings(rgb, boxes)
 
-            if len(encodings)>0:
-                printLog("Esta imagen SI tiene caras reconocibles por que tiene encodings")
+        if len(encodings)>0:
+            printLog("Esta imagen SI tiene caras reconocibles por que tiene encodings")
 
-                if cv2.haveImageReader (imagePath):
-                    printLog("Esta imagen SI tiene caras2!!!")
+            if cv2.haveImageReader (imagePath):
+                printLog("Esta imagen SI tiene caras2!!!")
 
-                    if(len(encodings)>1):
-                        printLog("Esto no puede pasar, hay mas de 1 cara en la imagen")
-                    else:
-                        printLog("Perfecto, supera todos los filtros")
-                        insertada=True
+                if(len(encodings)>1):
+                    printLog("Esto no puede pasar, hay mas de 1 cara en la imagen")
+                else:
+                    printLog("Perfecto, supera todos los filtros")
+                    insertada=True
 
-                        for encoding in encodings:    
-                            knownEncodings.append(encoding)  
-
-                            
-                        proc = subprocess.Popen("php /var/www/html/reconocimientoFacial/proyecto_definitivo/ws.php fotos_identificadorunico", shell=True, stdout=subprocess.PIPE)
-                        fotos_identificadorunico = str(proc.stdout.read())
-                        fotos_identificadorunico = fotos_identificadorunico.replace("'", "")
-
-                        knownNames.append(ganador_name)
-                        knownPoints.append(9999)
-                        knownIdentificadorunico.append(fotos_identificadorunico)
-                        knownEnfoque.append(enfoque)
+                    for encoding in encodings:    
+                        knownEncodings.append(encoding)  
 
                         
+                    proc = subprocess.Popen("php /var/www/html/reconocimientoFacial/proyecto_definitivo/ws.php fotos_identificadorunico", shell=True, stdout=subprocess.PIPE)
+                    fotos_identificadorunico = str(proc.stdout.read())
+                    fotos_identificadorunico = fotos_identificadorunico.replace("'", "")
+
+                    knownNames.append(ganador_name)
+                    knownPoints.append(9999)
+                    knownIdentificadorunico.append(fotos_identificadorunico)
+                    knownEnfoque.append(enfoque)
+
+                    
 
 
-                else:
-                    printLog("Esta imagen no tiene caras2 por haveImageReader")
             else:
-                printLog("Esta imagen no tiene caras1 por que no tiene encodings")
+                printLog("Esta imagen no tiene caras2 por haveImageReader")
         else:
-            printLog("Esta imagen no tiene caras3 por la funcion escara")
+            printLog("Esta imagen no tiene caras1 por que no tiene encodings")
+        # else:
+        #    printLog("Esta imagen no tiene caras3 por la funcion escara")
     else:
         printLog("NO ESTA ENFOCADA1")
 
@@ -474,7 +472,6 @@ for (i, imagePath) in enumerate(imagePaths):
     if not insertada:
         printLog('remuevo la imagen pues no supero los filtros y no se va a usar: '+imagePath)
         copyfile(imagePath , "/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/removidas/nopasafiltros/"+name_file)
-        os.remove(imagePath)
     else:
         printLog('La imagen es buena, voy a ponerla en su correspondiente carpeta, para conservarla: '+imagePath)
 
@@ -483,6 +480,8 @@ for (i, imagePath) in enumerate(imagePaths):
 
         copyfile(imagePath, '/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name+'/'+name_file+'_'+fotos_identificadorunico+".jpg") 
         printLog("He copiado de aki: "+imagePath+ " a aki: "+ganador_name+'/'+name_file+'_'+fotos_identificadorunico+".jpg")
+    os.remove(imagePath)
+
 
 
 anyade_datos(knownEncodings,knownNames,knownPoints,ganador_name,knownIdentificadorunico,knownEnfoque)
@@ -490,7 +489,7 @@ anyade_datos(knownEncodings,knownNames,knownPoints,ganador_name,knownIdentificad
 
 
 time_elapsed = time.time() - time_ini
-printLog("Tiempo de analizar el video:" + time_elapsed)
+printLog("Tiempo de analizar el video:" + str(time_elapsed))
 
 
 
