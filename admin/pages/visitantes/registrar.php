@@ -23,23 +23,33 @@
                     </td></tr>
                     
                     <tr><td align="center">
-                        <button class="button text-white bg-theme-1 shadow-md mr-2" onclick="startRecording()">Empezar a capturar</button>
-                        <button class="button text-white bg-theme-1 shadow-md mr-2" onclick="stopRecording()">Parar captura</button>
+                        <button id="btn_grabar" class="button text-white bg-theme-1 shadow-md mr-2" onclick="grabarParar()">Empezar a capturar</button>
+                        
                     </td></tr>
                 
                     
                     <tr><td align="center">
-                            <div id="webcam" ></div>        
+                            
+                            <table style="width:100%" border="1"><tr>
+                            
+                            <td style="width:50%">
+                                <video autoplay id="web-cam-container" 
+                                    style="background-color: black;width: 100%;height:800px;border-color:blue;border-style:solid;border-width:2px;">
+                                    Your browser doesn't support 
+                                    the video tag
+                                </video>
+
+                                <span id="padescargar"></span>
+                            </td>
+                            <td>
+                                <img src="" id="sigueme" style="width:100%">
+                                    
+                                
+                                
+                            </td>
                             
                             
-                            
-                            <video autoplay id="web-cam-container" 
-                                style="background-color: black;width: 70%;height:800px;border-color:blue;border-style:solid;border-width:2px;">
-                                Your browser doesn't support 
-                                the video tag
-                            </video>
-                            
-                            <span id="padescargar"></span>
+                            </tr></table>
                             
                     </td></tr>        
         </div>
@@ -50,4 +60,206 @@
     </div>
 </div>
 
+
+
+<script>
+    const webCamContainer = document.getElementById("web-cam-container");
+    let chunks = [];
+    var mode="start";
+    const selectedMedia="vid";
+    const audioMediaConstraints = {
+            audio: true,
+            video: false,
+    };
+    const videoMediaConstraints = {
+            audio: true,
+            video: true,
+    };
+    
+    function grabarParar(){
+        //alert("grabar_o_parar");
+        
+        if(mode=="start"){
+            mode="stop";
+            document.getElementById("btn_grabar").innerHTML="Detener la Captura";
+            sigueme();
+            startRecording();
+            
+        }else{ //mode=="stop"
+            mode="stop";
+            document.getElementById("btn_grabar").innerHTML="Empezar a capturar";
+            stopRecording();
+        }
+        
+    }
+    
+    sigue=1;
+    function sigueme(){
+        document.getElementById("sigueme").setAttribute("src","files/images/" + sigue + ".png");
+        sigue=sigue+1;
+        
+        if(sigue<=12){
+            tiempo=3000;
+            if(sigue<=5){
+                tiempo=1000;    
+            }
+            setTimeout(sigueme, tiempo);
+        }else{
+            
+        }
+
+    }
+    
+    
+    
+    function startRecording(){
+        
+        
+        if(document.getElementById("nombre").value==""){
+            alert("Debe completar el nobre del usuario a registrar");
+        }else{
+        
+        
+        
+            navigator.mediaDevices.getUserMedia(
+                    selectedMedia === "vid" ?
+                    videoMediaConstraints :
+                    audioMediaConstraints)
+                    .then((mediaStream) => {
+
+
+                    // Create a new MediaRecorder instance
+                    const mediaRecorder = new MediaRecorder(mediaStream);
+
+                    //Make the mediaStream global
+                    window.mediaStream = mediaStream;
+                    //Make the mediaRecorder global
+                    window.mediaRecorder = mediaRecorder;
+
+                    mediaRecorder.start();
+
+
+
+                    
+                    let blob;
+                    // When the MediaRecorder stops
+                    // recording, it emits "stop"
+                    // event
+                    //mediaRecorder.onstop = () => {
+                    mediaRecorder.onstop = async () => {
+
+                            blob = new Blob(
+                                    chunks, {
+                                            type: selectedMedia === "vid" ?
+                                                    "video/mp4" : "audio/mpeg"
+                                    });
+                            chunks = [];
+
+                            // Create a video or audio element
+                            // that stores the recorded media
+                            const recordedMedia = document.createElement("video");
+                            recordedMedia.controls = true;
+
+                            // You can not directly set the blob as
+                            // the source of the video or audio element
+                            // Instead, you need to create a URL for blob
+                            // using URL.createObjectURL() method.
+                            const recordedMediaURL = URL.createObjectURL(blob);
+
+                            // Now you can use the created URL as the
+                            // source of the video or audio element
+                            recordedMedia.src = recordedMediaURL;
+
+
+
+
+                            // Create a download button that lets the
+                            // user download the recorded media
+                            const downloadButton = document.createElement("a");
+
+                            // Set the download attribute to true so that
+                            // when the user clicks the link the recorded
+                            // media is automatically gets downloaded.
+                            downloadButton.download = "Recorded-Media";
+
+                            downloadButton.href = recordedMediaURL;
+                            //downloadButton.innerText = "Download it!";
+
+                            downloadButton.onclick = () => {
+                                    URL.revokeObjectURL(recordedMedia);
+                            };
+
+                            //document.getElementById("padescargar").append(recordedMedia, downloadButton);
+                            alert(recordedMediaURL + "---" + document.getElementById("nombre").value);
+
+                            downloadButton.click();
+                            //recordedMediaURL
+
+
+                            for(i=0;i<5;i++){
+                                console.log("LISTO(" + i + "):" + blob.size);
+                                await sleep(2000);
+                            }
+                            
+                            
+                            
+                            var fd = new FormData();
+                            fd.append("video",blob);
+                            //fd.append("video2",recordedMediaURL);
+                            var request = new XMLHttpRequest();
+                            request.open("POST", "<?= URL_PROGRAMA_SERVER ?>admin/index.php?page=visitantes&mode=registrar&info=subir_video&nombre=" + document.getElementById("nombre").value);
+                            request.send(fd);
+
+
+
+                    };
+
+
+                    // Whenever (here when the recorder
+                    // stops recording) data is available
+                    // the MediaRecorder emits a "dataavailable"
+                    // event with the recorded media data.
+                    mediaRecorder.ondataavailable = (e) => {
+
+                            // Push the recorded media data to
+                            // the chunks array
+                            chunks.push(e.data);
+                            
+
+                    };
+
+                    if (selectedMedia === "vid") {
+
+                        // Remember to use the srcObject
+                        // attribute since the src attribute
+                        // doesn't support media stream as a value
+                        webCamContainer.srcObject = mediaStream;
+                    }
+
+            });
+        }
+    }
+
+
+
+    function stopRecording() {
+
+            // Stop the recording
+            window.mediaRecorder.stop();
+
+            // Stop all the tracks in the
+            // received media stream
+            window.mediaStream.getTracks()
+            .forEach((track) => {
+                    track.stop();
+            });
+
+            //document.getElementById("padescargar").innerText = "Recording done!";
+    }
+
+
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+</script>
 

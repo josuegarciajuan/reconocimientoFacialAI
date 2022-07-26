@@ -73,3 +73,22 @@ if(isset($_GET["mover"]) and $_GET["mover"]!=""){
      
 }
 
+
+if(isset($_GET["info"]) and $_GET["info"]=="subir_video"){
+    //$video=$_FILES["video"];
+    $uploads_dir="files/videos_registro";
+    
+    $tmp_name = $_FILES["video"]["tmp_name"];
+    //$tmp_name = $_FILES["video2"]["tmp_name"];
+    //$name = basename($_FILES["video"]["name"]);
+    $name = $_GET["nombre"];
+    
+    echo "Mover de:".$tmp_name."----"."$uploads_dir/$name.avi";
+    
+    if(move_uploaded_file($tmp_name, "$uploads_dir/$name.avi")){
+        echo "Subido correctamente";
+    }else{
+        echo "NO subido";
+    }
+    exit;
+}
