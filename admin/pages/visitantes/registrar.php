@@ -5,7 +5,7 @@
  * Author: Josué García Juan
  * 21-jul-2022, 13:18:08.
  */
-                
+
 ?>
 
 <div class="intro-y flex items-center mt-8">
@@ -27,14 +27,14 @@
                         
                     </td></tr>
                 
-                    
+                   
                     <tr><td align="center">
                             
                             <table style="width:100%" border="1"><tr>
                             
                             <td style="width:50%">
                                 <video autoplay id="web-cam-container" 
-                                    style="background-color: black;width: 100%;height:800px;border-color:blue;border-style:solid;border-width:2px;">
+                                    style="background-color: black;width: 100%;height:800px;border-color:blue;border-style:solid;border-width:2px; transform: rotateY(180deg); -webkit-transform:rotateY(180deg); -moz-transform:rotateY(180deg);">
                                     Your browser doesn't support 
                                     the video tag
                                 </video>
@@ -43,9 +43,7 @@
                             </td>
                             <td>
                                 <img src="" id="sigueme" style="width:100%">
-                                    
-                                
-                                
+
                             </td>
                             
                             

@@ -25,6 +25,9 @@ SENSIBILIDAD_ES_CARA=0.68
 LOCAL_ID=sys.argv[1]
 FICHERO=sys.argv[2]
 CAMARA_ID="0"
+RUTA_PROYECTO="/var/www/html/reconocimientoFacial/proyecto_definitivo/"
+# RUTA_PROYECTO="/var/www/html/reconocimientofacialV2/"
+
 
 
 
@@ -34,7 +37,7 @@ time_ini = time.time()
 def printLog(*args, **kwargs):
     print(*args, **kwargs)
     
-    with open('/var/www/html/reconocimientofacialV2/motor/procesa_videos_registro.out','a') as file:
+    with open(RUTA_PROYECTO + 'motor/procesa_videos_registro.out','a') as file:
        print(*args, **kwargs, file=file)
 
 
@@ -52,12 +55,12 @@ sacar imagenes con posibles caras de un video
 
 
 
-modelFile = "/var/www/html/reconocimientofacialV2/motor/models/res10_300x300_ssd_iter_140000.caffemodel"
-configFile = "/var/www/html/reconocimientofacialV2/motor/models/deploy.prototxt.txt"
+modelFile = RUTA_PROYECTO + "motor/models/res10_300x300_ssd_iter_140000.caffemodel"
+configFile = RUTA_PROYECTO + "motor/models/deploy.prototxt.txt"
 net = cv2.dnn.readNetFromCaffe(configFile, modelFile)
 
 
-name_file=os.path.join('/var/www/html/reconocimientofacialV2/admin/files/videos_registro/', FICHERO)
+name_file=os.path.join(RUTA_PROYECTO + 'admin/files/videos_registro/', FICHERO)
 
 
 printLog("tenemos este video:"+name_file)
@@ -77,74 +80,76 @@ while(cap.isOpened()):
         #printLog('tenemos frame k lo guardo ..')
         num_frame=num_frame+1
 
-
-        #img = cv2.resize(img, None, fx=0.25, fy=0.25)
-        height, width = img.shape[:2]
-        height1, width1 = img.shape[:2]
-        time_elapsed = time.time() - prev
-        prev = time.time()
-
-        img_original=img
-        img_test=img
+        if num_frame % 2 == 0:
 
 
+            #img = cv2.resize(img, None, fx=0.25, fy=0.25)
+            height, width = img.shape[:2]
+            height1, width1 = img.shape[:2]
+            time_elapsed = time.time() - prev
+            prev = time.time()
 
-        blob = cv2.dnn.blobFromImage(cv2.resize(img_original, (300, 300)),1.0, (353, 353), (104.0, 117.0, 123.0))
-        net.setInput(blob)
-        faces3 = net.forward()
-        
-        for i in range(faces3.shape[2]):
-            confidence = faces3[0, 0, i, 2]
-            if confidence > SENSIBILIDAD_ES_CARA:
-
-                printLog('cara encontrada en: '+name_file)
-
-                box = faces3[0, 0, i, 3:7] * np.array([width1, height1, width1, height1])
-                (x, y, x1, y1) = box.astype("int")
-                #cv2.rectangle(img2, (x, y), (x1, y1), (0, 0, 255), 2)
+            img_original=img
+            img_test=img
 
 
-                ydef=y-100
-                if ydef<0:
-                    ydef=0
-                y1def=y1+100
-                if y1def>height1:
-                    y1def=height1-1
 
-                xdef=x-100
-                if xdef<0:
-                    xdef=0
-                x1def=x1+100
-                if x1def>width1:
-                    x1def=width1-1    
+            blob = cv2.dnn.blobFromImage(cv2.resize(img_original, (300, 300)),1.0, (353, 353), (104.0, 117.0, 123.0))
+            net.setInput(blob)
+            faces3 = net.forward()
+            
+            for i in range(faces3.shape[2]):
+                confidence = faces3[0, 0, i, 2]
+                if confidence > SENSIBILIDAD_ES_CARA:
 
+                    printLog('cara encontrada en: '+name_file)
 
-                rostro = img_original[ydef:y1def, xdef:x1def]
+                    box = faces3[0, 0, i, 3:7] * np.array([width1, height1, width1, height1])
+                    (x, y, x1, y1) = box.astype("int")
+                    #cv2.rectangle(img2, (x, y), (x1, y1), (0, 0, 255), 2)
 
 
-                sigue=True
-                if(type(rostro) == type(None)):
-                    sigue=False
-                else:
-                    
-                    try:
-                        # rostro = cv2.resize(rostro, (150, 150), interpolation=cv2.INTER_CUBIC)
-                        rostro = cv2.resize(rostro, (250, 250), interpolation=cv2.INTER_CUBIC)
-                    except Exception as e:
-                        printLog(str(e))
+                    ydef=y-100
+                    if ydef<0:
+                        ydef=0
+                    y1def=y1+100
+                    if y1def>height1:
+                        y1def=height1-1
+
+                    xdef=x-100
+                    if xdef<0:
+                        xdef=0
+                    x1def=x1+100
+                    if x1def>width1:
+                        x1def=width1-1    
+
+
+                    rostro = img_original[ydef:y1def, xdef:x1def]
+
+
+                    sigue=True
+                    if(type(rostro) == type(None)):
                         sigue=False
-
-
-
-                if sigue:
-                    segs_elapsed = time.time() - segundos_ini
-                    nombrefinal=FICHERO+'_'+str(segs_elapsed)
-                    cv2.imwrite('/var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/'+nombrefinal+'.jpg', rostro)
+                    else:
                         
+                        try:
+                            # rostro = cv2.resize(rostro, (150, 150), interpolation=cv2.INTER_CUBIC)
+                            rostro = cv2.resize(rostro, (250, 250), interpolation=cv2.INTER_CUBIC)
+                        except Exception as e:
+                            printLog(str(e))
+                            sigue=False
 
-                    printLog("cara guardada en /"+nombrefinal+".jpg con esta confidence:"+str(confidence))
 
-        
+
+                    if sigue:
+                        segs_elapsed = time.time() - segundos_ini
+                        nombrefinal=FICHERO+'_'+str(segs_elapsed)
+                        cv2.imwrite(RUTA_PROYECTO + 'motor/caras/sinclasificar/'+nombrefinal+'.jpg', rostro)
+                            
+
+                        printLog("cara guardada en /"+nombrefinal+".jpg con esta confidence:"+str(confidence))
+
+            
         # cv2.imshow("dnn", img)
         #printLog('----------------------------------------------------------');
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -219,7 +224,7 @@ def comprueba_enfocada(imagePath,name_file):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)        
         fm = variance_of_laplacian(gray)
         printLog("el fm de la imagen es: "+str(fm))
-        # copyfile(imagePath+"_tmp.jpg" , "/var/www/html/reconocimientofacialV2/motor/removidas/tmp/"+name_file)
+        # copyfile(imagePath+"_tmp.jpg" , RUTA_PROYECTO + "motor/removidas/tmp/"+name_file)
         os.remove(imagePath+"_tmp.jpg")
         if fm > UMBRAL_ENFOQUE_MAXIMO_CARA:    
             printLog("Ademas esta enfocada")
@@ -244,13 +249,13 @@ def escara(imagePath):
 
 
     
-    face1 = "/var/www/html/reconocimientofacialV2/motor/models/haarcascade_frontalface2.xml"
-    face2 = "/var/www/html/reconocimientofacialV2/motor/models/haarcascade_frontalface_alt.xml"
-    face3 = "/var/www/html/reconocimientofacialV2/motor/models/haarcascade_frontalface_alt2.xml"
-    face4 = "/var/www/html/reconocimientofacialV2/motor/models/haarcascade_frontalface_alt_tree.xml"
-    face5 = "/var/www/html/reconocimientofacialV2/motor/models/haarcascade_frontalface_default.xml"
-    face6 = "/var/www/html/reconocimientofacialV2/motor/models/haarcascade_profileface.xml"
-    face7 = "/var/www/html/reconocimientofacialV2/motor/cosas_en_la_cara/models/haarcascade_frontalface_default.xml"
+    face1 = RUTA_PROYECTO + "motor/models/haarcascade_frontalface2.xml"
+    face2 = RUTA_PROYECTO + "motor/models/haarcascade_frontalface_alt.xml"
+    face3 = RUTA_PROYECTO + "motor/models/haarcascade_frontalface_alt2.xml"
+    face4 = RUTA_PROYECTO + "motor/models/haarcascade_frontalface_alt_tree.xml"
+    face5 = RUTA_PROYECTO + "motor/models/haarcascade_frontalface_default.xml"
+    face6 = RUTA_PROYECTO + "motor/models/haarcascade_profileface.xml"
+    face7 = RUTA_PROYECTO + "motor/cosas_en_la_cara/models/haarcascade_frontalface_default.xml"
 
     face_cascade1 = cv2.CascadeClassifier(face1)
     face_cascade2 = cv2.CascadeClassifier(face2)
@@ -359,7 +364,7 @@ def anyade_datos_def(maximo,count,knownEncoding,knownName,knownPoint,ganador_nam
     knownIdentificadorunico_def.append(knownIdentificadorunic)
     knownEnfoque_def.append(knownEnfoque)
 
-    data = pickle.loads(open('/var/www/html/reconocimientofacialV2/motor/bbdd_reconocimiento/'+LOCAL_ID+'/face_enc', "rb").read())
+    data = pickle.loads(open(RUTA_PROYECTO + 'motor/bbdd_reconocimiento/'+LOCAL_ID+'/face_enc', "rb").read())
 
     for ff in range(0,len(data["encodings"])):
         knownEncodings_def.append(data["encodings"][ff])
@@ -372,8 +377,8 @@ def anyade_datos_def(maximo,count,knownEncoding,knownName,knownPoint,ganador_nam
 
     #printLog("anyado todo lo recabado")
     data = {"encodings": knownEncodings_def, "names": knownNames_def, "points": knownPoints_def, "identificadoresunicos": knownIdentificadorunico_def, "enfoque": knownEnfoque_def}
-    with FileLock('/var/www/html/reconocimientofacialV2/motor/bbdd_reconocimiento/'+LOCAL_ID+'/face_enc'):
-        f = open('/var/www/html/reconocimientofacialV2/motor/bbdd_reconocimiento/'+LOCAL_ID+'/face_enc', "wb")
+    with FileLock(RUTA_PROYECTO + 'motor/bbdd_reconocimiento/'+LOCAL_ID+'/face_enc'):
+        f = open(RUTA_PROYECTO + 'motor/bbdd_reconocimiento/'+LOCAL_ID+'/face_enc', "wb")
         f.write(pickle.dumps(data))
         f.close()
 
@@ -392,7 +397,7 @@ def anyade_datos_def(maximo,count,knownEncoding,knownName,knownPoint,ganador_nam
 # UMBRAL_ENFOQUE_MAXIMO=300 # menos de este desenfoque , se descartan
 UMBRAL_ENFOQUE_MAXIMO_CARA=120 #menos de este enfoque se descartan ,pero solo actuando sobre la cara
 
-path_imgs='/var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/'
+path_imgs=RUTA_PROYECTO + 'motor/caras/sinclasificar/'
 
 
 
@@ -406,7 +411,7 @@ knownIdentificadorunico = []
 knownEnfoque = []
 
 
-proc = subprocess.Popen("php /var/www/html/reconocimientofacialV2/ws.php nombreunico", shell=True, stdout=subprocess.PIPE)
+proc = subprocess.Popen("php " + RUTA_PROYECTO + "ws.php nombreunico", shell=True, stdout=subprocess.PIPE)
 ganador_name = str(proc.stdout.read())
 ganador_name = ganador_name.replace("'", "")
 printLog("Como es nuevo, le voy a asignar un random: "+ganador_name)
@@ -446,7 +451,7 @@ for (i, imagePath) in enumerate(imagePaths):
                         knownEncodings.append(encoding)  
 
                         
-                    proc = subprocess.Popen("php /var/www/html/reconocimientofacialV2/ws.php fotos_identificadorunico", shell=True, stdout=subprocess.PIPE)
+                    proc = subprocess.Popen("php " + RUTA_PROYECTO + "ws.php fotos_identificadorunico", shell=True, stdout=subprocess.PIPE)
                     fotos_identificadorunico = str(proc.stdout.read())
                     fotos_identificadorunico = fotos_identificadorunico.replace("'", "")
 
@@ -471,14 +476,14 @@ for (i, imagePath) in enumerate(imagePaths):
 
     if not insertada:
         printLog('remuevo la imagen pues no supero los filtros y no se va a usar: '+imagePath)
-        copyfile(imagePath , "/var/www/html/reconocimientofacialV2/motor/removidas/nopasafiltros/"+name_file)
+        copyfile(imagePath , RUTA_PROYECTO + "motor/removidas/nopasafiltros/"+name_file)
     else:
         printLog('La imagen es buena, voy a ponerla en su correspondiente carpeta, para conservarla: '+imagePath)
 
-        if not os.path.exists('/var/www/html/reconocimientofacialV2/motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name):
-            os.makedirs('/var/www/html/reconocimientofacialV2/motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name)
+        if not os.path.exists(RUTA_PROYECTO + 'motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name):
+            os.makedirs(RUTA_PROYECTO + 'motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name)
 
-        copyfile(imagePath, '/var/www/html/reconocimientofacialV2/motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name+'/'+name_file+'_'+fotos_identificadorunico+".jpg") 
+        copyfile(imagePath, RUTA_PROYECTO + 'motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name+'/'+name_file+'_'+fotos_identificadorunico+".jpg") 
         printLog("He copiado de aki: "+imagePath+ " a aki: "+ganador_name+'/'+name_file+'_'+fotos_identificadorunico+".jpg")
     os.remove(imagePath)
 
