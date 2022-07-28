@@ -30,6 +30,11 @@ $nombre_fichero="prueba"; //sin el .avi
 
 $numero_videos=dividir_video($local_id,$ruta,$nombre_fichero);
 
+exit;
+
+
+
+
 echo "Videos:\n\n";
 for($i=1;$i<=$numero_videos;$i++){
     echo $ruta.$nombre_fichero."_".$i.".avi \n";
