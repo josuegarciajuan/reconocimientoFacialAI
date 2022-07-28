@@ -14,8 +14,8 @@ $local_id="";
 if(isset($argv[1]) and $argv[1]!=""){
     $local_id=$argv[1];    
 }
-$ruta="/var/www/html/reconocimientoFacial/proyecto_definitivo/admin/files/videos_registro/";
-
+//$ruta="/var/www/html/reconocimientoFacial/proyecto_definitivo/admin/files/videos_registro/";
+$ruta="/var/www/html/reconocimientofacialV2/admin/files/videos_registro/";
 
 $threads=[];
 
