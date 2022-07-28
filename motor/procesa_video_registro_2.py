@@ -332,6 +332,10 @@ for (i, imagePath) in enumerate(imagePaths):
     printLog("-------")
 
 
+    if primero % 2 == 0:
+        printLog("el primero es par")
+
+
     continua=False
     if primero % 2 == 0 and segundo % 2 == 0 and tercero % 2 == 0 and HILO==1:
         continua=True
@@ -357,6 +361,10 @@ for (i, imagePath) in enumerate(imagePaths):
     if primero % 2 == 1 and segundo % 2 == 0 and tercero % 2 == 0 and HILO==8:
         continua=True
         printLog("paso8")
+
+
+    printLog("paso despues de comprobar si son pares o no")
+
 
 
     
