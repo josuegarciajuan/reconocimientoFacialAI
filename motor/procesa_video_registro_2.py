@@ -326,36 +326,42 @@ for (i, imagePath) in enumerate(imagePaths):
     segundo=int(lastseven[1:2])
     tercero=int(lastseven[2:3])
 
-    # printLog("1.-" + primero)
-    # printLog("2.-" + segundo)
-    # printLog("3.-" + tercero)
-    # printLog("-------")
+    printLog("1.-" + str(primero))
+    printLog("2.-" + str(segundo))
+    printLog("3.-" + str(tercero))
+    printLog("-------")
 
 
     continua=False
     if primero % 2 == 0 and segundo % 2 == 0 and tercero % 2 == 0 and HILO==1:
         continua=True
+        printLog("paso1")
     if primero % 2 == 0 and segundo % 2 == 0 and tercero % 2 == 1 and HILO==2:
         continua=True
+        printLog("paso2")
     if primero % 2 == 0 and segundo % 2 == 1 and tercero % 2 == 0 and HILO==3:
         continua=True
+        printLog("paso3")
     if primero % 2 == 0 and segundo % 2 == 1 and tercero % 2 == 1 and HILO==4:
         continua=True
+        printLog("paso4")
     if primero % 2 == 1 and segundo % 2 == 1 and tercero % 2 == 1 and HILO==5:
         continua=True
+        printLog("paso5")
     if primero % 2 == 1 and segundo % 2 == 1 and tercero % 2 == 0 and HILO==6:
         continua=True
+        printLog("paso6")
     if primero % 2 == 0 and segundo % 2 == 1 and tercero % 2 == 0 and HILO==7:
         continua=True
+        printLog("paso7")
     if primero % 2 == 1 and segundo % 2 == 0 and tercero % 2 == 0 and HILO==8:
         continua=True
-
-
-
+        printLog("paso8")
 
 
     
     if continua:
+        printLog("deberia a continua")        
 
         insertada=False
         enfoque=comprueba_enfocada(imagePath,name_file)
