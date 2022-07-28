@@ -332,6 +332,9 @@ for (i, imagePath) in enumerate(imagePaths):
     printLog("-------")
 
 
+    aux=primero % 2
+    printLog("comprobando el resto:" + aux)
+
     if primero % 2 == 0:
         printLog("el primero es par")
 
