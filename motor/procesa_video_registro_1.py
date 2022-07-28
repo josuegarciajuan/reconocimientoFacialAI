@@ -37,7 +37,7 @@ time_ini = time.time()
 def printLog(*args, **kwargs):
     print(*args, **kwargs)
     
-    with open(RUTA_PROYECTO + 'motor/procesa_videos_registro.out','a') as file:
+    with open(RUTA_PROYECTO + 'motor/procesa_videos_registro_1.out','a') as file:
        print(*args, **kwargs, file=file)
 
 
