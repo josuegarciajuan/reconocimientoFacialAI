@@ -31,7 +31,11 @@ rm -R motor/caras/1/0/*
 rm motor/removidas/nopasafiltros/*
 cd motor
 python3.7 crear_diccionario_inicial.py 
-python3.7 procesa_video_registro.py 1 prueba2.avi
+cd ..
+php procesa_video_registro.php 1
+
+
+//python3.7 procesa_video_registro.py 1 prueba2.avi
 
 
 ls | wc -l

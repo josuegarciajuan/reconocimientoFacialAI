@@ -37,7 +37,7 @@ time_ini = time.time()
 def printLog(*args, **kwargs):
     print(*args, **kwargs)
     
-    with open(RUTA_PROYECTO + 'motor/procesa_videos_registro_1.out','a') as file:
+    with open(RUTA_PROYECTO + 'motor/procesa_videos_registro_1_' + HILO + '.out','a') as file:
        print(*args, **kwargs, file=file)
 
 
@@ -69,10 +69,10 @@ num_frame=0
 
 
 while(cap.isOpened()):
-    # printLog('voy leyendo el video..')
+    printLog('voy(' + HILO + ') leyendo el video..')
     ret, img = cap.read()
     if ret == True:
-        #printLog('tenemos frame k lo guardo ..')
+        printLog('tenemos(' + HILO + ') frame k lo guardo ..')
         num_frame=num_frame+1
 
         if num_frame % 2 == 0:
