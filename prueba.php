@@ -7,10 +7,10 @@
 
 $id=$argv[1];
 $i=0;
-while(true){
-    file_put_contents("test.txt", $id." - ".$i."\n",FILE_APPEND);    
+while($i<$id){
+    //file_put_contents("test.txt", $id." - ".$i."\n",FILE_APPEND);    
     $i++;
-    sleep(3);
+    sleep(1);
 }
 
 

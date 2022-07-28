@@ -153,7 +153,7 @@ extras
   apt-get install screen
   apt-get install ffmpeg
 
-
+  apt install composer
 
 
 

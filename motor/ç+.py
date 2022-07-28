@@ -25,10 +25,11 @@ si hay pocas imagenes con cara no te as colocado bien
 
 
 
-rm bbdd_reconocimiento/1/*
-rm caras/sinclasificar/*
-rm -R caras/1/0/*
-rm removidas/nopasafiltros/*
+rm motor/bbdd_reconocimiento/1/*
+rm motor/caras/sinclasificar/*
+rm -R motor/caras/1/0/*
+rm motor/removidas/nopasafiltros/*
+cd motor
 python3.7 crear_diccionario_inicial.py 
 python3.7 procesa_video_registro.py 1 prueba2.avi
 
@@ -57,3 +58,11 @@ local
 127 S
 120 buenas
 105 malas
+
+server
+214 S
+120 buenas
+105 malas
+
+
+
