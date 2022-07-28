@@ -6,6 +6,10 @@
  * 27-jul-2022, 11:12:21.
  */
 
+
+
+
+
 require_once("includes/rutas.php");
 require_once("libs/Jos_thread.class.php");
 $tiempo_inicial = microtime(true);
@@ -131,7 +135,7 @@ function dividir_video($local_id,$ruta,$video){
         
        
         //ffmpeg -ss 00:00:00 -to 00:00:05  -i /var/www/html/reconocimientoFacial/proyecto_definitivo/admin/files/videos_registro/prueba2.avi -c:v libx264 /var/www/html/reconocimientoFacial/proyecto_definitivo/admin/files/videos_registro/prueba2_2.avi > ./aux/procesa_video_registro_good.txt 2>&1
-        $cmd="ffmpeg -ss 00:00:".$ini_txt." -to 00:00:".$fin_txt." -i ".$video." -c:v libx264 ".$salida."_".$i.".avi > ".$output_salida." 2>&1";
+        $cmd="ffmpeg -i ".$video." -ss 00:00:".$ini_txt." -to 00:00:".$fin_txt." -c:v libx264 ".$salida."_".$i.".avi > ".$output_salida." 2>&1";
         echo "Ejecuto1:".$cmd."\n\n";
         exec($cmd);
 
