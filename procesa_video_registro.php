@@ -6,10 +6,6 @@
  * 27-jul-2022, 11:12:21.
  */
 
-
-
-
-
 require_once("includes/rutas.php");
 require_once("libs/Jos_thread.class.php");
 $tiempo_inicial = microtime(true);
@@ -34,7 +30,7 @@ $nombre_fichero="prueba"; //sin el .avi
 
 $numero_videos=dividir_video($local_id,$ruta,$nombre_fichero);
 
-exit;
+
 
 
 
