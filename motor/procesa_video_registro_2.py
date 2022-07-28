@@ -37,8 +37,8 @@ HILO=sys.argv[2] #SIRVE PARA SABER DE QUE HILO VIENE ADEMAS DE QUE SEGUN CUAL CL
 
 
 CAMARA_ID="0"
-RUTA_PROYECTO="/var/www/html/reconocimientoFacial/proyecto_definitivo/"
-#RUTA_PROYECTO="/var/www/html/reconocimientofacialV2/"
+#RUTA_PROYECTO="/var/www/html/reconocimientoFacial/proyecto_definitivo/"
+RUTA_PROYECTO="/var/www/html/reconocimientofacialV2/"
 
 
 
