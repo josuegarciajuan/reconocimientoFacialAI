@@ -30,7 +30,7 @@ $nombre_fichero="prueba"; //sin el .avi
 
 $numero_videos=dividir_video($local_id,$ruta,$nombre_fichero);
 
-exit;
+
 
 
 
