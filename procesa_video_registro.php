@@ -125,19 +125,19 @@ echo "CONCLUSIONES:\n";
 $correcto=true;
 
 //si hay muchas desenfocadas da mas luz                                   20%
-if(($IMAGENES_TOTAL*$IMAGENES_DESENFOCADAS/100)<=20){
+if(($IMAGENES_TOTAL*$IMAGENES_DESENFOCADAS/100)>=20){
     $correcto=true;
     echo "hay muchas desenfocadas da mas luz\n";
 }
 
 //si hay muchas que no se puede recortar, exate parta atras un poco       20%
-if(($IMAGENES_TOTAL*$IMAGENES_NOSEPUEDERECORTARCARA/100)<=20){
+if(($IMAGENES_TOTAL*$IMAGENES_NOSEPUEDERECORTARCARA/100)>=20){
     $correcto=true;
     echo "hay muchas que no se puede recortar, exate parta atras un poco\n";
 }
 
 //si hay pocas imagenes extraidas el video es muy corto o mal grabado     +de 200 imgs buenas o malas
-if($IMAGENES_TOTAL<200){
+if($IMAGENES_TOTAL<150){
     $correcto=true;
     echo "hay pocas imagenes extraidas el video es muy corto o mal grabado\n";
 }
