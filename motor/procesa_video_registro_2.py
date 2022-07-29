@@ -23,6 +23,7 @@ from facealigner import FaceAligner
 
 LOCAL_ID=sys.argv[1]
 HILO=sys.argv[2] #SIRVE PARA SABER DE QUE HILO VIENE ADEMAS DE QUE SEGUN CUAL CLASIFICA DEPENDIENDO DE LAS 3 ULTIMAS CIFRAS:
+NOMBRE_UNICO=sys.argv[3]
 """
 1:  par, par, par
 2:  p,p,i
@@ -306,11 +307,14 @@ knownPoints = []
 knownIdentificadorunico = []
 knownEnfoque = []
 
-
+"""
 proc = subprocess.Popen("php " + RUTA_PROYECTO + "ws.php nombreunico", shell=True, stdout=subprocess.PIPE)
 ganador_name = str(proc.stdout.read())
 ganador_name = ganador_name.replace("'", "")
 printLog("Como es nuevo, le voy a asignar un random: "+ganador_name)
+"""
+
+ganador_name = NOMBRE_UNICO
 
 
 for (i, imagePath) in enumerate(imagePaths):
@@ -473,7 +477,10 @@ for (i, imagePath) in enumerate(imagePaths):
             printLog('La imagen es buena, voy a ponerla en su correspondiente carpeta, para conservarla: '+imagePath)
 
             if not os.path.exists(RUTA_PROYECTO + 'motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name):
+                printLog("No existe y la voy a crear:" + RUTA_PROYECTO + 'motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name)
                 os.makedirs(RUTA_PROYECTO + 'motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name)
+            else:
+                prinLog("Ya existia la ruta:" + RUTA_PROYECTO + 'motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name)
 
             copyfile(imagePath, RUTA_PROYECTO + 'motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name+'/'+name_file+'_'+fotos_identificadorunico+".jpg") 
             printLog("He copiado de aki: "+imagePath+ " a aki: "+ganador_name+'/'+name_file+'_'+fotos_identificadorunico+".jpg")
