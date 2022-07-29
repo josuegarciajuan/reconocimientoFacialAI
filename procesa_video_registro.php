@@ -65,7 +65,7 @@ while($sigue){
     }
 }
 
-
+exit;
 
 for($i=1;$i<=16;$i++){
     $id="vr_".$i."_".$local_id."_".$randaux;
