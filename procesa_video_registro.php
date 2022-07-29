@@ -64,7 +64,7 @@ while($sigue){
 
 for($i=1;$i<=16;$i++){
     $id="vr_".$i."_".$local_id."_".$randaux;
-    $cmd="python3.7 motor/procesa_video_registro_2.py ".$local_id."_".$i.".avi ".$i." ".$nombreunico;
+    $cmd="python3.7 motor/procesa_video_registro_2.py ".$local_id." ".$i." ".$nombreunico;
     echo "Alta hilo->".$cmd."\n";
     $threads[$id]=new Jos_Thread($id,$cmd,true);
 
