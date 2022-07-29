@@ -86,6 +86,9 @@ def variance_of_laplacian(image):
 detector = dlib.get_frontal_face_detector()
 def comprueba_enfocada(imagePath,name_file):
 
+    global IMAGENES_DESENFOCADAS
+    global IMAGENES_NOSEPUEDERECORTARCARA
+
     printLog("Voy a comprobar si enfocada, y si pilla cara a la vez")
 
     image = cv2.imread(imagePath)
