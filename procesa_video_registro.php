@@ -6,6 +6,8 @@
  * 27-jul-2022, 11:12:21.
  */
 
+
+
 require_once("includes/rutas.php");
 require_once("libs/Jos_thread.class.php");
 $tiempo_inicial = microtime(true);
@@ -18,8 +20,6 @@ if(isset($argv[1]) and $argv[1]!=""){
 $ruta="/var/www/html/reconocimientofacialV2/admin/files/videos_registro/";
 
 $threads=[];
-
-
 
 
 
