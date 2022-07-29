@@ -316,6 +316,8 @@ printLog("Como es nuevo, le voy a asignar un random: "+ganador_name)
 for (i, imagePath) in enumerate(imagePaths):
     name_file = imagePath.split(os.path.sep)[-1]
 
+    printLog("-------------------")    
+
     printLog('analizando:'+name_file)
 
     lastseven=name_file[-7:]
@@ -337,6 +339,12 @@ for (i, imagePath) in enumerate(imagePaths):
 
     if primero%2 == 0:
         printLog("el primero es par")
+    if segundo%2 == 0:
+        printLog("el segundo es par")
+    if tercero%2 == 0:
+        printLog("el tercero es par")
+    if HILO=="1":
+        printLog("estamos en el hilo1")
 
 
     printLog("Despues de comprobar si el primero es par")
@@ -344,34 +352,34 @@ for (i, imagePath) in enumerate(imagePaths):
 
 
     continua=False
-    if primero%2 == 0 and segundo%2 == 0 and tercero%2 == 0 and HILO==1:
+    if primero%2 == 0 and segundo%2 == 0 and tercero%2 == 0 and HILO=="1":
         continua=True
-        printLog("paso1")
-    if primero%2 == 0 and segundo%2 == 0 and tercero%2 == 1 and HILO==2:
+        printLog("paso1!!")
+    if primero%2 == 0 and segundo%2 == 0 and tercero%2 == 1 and HILO=="2":
         continua=True
-        printLog("paso2")
-    if primero%2 == 0 and segundo%2 == 1 and tercero%2 == 0 and HILO==3:
+        printLog("paso2!!")
+    if primero%2 == 0 and segundo%2 == 1 and tercero%2 == 0 and HILO=="3":
         continua=True
-        printLog("paso3")
-    if primero%2 == 0 and segundo%2 == 1 and tercero%2 == 1 and HILO==4:
+        printLog("paso3!!")
+    if primero%2 == 0 and segundo%2 == 1 and tercero%2 == 1 and HILO=="4":
         continua=True
-        printLog("paso4")
-    if primero%2 == 1 and segundo%2 == 1 and tercero%2 == 1 and HILO==5:
+        printLog("paso4!!")
+    if primero%2 == 1 and segundo%2 == 1 and tercero%2 == 1 and HILO=="5":
         continua=True
-        printLog("paso5")
-    if primero%2 == 1 and segundo%2 == 1 and tercero%2 == 0 and HILO==6:
+        printLog("paso5!!")
+    if primero%2 == 1 and segundo%2 == 1 and tercero%2 == 0 and HILO=="6":
         continua=True
-        printLog("paso6")
-    if primero%2 == 0 and segundo%2 == 1 and tercero%2 == 0 and HILO==7:
+        printLog("paso6!!")
+    if primero%2 == 0 and segundo%2 == 1 and tercero%2 == 0 and HILO=="7":
         continua=True
-        printLog("paso7")
-    if primero%2 == 1 and segundo%2 == 0 and tercero%2 == 0 and HILO==8:
+        printLog("paso7!!")
+    if primero%2 == 1 and segundo%2 == 0 and tercero%2 == 0 and HILO=="8":
         continua=True
-        printLog("paso8")
+        printLog("paso8!!")
 
 
 
-    printLog("paso despues de comprobar si son pares o no")
+    printLog("despues de comprobar si son pares o no")
 
 
 
