@@ -90,14 +90,63 @@ while($sigue){
 
 echo "\n\n\n";
 echo "RESULTADOS\n";
+
+$IMAGENES_TOTAL=0;
+$IMAGENES_DESENFOCADAS=0;
+$IMAGENES_NOSEPUEDERECORTARCARA=0;
+$IMAGENES_CONCARA=0;
+
 for($i=1;$i<=16;$i++){
     $file='aux/procesa_video_registro_resultado_'.$local_id.'_'.$i.'.txt';
     $res=file_get_contents($file);
     echo "Para el hilo:".$i.", los resultados son:".$res."\n";
     exec("rm ".$file);
+    
+    $vres= explode(";;", $res);
+    
+    $IMAGENES_TOTAL+=trim($res[0]);
+    $IMAGENES_DESENFOCADAS+=trim($res[1]);
+    $IMAGENES_NOSEPUEDERECORTARCARA+=trim($res[2]);
+    $IMAGENES_CONCARA+=trim($res[3]);
+    
 }
 echo "\n\n\n";
+echo "TOTALES\n";
 
+echo "IMAGENES_TOTAL:".$IMAGENES_TOTAL."\n";
+echo "IMAGENES_DESENFOCADAS:".$IMAGENES_DESENFOCADAS."\n";
+echo "IMAGENES_NOSEPUEDERECORTARCARA:".$IMAGENES_NOSEPUEDERECORTARCARA."\n";
+echo "IMAGENES_CONCARA:".$IMAGENES_CONCARA."\n";
+
+echo "\n\n\n";
+
+echo "CONCLUSIONES:\n";
+
+$correcto=true;
+
+//si hay muchas desenfocadas da mas luz                                   20%
+if(($IMAGENES_TOTAL*$IMAGENES_DESENFOCADAS/100)<=20){
+    $correcto=true;
+    echo "hay muchas desenfocadas da mas luz\n";
+}
+
+//si hay muchas que no se puede recortar, exate parta atras un poco       20%
+if(($IMAGENES_TOTAL*$IMAGENES_NOSEPUEDERECORTARCARA/100)<=20){
+    $correcto=true;
+    echo "hay muchas que no se puede recortar, exate parta atras un poco\n";
+}
+
+//si hay pocas imagenes extraidas el video es muy corto o mal grabado     +de 200 imgs buenas o malas
+if($IMAGENES_TOTAL<200){
+    $correcto=true;
+    echo "hay pocas imagenes extraidas el video es muy corto o mal grabado\n";
+}
+
+//si hay pocas imagenes con cara no te as colocado bien                   +70%
+if(($IMAGENES_TOTAL*$IMAGENES_CONCARA/100)<=70){
+    $correcto=true;
+    echo "hay pocas imagenes con cara no te as colocado bien\n";
+}     
 
 
 
