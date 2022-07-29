@@ -104,10 +104,10 @@ for($i=1;$i<=16;$i++){
     
     $vres= explode(";;", $res);
     
-    $IMAGENES_TOTAL+=trim($res[0]);
-    $IMAGENES_DESENFOCADAS+=trim($res[1]);
-    $IMAGENES_NOSEPUEDERECORTARCARA+=trim($res[2]);
-    $IMAGENES_CONCARA+=trim($res[3]);
+    $IMAGENES_TOTAL+=((int)(trim($vres[0])));
+    $IMAGENES_DESENFOCADAS+=((int)(trim($vres[1])));
+    $IMAGENES_NOSEPUEDERECORTARCARA+=((int)(trim($vres[2])));
+    $IMAGENES_CONCARA+=((int)(trim($vres[3])));
     
 }
 echo "\n\n\n";
