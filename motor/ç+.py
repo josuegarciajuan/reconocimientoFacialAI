@@ -16,10 +16,10 @@
 
 
 al principal devolvere:
-si hay muchas desenfocadas da mas luz
-si hay muchas que no se puede recortar, exate parta atras un poco
-si hay pocas imagenes extraidas el video es muy corto
-si hay pocas imagenes con cara no te as colocado bien
+si hay muchas desenfocadas da mas luz                                   20%     (l.120)
+si hay muchas que no se puede recortar, exate parta atras un poco       20%     (l.123)
+si hay pocas imagenes extraidas el video es muy corto o mal grabado     +de 200 imgs buenas o malas   (l.314)
+si hay pocas imagenes con cara no te as colocado bien                   +70%    (l.401)
 
 
 
@@ -40,34 +40,6 @@ php procesa_video_registro.php 1
 
 
 ls | wc -l
-
-
-server
-456 S
-242 buenas
-206 malas
-
-
-local
-251 S
-227 buenas
-62  malas
-
-
-
-
-
-
-
-local
-127 S
-120 buenas
-105 malas
-
-server
-214 S
-120 buenas
-105 malas
 
 
 

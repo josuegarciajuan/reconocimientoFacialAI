@@ -88,6 +88,17 @@ while($sigue){
 }
 
 
+echo "\n\n\n";
+echo "RESULTADOS\n";
+for($i=1;$i<=16;$i++){
+    $file='aux/procesa_video_registro_resultado_'.$local_id.'_'.$i.'.txt';
+    $res=file_get_contents($file);
+    echo "Para el hilo:".$i.", los resultados son:".$res."\n";
+    exec("rm ".$file);
+}
+echo "\n\n\n";
+
+
 
 
 

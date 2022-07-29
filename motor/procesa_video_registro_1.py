@@ -162,3 +162,5 @@ printLog("Llego al final y remuevo el video!")
 
 time_elapsed = time.time() - time_ini
 printLog("Tiempo de analizar el video:" + str(time_elapsed))
+
+

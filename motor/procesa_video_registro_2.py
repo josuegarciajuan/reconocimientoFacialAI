@@ -24,17 +24,6 @@ from facealigner import FaceAligner
 LOCAL_ID=sys.argv[1]
 HILO=sys.argv[2] #SIRVE PARA SABER DE QUE HILO VIENE ADEMAS DE QUE SEGUN CUAL CLASIFICA DEPENDIENDO DE LAS 3 ULTIMAS CIFRAS:
 NOMBRE_UNICO=sys.argv[3]
-"""
-1:  par, par, par
-2:  p,p,i
-3:  p,i,p
-4:  p,i,i
-5:  i,i,i
-6:  i,i,p
-7:  p,i,p
-8:  i,p,p
-"""
-
 
 
 CAMARA_ID="0"
@@ -56,6 +45,12 @@ UMBRAL_ENFOQUE_MAXIMO_CARA=120 #menos de este enfoque se descartan ,pero solo ac
 Borrar las fotos no enfocadas ni centradas, y luego saca los encodings para guardarlos
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 """
+
+IMAGENES_TOTAL=0
+IMAGENES_DESENFOCADAS=0
+IMAGENES_NOSEPUEDERECORTARCARA=0
+IMAGENES_CONCARA=0
+
 
 
 
@@ -127,11 +122,15 @@ def comprueba_enfocada(imagePath,name_file):
         if fm > UMBRAL_ENFOQUE_MAXIMO_CARA:    
             printLog("Ademas esta enfocada")
             devolver=fm
+        else:
+            printLog("Esta desenfocada")
+            IMAGENES_DESENFOCADAS=IMAGENES_DESENFOCADAS+1
          
     else:
         fm = variance_of_laplacian(gray)
         #printLog("NO se puede recortar la face, por lo que aplico el umbral de la foto completa y su fm es:"+str(fm)+" y el umbral que considero:"+str(UMBRAL_ENFOQUE_MAXIMO))
         printLog("No se puede recortar la face")
+        IMAGENES_NOSEPUEDERECORTARCARA=IMAGENES_NOSEPUEDERECORTARCARA+1
         """
         if fm > UMBRAL_ENFOQUE_MAXIMO:
            devolver=fm
@@ -320,6 +319,8 @@ ganador_name = NOMBRE_UNICO
 for (i, imagePath) in enumerate(imagePaths):
     name_file = imagePath.split(os.path.sep)[-1]
 
+    
+
     printLog("-------------------")    
 
     printLog('analizando:'+name_file)
@@ -334,29 +335,6 @@ for (i, imagePath) in enumerate(imagePaths):
     cuarto=int(lastseven[3:4])
 
 
-    """
-    printLog("1.-" + str(primero))
-    printLog("2.-" + str(segundo))
-    printLog("3.-" + str(tercero))
-    printLog("mm")
-
-
-    aux=primero%2
-    printLog("comprobando el resto:" + str(aux))
-
-    if primero%2 == 0:
-        printLog("el primero es par")
-    if segundo%2 == 0:
-        printLog("el segundo es par")
-    if tercero%2 == 0:
-        printLog("el tercero es par")
-    if HILO=="1":
-        printLog("estamos en el hilo1")
-
-
-    printLog("Despues de comprobar si el primero es par")
-
-    """
 
     continua=False
     if primero%2 == 0 and segundo%2 == 0 and tercero%2 == 0 and cuarto%2 == 0 and HILO=="1":
@@ -410,13 +388,10 @@ for (i, imagePath) in enumerate(imagePaths):
 
 
 
-    # printLog("despues de comprobar si son pares o no")
-
-
-
     
     if continua:
         printLog("deberia a continua")        
+        IMAGENES_TOTAL=IMAGENES_TOTAL+1
 
         insertada=False
         enfoque=comprueba_enfocada(imagePath,name_file)
@@ -436,6 +411,7 @@ for (i, imagePath) in enumerate(imagePaths):
 
                 if cv2.haveImageReader (imagePath):
                     printLog("Esta imagen SI tiene caras2!!!")
+                    IMAGENES_CONCARA=IMAGENES_CONCARA+1
 
                     if(len(encodings)>1):
                         printLog("Esto no puede pasar, hay mas de 1 cara en la imagen")
@@ -490,12 +466,15 @@ for (i, imagePath) in enumerate(imagePaths):
 
 
 
-# anyade_datos(knownEncodings,knownNames,knownPoints,ganador_name,knownIdentificadorunico,knownEnfoque)
+anyade_datos(knownEncodings,knownNames,knownPoints,ganador_name,knownIdentificadorunico,knownEnfoque)
 
+
+cadena=IMAGENES_TOTAL+";;"+IMAGENES_DESENFOCADAS+";;"+IMAGENES_NOSEPUEDERECORTARCARA+";;"+IMAGENES_CONCARA
+with open(RUTA_PROYECTO + 'aux/procesa_video_registro_resultado_' +  LOCAL_ID + '_' +  HILO + '.txt','a') as file:
+   print(cadena, file=file)
 
 
 time_elapsed = time.time() - time_ini
 printLog("Tiempo de analizar el video:" + str(time_elapsed))
-
 
 
