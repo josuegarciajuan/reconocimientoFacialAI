@@ -130,7 +130,7 @@ def comprueba_enfocada(imagePath,name_file):
         fm = variance_of_laplacian(gray)
         #printLog("NO se puede recortar la face, por lo que aplico el umbral de la foto completa y su fm es:"+str(fm)+" y el umbral que considero:"+str(UMBRAL_ENFOQUE_MAXIMO))
         printLog("No se puede recortar la face")
-        IMAGENES_NOSEPUEDERECORTARCARA=IMAGENES_NOSEPUEDERECORTARCARA+1
+        IMAGENES_NOSEPUEDERECORTARCARA = IMAGENES_NOSEPUEDERECORTARCARA+1
         """
         if fm > UMBRAL_ENFOQUE_MAXIMO:
            devolver=fm
@@ -469,7 +469,7 @@ for (i, imagePath) in enumerate(imagePaths):
 anyade_datos(knownEncodings,knownNames,knownPoints,ganador_name,knownIdentificadorunico,knownEnfoque)
 
 
-cadena=IMAGENES_TOTAL+";;"+IMAGENES_DESENFOCADAS+";;"+IMAGENES_NOSEPUEDERECORTARCARA+";;"+IMAGENES_CONCARA
+cadena=str(IMAGENES_TOTAL)+";;"+str(IMAGENES_DESENFOCADAS)+";;"+str(IMAGENES_NOSEPUEDERECORTARCARA)+";;"+str(IMAGENES_CONCARA)
 with open(RUTA_PROYECTO + 'aux/procesa_video_registro_resultado_' +  LOCAL_ID + '_' +  HILO + '.txt','a') as file:
    print(cadena, file=file)
 
