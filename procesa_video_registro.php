@@ -74,13 +74,13 @@ for($i=1;$i<=16;$i++){
 $sigue=true;
 while($sigue){
     $terminados=0;
-    for($i=1;$i<=$numero_videos;$i++){
+    for($i=1;$i<=16;$i++){
         $id="vr_".$i."_".$local_id."_".$randaux;
         if(!$threads[$id]->isrunning()){
             $terminados++;
         }
     }
-    if($terminados==$numero_videos){
+    if($terminados==16){
         $sigue=false;
     }else{
         usleep(500);
