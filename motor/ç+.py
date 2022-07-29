@@ -30,6 +30,7 @@ rm motor/caras/sinclasificar/*
 rm -R motor/caras/1/0/*
 rm motor/removidas/nopasafiltros/*
 cd motor
+rm *.out
 python3.7 crear_diccionario_inicial.py 
 cd ..
 php procesa_video_registro.php 1

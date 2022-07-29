@@ -329,10 +329,10 @@ for (i, imagePath) in enumerate(imagePaths):
     printLog("1.-" + str(primero))
     printLog("2.-" + str(segundo))
     printLog("3.-" + str(tercero))
-    printLog("-------")
+    printLog("mm")
 
 
-    aux=primero % 2
+    aux=primero%2
     printLog("comprobando el resto:" + aux)
 
     if primero % 2 == 0:
