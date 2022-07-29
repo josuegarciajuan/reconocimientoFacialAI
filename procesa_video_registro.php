@@ -67,7 +67,7 @@ while($sigue){
 
 
 
-for($i=1;$i<=8;$i++){
+for($i=1;$i<=16;$i++){
     $id="vr_".$i."_".$local_id."_".$randaux;
     $cmd="python3.7 motor/procesa_video_registro_2.py ".$local_id."_".$i.".avi ".$i;
     echo "Alta hilo->".$cmd."\n";
@@ -113,6 +113,8 @@ function dividir_video($local_id,$ruta,$video){
     
     $output_salida="aux/procesa_video_registro_".$local_id."_".rand(1000000,9999999).".txt";
 
+    $longitud_videos=4;
+    
     $time=0;
     $i=1;
     $terminado=false;
@@ -122,11 +124,11 @@ function dividir_video($local_id,$ruta,$video){
         if($time<10){
             $ini_txt.="0";
         }
-        if(($time+5)<10){
+        if(($time+$longitud_videos)<10){
             $fin_txt.="0";
         }
         $ini_txt.=$time;
-        $fin_txt.=$time+5;
+        $fin_txt.=$time+$longitud_videos;
        
         
        
@@ -145,7 +147,7 @@ function dividir_video($local_id,$ruta,$video){
                 if($time<10){
                     $ini_txt.="0";
                 }
-                if(($time+5)<10){
+                if(($time+$longitud_videos)<10){
                     $fin_txt.="0";
                 }
                 $ini_txt.=$time;
@@ -161,14 +163,14 @@ function dividir_video($local_id,$ruta,$video){
                 }
                 
                 $resta++;
-                if($resta==5){
+                if($resta==$longitud_videos){
                     $terminado=true;
                     $i--;
                 }
             }
         }
         
-        $time+=5;
+        $time+=$longitud_videos;
         $i++;
         if($time==55){
             $terminado=true;

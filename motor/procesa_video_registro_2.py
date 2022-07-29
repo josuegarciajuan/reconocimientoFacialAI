@@ -320,14 +320,17 @@ for (i, imagePath) in enumerate(imagePaths):
 
     printLog('analizando:'+name_file)
 
-    lastseven=name_file[-7:]
+    lastseven=name_file[-8:]
 
     printLog('ultimos 7:'+lastseven)
 
     primero=int(lastseven[0:1])
     segundo=int(lastseven[1:2])
     tercero=int(lastseven[2:3])
+    cuarto=int(lastseven[3:4])
 
+
+    """
     printLog("1.-" + str(primero))
     printLog("2.-" + str(segundo))
     printLog("3.-" + str(tercero))
@@ -349,37 +352,61 @@ for (i, imagePath) in enumerate(imagePaths):
 
     printLog("Despues de comprobar si el primero es par")
 
-
+    """
 
     continua=False
-    if primero%2 == 0 and segundo%2 == 0 and tercero%2 == 0 and HILO=="1":
+    if primero%2 == 0 and segundo%2 == 0 and tercero%2 == 0 and cuarto%2 == 0 and HILO=="1":
         continua=True
         printLog("paso1!!")
-    if primero%2 == 0 and segundo%2 == 0 and tercero%2 == 1 and HILO=="2":
+    if primero%2 == 0 and segundo%2 == 0 and tercero%2 == 0 and cuarto%2 == 1 and HILO=="2":
         continua=True
         printLog("paso2!!")
-    if primero%2 == 0 and segundo%2 == 1 and tercero%2 == 0 and HILO=="3":
+    if primero%2 == 0 and segundo%2 == 0 and tercero%2 == 1 and cuarto%2 == 0 and HILO=="3":
         continua=True
         printLog("paso3!!")
-    if primero%2 == 0 and segundo%2 == 1 and tercero%2 == 1 and HILO=="4":
+    if primero%2 == 0 and segundo%2 == 0 and tercero%2 == 1 and cuarto%2 == 1 and HILO=="4":
         continua=True
         printLog("paso4!!")
-    if primero%2 == 1 and segundo%2 == 1 and tercero%2 == 1 and HILO=="5":
+    if primero%2 == 0 and segundo%2 == 1 and tercero%2 == 0 and cuarto%2 == 0 and HILO=="5":
         continua=True
         printLog("paso5!!")
-    if primero%2 == 1 and segundo%2 == 1 and tercero%2 == 0 and HILO=="6":
+    if primero%2 == 0 and segundo%2 == 1 and tercero%2 == 0 and cuarto%2 == 1 and HILO=="6":
         continua=True
         printLog("paso6!!")
-    if primero%2 == 0 and segundo%2 == 1 and tercero%2 == 0 and HILO=="7":
+    if primero%2 == 0 and segundo%2 == 1 and tercero%2 == 1 and cuarto%2 == 0 and HILO=="7":
         continua=True
         printLog("paso7!!")
-    if primero%2 == 1 and segundo%2 == 0 and tercero%2 == 0 and HILO=="8":
+    if primero%2 == 0 and segundo%2 == 1 and tercero%2 == 1 and cuarto%2 == 1 and HILO=="8":
         continua=True
         printLog("paso8!!")
+    if primero%2 == 1 and segundo%2 == 0 and tercero%2 == 0 and cuarto%2 == 0 and HILO=="9":
+        continua=True
+        printLog("paso9!!")
+    if primero%2 == 1 and segundo%2 == 0 and tercero%2 == 0 and cuarto%2 == 1 and HILO=="10":
+        continua=True
+        printLog("paso10!!")
+    if primero%2 == 1 and segundo%2 == 0 and tercero%2 == 1 and cuarto%2 == 0 and HILO=="11":
+        continua=True
+        printLog("paso11!!")
+    if primero%2 == 1 and segundo%2 == 0 and tercero%2 == 1 and cuarto%2 == 1 and HILO=="12":
+        continua=True
+        printLog("paso12!!")
+    if primero%2 == 1 and segundo%2 == 1 and tercero%2 == 0 and cuarto%2 == 0 and HILO=="13":
+        continua=True
+        printLog("paso13!!")
+    if primero%2 == 1 and segundo%2 == 1 and tercero%2 == 0 and cuarto%2 == 1 and HILO=="14":
+        continua=True
+        printLog("paso14!!")
+    if primero%2 == 1 and segundo%2 == 1 and tercero%2 == 1 and cuarto%2 == 0 and HILO=="15":
+        continua=True
+        printLog("paso15!!")
+    if primero%2 == 1 and segundo%2 == 1 and tercero%2 == 1 and cuarto%2 == 1 and HILO=="16":
+        continua=True
+        printLog("paso16!!")
 
 
 
-    printLog("despues de comprobar si son pares o no")
+    # printLog("despues de comprobar si son pares o no")
 
 
 
