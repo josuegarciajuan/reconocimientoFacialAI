@@ -333,9 +333,9 @@ for (i, imagePath) in enumerate(imagePaths):
 
 
     aux=primero%2
-    printLog("comprobando el resto:" + aux)
+    printLog("comprobando el resto:" + str(aux))
 
-    if primero % 2 == 0:
+    if primero%2 == 0:
         printLog("el primero es par")
 
 
@@ -344,28 +344,28 @@ for (i, imagePath) in enumerate(imagePaths):
 
 
     continua=False
-    if primero % 2 == 0 and segundo % 2 == 0 and tercero % 2 == 0 and HILO==1:
+    if primero%2 == 0 and segundo%2 == 0 and tercero%2 == 0 and HILO==1:
         continua=True
         printLog("paso1")
-    if primero % 2 == 0 and segundo % 2 == 0 and tercero % 2 == 1 and HILO==2:
+    if primero%2 == 0 and segundo%2 == 0 and tercero%2 == 1 and HILO==2:
         continua=True
         printLog("paso2")
-    if primero % 2 == 0 and segundo % 2 == 1 and tercero % 2 == 0 and HILO==3:
+    if primero%2 == 0 and segundo%2 == 1 and tercero%2 == 0 and HILO==3:
         continua=True
         printLog("paso3")
-    if primero % 2 == 0 and segundo % 2 == 1 and tercero % 2 == 1 and HILO==4:
+    if primero%2 == 0 and segundo%2 == 1 and tercero%2 == 1 and HILO==4:
         continua=True
         printLog("paso4")
-    if primero % 2 == 1 and segundo % 2 == 1 and tercero % 2 == 1 and HILO==5:
+    if primero%2 == 1 and segundo%2 == 1 and tercero%2 == 1 and HILO==5:
         continua=True
         printLog("paso5")
-    if primero % 2 == 1 and segundo % 2 == 1 and tercero % 2 == 0 and HILO==6:
+    if primero%2 == 1 and segundo%2 == 1 and tercero%2 == 0 and HILO==6:
         continua=True
         printLog("paso6")
-    if primero % 2 == 0 and segundo % 2 == 1 and tercero % 2 == 0 and HILO==7:
+    if primero%2 == 0 and segundo%2 == 1 and tercero%2 == 0 and HILO==7:
         continua=True
         printLog("paso7")
-    if primero % 2 == 1 and segundo % 2 == 0 and tercero % 2 == 0 and HILO==8:
+    if primero%2 == 1 and segundo%2 == 0 and tercero%2 == 0 and HILO==8:
         continua=True
         printLog("paso8")
 
