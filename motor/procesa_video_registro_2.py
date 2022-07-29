@@ -480,7 +480,7 @@ for (i, imagePath) in enumerate(imagePaths):
                 printLog("No existe y la voy a crear:" + RUTA_PROYECTO + 'motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name)
                 os.makedirs(RUTA_PROYECTO + 'motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name)
             else:
-                prinLog("Ya existia la ruta:" + RUTA_PROYECTO + 'motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name)
+                printLog("Ya existia la ruta:" + RUTA_PROYECTO + 'motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name)
 
             copyfile(imagePath, RUTA_PROYECTO + 'motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name+'/'+name_file+'_'+fotos_identificadorunico+".jpg") 
             printLog("He copiado de aki: "+imagePath+ " a aki: "+ganador_name+'/'+name_file+'_'+fotos_identificadorunico+".jpg")
