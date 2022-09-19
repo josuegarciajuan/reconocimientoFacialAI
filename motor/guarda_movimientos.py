@@ -4,7 +4,6 @@ import pysftp
 import os
 import _thread
 import sys
-import os
 
 sys.path.append(".")
 from fifo import fifo
@@ -84,19 +83,20 @@ printLog("LOCAL_ID"+LOCAL_ID)
 printLog("CAMARA_ID"+CAMARA_ID)
 
 def subir_video(nombre):
-    cnopts = pysftp.CnOpts()
-    cnopts.hostkeys = None   
-    #myHostname = "217.61.112.100"
-    #myUsername = "testuser"
-    #myPassword = "prueba123"
-    myHostname = FTP_SERVER
-    myUsername = FTP_USER
-    myPassword = FTP_PASS
+    # cnopts = pysftp.CnOpts()
+    # cnopts.hostkeys = None   
+    # myHostname = FTP_SERVER
+    # myUsername = FTP_USER
+    # myPassword = FTP_PASS
 
-    with pysftp.Connection(host=myHostname, username=myUsername, password=myPassword, cnopts=cnopts) as sftp:
-        print ("Connection succesfully stablished ... ")
-        sftp.put('motor/videos/'+LOCAL_ID+'/'+nombre,'motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/'+nombre)
-        sftp.close()
+    # with pysftp.Connection(host=myHostname, username=myUsername, password=myPassword, cnopts=cnopts) as sftp:
+    #     print ("Connection succesfully stablished ... ")
+    #     sftp.put('motor/videos/'+LOCAL_ID+'/'+nombre,'motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/'+nombre)
+    #     sftp.close()
+
+
+    cmd='ftp-upload -h '+FTP_SERVER+' -u '+FTP_USER+' --password '+FTP_PASS+' -d motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/'+nombre+' motor/videos/'+LOCAL_ID+'/'+nombre
+    os.system(cmd)
     os.remove('motor/videos/'+LOCAL_ID+'/'+nombre)
 
 
