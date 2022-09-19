@@ -87,6 +87,8 @@ if(isset($_GET["info"]) and $_GET["info"]=="subir_video"){
     
     if(move_uploaded_file($tmp_name, "$uploads_dir/$name.avi")){
         echo "Subido correctamente";
+        exec(RUTA_PROYECTO."procesa_video_registro.php ".$_SESSION["local_id"]);
+
     }else{
         echo "NO subido";
     }

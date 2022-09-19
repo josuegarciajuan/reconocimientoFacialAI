@@ -188,9 +188,9 @@
                             };
 
                             //document.getElementById("padescargar").append(recordedMedia, downloadButton);
-                            alert(recordedMediaURL + "---" + document.getElementById("nombre").value);
+                            //alert(recordedMediaURL + "---" + document.getElementById("nombre").value);
 
-                            downloadButton.click();
+                            //downloadButton.click();
                             //recordedMediaURL
 
 
@@ -208,8 +208,8 @@
                             request.open("POST", "<?= URL_PROGRAMA_SERVER ?>admin/index.php?page=visitantes&mode=registrar&info=subir_video&nombre=" + document.getElementById("nombre").value);
                             request.send(fd);
 
-
-
+                            //aki habria que hacer overlay que se muestre como procesando asta que que consultas ajax recibir respuesta 
+                            //del procesardor del video que es: procesa_video_registro.php
                     };
 
 

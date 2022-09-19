@@ -1,5 +1,13 @@
 NUEVO SERVER:
 
+45.136.70.236 
+eladmin
+prueba123
+ssh -i ~/.ssh/id_rsa eladmin@camarasdef.vps.webdock.cloud
+
+
+
+
 camaras
 prueba123
 ssh -i ~/.ssh/id_rsa camaras@camaras2.vps.webdock.cloud
