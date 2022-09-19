@@ -5,8 +5,8 @@
  * Author: Josué García Juan
  * 28/07/2020
  */
-//$server="server";
-$server="localhost";
+$server="server";
+//$server="localhost";
   
 
 //define("FTP_SERVER","46.249.32.179");  
