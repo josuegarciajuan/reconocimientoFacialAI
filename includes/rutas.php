@@ -5,8 +5,8 @@
  * Author: Josué García Juan
  * 28/07/2020
  */
-$server="server";
-//$server="localhost";
+//$server="server";
+$server="localhost";
   
 
 //define("FTP_SERVER","46.249.32.179");  
@@ -51,7 +51,7 @@ switch($server){
     case "localhost":
         define("URL_PROGRAMA_SERVER","http://localhost/reconocimientoFacial/proyecto_definitivo/");  
         
-        define('BD_BBDD', 'reconocimientofacial2'); 
+        define('BD_BBDD', 'reconocimientofacial3'); 
         define('BD_USUARIO', 'root');
         define('BD_PASS', 'camaras');
         define('BD_HOST', 'localhost');

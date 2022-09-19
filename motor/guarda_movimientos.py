@@ -9,9 +9,8 @@ sys.path.append(".")
 from fifo import fifo
 
 
-# python3.7 motor/guarda_movimientos.py camaras.vps.webdock.io testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.52:554/cam/realmonitor?channel=1&subtype=0' 2 6 KszrR2H1snGs
-
-
+# python3.7 motor/guarda_movimientos.py camaras.vps.webdock.io testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.52:554/cam/realmonitor?channel=1&subtype=0' 1 1 KszrR2H1snGs
+# python3.7 motor/guarda_movimientos.py camaras.vps.webdock.io testuser prueba123 'rtsp://admin:bakcAse4@nouesmalt.duckdns.org/cam/realmonitor?channel=1&subtype=0' 1 1 KszrR2H1snGs
 
 
 
@@ -30,10 +29,6 @@ def printLog(*args, **kwargs):
     with open('motor/guarda_movimientos_'+CAMARA_ID+'.out','a') as file:
         print(*args, **kwargs, file=file)
     
-
-
-
-
 
 
 # Converting gray scale image to GaussianBlur
@@ -80,12 +75,12 @@ def hay_movimiento(the_motion_list):
         retorno=True
     return retorno  
 
-#printLog("FTP_SERVER"+FTP_SERVER)
-#printLog("FTP_USER"+FTP_USER)
-#printLog("FTP_PASS"+FTP_PASS)
-#printLog("URL_CONEXION"+URL_CONEXION)
-#printLog("LOCAL_ID"+LOCAL_ID)
-#printLog("CAMARA_ID"+CAMARA_ID)
+printLog("FTP_SERVER"+FTP_SERVER)
+printLog("FTP_USER"+FTP_USER)
+printLog("FTP_PASS"+FTP_PASS)
+printLog("URL_CONEXION"+URL_CONEXION)
+printLog("LOCAL_ID"+LOCAL_ID)
+printLog("CAMARA_ID"+CAMARA_ID)
 
 def subir_video(nombre):
     cnopts = pysftp.CnOpts()
@@ -161,8 +156,8 @@ while True:
 
 
 
-    frame = cv2.resize(frame, None, fx=0.25, fy=0.25)
-    #frame = cv2.resize(frame, None, fx=0.60, fy=0.60)
+    #frame = cv2.resize(frame, None, fx=0.25, fy=0.25)
+    frame = cv2.resize(frame, None, fx=0.60, fy=0.60)
 
     # Initializing motion = 0(no motion)
     motion = 0
@@ -217,7 +212,7 @@ while True:
     motion_list = motion_list[-frames_a_analizar:]
 
 
-    # printLog("Estado actual del movimiento:"+str(motion))
+    printLog("Estado actual del movimiento:"+str(motion))
 
 
     #Para saber si hay movimiento, de los ultimos 10, 8 han de tener movimiento
@@ -311,7 +306,7 @@ while True:
     # cv2.imshow("Threshold Frame", thresh_frame)
 
     # Displaying color frame with contour of motion of object
-    cv2.imshow("Color Frame", frame)
+    # cv2.imshow("Color Frame", frame)
 
     #->key = cv2.waitKey(10)
 
@@ -336,15 +331,3 @@ video.release()
 
 # Destroying all the windows
 cv2.destroyAllWindows()
-
-
-def hay_movimiento(the_motion_list):
-    num=0
-    for m in the_motion_list:
-        if m==1:
-            num=num+1
-    retorno=False        
-    if num>=8:
-        retorno=True
-    return retorno    
-
