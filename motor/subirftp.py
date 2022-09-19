@@ -1,4 +1,8 @@
 import pysftp
+
+import warnings
+warnings.filterwarnings('ignore','.*Failed to load HostKeys.*')
+
 cnopts = pysftp.CnOpts()
 cnopts.hostkeys = None 
 
