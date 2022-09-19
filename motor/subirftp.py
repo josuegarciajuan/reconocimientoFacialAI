@@ -17,11 +17,19 @@ myUsername = "testuser"
 myPassword = "prueba123"
 
 
-with pysftp.Connection(host=myHostname, username=myUsername, password=myPassword, cnopts=cnopts) as sftp:
-    print ("Connection succesfully stablished ... ")
-    sftp.put("/var/www/html/reconocimientofacialV2/motor/videos/1/1_2022-09-19_11:03:54.107124.avi",'motor/videos/1/1/video.avi')
-    sftp.close()
+# with pysftp.Connection(host=myHostname, username=myUsername, password=myPassword, cnopts=cnopts) as sftp:
+    # print ("Connection succesfully stablished ... ")
+    # sftp.put("/var/www/html/reconocimientofacialV2/motor/videos/1/1_2022-09-19_11:03:54.107124.avi",'motor/videos/1/1/video.avi')
+    # sftp.close()
 # os.remove(video_actual)
 
+
+
+
+
+
+
+cmd="ftp-upload -h 45.136.70.236 -u testuser --password prueba123 -d motor/videos/1/1/ /var/www/html/reconocimientofacialV2/motor/videos/1/1_2022-09-19_11:03:54.107124.avi"
+exec(cmd)
 
 

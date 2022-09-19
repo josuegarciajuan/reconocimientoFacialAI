@@ -32,6 +32,7 @@ instalacion php
   sudo apt install php libapache2-mod-php php-mysql
 
 
+
 instalacion FTP
   sudo apt install vsftpd
   sudo systemctl start vsftpd
@@ -74,6 +75,8 @@ NO
 
 añador esto allow_writeable_chroot=YES y reiniciar
 
+
+apt-get install ftp-upload
 
 instalacion python
   sudo apt-get install software-properties-common
