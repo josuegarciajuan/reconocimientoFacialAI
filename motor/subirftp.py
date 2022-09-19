@@ -26,7 +26,8 @@ import pysftp
 
 
 
-cmd="ftp-upload -h '45.136.70.236' -u 'testuser' --password 'prueba123' -d 'motor/videos/1/1/' '/var/www/html/reconocimientofacialV2/motor/videos/1/1_2022-09-19_11:03:54.107124.avi'"
+# cmd="ftp-upload -h '45.136.70.236' -u 'testuser' --password 'prueba123' -d 'motor/videos/1/1/' '/var/www/html/reconocimientofacialV2/motor/videos/1/1_2022-09-19_11:03:54.107124.avi'"
+cmd='ftp-upload -h 45.136.70.236 -u testuser --password prueba123 -d motor/videos/1/1/ /var/www/html/reconocimientofacialV2/motor/videos/1/1_2022-09-19_11:03:54.107124.avi'
 exec(cmd)
 
 
