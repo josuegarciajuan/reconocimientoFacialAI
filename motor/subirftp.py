@@ -1,10 +1,10 @@
 import pysftp
 
-import warnings
-warnings.filterwarnings('ignore','.*Failed to load HostKeys.*')
+# import warnings
+# warnings.filterwarnings('ignore','.*Failed to load HostKeys.*')
 
-cnopts = pysftp.CnOpts()
-cnopts.hostkeys = None 
+# cnopts = pysftp.CnOpts()
+# cnopts.hostkeys = None 
 
 
 
@@ -12,9 +12,9 @@ cnopts.hostkeys = None
 # myUsername = "testuser"
 # myPassword = "prueba123"
 
-myHostname = "45.136.70.236"
-myUsername = "testuser"
-myPassword = "prueba123"
+# myHostname = "45.136.70.236"
+# myUsername = "testuser"
+# myPassword = "prueba123"
 
 
 # with pysftp.Connection(host=myHostname, username=myUsername, password=myPassword, cnopts=cnopts) as sftp:
@@ -26,10 +26,7 @@ myPassword = "prueba123"
 
 
 
-
-
-
-cmd="ftp-upload -h 45.136.70.236 -u testuser --password prueba123 -d motor/videos/1/1/ /var/www/html/reconocimientofacialV2/motor/videos/1/1_2022-09-19_11:03:54.107124.avi"
+cmd="ftp-upload -h '45.136.70.236' -u 'testuser' --password 'prueba123' -d 'motor/videos/1/1/' '/var/www/html/reconocimientofacialV2/motor/videos/1/1_2022-09-19_11:03:54.107124.avi'"
 exec(cmd)
 
 
