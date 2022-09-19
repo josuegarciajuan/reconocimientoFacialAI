@@ -6,6 +6,8 @@ warnings.filterwarnings('ignore','.*Failed to load HostKeys.*')
 cnopts = pysftp.CnOpts()
 cnopts.hostkeys = None 
 
+cnopts.allow_agent = False
+cnopts.look_for_keys = False 
 
 
 # myHostname = "217.61.112.100"
