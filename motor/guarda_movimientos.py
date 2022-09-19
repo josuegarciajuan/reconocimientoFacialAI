@@ -95,7 +95,7 @@ def subir_video(nombre):
     #     sftp.close()
 
 
-    cmd='ftp-upload -h '+FTP_SERVER+' -u '+FTP_USER+' --password '+FTP_PASS+' -d motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/'+nombre+' motor/videos/'+LOCAL_ID+'/'+nombre
+    cmd='ftp-upload -h '+FTP_SERVER+' -u '+FTP_USER+' --password '+FTP_PASS+' -d motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+' motor/videos/'+LOCAL_ID+'/'+nombre
     printLog(cmd)
     os.system(cmd)
     os.remove('motor/videos/'+LOCAL_ID+'/'+nombre)
