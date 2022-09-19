@@ -11,7 +11,7 @@ $server="localhost";
 
 //define("FTP_SERVER","46.249.32.179");  
 //define("FTP_SERVER","45.92.108.137");  
-define("FTP_SERVER","camaras2.vps.webdock.cloud");  
+define("FTP_SERVER","camarasdef.vps.webdock.cloud");  
 define("FTP_USER","testuser");
 define("FTP_PASS","prueba123");
 
@@ -25,12 +25,13 @@ define('CANVAS_HEIGHT', '562');
 
 
 
-define("URL_BASE_SERVER","http://camaras2.vps.webdock.cloud/reconocimientoFacial/proyecto_definitivo/");  
+define("URL_BASE_SERVER","http://camarasdef.vps.webdock.cloud/reconocimientofacialV2/");  
 
 switch($server){
     case "server":
         
-        define("URL_PROGRAMA_SERVER","http://camaras.eroticamaxx.com/");  
+        //define("URL_PROGRAMA_SERVER","http://camaras.eroticamaxx.com/");  
+        define("URL_PROGRAMA_SERVER","http://camarasdef.vps.webdock.cloud/reconocimientofacialV2/admin/");  
         
         define('BD_BBDD', 'reconocimientofacial2'); 
         /*
@@ -38,12 +39,12 @@ switch($server){
         GRANT ALL PRIVILEGES ON *.* TO 'newuser'@'localhost';
         */
         define('BD_USUARIO', 'newuser');
-        define('BD_PASS', 'prueba123@4522gwrQWWERw');
+        define('BD_PASS', 'Prueba123!');
         define('BD_HOST', 'localhost');
         define('PREFIJO_TABLAS', '');
         
         
-        define('RUTA_PROYECTO', "/var/www/html/reconocimientoFacial/proyecto_definitivo/");
+        define('RUTA_PROYECTO', "/var/www/html/reconocimientoFacialV2/");
         
         
         break;

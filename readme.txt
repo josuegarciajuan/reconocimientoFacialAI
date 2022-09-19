@@ -4,7 +4,7 @@ NUEVO SERVER:
 eladmin
 prueba123
 ssh -i ~/.ssh/id_rsa eladmin@camarasdef.vps.webdock.cloud
-
+MYSQL: Prueba123!
 
 
 
