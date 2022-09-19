@@ -12,7 +12,7 @@ cnopts.hostkeys = None
 # myUsername = "testuser"
 # myPassword = "prueba123"
 
-myHostname = "camarasdef.vps.webdock.io"
+myHostname = "45.136.70.236"
 myUsername = "testuser"
 myPassword = "prueba123"
 
