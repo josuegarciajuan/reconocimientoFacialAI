@@ -4,6 +4,7 @@ import pysftp
 import os
 import _thread
 import sys
+import os
 
 sys.path.append(".")
 from fifo import fifo
