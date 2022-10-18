@@ -10,7 +10,7 @@ from fifo import fifo
 
 
 # python3.7 motor/guarda_movimientos.py camaras.vps.webdock.io testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.52:554/cam/realmonitor?channel=1&subtype=0' 1 1 KszrR2H1snGs
-# python3.7 motor/guarda_movimientos.py camaras.vps.webdock.io testuser prueba123 'rtsp://admin:bakcAse4@nouesmalt.duckdns.org:779/cam/realmonitor?channel=1&subtype=0' 1 1 KszrR2H1snGs
+# python3.7 motor/guarda_movimientos.py 45.136.70.236 testuser prueba123 'rtsp://admin:bakcAse4@nouesmalt.duckdns.org:779/cam/realmonitor?channel=1&subtype=0' 1 1 KszrR2H1snGs
 
 
 

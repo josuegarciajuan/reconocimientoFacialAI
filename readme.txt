@@ -1,16 +1,20 @@
 NUEVO SERVER:
 
-45.136.70.236 
+
+la cuenta de casasescortsmurcia@gmail.com
+45.136.71.235 
 eladmin
 prueba123
-ssh -i ~/.ssh/id_rsa eladmin@camarasdef.vps.webdock.cloud
+ssh -i ~/.ssh/id_rsa eladmin@reconocimien.vps.webdock.cloud
+mc . sftp://eladmin:prueba123@reconocimien.vps.webdock.cloud/var/www/
 MYSQL: Prueba123!
 
-
+scp eladmin@45.136.71.235:/home/testuser/motor/videos/1/1/pruebas.txt .
+/home/testuser/motor/videos/1/1
 
 camaras
 prueba123
-ssh -i ~/.ssh/id_rsa camaras@camaras2.vps.webdock.cloud
+ssh -i ~/.ssh/id_rsa camaras@reconocimien.vps.webdock.cloud
 MYSQL: Prueba123!
 
 
@@ -77,6 +81,65 @@ añador esto allow_writeable_chroot=YES y reiniciar
 
 
 apt-get install ftp-upload
+
+
+
+/******************************************************
+NO se usa pero esto sive para crear mas usuarios
+
+nano /etc/vsftpd.conf
+
+And add the following lines:
+# Disable anonymous login
+anonymous_enable=NO
+ 
+# Enable the userlist 
+userlist_enable=YES
+ 
+# Configure the userlist to act as a whitelist (only allow users who are listed there)
+userlist_deny=NO
+ 
+# Allow the local users to login to the FTP (if they're in the userlist)
+local_enable=YES
+ 
+# Allow virtual users to use the same privileges as local users
+virtual_use_local_privs=YES
+ 
+# Setup the virtual users config folder
+user_config_dir=/etc/vsftpd/user_config_dir/
+
+
+useradd ftp1
+passwd ftp1
+
+nano  /etc/vsftpd.user_list
+josue
+
+> nano /etc/vsftpd/user_config_dir/josue
+
+local_root=/var/www/ftp1
+write_enable=YES
+
+
+nano /etc/passwd  
+poner la ruta correspondiente
+
+
+sudo systemctl restart vsftpd.service
+
+******************************************************/
+
+
+
+
+
+
+
+
+
+
+
+
 
 instalacion python
   sudo apt-get install software-properties-common

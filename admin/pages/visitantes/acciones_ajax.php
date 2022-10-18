@@ -25,6 +25,12 @@ switch ($_GET["a"]) {
         echo "ok";
         break;
         
+    case "3": //subir imagen y cmprobar que esta en una determomnada posicion
+        
+        
+        break;
+    
+    
     default:
         break;
         

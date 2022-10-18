@@ -43,7 +43,7 @@
                             </td>
                             <td>
                                 <img src="" id="sigueme" style="width:100%">
-
+                                <center><span id="textocabeza" style="text-align:center;font-size:25px;width:100%;color:blue;font-weight:bold;border-color:blue;border-style:solid;border-width:2px;padding:10px"></span></center>
                             </td>
                             
                             
@@ -62,6 +62,7 @@
 
 <script>
     const webCamContainer = document.getElementById("web-cam-container");
+    
     let chunks = [];
     var mode="start";
     const selectedMedia="vid";
@@ -76,13 +77,11 @@
     
     function grabarParar(){
         //alert("grabar_o_parar");
-        
         if(mode=="start"){
             mode="stop";
             document.getElementById("btn_grabar").innerHTML="Detener la Captura";
-            sigueme();
+            //sigueme();
             startRecording();
-            
         }else{ //mode=="stop"
             mode="stop";
             document.getElementById("btn_grabar").innerHTML="Empezar a capturar";
@@ -91,6 +90,57 @@
         
     }
     
+    
+    var cabeza=1;
+    function cabezon(posicion){
+        
+        style="background-color: black;width: 100%;height:800px; transform: rotateY(180deg); -webkit-transform:rotateY(180deg); -moz-transform:rotateY(180deg);";
+        style+="border-left:  5px solid red;";
+        style+="border-top:    5px solid red;";
+        style+="border-right:  5px solid red;";
+        style+="border-bottom: 5px solid red;";
+        webCamContainer.setAttribute("style",style);
+        
+        switch(posicion){
+            case 1:
+                texto="Ponga la cabeza de frente";
+                imagen="01-front-Head-set.jpg";
+                break;
+            case 2:
+                texto="Gira 2..";
+                imagen="02-right-Head-set.jpg";
+                break;
+            case 3:
+                texto="Gira3 ..";
+                imagen="03-right-Head-set.jpg";
+                break;
+            case 4:
+                texto="Gira4..";
+                imagen="04-left-Head-set.jpg";
+                break;
+            case 5:
+                texto="Gira5..";
+                imagen="05-left-Head-set.jpg";
+                break;
+            case 6:
+                texto="Gira6..";
+                imagen="06-up-Head-set.jpg";
+                break;
+            case 7:
+                texto="Gira7..";
+                imagen="07-down-Head-set.jpg";
+                break;
+            default:
+                alert("Esto no puede pasar");
+                break;
+        }
+          
+        document.getElementById("sigueme").setAttribute("src","files/images/" + imagen);
+        document.getElementById("textocabeza").innerHTML=texto;
+        
+    }
+    
+    /*
     sigue=1;
     function sigueme(){
         document.getElementById("sigueme").setAttribute("src","files/images/" + sigue + ".png");
@@ -102,19 +152,21 @@
                 tiempo=1000;    
             }
             setTimeout(sigueme, tiempo);
+            
         }else{
             
         }
 
     }
+    */
     
-    
+    let subidor_caras=true;
     
     function startRecording(){
-        
+        //
         
         if(document.getElementById("nombre").value==""){
-            alert("Debe completar el nobre del usuario a registrar");
+            alert("Rellena el nombre del usuario a registrar");
         }else{
         
         
@@ -124,8 +176,9 @@
                     videoMediaConstraints :
                     audioMediaConstraints)
                     .then((mediaStream) => {
-
-
+                        
+                    cabezon(cabeza);
+                    
                     // Create a new MediaRecorder instance
                     const mediaRecorder = new MediaRecorder(mediaStream);
 
@@ -137,7 +190,9 @@
                     mediaRecorder.start();
 
 
+                    setTimeout(subeCaras, 1000);
 
+                    
                     
                     let blob;
                     // When the MediaRecorder stops
@@ -194,12 +249,13 @@
                             //recordedMediaURL
 
 
+/*
                             for(i=0;i<5;i++){
                                 console.log("LISTO(" + i + "):" + blob.size);
                                 await sleep(2000);
                             }
-                            
-                            
+*/                            
+                            subidor_caras=false;
                             
                             var fd = new FormData();
                             fd.append("video",blob);
@@ -223,6 +279,8 @@
                             // the chunks array
                             chunks.push(e.data);
                             
+                            
+                            
 
                     };
 
@@ -232,6 +290,8 @@
                         // attribute since the src attribute
                         // doesn't support media stream as a value
                         webCamContainer.srcObject = mediaStream;
+
+                        
                     }
 
             });
@@ -253,11 +313,153 @@
             });
 
             //document.getElementById("padescargar").innerText = "Recording done!";
+            
+            subidor_caras=false;
     }
 
 
     function sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
+    
+    
+    
+    let contadorCaras=0;
+    function subeCaras(){
+        if(subidor_caras){
+            contadorCaras++;
+            console.log(contadorCaras);
+            if(contadorCaras==2){
+                //alert("Voy a allamar a checkearPosicionCara");
+                checkearPosicionCara(cabeza);
+                //alert("llamado y analizado checkearPosicionCara!")
+                contadorCaras=0;
+            }
+            setTimeout(subeCaras, 1000);
+        }
+    }
+    
+    
+    function checkearPosicionCara(posicion){
+        
+        
+        
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        
+        canvas.height = webCamContainer.videoHeight;
+        canvas.width = webCamContainer.videoWidth;
+        ctx.drawImage(webCamContainer, 0, 0);
+        canvas.toBlob(blob=> {
+            console.log(blob);
+            
+            var fd = new FormData();
+            fd.append("imagen",blob);
+            //fd.append("video2",recordedMediaURL);
+            var request = new XMLHttpRequest();
+            
+            
+            request.onreadystatechange = () => {
+                if (request.readyState === 4) {
+                  //alert(request.response);
+                  respuesta=request.response;
+                  posicion=respuesta.indexOf("---resp>");
+                  respuesta=respuesta.substr(posicion+8);
+                  posicion=respuesta.indexOf("<---");
+                  respuesta=respuesta.substr(0,posicion);
+                  //alert("Dentro de checar caras, la respuesta obtenida es:"+respuesta);
+                  
+                  interpretaRespuesta(respuesta);
+                  
+                }
+              }
+            
+            request.open("POST", "<?= URL_PROGRAMA_SERVER ?>admin/index.php?page=visitantes&mode=registrar&info=checkearPosicionCara&posicion=" + posicion+"&debug=1", false);
+            request.send(fd);   
+            
+        });
+        
+  
+    }
+    
+    
+
+    
+    async function interpretaRespuesta(respuesta){
+
+       console.log("interpretaRespuesta:"+respuesta);
+
+        style="background-color: black;width: 100%;height:800px; transform: rotateY(180deg); -webkit-transform:rotateY(180deg); -moz-transform:rotateY(180deg);";
+        if(respuesta=="NOOK"){
+            style+="border-color:red;border-style:solid;border-width:5px";
+
+        }else{
+            console.log("Voy a analizar");
+            //alert(respuesta);
+            resp=parseInt(respuesta);
+
+            //if(resp>=80 && resp<85){
+            if(resp>=50 && resp<60){
+                console.log("paso1");
+                style+="border-left:  5px solid red;";
+                style+="border-top:    5px solid red;";
+                style+="border-right:  7px solid green;";
+                style+="border-bottom: 5px solid red;";
+            //}else if(resp>=85 && resp<90){
+            }else if(resp>=60 && resp<70){
+                console.log("paso2");
+                style+="border-left:  5px solid red;";
+                style+="border-top:    7px solid green;";
+                style+="border-right:  7px solid green;";
+                style+="border-bottom: 5px solid red;";
+            //}else if(resp>=90 && resp<95){
+            }else if(resp>=70 && resp<80){
+                console.log("paso3");
+                style+="border-left:  7px solid green;";
+                style+="border-top:    7px solid green;";
+                style+="border-right:  7px solid green;";
+                style+="border-bottom: 5px solid red;";
+            //}else if(resp>=95 && resp<=100){
+            }else if(resp>=80){
+                console.log("reconocido!!!!!!!!!");
+                style+="border-left:  7px dotted green;";
+                style+="border-top:    7px dotted green;";
+                style+="border-right:  7px dotted green;";
+                style+="border-bottom: 7px dotted green;";
+                cabeza++;
+                console.log("la siguiebte cabeza es:"+cabeza);
+                if(cabeza<=7){
+                    console.log("voy a llamar al siguiente cabezon");
+                    await sleep(2000);
+                    cabezon(cabeza);
+                }else{
+                    alert("Voy a parar");
+                    stopRecording();
+                }
+            //}else if(resp>=60 && resp<80){
+            }else if(resp>=40 && resp<50){
+                console.log("paso5");
+                style+="border-left:  5px solid red;";
+                style+="border-top:    5px solid red;";
+                style+="border-right:  5px solid red;";
+                style+="border-bottom: 5px solid red;";
+            }else{
+                console.log("paso6");
+                style+="border-left:  7px solid red;";
+                style+="border-top:    7px solid red;";
+                style+="border-right:  7px solid red;";
+                style+="border-bottom: 7px solid red;";
+            }
+            console.log("analziado1");
+        }
+        webCamContainer.setAttribute("style",style);
+        console.log("analziado2");
+        
+    }
+
+//
+
+
 </script>
 

@@ -94,3 +94,89 @@ if(isset($_GET["info"]) and $_GET["info"]=="subir_video"){
     }
     exit;
 }
+
+
+
+//http://localhost/reconocimientoFacial/proyecto_definitivo/admin/index.php?page=visitantes&mode=registrar&info=checkearPosicionCara_test&posicion=1&debug=1
+if(isset($_GET["info"]) and $_GET["info"]=="checkearPosicionCara_test"){
+    
+        $uploads_dir="files/videos_registro";
+    
+    
+        echo "checkearPosicionCara_test<br />";
+        
+        $terminado=false;
+        $fichero_respuesta=$uploads_dir."/".$_SESSION["local_id"].".txt";
+        
+        echo "fichero de respuesta:".$fichero_respuesta."<br />";
+        while(!$terminado){
+            echo "No terminado<br />";
+            if(file_exists($fichero_respuesta)){
+                echo "El fichero existe<br />";
+                $respuesta= file_get_contents($fichero_respuesta);
+                echo "la respuesta en el fichero es:->".$respuesta."<-<br />";
+                $terminado=true;
+                exec("chmod 777 ".$fichero_respuesta);
+                exec("rm ".$fichero_respuesta);
+                exec("rm ".$imagen_jpg);
+            }else{
+                echo "El fichero NO existe<br />";
+                sleep(1);
+            }
+        }
+        echo "llego al final<br />";
+        exit;
+}
+
+
+if(isset($_GET["info"]) and $_GET["info"]=="checkearPosicionCara"){
+    $uploads_dir="files/videos_registro";
+    $pos_dir="files/videos_registro_posiciones";
+    $res_dir="files/videos_registro_resultados";
+    
+    $tmp_name = $_FILES["imagen"]["tmp_name"];
+    $name = $_SESSION["local_id"];
+    $posicion= $_GET["posicion"];
+  
+    
+    $file_posicion=$pos_dir."/".$_SESSION["local_id"].".txt";
+    file_put_contents($file_posicion, $posicion);
+    exec("chmod 777 ".$file_posicion);
+
+    
+    $imagen="$uploads_dir/$name.png";
+    $imagen_jpg="$uploads_dir/$name.jpg";
+    if(move_uploaded_file($tmp_name, $imagen)){
+
+        $image = imagecreatefrompng($imagen);
+        imagejpeg($image, $imagen_jpg, 80);
+        imagedestroy($image);
+        exec("rm ".$imagen);
+        exec("chmod 777 ".$imagen_jpg);
+        
+        $respuesta=0;
+        
+        $terminado=false;
+        $fichero_respuesta=$res_dir."/".$_SESSION["local_id"].".txt";
+        while(!$terminado){
+            if(file_exists($fichero_respuesta)){
+                $respuesta= file_get_contents($fichero_respuesta);
+                $terminado=true;
+                exec("chmod 777 ".$fichero_respuesta);
+                exec("rm ".$fichero_respuesta);
+            }else{
+                sleep(1);
+            }
+        }
+        //echo "---resp>82<---";
+        
+         
+        echo "---resp>".$respuesta."<---";
+        
+    }else{
+        //echo "NO subido";
+        
+        echo "---resp>NOOK<---";
+    }
+    exit;
+}

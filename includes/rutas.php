@@ -45,6 +45,8 @@ switch($server){
         
         
         define('RUTA_PROYECTO', "/var/www/html/reconocimientoFacialV2/");
+        define("RUTA_PHP","php");
+        define("RUTA_PYTHON","python3.7");
         
         
         break;
@@ -58,6 +60,9 @@ switch($server){
         define('PREFIJO_TABLAS', '');
 
         define('RUTA_PROYECTO', "/var/www/html/reconocimientoFacial/proyecto_definitivo/");
+        
+        define("RUTA_PHP","php");
+        define("RUTA_PYTHON","python3.7");
         
         break;
 }
