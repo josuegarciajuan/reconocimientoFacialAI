@@ -467,7 +467,8 @@
         console.log("pruebaAjax1");
         var request = new XMLHttpRequest();
         console.log("pruebaAjax2");
-        tcmd="<?= URL_PROGRAMA_SERVER ?>admin/index.php?page=visitantes&mode=registrar&info=pruebaAjax&debug=1";
+        //tcmd="<?= URL_PROGRAMA_SERVER ?>admin/index.php?page=visitantes&mode=registrar&info=pruebaAjax&debug=1";
+        tcmd="index.php?page=visitantes&mode=registrar&info=pruebaAjax&debug=1";
         console.log("pruebaAjax21:" + tcmd);
         request.open("GET", tcmd, false);
         console.log("pruebaAjax22");
