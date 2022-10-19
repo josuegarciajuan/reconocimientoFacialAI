@@ -479,7 +479,7 @@
 
         tcmd="<?= URL_PROGRAMA_SERVER ?>admin/index.php?page=visitantes&mode=registrar&info=pruebaAjax&debug=1";
         console.log("pruebaAjax6:" + tcmd);
-        request.open("GET", tcmd, true);
+        request.open("GET", tcmd, false);
         console.log("pruebaAjax7");
     }
 
