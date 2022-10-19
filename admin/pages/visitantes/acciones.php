@@ -219,8 +219,6 @@ if(isset($_GET["info"]) and $_GET["info"]=="checkearPosicionCara2"){
     $posicion= $_GET["posicion"];
   
     
-    $test=file_get_contents('php://input');
-    file_put_contents($uploads_dir."/pruebas.png", $test);
     //var_dump($test);
     //echo "<br />.-------.<br />";
     
@@ -232,6 +230,13 @@ if(isset($_GET["info"]) and $_GET["info"]=="checkearPosicionCara2"){
     
     $imagen="$uploads_dir/$name.png";
     $imagen_jpg="$uploads_dir/$name.jpg";
+
+
+    $test=file_get_contents('php://input');
+    //file_put_contents($uploads_dir."/pruebas.png", $test);
+    file_put_contents($uploads_dir."/".$name.".png", $test);
+
+
     
     echo "checkearPosicionCara--imagen:".$imagen."<br />";
     echo "checkearPosicionCara--imagen_jpg:".$imagen_jpg."<br />";
