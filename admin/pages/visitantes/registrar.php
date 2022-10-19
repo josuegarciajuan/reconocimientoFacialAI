@@ -399,6 +399,8 @@
             //request.open("POST", "<?= URL_PROGRAMA_SERVER ?>admin/index.php?page=visitantes&mode=registrar&info=checkearPosicionCara&posicion=" + posicion+"&debug=1", false);
 
 
+
+
             request.open("POST", "index.php?page=visitantes&mode=registrar&info=checkearPosicionCara&posicion=" + posicion+"&debug=1", false);
             request.setRequestHeader('Content-Type', 'multipart/form-data');
             request.send(fd);
