@@ -34,7 +34,8 @@ instalacion php
   sudo apt install mysql-server
   sudo mysql_secure_installation
   sudo apt install php libapache2-mod-php php-mysql
-
+  apt-get install php-gd
+  service apache2 restart
 
 
 instalacion FTP

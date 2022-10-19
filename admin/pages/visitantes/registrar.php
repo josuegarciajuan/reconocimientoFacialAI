@@ -25,6 +25,9 @@
                     <tr><td align="center">
                         <button id="btn_grabar" class="button text-white bg-theme-1 shadow-md mr-2" onclick="grabarParar()">Empezar a capturar</button>
                         
+                        
+                        <button id="btn_grabar" class="button text-white bg-theme-1 shadow-md mr-2" onclick="pruebaAjax()">Pruebas</button>
+                        
                     </td></tr>
                 
                    
@@ -459,6 +462,20 @@
     }
 
 //
+
+    function pruebaAjax(){
+        var request = new XMLHttpRequest();
+
+        request.onreadystatechange = () => {
+            if (request.readyState === 4) {
+              alert(request.response);
+              
+
+            }
+          }
+
+        request.open("POST", "<?= URL_PROGRAMA_SERVER ?>admin/index.php?page=visitantes&mode=registrar&info=pruebaAjax&debug=1", false);
+    }
 
 
 </script>

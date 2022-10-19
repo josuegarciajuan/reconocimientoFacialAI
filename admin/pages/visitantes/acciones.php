@@ -178,3 +178,8 @@ if(isset($_GET["info"]) and $_GET["info"]=="checkearPosicionCara"){
     }
     exit;
 }
+
+
+if(isset($_GET["info"]) and $_GET["info"]=="pruebaAjax"){
+    echo "larespuesta";
+}
