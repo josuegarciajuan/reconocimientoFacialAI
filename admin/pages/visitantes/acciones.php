@@ -138,14 +138,22 @@ if(isset($_GET["info"]) and $_GET["info"]=="checkearPosicionCara"){
     $name = $_SESSION["local_id"];
     $posicion= $_GET["posicion"];
   
+    echo "checkearPosicionCara--tmp_name:".$tmp_name."<br />";
+    echo "checkearPosicionCara--name:".$name."<br />";
+    echo "checkearPosicionCara--posicion:".$posicion."<br />";
     
     $file_posicion=$pos_dir."/".$_SESSION["local_id"].".txt";
     file_put_contents($file_posicion, $posicion);
     exec("chmod 777 ".$file_posicion);
 
+    echo "checkearPosicionCara--file_posicion:".$file_posicion."<br />";
     
     $imagen="$uploads_dir/$name.png";
     $imagen_jpg="$uploads_dir/$name.jpg";
+    
+    echo "checkearPosicionCara--imagen:".$imagen."<br />";
+    echo "checkearPosicionCara--imagen_jpg:".$imagen_jpg."<br />";
+    
     if(move_uploaded_file($tmp_name, $imagen)){
 
         $image = imagecreatefrompng($imagen);
