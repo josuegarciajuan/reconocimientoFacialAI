@@ -464,30 +464,15 @@
 //
 
     function pruebaAjax(){
-        console.log("pruebaAjax1");
-        var request = new XMLHttpRequest();
-        console.log("pruebaAjax2");
-
         
-        request.onprogress = () => {
-            console.log('LOADING', request.readyState); // readyState will be 3
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                alert(this.responseText;);
+           }
         };
-
-        request.onreadystatechange = () => {
-            console.log("pruebaAjax3:" + request.readyState);
-            if (request.readyState === 4) {
-              alert(request.response);
-              console.log("pruebaAjax4");
-
-            }
-          }
-        console.log("pruebaAjax5");
-
-        //tcmd="<?= URL_PROGRAMA_SERVER ?>admin/index.php?page=visitantes&mode=registrar&info=pruebaAjax&debug=1";
-        tcmd="index.php?page=visitantes&mode=registrar&info=pruebaAjax&debug=1";
-        console.log("pruebaAjax21:" + tcmd);
-        request.open("GET", tcmd, false);
-        console.log("pruebaAjax22");
+        xhttp.open("GET", "index.php?page=visitantes&mode=registrar&info=pruebaAjax&debug=1", true);
+        xhttp.send(); 
         
     }
 
