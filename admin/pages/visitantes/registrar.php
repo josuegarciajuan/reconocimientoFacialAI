@@ -468,7 +468,7 @@
         var request = new XMLHttpRequest();
         console.log("pruebaAjax2");
         request.onreadystatechange = () => {
-            console.log("pruebaAjax3" + request.readyState);
+            console.log("pruebaAjax3:" + request.readyState);
             if (request.readyState === 4) {
               alert(request.response);
               console.log("pruebaAjax4");
@@ -477,8 +477,10 @@
           }
         console.log("pruebaAjax5");
 
-        request.open("POST", "<?= URL_PROGRAMA_SERVER ?>admin/index.php?page=visitantes&mode=registrar&info=pruebaAjax&debug=1", false);
-        console.log("pruebaAjax6");
+        tcmd="<?= URL_PROGRAMA_SERVER ?>admin/index.php?page=visitantes&mode=registrar&info=pruebaAjax&debug=1";
+        console.log("pruebaAjax6:" + tcmd);
+        request.open("POST", tcmd, false);
+        console.log("pruebaAjax7");
     }
 
 
