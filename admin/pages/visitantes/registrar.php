@@ -405,7 +405,8 @@
 
             request.open("POST", "index.php?page=visitantes&mode=registrar&info=checkearPosicionCara&posicion=" + posicion+"&debug=1", false);
             //request.setRequestHeader('Content-Type', 'multipart/form-data;');
-            request.send(fd);
+            //request.send(fd);
+            request.send(blob);
 
 
 
