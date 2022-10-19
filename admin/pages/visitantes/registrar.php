@@ -193,7 +193,7 @@
                     mediaRecorder.start();
 
 
-                    setTimeout(subeCaras, 3000);
+                    setTimeout(subeCaras, 1000);
 
                     
                     
@@ -364,9 +364,10 @@
             console.log("checkearPosicionCara3");
             
             var fd = new FormData();
-            fd.append("imagen",blob);
+            fd.append("imagen",blob,"test.png");
             //fd.append("video2",recordedMediaURL);
             var request = new XMLHttpRequest();
+            request.setRequestHeader('Content-Type', 'multipart/form-data');
             
             console.log("checkearPosicionCara4");
             
@@ -388,12 +389,17 @@
                   
                 }
               }
+            request.onerror = function (err) {
+                console.error('Error uploading file  to server')
+                console.error(err)
+                if (typeof callback === 'function') { callback(err) }
+              }  
             
             console.log("checkearPosicionCara7");
             
             //request.open("POST", "<?= URL_PROGRAMA_SERVER ?>admin/index.php?page=visitantes&mode=registrar&info=checkearPosicionCara&posicion=" + posicion+"&debug=1", false);
             request.open("POST", "index.php?page=visitantes&mode=registrar&info=checkearPosicionCara&posicion=" + posicion+"&debug=1", false);
-            request.send(fd);   
+            request.send(fd);
             //request.send();
             
             console.log("checkearPosicionCara8");
