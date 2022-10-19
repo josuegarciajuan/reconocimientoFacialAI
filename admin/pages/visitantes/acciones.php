@@ -141,6 +141,8 @@ if(isset($_GET["info"]) and $_GET["info"]=="checkearPosicionCara"){
     echo "checkearPosicionCara--tmp_name:".$tmp_name."<br />";
     echo "checkearPosicionCara--name:".$name."<br />";
     echo "checkearPosicionCara--posicion:".$posicion."<br />";
+    var_dump($_FILES);
+    echo "<br />.-------.<br />";
     
     $file_posicion=$pos_dir."/".$_SESSION["local_id"].".txt";
     file_put_contents($file_posicion, $posicion);
