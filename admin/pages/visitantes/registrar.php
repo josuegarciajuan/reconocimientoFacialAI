@@ -193,7 +193,7 @@
                     mediaRecorder.start();
 
 
-                    setTimeout(subeCaras, 1000);
+                    setTimeout(subeCaras, 3000);
 
                     
                     
