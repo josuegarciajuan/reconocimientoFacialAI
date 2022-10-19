@@ -26,7 +26,7 @@
                         <button id="btn_grabar" class="button text-white bg-theme-1 shadow-md mr-2" onclick="grabarParar()">Empezar a capturar</button>
                         
                         
-                        <!--<button id="btn_pruebas" class="button text-white bg-theme-1 shadow-md mr-2" onclick="pruebaAjax()">Pruebas</button>-->
+                        <button id="btn_pruebas" class="button text-white bg-theme-1 shadow-md mr-2" onclick="pruebaAjax()">Pruebas</button>
                         
                     </td></tr>
                 
