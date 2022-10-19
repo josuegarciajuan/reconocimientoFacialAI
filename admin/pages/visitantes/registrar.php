@@ -368,11 +368,6 @@
             //fd.append("video2",recordedMediaURL);
             var request = new XMLHttpRequest();
             
-            request.open("POST", "index.php?page=visitantes&mode=registrar&info=checkearPosicionCara&posicion=" + posicion+"&debug=1", false);
-            request.setRequestHeader('Content-Type', 'multipart/form-data');
-            request.send(fd);
-            
-            
             console.log("checkearPosicionCara4");
             
             request.onreadystatechange = () => {
@@ -403,7 +398,13 @@
             
             //request.open("POST", "<?= URL_PROGRAMA_SERVER ?>admin/index.php?page=visitantes&mode=registrar&info=checkearPosicionCara&posicion=" + posicion+"&debug=1", false);
 
-            //request.send();
+
+            request.open("POST", "index.php?page=visitantes&mode=registrar&info=checkearPosicionCara&posicion=" + posicion+"&debug=1", false);
+            request.setRequestHeader('Content-Type', 'multipart/form-data');
+            request.send(fd);
+
+
+
             
             console.log("checkearPosicionCara8");
             
