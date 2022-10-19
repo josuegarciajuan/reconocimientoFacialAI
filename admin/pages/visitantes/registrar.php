@@ -365,7 +365,7 @@
             
             var fd = new FormData();
             //fd.append("imagen",blob,"imagen.png");
-            fd.append("imagen",blob);
+            //fd.append("imagen",blob);
             fd.append("campo","valor");
             //fd.append("video2",recordedMediaURL);
             var request = new XMLHttpRequest();
