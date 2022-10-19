@@ -21,18 +21,20 @@ import matplotlib.pyplot as plt
 import face_alignment
 fa = face_alignment.FaceAlignment(face_alignment.LandmarksType._2D, flip_input=False, device='cpu')
 
-# https://towardsdatascience.com/face-landmark-detection-using-python-1964cb620837
+RUTA_PROYECTO=sys.argv[1]
+DEBUG=sys.argv[2]
 
-UMBRAL_ENFOQUE=1000 #para considerar una foto desenfocada ya y al comparar 1 a 1 con todo el diccionario, ya pasaria a ver si las 2 tienen muxa diferencia de enfoque
-#UMBRAL_ENFOQUE_MAXIMO=200 # mas de este desenfoque , se descartan
-UMBRAL_ENFOQUE_MAXIMO=10
+
+# https://towardsdatascience.com/face-landmark-detection-using-python-1964cb620837
 
 
 def printLog(*args, **kwargs):
-    print(*args, **kwargs)
+    if DEBUG==1:
+        print(*args, **kwargs)
     
-    with open('posicion_cara2.out','a') as file:
-      print(*args, **kwargs, file=file)
+        with open('devuelve_posicion_cara.out','a') as file:
+            print(*args, **kwargs, file=file)
+
 
 printLog("paso0")
 
@@ -828,7 +830,8 @@ def distancia_entrepuntos(numprueba,x1,y1,x2,y2,margen):
 
 
 
-path="/var/www/html/reconocimientoFacial/proyecto_definitivo/admin/files/videos_registro"
+# path="/var/www/html/reconocimientoFacial/proyecto_definitivo/admin/files/videos_registro"
+path=RUTA_PROYECTO + "admin/files/videos_registro"
 path_imgs=path+"/"
 
 while True:

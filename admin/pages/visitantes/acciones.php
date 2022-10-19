@@ -169,8 +169,6 @@ if(isset($_GET["info"]) and $_GET["info"]=="checkearPosicionCara"){
             }
         }
         //echo "---resp>82<---";
-        
-         
         echo "---resp>".$respuesta."<---";
         
     }else{

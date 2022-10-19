@@ -12,6 +12,8 @@
 -clasificadorV2.php
 
 
+-procesos_panel_control.php {DEBUG(0=>NO,1=>si)}
+
 
 
 

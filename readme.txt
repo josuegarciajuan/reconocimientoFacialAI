@@ -296,6 +296,7 @@ php clasificadorV2.php
 
 
 
+
 ------------------------------------------------
 -resetear y empezar de 0:
 rm -R /var/www/html/reconocimientoFacial/proyecto_definitivo/admin/caras_procesadas/*
