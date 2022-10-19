@@ -148,7 +148,7 @@ if(isset($_GET["info"]) and $_GET["info"]=="checkearPosicionCara"){
     var_dump($_GET);
     echo "<br />.-------TEST:.<br />";
     
-    if(isset($_FILES["imagen"]["tmp_name"])){
+    if(isset($_FILES["imagen"])){
         echo "EXISTE<br />";
     }else{
         echo "NO EXISTE<br />";
