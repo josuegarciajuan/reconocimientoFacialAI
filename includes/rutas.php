@@ -6,20 +6,21 @@
  * 28/07/2020
  */
 
-$host= gethostname();
-$ip = gethostbyname($host);
-
-echo "My from rutas".$ip.":\n";
-exit;
-
-
 
 $whitelist = [
     '127.0.0.1',
     '::1',
     'localhost'
 ];
-if(in_array($_SERVER['REMOTE_ADDR'], $whitelist)){
+
+if(isset($_SERVER['REMOTE_ADDR']) and $_SERVER['REMOTE_ADDR']!=NULL){
+    $ip=$_SERVER['REMOTE_ADDR'];
+}else{
+    $host= gethostname();
+    $ip = gethostbyname($host);
+}
+
+if(in_array($ip, $whitelist)){
     $server="localhost";    
 }else{
     $server="server";    
