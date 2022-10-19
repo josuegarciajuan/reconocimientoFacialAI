@@ -354,17 +354,28 @@
         canvas.height = webCamContainer.videoHeight;
         canvas.width = webCamContainer.videoWidth;
         ctx.drawImage(webCamContainer, 0, 0);
+        
+        console.log("checkearPosicionCara1");
         canvas.toBlob(blob=> {
+            console.log("checkearPosicionCara2");
+            
             console.log(blob);
+            
+            console.log("checkearPosicionCara3");
             
             var fd = new FormData();
             fd.append("imagen",blob);
             //fd.append("video2",recordedMediaURL);
             var request = new XMLHttpRequest();
             
+            console.log("checkearPosicionCara4");
             
             request.onreadystatechange = () => {
+                console.log("checkearPosicionCara5");
+                
                 if (request.readyState === 4) {
+                  console.log("checkearPosicionCara6");
+                    
                   //alert(request.response);
                   respuesta=request.response;
                   posicion=respuesta.indexOf("---resp>");
@@ -378,9 +389,14 @@
                 }
               }
             
+            console.log("checkearPosicionCara7");
+            
             //request.open("POST", "<?= URL_PROGRAMA_SERVER ?>admin/index.php?page=visitantes&mode=registrar&info=checkearPosicionCara&posicion=" + posicion+"&debug=1", false);
             request.open("POST", "index.php?page=visitantes&mode=registrar&info=checkearPosicionCara&posicion=" + posicion+"&debug=1", false);
             request.send(fd);   
+            
+            console.log("checkearPosicionCara8");
+            
             
         });
         
