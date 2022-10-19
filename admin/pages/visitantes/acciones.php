@@ -172,7 +172,7 @@ if(isset($_GET["info"]) and $_GET["info"]=="checkearPosicionCara"){
     echo "checkearPosicionCara--imagen:".$imagen."<br />";
     echo "checkearPosicionCara--imagen_jpg:".$imagen_jpg."<br />";
     
-    if(move_uploaded_file($tmp_name, $imagen)){
+    if(move_uploaded_file($tmp_name, $imagen)){ 
 
         $image = imagecreatefrompng($imagen);
         imagejpeg($image, $imagen_jpg, 80);
