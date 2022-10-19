@@ -49,7 +49,7 @@ switch($server){
     case "server":
         
         //define("URL_PROGRAMA_SERVER","http://camaras.eroticamaxx.com/");  
-        define("URL_PROGRAMA_SERVER","http://reconocimien.vps.webdock.cloud/reconocimientofacialV2/admin/");  
+        define("URL_PROGRAMA_SERVER","http://reconocimien.vps.webdock.cloud/reconocimientofacialV2/");  
         
         define('BD_BBDD', 'reconocimientofacial2'); 
         /*
