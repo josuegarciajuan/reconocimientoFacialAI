@@ -155,7 +155,8 @@ if(isset($_GET["info"]) and $_GET["info"]=="checkearPosicionCara"){
     }
     
     
-    //$test=file_get_contents('php://input');
+    $test=file_get_contents('php://input');
+    file_put_contents($uploads_dir."/pruebas.png", $test);
     //var_dump($test);
     //echo "<br />.-------.<br />";
     
