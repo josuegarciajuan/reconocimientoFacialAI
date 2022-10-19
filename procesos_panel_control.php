@@ -19,7 +19,7 @@ define("VALIDACION",10); //en segundos
 $cmd=RUTA_PYTHON." motor/devuelve_posicion_cara.py '".RUTA_PROYECTO."' ".$debug;
 echo $cmd;
 
-exit;
+//exit;
 
 $threads=[];
 $proc="procesos_panel_control";
@@ -37,7 +37,9 @@ while(true){
     }
 
     if((microtime(true) - $tiempo_inicial)>VALIDACION){
+        echo "Tiempo de comprobar..\n";
         if(!$threads[$proc]->isrunning()){
+            echo "Estaba apagado, reiniciando!\n";
             $threads[$proc]=new Jos_Thread($proc,$cmd,true);
             $threads[$proc]->start();
         }
