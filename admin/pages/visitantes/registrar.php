@@ -364,7 +364,7 @@
             console.log("checkearPosicionCara3");
             
             var fd = new FormData();
-            fd.append("imagen",blob);
+            fd.append("imagen",blob,"theimg.png");
             //fd.append("video2",recordedMediaURL);
             var request = new XMLHttpRequest();
             
