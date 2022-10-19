@@ -6,6 +6,14 @@
  * 28/07/2020
  */
 
+$host= gethostname();
+$ip = gethostbyname($host);
+
+echo "My from rutas".$ip.":\n";
+exit;
+
+
+
 $whitelist = [
     '127.0.0.1',
     '::1',
