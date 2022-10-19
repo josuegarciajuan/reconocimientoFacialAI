@@ -363,10 +363,10 @@
             
             console.log("checkearPosicionCara3");
             
-            var fd = new FormData();
+//            var fd = new FormData();
             //fd.append("imagen",blob,"imagen.png");
-            fd.append("imagen",blob,"imagen");
-            fd.append("campo","valor");
+//            fd.append("imagen",blob,"imagen");
+//            fd.append("campo","valor");
             //fd.append("video2",recordedMediaURL);
             var request = new XMLHttpRequest();
             
@@ -403,7 +403,7 @@
 
 
 
-            request.open("POST", "index.php?page=visitantes&mode=registrar&info=checkearPosicionCara&posicion=" + posicion+"&debug=1", false);
+            request.open("POST", "index.php?page=visitantes&mode=registrar&info=checkearPosicionCara2&posicion=" + posicion+"&debug=1", false);
             //request.setRequestHeader('Content-Type', 'multipart/form-data;');
             //request.send(fd);
             request.send(blob);
