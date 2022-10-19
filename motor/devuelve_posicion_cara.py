@@ -29,7 +29,7 @@ DEBUG=sys.argv[2]
 
 
 def printLog(*args, **kwargs):
-    if DEBUG==1:
+    if DEBUG=="1":
         print(*args, **kwargs)
     
         with open('devuelve_posicion_cara.out','a') as file:

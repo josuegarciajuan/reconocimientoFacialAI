@@ -220,6 +220,8 @@ librerias python
   python3.7 -m pip install matplotlib
   python3.7 -m pip uninstall colorama
   python3.7 -m pip install colorama
+  python3.7 -m pip install requests
+  python3.7 -m pip install pyOpenSSL --upgrade
 
 
 extras

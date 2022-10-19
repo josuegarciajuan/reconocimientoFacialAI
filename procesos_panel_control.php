@@ -16,7 +16,7 @@ require_once("libs/Jos_thread.class.php");
 
 define("VALIDACION",10); //en segundos
 
-$cmd=RUTA_PYTHON." motor/devuelve_posicion_cara.php '".RUTA_PROYECTO."' ".$debug;
+$cmd=RUTA_PYTHON." motor/devuelve_posicion_cara.py '".RUTA_PROYECTO."' ".$debug;
 echo $cmd;
 
 exit;
