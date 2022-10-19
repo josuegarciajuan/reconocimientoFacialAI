@@ -363,10 +363,10 @@
             
             console.log("checkearPosicionCara3");
             
-//            var fd = new FormData();
+            var fd = new FormData();
             //fd.append("imagen",blob,"imagen.png");
-//            fd.append("imagen",blob,"imagen");
-//            fd.append("campo","valor");
+            fd.append("imagen",blob,"imagen");
+            fd.append("campo","valor");
             //fd.append("video2",recordedMediaURL);
             var request = new XMLHttpRequest();
             
