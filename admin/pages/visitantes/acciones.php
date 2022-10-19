@@ -241,36 +241,32 @@ if(isset($_GET["info"]) and $_GET["info"]=="checkearPosicionCara2"){
     echo "checkearPosicionCara--imagen:".$imagen."<br />";
     echo "checkearPosicionCara--imagen_jpg:".$imagen_jpg."<br />";
     
-    if(move_uploaded_file($tmp_name, $imagen)){
+    
 
-        $image = imagecreatefrompng($imagen);
-        imagejpeg($image, $imagen_jpg, 80);
-        imagedestroy($image);
-        exec("rm ".$imagen);
-        exec("chmod 777 ".$imagen_jpg);
-        
-        $respuesta=0;
-        
-        $terminado=false;
-        $fichero_respuesta=$res_dir."/".$_SESSION["local_id"].".txt";
-        while(!$terminado){
-            if(file_exists($fichero_respuesta)){
-                $respuesta= file_get_contents($fichero_respuesta);
-                $terminado=true;
-                exec("chmod 777 ".$fichero_respuesta);
-                exec("rm ".$fichero_respuesta);
-            }else{
-                sleep(1);
-            }
+    $image = imagecreatefrompng($imagen);
+    imagejpeg($image, $imagen_jpg, 80);
+    imagedestroy($image);
+    exec("rm ".$imagen);
+    exec("chmod 777 ".$imagen_jpg);
+
+    $respuesta=0;
+
+    $terminado=false;
+    $fichero_respuesta=$res_dir."/".$_SESSION["local_id"].".txt";
+    while(!$terminado){
+        if(file_exists($fichero_respuesta)){
+            $respuesta= file_get_contents($fichero_respuesta);
+            $terminado=true;
+            exec("chmod 777 ".$fichero_respuesta);
+            exec("rm ".$fichero_respuesta);
+        }else{
+            sleep(1);
         }
-        //echo "---resp>82<---";
-        echo "---resp>".$respuesta."<---";
-        
-    }else{
-        //echo "NO subido";
-        
-        echo "---resp>NOOK<---";
     }
+    //echo "---resp>82<---";
+    echo "---resp>".$respuesta."<---";
+        
+    
     exit;
 }
 
