@@ -95,7 +95,11 @@
     
     
     var cabeza=1;
+    console.log("cabeza inicializada a:" + cabeza)
+    
     function cabezon(posicion){
+        
+        console.log("cabezon actuializar a la posicion:" + posicion)
         
         style="background-color: black;width: 100%;height:800px; transform: rotateY(180deg); -webkit-transform:rotateY(180deg); -moz-transform:rotateY(180deg);";
         style+="border-left:  5px solid red;";
@@ -180,6 +184,7 @@
                     audioMediaConstraints)
                     .then((mediaStream) => {
                         
+                    console.log("Se va a llamar a cabezon al empezar a grabar, con esta cabeza:" + cabeza)    
                     cabezon(cabeza);
                     
                     // Create a new MediaRecorder instance
@@ -334,6 +339,7 @@
             console.log(contadorCaras);
             if(contadorCaras==2){
                 //alert("Voy a allamar a checkearPosicionCara");
+                console.log("aki se usa esta cabeza, antes de llamar a checar posicion cara" + cabeza)
                 checkearPosicionCara(cabeza);
                 //alert("llamado y analizado checkearPosicionCara!")
                 contadorCaras=0;
@@ -422,7 +428,7 @@
     
     async function interpretaRespuesta(respuesta){
 
-       console.log("interpretaRespuesta:"+respuesta);
+       console.log("interpretaRespuesta:::::::::::::::::::::::::::::::"+respuesta);
 
         style="background-color: black;width: 100%;height:800px; transform: rotateY(180deg); -webkit-transform:rotateY(180deg); -moz-transform:rotateY(180deg);";
         if(respuesta=="NOOK"){
@@ -434,45 +440,52 @@
             resp=parseInt(respuesta);
 
             //if(resp>=80 && resp<85){
-            if(resp>=50 && resp<60){
+            //if(resp>=50 && resp<60){
+            if(resp>=40 && resp<50){
                 console.log("paso1");
                 style+="border-left:  5px solid red;";
                 style+="border-top:    5px solid red;";
                 style+="border-right:  7px solid green;";
                 style+="border-bottom: 5px solid red;";
             //}else if(resp>=85 && resp<90){
-            }else if(resp>=60 && resp<70){
+            //}else if(resp>=60 && resp<70){
+            }else if(resp>=50 && resp<60){
                 console.log("paso2");
                 style+="border-left:  5px solid red;";
                 style+="border-top:    7px solid green;";
                 style+="border-right:  7px solid green;";
                 style+="border-bottom: 5px solid red;";
             //}else if(resp>=90 && resp<95){
-            }else if(resp>=70 && resp<80){
+            //}else if(resp>=70 && resp<80){
+            }else if(resp>=60 && resp<70){
                 console.log("paso3");
                 style+="border-left:  7px solid green;";
                 style+="border-top:    7px solid green;";
                 style+="border-right:  7px solid green;";
                 style+="border-bottom: 5px solid red;";
             //}else if(resp>=95 && resp<=100){
-            }else if(resp>=80){
+            //}else if(resp>=80){
+            }else if(resp>=70){
                 console.log("reconocido!!!!!!!!!");
                 style+="border-left:  7px dotted green;";
                 style+="border-top:    7px dotted green;";
                 style+="border-right:  7px dotted green;";
                 style+="border-bottom: 7px dotted green;";
+                
+                console.log("se va a incrementar el valor de cabeza, ahora esta en:" + cabeza)
                 cabeza++;
-                console.log("la siguiebte cabeza es:"+cabeza);
+                console.log("Ahora se queda en:" + cabeza)
                 if(cabeza<=7){
                     console.log("voy a llamar al siguiente cabezon");
-                    await sleep(2000);
+                    //await sleep(2000);
                     cabezon(cabeza);
                 }else{
                     alert("Voy a parar");
                     stopRecording();
                 }
             //}else if(resp>=60 && resp<80){
-            }else if(resp>=40 && resp<50){
+            //}else if(resp>=40 && resp<50){
+            }else if(resp>=30 && resp<40){
                 console.log("paso5");
                 style+="border-left:  5px solid red;";
                 style+="border-top:    5px solid red;";

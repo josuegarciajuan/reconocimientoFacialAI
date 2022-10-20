@@ -634,9 +634,13 @@ def es_posicion_cara(imagePath,posicion):
             else: 
                 printLog("Esto no puede pasar")
             
+        printLog("Voy a reajustar la puntuacion:" + puntuacion)    
+        printLog("Definitivo esta enb:" + definitivo)    
         if puntuacion>definitivo:
             definitivo=puntuacion
+            printLog("Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:" + definitivo)
 
+    printLog("Finalmente devuelvo:" + definitivo)
     return definitivo
 
 
@@ -861,7 +865,8 @@ while True:
         printLog("posicion:"+posicion)
 
         puntuacion=es_posicion_cara(imagePath,int(posicion))
-        printLog("puntuacion:"+str(puntuacion))
+        printLog("")        
+        printLog("PUNTUACION:"+str(puntuacion))
 
         os.remove(imagePath)
         os.remove(fileposicion)
