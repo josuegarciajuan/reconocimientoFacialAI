@@ -285,7 +285,7 @@ def es_posicion_cara(imagePath,posicion):
             
             elif posicion == 3: #derecha 90
 
-                num_puebas=11
+                num_puebas=9
                 sumatorio=100/num_puebas
 
                 if posicionado(1,"R",x[30][0],x[30][1],x[0][0],x[0][1]):
@@ -333,15 +333,15 @@ def es_posicion_cara(imagePath,posicion):
                     printLog(".............SUPERO prueba 9")
                 printLog("")
 
-                if distancia_entrepuntos(10,x[33][0],x[33][1],x[35][0],x[35][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 10")
-                printLog("")
+                # if distancia_entrepuntos(10,x[33][0],x[33][1],x[35][0],x[35][1],10):
+                #    puntuacion=puntuacion+sumatorio
+                #    printLog(".............SUPERO prueba 10")
+                # printLog("")
 
-                if posicionado(11,"R",x[57][0],x[57][1],x[8][0],x[8][1]): 
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 11")
-                printLog("")
+                # if posicionado(11,"R",x[57][0],x[57][1],x[8][0],x[8][1]): 
+                #    puntuacion=puntuacion+sumatorio    
+                #    printLog(".............SUPERO prueba 11")
+                #printLog("")
 
                 puntuacion=puntuacion+5
 
@@ -407,7 +407,7 @@ def es_posicion_cara(imagePath,posicion):
 
 
             elif posicion == 5: #izquierda 90
-                num_puebas=11
+                num_puebas=9
                 sumatorio=100/num_puebas
 
                 if posicionado(1,"L",x[30][0],x[30][1],x[16][0],x[16][1]):
@@ -455,15 +455,15 @@ def es_posicion_cara(imagePath,posicion):
                     printLog(".............SUPERO prueba 9")
                 printLog("")
 
-                if distancia_entrepuntos(10,x[33][0],x[33][1],x[35][0],x[35][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 10")
-                printLog("")
+                # if distancia_entrepuntos(10,x[33][0],x[33][1],x[35][0],x[35][1],10):
+                #    puntuacion=puntuacion+sumatorio
+                #    printLog(".............SUPERO prueba 10")
+                # printLog("")
 
-                if posicionado(11,"L",x[57][0],x[57][1],x[8][0],x[8][1]): 
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 11")
-                printLog("")
+                # if posicionado(11,"L",x[57][0],x[57][1],x[8][0],x[8][1]): 
+                #    puntuacion=puntuacion+sumatorio    
+                #    printLog(".............SUPERO prueba 11")
+                # printLog("")
 
                 puntuacion=puntuacion+5
 
