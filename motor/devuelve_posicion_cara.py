@@ -27,6 +27,7 @@ DEBUG=sys.argv[2]
 
 # https://towardsdatascience.com/face-landmark-detection-using-python-1964cb620837
 
+detector = dlib.get_frontal_face_detector()
 
 def printLog(*args, **kwargs):
     if DEBUG=="1":
