@@ -297,7 +297,7 @@ def es_posicion_cara(imagePath,posicion):
                     num_puebas=11
                     sumatorio=100/num_puebas
 
-                    if posicionado(1,"R",x[30][0],x[30][1],x[16][0],x[16][1]):
+                    if posicionado(1,"R",x[30][0],x[30][1],x[0][0],x[0][1]):
                         puntuacion=puntuacion+sumatorio
                         printLog(".............SUPERO prueba 1")
                     printLog("")
@@ -327,12 +327,12 @@ def es_posicion_cara(imagePath,posicion):
                         printLog(".............SUPERO prueba 6")
                     printLog("")
 
-                    if posicionado(7,"L",x[16][0],x[16][1],x[27][0],x[27][1]): 
+                    if posicionado(7,"L",x[0][0],x[0][1],x[27][0],x[27][1]): 
                         puntuacion=puntuacion+sumatorio    
                         printLog(".............SUPERO prueba 7")
                     printLog("")
 
-                    if posicionado(8,"L",x[54][0],x[54][1],x[51][0],x[51][1]): 
+                    if posicionado(8,"L",x[48][0],x[48][1],x[51][0],x[51][1]): 
                         puntuacion=puntuacion+sumatorio    
                         printLog(".............SUPERO prueba 8")
                     printLog("")
@@ -419,7 +419,7 @@ def es_posicion_cara(imagePath,posicion):
                     num_puebas=11
                     sumatorio=100/num_puebas
 
-                    if posicionado(1,"L",x[30][0],x[30][1],x[0][0],x[0][1]):
+                    if posicionado(1,"L",x[30][0],x[30][1],x[16][0],x[16][1]):
                         puntuacion=puntuacion+sumatorio
                         printLog(".............SUPERO prueba 1")
                     printLog("")
@@ -449,12 +449,12 @@ def es_posicion_cara(imagePath,posicion):
                         printLog(".............SUPERO prueba 6")
                     printLog("")
      
-                    if posicionado(7,"R",x[0][0],x[0][1],x[27][0],x[27][1]): 
+                    if posicionado(7,"R",x[16][0],x[16][1],x[27][0],x[27][1]): 
                         puntuacion=puntuacion+sumatorio    
                         printLog(".............SUPERO prueba 7")
                     printLog("")
 
-                    if posicionado(8,"R",x[48][0],x[48][1],x[51][0],x[51][1]): 
+                    if posicionado(8,"R",x[54][0],x[54][1],x[51][0],x[51][1]): 
                         puntuacion=puntuacion+sumatorio    
                         printLog(".............SUPERO prueba 8")
                     printLog("")
