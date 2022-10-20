@@ -876,34 +876,40 @@ while True:
         fileposicion=path+"_posiciones/"+local_id+".txt"
 
        
-        with open(fileposicion) as f:
-            posicion = f.readline()
-
-        printLog("posicion:"+posicion)
-
-
-        
         try:
-            puntuacion=es_posicion_cara(imagePath,int(posicion))
-            printLog("")        
-            printLog("PUNTUACION("+str(count_img)+"):"+str(puntuacion))
+            with open(fileposicion) as f:
+                posicion = f.readline()
 
-            if DEBUG=="1":
-                os.rename(imagePath,path+"_pruebas/"+str(count_img)+".jpg")
-                count_img=count_img+1
+            printLog("posicion:"+posicion)
+            try:
+                puntuacion=es_posicion_cara(imagePath,int(posicion))
+                printLog("")        
+                printLog("PUNTUACION("+str(count_img)+"):"+str(puntuacion))
 
-            os.remove(imagePath)
-            os.remove(fileposicion)
+                if DEBUG=="1":
+                    os.rename(imagePath,path+"_pruebas/"+str(count_img)+".jpg")
+                    count_img=count_img+1
 
-            fileresultado=path+"_resultados/"+local_id+".txt"
+                os.remove(imagePath)
+                os.remove(fileposicion)
 
-            f= open(fileresultado,"w+")
-            f.write(str(puntuacion))
-            f.close()
-            
+                fileresultado=path+"_resultados/"+local_id+".txt"
+
+                f= open(fileresultado,"w+")
+                f.write(str(puntuacion))
+                f.close()
+                
+                break
+            except RuntimeError:
+                printLog("Oops!  se cometio runtime error")
+                break
+
             break
-        except RuntimeError:
-            print("Oops!  se cometio runtime error")
+        except FileNotFoundError:
+            printLog("Fichero posiciones no existente")
+            break
+
+
 
 
     t.sleep(1)
