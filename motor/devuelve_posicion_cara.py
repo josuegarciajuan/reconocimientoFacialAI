@@ -877,18 +877,28 @@ while True:
 
         printLog("posicion:"+posicion)
 
-        puntuacion=es_posicion_cara(imagePath,int(posicion))
-        printLog("")        
-        printLog("PUNTUACION:"+str(puntuacion))
 
-        os.remove(imagePath)
-        os.remove(fileposicion)
+        sigue=False
+        try:
+            puntuacion=es_posicion_cara(imagePath,int(posicion))
+            sigue=True
+            break
+        except RuntimeError:
+            print("Oops!  se cometio runtime error")
 
-        fileresultado=path+"_resultados/"+local_id+".txt"
 
-        f= open(fileresultado,"w+")
-        f.write(str(puntuacion))
-        f.close()
+        if sigue:
+            printLog("")        
+            printLog("PUNTUACION:"+str(puntuacion))
+
+            os.remove(imagePath)
+            os.remove(fileposicion)
+
+            fileresultado=path+"_resultados/"+local_id+".txt"
+
+            f= open(fileresultado,"w+")
+            f.write(str(puntuacion))
+            f.close()
 
 
     t.sleep(1)
