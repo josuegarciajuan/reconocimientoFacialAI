@@ -422,7 +422,6 @@
 
 
 
-            //request.open("POST", "index.php?page=visitantes&mode=registrar&info=checkearPosicionCara2&posicion=" + posicion+"&debug=1", false);
             request.open("POST", "index.php?page=visitantes&mode=registrar&info=checkearPosicionCara2&posicion=" + posicion+"&debug=1", true);
             //request.setRequestHeader('Content-Type', 'multipart/form-data;');
             //request.send(fd);
