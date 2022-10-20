@@ -278,7 +278,7 @@ if(isset($_GET["info"]) and $_GET["info"]=="checkearPosicionCara2"){
     $terminado=false;
     $fichero_respuesta=$res_dir."/".$_SESSION["local_id"].".txt";
     
-    $espera=10;
+    $espera=15;
     $e=0;
     while(!$terminado){
         if(file_exists($fichero_respuesta)){
