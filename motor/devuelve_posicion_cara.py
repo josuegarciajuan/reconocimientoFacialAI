@@ -834,11 +834,16 @@ def distancia_entrepuntos(numprueba,x1,y1,x2,y2,margen):
 path=RUTA_PROYECTO + "admin/files/videos_registro"
 path_imgs=path+"/"
 
+printLog("path:" + path)
+printLog("path_imgs:" + path_imgs)
+
 while True:
     
     printLog("true")
-        
+
     imagePaths = list(paths.list_images(path_imgs))
+    printLog("imagePaths:" + imagePaths)
+
     for (i, imagePath) in enumerate(imagePaths):
         puntuacion=0
 
