@@ -255,7 +255,8 @@ if(isset($_GET["info"]) and $_GET["info"]=="checkearPosicionCara2"){
     $terminado=false;
     $fichero_respuesta=$res_dir."/".$_SESSION["local_id"].".txt";
     
-    
+    $espera=10;
+    $e=0;
     while(!$terminado){
         if(file_exists($fichero_respuesta)){
             $respuesta= file_get_contents($fichero_respuesta);
@@ -264,6 +265,11 @@ if(isset($_GET["info"]) and $_GET["info"]=="checkearPosicionCara2"){
             exec("rm ".$fichero_respuesta);
         }else{
             sleep(1);
+            $e++;
+            if($e>$espera){
+                $terminado=true;
+                $respuesta="---resp>NOOK<---";
+            }
         }
     }
     
