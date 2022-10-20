@@ -842,8 +842,6 @@ while True:
     printLog("true")
 
     imagePaths = list(paths.list_images(path_imgs))
-    printLog("imagePaths:" + imagePaths)
-
     for (i, imagePath) in enumerate(imagePaths):
         puntuacion=0
 

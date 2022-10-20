@@ -62,7 +62,7 @@ switch($server){
         define('PREFIJO_TABLAS', '');
         
         
-        define('RUTA_PROYECTO', "/var/www/html/reconocimientoFacialV2/");
+        define('RUTA_PROYECTO', "/var/www/html/reconocimientofacialV2/");
         define("RUTA_PHP","php");
         define("RUTA_PYTHON","python3.7");
         
