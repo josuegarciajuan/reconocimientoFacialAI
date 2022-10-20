@@ -184,7 +184,7 @@ if(isset($_GET["info"]) and $_GET["info"]=="checkearPosicionCara"){
         
         $terminado=false;
         $fichero_respuesta=$res_dir."/".$_SESSION["local_id"].".txt";
-        /*
+        
         while(!$terminado){
             if(file_exists($fichero_respuesta)){
                 $respuesta= file_get_contents($fichero_respuesta);
@@ -195,8 +195,6 @@ if(isset($_GET["info"]) and $_GET["info"]=="checkearPosicionCara"){
                 sleep(1);
             }
         }
-         * 
-         */
         //echo "---resp>82<---";
         echo "---resp>".$respuesta."<---";
         
@@ -257,7 +255,7 @@ if(isset($_GET["info"]) and $_GET["info"]=="checkearPosicionCara2"){
     $terminado=false;
     $fichero_respuesta=$res_dir."/".$_SESSION["local_id"].".txt";
     
-    /*
+    
     while(!$terminado){
         if(file_exists($fichero_respuesta)){
             $respuesta= file_get_contents($fichero_respuesta);
@@ -268,7 +266,7 @@ if(isset($_GET["info"]) and $_GET["info"]=="checkearPosicionCara2"){
             sleep(1);
         }
     }
-     */
+    
     //echo "---resp>82<---";
     echo "---resp>".$respuesta."<---";
         
