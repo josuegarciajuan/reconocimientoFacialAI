@@ -878,16 +878,9 @@ while True:
         printLog("posicion:"+posicion)
 
 
-        sigue=False
+        
         try:
             puntuacion=es_posicion_cara(imagePath,int(posicion))
-            sigue=True
-            break
-        except RuntimeError:
-            print("Oops!  se cometio runtime error")
-
-
-        if sigue:
             printLog("")        
             printLog("PUNTUACION:"+str(puntuacion))
 
@@ -899,6 +892,11 @@ while True:
             f= open(fileresultado,"w+")
             f.write(str(puntuacion))
             f.close()
+        
+
+            break
+        except RuntimeError:
+            print("Oops!  se cometio runtime error")
 
 
     t.sleep(1)
