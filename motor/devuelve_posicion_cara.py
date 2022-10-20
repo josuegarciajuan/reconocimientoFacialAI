@@ -53,7 +53,7 @@ def es_posicion_cara(imagePath,posicion):
     input = io.imread(imagePath)
     preds = fa.get_landmarks(input)
 
-    
+    puntuacion=0
     if preds is not None:
 
         printLog("Tiene caras1")
@@ -61,7 +61,7 @@ def es_posicion_cara(imagePath,posicion):
         for (x) in preds:
 
 
-            puntuacion=0
+            
             printLog("0:(parte izquierda cara)"+"->"+str(x[0][0])+"/"+str(x[0][1]))
             printLog("16:(parte derecha cara)"+"->"+str(x[16][0])+"/"+str(x[16][1]))
             printLog("7:(barbilla1)"+"->"+str(x[7][0])+"/"+str(x[7][1]))
