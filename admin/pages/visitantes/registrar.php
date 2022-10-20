@@ -350,9 +350,9 @@
         if(subidor_caras){
             contadorCaras++;
             console.log(contadorCaras);
-            if(contadorCaras==2){
+            if(contadorCaras==1){
                 //alert("Voy a allamar a checkearPosicionCara");
-                console.log("aki se usa esta cabeza, antes de llamar a checar posicion cara" + cabeza)
+                console.log("aki se usa esta cabeza, antes de llamar a checar posicion cara:" + cabeza)
                 checkearPosicionCara(cabeza);
                 //alert("llamado y analizado checkearPosicionCara!")
                 contadorCaras=0;
