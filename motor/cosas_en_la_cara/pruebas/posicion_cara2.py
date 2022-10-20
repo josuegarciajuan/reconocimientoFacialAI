@@ -1044,6 +1044,37 @@ def pinta24(imagePath,frame):
     return frame
 
 
+
+def pinta25_mas(imagePath,frame):
+
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    fontScale = 0.4
+    color = (0, 0, 255) #BGR
+    thickness = 1
+
+    frame = cv2.putText(frame, str(0), (342,253), font, fontScale, color, thickness, cv2.LINE_AA)
+    frame = cv2.putText(frame, str(16), (662,292), font, fontScale, color, thickness, cv2.LINE_AA)
+    frame = cv2.putText(frame, str(7), (488,525), font, fontScale, color, thickness, cv2.LINE_AA)
+    frame = cv2.putText(frame, str(8), (502,535), font, fontScale, color, thickness, cv2.LINE_AA)
+    frame = cv2.putText(frame, str(9), (575,525), font, fontScale, color, thickness, cv2.LINE_AA)
+    frame = cv2.putText(frame, str(27), (478,389), font, fontScale, color, thickness, cv2.LINE_AA)
+    frame = cv2.putText(frame, str(33), (502,486), font, fontScale, color, thickness, cv2.LINE_AA)
+    frame = cv2.putText(frame, str(31), (483,482), font, fontScale, color, thickness, cv2.LINE_AA)
+    frame = cv2.putText(frame, str(35), (527,477), font, fontScale, color, thickness, cv2.LINE_AA)
+    frame = cv2.putText(frame, str(36), (391,380), font, fontScale, color, thickness, cv2.LINE_AA)
+    frame = cv2.putText(frame, str(39), (444,375), font, fontScale, color, thickness, cv2.LINE_AA)
+    frame = cv2.putText(frame, str(45), (585,351), font, fontScale, color, thickness, cv2.LINE_AA)
+    frame = cv2.putText(frame, str(42), (527,360), font, fontScale, color, thickness, cv2.LINE_AA)
+    frame = cv2.putText(frame, str(48), (488,491), font, fontScale, color, thickness, cv2.LINE_AA)
+    frame = cv2.putText(frame, str(54), (565,501), font, fontScale, color, thickness, cv2.LINE_AA)
+    frame = cv2.putText(frame, str(51), (507,511), font, fontScale, color, thickness, cv2.LINE_AA)
+    frame = cv2.putText(frame, str(57), (512,525), font, fontScale, color, thickness, cv2.LINE_AA)
+    frame = cv2.putText(frame, str(30), (483,482), font, fontScale, color, thickness, cv2.LINE_AA)
+    return frame
+
+
+
+
 def es_posicion_cara(imagePath,posicion):
     
 
@@ -1843,6 +1874,9 @@ while i <= 7:
     i=i+1
 """
 
+
+
+"""
 path_imgs='/home/camaras/Descargas/caretos/a_frente/'
 imagePaths = list(paths.list_images(path_imgs))
 printLog("00000000000000000000000000000000000000000000000000000")
@@ -1996,9 +2030,23 @@ for (i, imagePath) in enumerate(imagePaths):
     printLog("")
     printLog("")
     printLog("")
+"""
 
 
 
+printLog("pinta25_mas_1")
+imagePath="/var/www/html/reconocimientoFacial/proyecto_definitivo/admin/files/videos_registro_pruebas/4.jpg"
+printLog("pinta25_mas_2")
+frame17_ = cv2.imread(imagePath)
+printLog("pinta25_mas_3")
+frame17_ = pinta25_mas(imagePath,frame17_)
+printLog("pinta25_mas_4")
+# frame17_=modoNativo(imagePath,frame17_)
+cv2.imshow('Test25_', frame17_)
+printLog("pinta25_mas_5")
+
+cv2.waitKey()
+cv2.destroyAllWindows()
 """
 
 # josue puntos en la cara

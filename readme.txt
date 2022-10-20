@@ -19,7 +19,6 @@ MYSQL: Prueba123!
 
 
 
-
 46.249.32.179
 sshpass -p 'Prueba123!' ssh root@217.61.112.100
 
