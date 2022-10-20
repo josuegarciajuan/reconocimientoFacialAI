@@ -290,8 +290,8 @@ if(isset($_GET["info"]) and $_GET["info"]=="checkearPosicionCara2"){
             sleep(1);
             $e++;
             if($e>$espera){
-                $terminado=true;
-                $respuesta="---resp>NOOK<---";
+                //$terminado=true;
+                //$respuesta="---resp>NOOK<---";
             }
         }
     }
