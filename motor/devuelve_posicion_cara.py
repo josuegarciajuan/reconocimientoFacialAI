@@ -342,7 +342,7 @@ def es_posicion_cara(imagePath,posicion):
                         printLog(".............SUPERO prueba 9")
                     printLog("")
 
-                    if distancia_entrepuntos(10,x[33][0],x[33][1],x[35][0],x[35][1],12):
+                    if distancia_entrepuntos(10,x[33][0],x[33][1],x[35][0],x[35][1],10):
                         puntuacion=puntuacion+sumatorio
                         printLog(".............SUPERO prueba 10")
                     printLog("")
@@ -464,7 +464,7 @@ def es_posicion_cara(imagePath,posicion):
                         printLog(".............SUPERO prueba 9")
                     printLog("")
 
-                    if distancia_entrepuntos(10,x[33][0],x[33][1],x[35][0],x[35][1],12):
+                    if distancia_entrepuntos(10,x[33][0],x[33][1],x[35][0],x[35][1],10):
                         puntuacion=puntuacion+sumatorio
                         printLog(".............SUPERO prueba 10")
                     printLog("")
@@ -855,6 +855,9 @@ path_imgs=path+"/"
 printLog("path:" + path)
 printLog("path_imgs:" + path_imgs)
 
+
+count_img=1
+
 while True:
     
     printLog("true")
@@ -883,7 +886,11 @@ while True:
         try:
             puntuacion=es_posicion_cara(imagePath,int(posicion))
             printLog("")        
-            printLog("PUNTUACION:"+str(puntuacion))
+            printLog("PUNTUACION("+count_img+"):"+str(puntuacion))
+
+            if DEBUG=="1":
+                os.rename(imagePath,path+"_pruebas/"+count_img+".jpg")
+                count_img=count_img+1
 
             os.remove(imagePath)
             os.remove(fileposicion)
@@ -893,8 +900,7 @@ while True:
             f= open(fileresultado,"w+")
             f.write(str(puntuacion))
             f.close()
-        
-
+            
             break
         except RuntimeError:
             print("Oops!  se cometio runtime error")
