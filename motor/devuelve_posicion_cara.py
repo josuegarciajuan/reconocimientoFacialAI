@@ -878,8 +878,8 @@ while True:
                 printLog("PUNTUACION("+str(count_img)+"):"+str(puntuacion))
 
                 if DEBUG=="1":
-                    os.rename(imagePath,path+"_pruebas/"+str(count_img)+".jpg")
-                    count_img=count_img+1
+                    # os.rename(imagePath,path+"_pruebas/"+str(count_img)+".jpg")
+                    # count_img=count_img+1
 
                 os.remove(imagePath)
                 os.remove(fileposicion)
@@ -890,6 +890,8 @@ while True:
                 f.write(str(puntuacion))
                 f.close()
                 
+                printLog("Fichero resultados->"+fileresultado+"<- escrito:"+str(puntuacion))        
+
                 break
             except RuntimeError:
                 printLog("Oops!  se cometio runtime error")
