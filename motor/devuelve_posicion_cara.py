@@ -877,7 +877,7 @@ while True:
                 printLog("")        
                 printLog("PUNTUACION("+str(count_img)+"):"+str(puntuacion))
 
-                if DEBUG=="1":
+                # if DEBUG=="1":
                     # os.rename(imagePath,path+"_pruebas/"+str(count_img)+".jpg")
                     # count_img=count_img+1
 
