@@ -87,13 +87,36 @@ if(isset($_GET["info"]) and $_GET["info"]=="subir_video"){
     
     if(move_uploaded_file($tmp_name, "$uploads_dir/$name.avi")){
         echo "Subido correctamente";
-        exec(RUTA_PROYECTO."procesa_video_registro.php ".$_SESSION["local_id"]);
+        //exec(RUTA_PROYECTO."procesa_video_registro.php ".$_SESSION["local_id"]);
 
     }else{
         echo "NO subido";
     }
     exit;
 }
+
+if(isset($_GET["info"]) and $_GET["info"]=="subir_video2"){
+    //$video=$_FILES["video"];
+    $uploads_dir="files/videos_registro_videos";
+    $name = $_GET["nombre"];
+    
+
+    $test=file_get_contents('php://input');
+    //file_put_contents($uploads_dir."/pruebas.png", $test);
+    file_put_contents($uploads_dir."/".$name.".avi", $test);
+
+    echo "Subido a:".$uploads_dir."/".$name.".avi"."<br />";
+
+    $cmd=RUTA_PROYECTO."procesa_video_registro.php ".$_SESSION["local_id"];
+    
+    echo "-->".$cmd."<--<br />";
+    //exec($cmd);
+    
+    
+    exit;
+}
+
+
 
 
 

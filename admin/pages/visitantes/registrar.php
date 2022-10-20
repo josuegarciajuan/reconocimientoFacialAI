@@ -64,6 +64,9 @@
 
 
 <script>
+    
+    var subir_video=false;
+    
     const webCamContainer = document.getElementById("web-cam-container");
     
     let chunks = [];
@@ -263,17 +266,27 @@
                                 await sleep(2000);
                             }
 */                            
-                            subidor_caras=false;
                             
-                            var fd = new FormData();
-                            fd.append("video",blob);
-                            //fd.append("video2",recordedMediaURL);
-                            var request = new XMLHttpRequest();
-                            request.open("POST", "<?= URL_PROGRAMA_SERVER ?>admin/index.php?page=visitantes&mode=registrar&info=subir_video&nombre=" + document.getElementById("nombre").value);
-                            request.send(fd);
+                            
+                            
+                            if(subir_video){
+                                
+                                
+                                alert("Voy a subir video");
+                                subidor_caras=false;
+                                
+                                var fd = new FormData();
+                                fd.append("video",blob);
+                                //fd.append("video2",recordedMediaURL);
+                                var request = new XMLHttpRequest();
+                                request.open("POST", "<?= URL_PROGRAMA_SERVER ?>admin/index.php?page=visitantes&mode=registrar&info=subir_video2&nombre=" + encodeURIComponent(document.getElementById("nombre").value));
+                                request.send(fd);
 
-                            //aki habria que hacer overlay que se muestre como procesando asta que que consultas ajax recibir respuesta 
-                            //del procesardor del video que es: procesa_video_registro.php
+                                alert("Supuestamente subido");
+                                //aki habria que hacer overlay que se muestre como procesando asta que que consultas ajax recibir respuesta 
+                                //del procesardor del video que es: procesa_video_registro.php                                
+                            }
+
                     };
 
 
@@ -480,7 +493,8 @@
                     //await sleep(2000);
                     cabezon(cabeza);
                 }else{
-                    alert("Voy a parar");
+                    //alert("Voy a parar");
+                    subir_video=true;
                     stopRecording();
                 }
             //}else if(resp>=60 && resp<80){
