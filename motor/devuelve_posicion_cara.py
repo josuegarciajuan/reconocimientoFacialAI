@@ -43,597 +43,609 @@ printLog("paso0")
 def es_posicion_cara(imagePath,posicion):
     
 
-    printLog("-------------Analizando en posicon_cara-------------")
-
-    input = io.imread(imagePath)
-    preds = fa.get_landmarks(input)
-
 
     definitivo=0
-    if preds is not None:
 
-        printLog("Tiene caras1")
+    test = plt.imread(imagePath)
+    test = imutils.resize(test, width=500)
+    gray = cv2.cvtColor(test, cv2.COLOR_BGR2GRAY)
+    rects = detector(test, 1)
+    detecto_cara=False
 
-        for (x) in preds:
+    for (i, rect) in enumerate(rects):
 
+        printLog("hay alguna cara")
 
-            puntuacion=0
-            printLog("0:(parte izquierda cara)"+"->"+str(x[0][0])+"/"+str(x[0][1]))
-            printLog("16:(parte derecha cara)"+"->"+str(x[16][0])+"/"+str(x[16][1]))
-            printLog("7:(barbilla1)"+"->"+str(x[7][0])+"/"+str(x[7][1]))
-            printLog("8:(barbilla2)"+"->"+str(x[8][0])+"/"+str(x[8][1]))
-            printLog("9:(barbilla3)"+"->"+str(x[9][0])+"/"+str(x[9][1]))
-            printLog("27:(entrecejo)"+"->"+str(x[27][0])+"/"+str(x[27][1]))
-            printLog("30:(toxa punta)"+"->"+str(x[30][0])+"/"+str(x[30][1]))
-            printLog("33:(toxa abajo)"+"->"+str(x[33][0])+"/"+str(x[33][1]))
-            printLog("31:(izq toxa)"+"->"+str(x[31][0])+"/"+str(x[31][1]))
-            printLog("35:(der toxa)"+"->"+str(x[35][0])+"/"+str(x[35][1]))
-            printLog("36:(ojo izq fuera)"+"->"+str(x[36][0])+"/"+str(x[36][1]))
-            printLog("39:(ojo izq dentro)"+"->"+str(x[39][0])+"/"+str(x[39][1]))
-            printLog("45:(ojo der fuera)"+"->"+str(x[45][0])+"/"+str(x[45][1]))
-            printLog("42:(ojo der dentro)"+"->"+str(x[42][0])+"/"+str(x[42][1]))
-            printLog("48:(boca izq)"+"->"+str(x[48][0])+"/"+str(x[48][1]))
-            printLog("54:(boca der)"+"->"+str(x[54][0])+"/"+str(x[54][1]))
-            printLog("51:(boca arriba)"+"->"+str(x[51][0])+"/"+str(x[51][1]))
-            printLog("57:(boca abajo)"+"->"+str(x[57][0])+"/"+str(x[57][1]))
+        printLog("-------------Analizando en posicon_cara-------------")
 
+        input = io.imread(imagePath)
+        preds = fa.get_landmarks(input)
 
+        
+        if preds is not None:
 
+            printLog("Tiene caras1")
 
-            oreja_izq_X=x[0][0]
-            oreja_izq_Y=x[0][1]
+            for (x) in preds:
 
-            oreja_der_X=x[16][0]
-            oreja_der_Y=x[16][1]
 
-            barbila_izq_X=x[7][0]
-            barbila_izq_Y=x[7][1]
+                puntuacion=0
+                printLog("0:(parte izquierda cara)"+"->"+str(x[0][0])+"/"+str(x[0][1]))
+                printLog("16:(parte derecha cara)"+"->"+str(x[16][0])+"/"+str(x[16][1]))
+                printLog("7:(barbilla1)"+"->"+str(x[7][0])+"/"+str(x[7][1]))
+                printLog("8:(barbilla2)"+"->"+str(x[8][0])+"/"+str(x[8][1]))
+                printLog("9:(barbilla3)"+"->"+str(x[9][0])+"/"+str(x[9][1]))
+                printLog("27:(entrecejo)"+"->"+str(x[27][0])+"/"+str(x[27][1]))
+                printLog("30:(toxa punta)"+"->"+str(x[30][0])+"/"+str(x[30][1]))
+                printLog("33:(toxa abajo)"+"->"+str(x[33][0])+"/"+str(x[33][1]))
+                printLog("31:(izq toxa)"+"->"+str(x[31][0])+"/"+str(x[31][1]))
+                printLog("35:(der toxa)"+"->"+str(x[35][0])+"/"+str(x[35][1]))
+                printLog("36:(ojo izq fuera)"+"->"+str(x[36][0])+"/"+str(x[36][1]))
+                printLog("39:(ojo izq dentro)"+"->"+str(x[39][0])+"/"+str(x[39][1]))
+                printLog("45:(ojo der fuera)"+"->"+str(x[45][0])+"/"+str(x[45][1]))
+                printLog("42:(ojo der dentro)"+"->"+str(x[42][0])+"/"+str(x[42][1]))
+                printLog("48:(boca izq)"+"->"+str(x[48][0])+"/"+str(x[48][1]))
+                printLog("54:(boca der)"+"->"+str(x[54][0])+"/"+str(x[54][1]))
+                printLog("51:(boca arriba)"+"->"+str(x[51][0])+"/"+str(x[51][1]))
+                printLog("57:(boca abajo)"+"->"+str(x[57][0])+"/"+str(x[57][1]))
 
-            barbilla_centro_X=x[8][0]
-            barbilla_centro_Y=x[8][1]
 
-            barbilla_der_X=x[9][0]
-            barbilla_der_Y=x[9][1]
 
-            entrecejo_X=x[27][0]
-            entrecejo_Y=x[27][1]
 
-            nariz_bottom_X=x[33][0]
-            nariz_bottom_Y=x[33][1]
+                oreja_izq_X=x[0][0]
+                oreja_izq_Y=x[0][1]
 
-            nariz_izq_X=x[31][0]
-            nariz_izq_Y=x[31][1]
+                oreja_der_X=x[16][0]
+                oreja_der_Y=x[16][1]
 
-            nariz_der_X=x[35][0]
-            nariz_der_Y=x[35][1]
+                barbila_izq_X=x[7][0]
+                barbila_izq_Y=x[7][1]
 
-            nariz_centro_X=x[30][0]
-            nariz_centro_Y=x[30][1]
+                barbilla_centro_X=x[8][0]
+                barbilla_centro_Y=x[8][1]
 
-            ojoext_izq_X=x[36][0]
-            ojoext_izq_Y=x[36][1]
+                barbilla_der_X=x[9][0]
+                barbilla_der_Y=x[9][1]
 
+                entrecejo_X=x[27][0]
+                entrecejo_Y=x[27][1]
 
-            lacrimal_izq_X=x[39][0]
-            lacrimal_izq_Y=x[39][1]
+                nariz_bottom_X=x[33][0]
+                nariz_bottom_Y=x[33][1]
 
-            ojoext_der_X=x[45][0]
-            ojoext_der_Y=x[45][1]
+                nariz_izq_X=x[31][0]
+                nariz_izq_Y=x[31][1]
 
-            lacrimal_der_X=x[42][0]
-            lacrimal_der_Y=x[42][1]
+                nariz_der_X=x[35][0]
+                nariz_der_Y=x[35][1]
 
-            boca_izq_X=x[48][0]
-            boca_izq_Y=x[48][1]
+                nariz_centro_X=x[30][0]
+                nariz_centro_Y=x[30][1]
 
-            boca_der_X=x[54][0]
-            boca_der_Y=x[54][1]
+                ojoext_izq_X=x[36][0]
+                ojoext_izq_Y=x[36][1]
 
-            boca_top_X=x[51][0]
-            boca_top_Y=x[51][1]
 
-            boca_bot_X=x[57][0]
-            boca_bot_Y=x[57][1]
+                lacrimal_izq_X=x[39][0]
+                lacrimal_izq_Y=x[39][1]
 
-            
+                ojoext_der_X=x[45][0]
+                ojoext_der_Y=x[45][1]
 
+                lacrimal_der_X=x[42][0]
+                lacrimal_der_Y=x[42][1]
 
+                boca_izq_X=x[48][0]
+                boca_izq_Y=x[48][1]
 
-            
-            if posicion == 1: #de frente
-                num_puebas=12
-                sumatorio=100/num_puebas
+                boca_der_X=x[54][0]
+                boca_der_Y=x[54][1]
 
-                if alineados(1,"V",x[27][0],x[27][1],x[33][0],x[33][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 1")
-                printLog("")
+                boca_top_X=x[51][0]
+                boca_top_Y=x[51][1]
 
-                if alineados(2,"V",x[57][0],x[57][1],x[8][0],x[8][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 2")
-                printLog("")
-
-                if alineados(3,"H",x[36][0],x[36][1],x[45][0],x[45][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 3")
-                printLog("")
-
-                """
-                if alineados(4,"H",x[36][0],x[36][1],x[39][0],x[39][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 4")
-                printLog("")
-                """
-
-                if alineados(5,"H",x[0][0],x[0][1],x[16][0],x[16][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 5")
-                printLog("")
-
-                if alineados(6,"H",x[48][0],x[48][1],x[54][0],x[54][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 6")
-                printLog("")
-
-                if enmedio(7,"H",x[27][0],x[27][1],x[36][0],x[36][1],x[45][0],x[45][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 7")
-                printLog("")
-
-                if enmedio(8,"H",x[27][0],x[27][1],x[0][0],x[0][1],x[16][0],x[16][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 8")
-                printLog("")
-
-                if enmedio(9,"H",x[33][0],x[33][1],x[0][0],x[0][1],x[16][0],x[16][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 9")
-                printLog("")
-
-                if distancias_similares(10,"H",x[0][0],x[0][1],x[36][0],x[36][1],x[45][0],x[45][1],x[16][0],x[16][1],12):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 10")
-                printLog("")
-
-                if posicionado(11,"B",x[8][0],x[8][1],x[7][0],x[7][1]): 
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 11")
-                printLog("")
-
-                """
-                if posicionado(12,"B",x[8][0],x[8][1],x[9][0],x[9][1]): 
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 12")
-                printLog("")
-                """
-            
-                if alineados(13,"H",x[0][0],x[0][1],x[36][0],x[36][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 13")
-                printLog("")
-
-                if alineados(14,"H",x[45][0],x[45][1],x[16][0],x[16][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 14")
-                printLog("")
-
-            elif posicion == 2: #derecha 45
-                num_puebas=11
-                sumatorio=100/num_puebas
-
-                if alineados(1,"V",x[27][0],x[27][1],x[33][0],x[33][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 1")
-                printLog("")
-
-                if alineados(2,"H",x[36][0],x[36][1],x[45][0],x[45][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 2")
-                printLog("")
-
-                if posicionado(3,"L",x[30][0],x[30][1],x[16][0],x[16][1]): 
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 3")
-                printLog("")
-
-                if posicionado(4,"B",x[8][0],x[8][1],x[7][0],x[7][1]): 
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 4")
-                printLog("")
-
-                if posicionado(5,"B",x[8][0],x[8][1],x[9][0],x[9][1]): 
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 5")
-                printLog("")
-
-                if distacia_superior(6,"H",x[0][0],x[0][1],x[36][0],x[36][1],x[45][0],x[45][1],x[16][0],x[16][1],3):
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 6")
-                printLog("")
-
-                if distacia_superior(7,"H",x[36][0],x[36][1],x[39][0],x[39][1],x[42][0],x[42][1],x[45][0],x[45][1],1.5):
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 7")
-                printLog("")
-
-                if distacia_superior(8,"H",x[31][0],x[31][1],x[30][0],x[30][1],x[30][0],x[30][1],x[35][0],x[35][1],1.2):
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 8")
-                printLog("")
-
-                if distacia_superior(9,"H",x[48][0],x[48][1],x[51][0],x[51][1],x[51][0],x[51][1],x[54][0],x[54][1],1.2):
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 9")
-                printLog("")
-
-                if distacia_superior(10,"H",x[7][0],x[7][1],x[8][0],x[8][1],x[8][0],x[8][1],x[9][0],x[9][1],1.2):
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 10")
-                printLog("")
-
-                if distacia_superior(11,"H",x[0][0],x[0][1],x[48][0],x[48][1],x[54][0],x[54][1],x[16][0],x[16][1],2):
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 11")
-                printLog("")
-
-
-            
-            elif posicion == 3: #derecha 90
-
-                num_puebas=11
-                sumatorio=100/num_puebas
-
-                if posicionado(1,"R",x[30][0],x[30][1],x[16][0],x[16][1]):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 1")
-                printLog("")
-
-                if distacia_superior(2,"H",x[0][0],x[0][1],x[36][0],x[36][1],x[45][0],x[45][1],x[16][0],x[16][1],4):
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 2")
-                printLog("")
-
-                if alineados(3,"V",x[27][0],x[27][1],x[33][0],x[33][1],12):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 3")
-                printLog("")
-
-                if alineados(4,"V",x[36][0],x[36][1],x[48][0],x[48][1],15):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 4")
-                printLog("")
-
-                if posicionado(5,"B",x[8][0],x[8][1],x[7][0],x[7][1]): 
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 5")
-                printLog("")
-
-                if posicionado(6,"B",x[8][0],x[8][1],x[9][0],x[9][1]): 
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 6")
-                printLog("")
-
-                if posicionado(7,"L",x[16][0],x[16][1],x[27][0],x[27][1]): 
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 7")
-                printLog("")
-
-                if posicionado(8,"L",x[54][0],x[54][1],x[51][0],x[51][1]): 
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 8")
-                printLog("")
-
-                if distacia_superior(9,"H",x[36][0],x[36][1],x[39][0],x[39][1],x[42][0],x[42][1],x[45][0],x[45][1],1.5):
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 9")
-                printLog("")
-
-                if distancia_entrepuntos(10,x[33][0],x[33][1],x[35][0],x[35][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 10")
-                printLog("")
-
-                if posicionado(11,"R",x[57][0],x[57][1],x[8][0],x[8][1]): 
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 11")
-                printLog("")
-
-
-
-            elif posicion == 4: #izquierda 45
-
-                num_puebas=11
-                sumatorio=100/num_puebas
-
-                if alineados(1,"V",x[27][0],x[27][1],x[33][0],x[33][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 1")
-                printLog("")
-
-                if alineados(2,"H",x[36][0],x[36][1],x[45][0],x[45][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 2")
-                printLog("")
-
-                if posicionado(3,"R",x[30][0],x[30][1],x[0][0],x[0][1]): 
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 3")
-                printLog("")
-
-                if posicionado(4,"B",x[8][0],x[8][1],x[7][0],x[7][1]): 
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 4")
-                printLog("")
-
-                if posicionado(5,"B",x[8][0],x[8][1],x[9][0],x[9][1]): 
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 5")
-                printLog("")
-
-                if distacia_superior(6,"H",x[45][0],x[45][1],x[16][0],x[16][1],x[0][0],x[0][1],x[36][0],x[36][1],3):
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 6")
-                printLog("")
-
-                if distacia_superior(7,"H",x[42][0],x[42][1],x[45][0],x[45][1],x[36][0],x[36][1],x[39][0],x[39][1],1.5):
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 7")
-                printLog("")
-
-                if distacia_superior(8,"H",x[30][0],x[30][1],x[35][0],x[35][1],x[31][0],x[31][1],x[30][0],x[30][1],1.2):
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 8")
-                printLog("")
-
-                if distacia_superior(9,"H",x[51][0],x[51][1],x[54][0],x[54][1],x[48][0],x[48][1],x[51][0],x[51][1],1.2):
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 9")
-                printLog("")
-
-                if distacia_superior(10,"H",x[8][0],x[8][1],x[9][0],x[9][1],x[7][0],x[7][1],x[8][0],x[8][1],1.2):
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 10")
-                printLog("")
-
-                if distacia_superior(11,"H",x[54][0],x[54][1],x[16][0],x[16][1],x[0][0],x[0][1],x[48][0],x[48][1],2):
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 11")
-                printLog("")
-
-
-            elif posicion == 5: #izquierda 90
-                num_puebas=11
-                sumatorio=100/num_puebas
-
-                if posicionado(1,"L",x[30][0],x[30][1],x[0][0],x[0][1]):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 1")
-                printLog("")
-
-                if distacia_superior(2,"H",x[45][0],x[45][1],x[16][0],x[16][1],x[0][0],x[0][1],x[36][0],x[36][1],4):
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 2")
-                printLog("")
-
-                if alineados(3,"V",x[27][0],x[27][1],x[33][0],x[33][1],12):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 3")
-                printLog("")
-
-                if alineados(4,"V",x[45][0],x[45][1],x[54][0],x[54][1],15):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 4")
-                printLog("")
-
-                if posicionado(5,"B",x[8][0],x[8][1],x[7][0],x[7][1]): 
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 5")
-                printLog("")
-
-                if posicionado(6,"B",x[8][0],x[8][1],x[9][0],x[9][1]): 
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 6")
-                printLog("")
- 
-                if posicionado(7,"R",x[0][0],x[0][1],x[27][0],x[27][1]): 
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 7")
-                printLog("")
-
-                if posicionado(8,"R",x[48][0],x[48][1],x[51][0],x[51][1]): 
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 8")
-                printLog("")
-
-                if distacia_superior(9,"H",x[42][0],x[42][1],x[45][0],x[45][1],x[36][0],x[36][1],x[39][0],x[39][1],1.5):
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 9")
-                printLog("")
-
-                if distancia_entrepuntos(10,x[33][0],x[33][1],x[35][0],x[35][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 10")
-                printLog("")
-
-                if posicionado(11,"L",x[57][0],x[57][1],x[8][0],x[8][1]): 
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 11")
-                printLog("")
-
-
-            elif posicion == 6: #arriba
-                num_puebas=12
-                sumatorio=100/num_puebas
-
-                """
-                if posicionado(1,"T",x[8][0],x[8][1],x[7][0],x[7][1]): 
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 1")
-                printLog("")
-
-                if posicionado(2,"T",x[8][0],x[8][1],x[9][0],x[9][1]): 
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 2")
-                printLog("")
-
-                if posicionado(3,"T",x[57][0],x[57][1],x[48][0],x[48][1]): 
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 3")
-                printLog("")
-
-                if posicionado(4,"T",x[57][0],x[57][1],x[54][0],x[54][1]): 
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 4")
-                printLog("")
-                """
-
-                if alineados(5,"V",x[57][0],x[57][1],x[8][0],x[8][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 5")
-                printLog("")
-
-                if alineados(6,"H",x[36][0],x[36][1],x[45][0],x[45][1],10): 
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 6")
-                printLog("")
-
-                if alineados(7,"H",x[0][0],x[0][1],x[16][0],x[16][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 7")
-                printLog("")
-
-                if posicionado(8,"T",x[27][0],x[27][1],x[39][0],x[39][1]): 
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 8")
-                printLog("")
-
-                if posicionado(9,"T",x[27][0],x[27][1],x[42][0],x[42][1]): 
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 9")
-                printLog("")
-
-                """
-                if posicionado(10,"T",x[30][0],x[30][1],x[39][0],x[39][1]): 
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 10")
-                printLog("")
-
-                if posicionado(11,"T",x[30][0],x[30][1],x[42][0],x[42][1]): 
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 11")
-                printLog("")
+                boca_bot_X=x[57][0]
+                boca_bot_Y=x[57][1]
+
                 
-                if alineados(12,"H",x[0][0],x[0][1],x[48][0],x[48][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 12")
-                printLog("")
-
-                if alineados(13,"H",x[16][0],x[16][1],x[54][0],x[54][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 13")
-                printLog("")
-                """
-
-                if enmedio(14,"H",x[57][0],x[57][1],x[0][0],x[0][1],x[16][0],x[16][1],10): 
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 14")
-                printLog("")
-
-                if posicionado(15,"T",x[30][0],x[30][1],x[0][0],x[0][1],15): 
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 15")
-                printLog("")
-
-                if posicionado(16,"T",x[30][0],x[30][1],x[16][0],x[16][1],15): 
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 16")
-                printLog("")
-
-                if posicionado(17,"T",x[27][0],x[27][1],x[39][0],x[39][1]): 
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 17")
-                printLog("")
-
-                if posicionado(18,"T",x[27][0],x[27][1],x[42][0],x[42][1]): 
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 18")
-                printLog("")
-
-                if posicionado(19,"B",x[0][0],x[0][1],x[36][0],x[36][1]): 
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 19")
-                printLog("")
-
-                if posicionado(20,"B",x[16][0],x[16][1],x[45][0],x[45][1]): 
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 20")
-                printLog("")
 
 
-            elif posicion == 7: #abajo
-                num_puebas=11
-                sumatorio=100/num_puebas
 
-                if posicionado(1,"B",x[8][0],x[8][1],x[7][0],x[7][1]): 
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 1")
-                printLog("")
+                
+                if posicion == 1: #de frente
+                    num_puebas=12
+                    sumatorio=100/num_puebas
 
-                if posicionado(2,"B",x[8][0],x[8][1],x[9][0],x[9][1]): 
-                    puntuacion=puntuacion+sumatorio    
-                    printLog(".............SUPERO prueba 2")
-                printLog("")
+                    if alineados(1,"V",x[27][0],x[27][1],x[33][0],x[33][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 1")
+                    printLog("")
 
-                if alineados(3,"H",x[36][0],x[36][1],x[45][0],x[45][1],10): 
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 3")
-                printLog("")
+                    if alineados(2,"V",x[57][0],x[57][1],x[8][0],x[8][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 2")
+                    printLog("")
 
-                if alineados(4,"V",x[57][0],x[57][1],x[8][0],x[8][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 4")
-                printLog("")
+                    if alineados(3,"H",x[36][0],x[36][1],x[45][0],x[45][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 3")
+                    printLog("")
 
-                if posicionado(5,"T",x[0][0],x[0][1],x[36][0],x[36][1],15):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 5")
-                printLog("")
+                    """
+                    if alineados(4,"H",x[36][0],x[36][1],x[39][0],x[39][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 4")
+                    printLog("")
+                    """
 
-                if posicionado(6,"T",x[16][0],x[16][1],x[45][0],x[45][1],15):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 6")
-                printLog("")
+                    if alineados(5,"H",x[0][0],x[0][1],x[16][0],x[16][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 5")
+                    printLog("")
 
-                if alineados(7,"H",x[0][0],x[0][1],x[16][0],x[16][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 7")
-                printLog("")
+                    if alineados(6,"H",x[48][0],x[48][1],x[54][0],x[54][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 6")
+                    printLog("")
 
-                if enmedio(8,"H",x[57][0],x[57][1],x[0][0],x[0][1],x[16][0],x[16][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 8")
-                printLog("")
+                    if enmedio(7,"H",x[27][0],x[27][1],x[36][0],x[36][1],x[45][0],x[45][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 7")
+                    printLog("")
 
-                if distancia_entrepuntos(9,x[30][0],x[30][1],x[33][0],x[33][1],10):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 9")
-                printLog("")
+                    if enmedio(8,"H",x[27][0],x[27][1],x[0][0],x[0][1],x[16][0],x[16][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 8")
+                    printLog("")
 
-                if posicionado(10,"B",x[27][0],x[27][1],x[39][0],x[39][1]):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 10")
-                printLog("")
+                    if enmedio(9,"H",x[33][0],x[33][1],x[0][0],x[0][1],x[16][0],x[16][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 9")
+                    printLog("")
 
-                if posicionado(11,"B",x[27][0],x[27][1],x[42][0],x[42][1]):
-                    puntuacion=puntuacion+sumatorio
-                    printLog(".............SUPERO prueba 11")
-                printLog("")
+                    if distancias_similares(10,"H",x[0][0],x[0][1],x[36][0],x[36][1],x[45][0],x[45][1],x[16][0],x[16][1],12):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 10")
+                    printLog("")
+
+                    if posicionado(11,"B",x[8][0],x[8][1],x[7][0],x[7][1]): 
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 11")
+                    printLog("")
+
+                    """
+                    if posicionado(12,"B",x[8][0],x[8][1],x[9][0],x[9][1]): 
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 12")
+                    printLog("")
+                    """
+                
+                    if alineados(13,"H",x[0][0],x[0][1],x[36][0],x[36][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 13")
+                    printLog("")
+
+                    if alineados(14,"H",x[45][0],x[45][1],x[16][0],x[16][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 14")
+                    printLog("")
+
+                elif posicion == 2: #derecha 45
+                    num_puebas=11
+                    sumatorio=100/num_puebas
+
+                    if alineados(1,"V",x[27][0],x[27][1],x[33][0],x[33][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 1")
+                    printLog("")
+
+                    if alineados(2,"H",x[36][0],x[36][1],x[45][0],x[45][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 2")
+                    printLog("")
+
+                    if posicionado(3,"L",x[30][0],x[30][1],x[16][0],x[16][1]): 
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 3")
+                    printLog("")
+
+                    if posicionado(4,"B",x[8][0],x[8][1],x[7][0],x[7][1]): 
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 4")
+                    printLog("")
+
+                    if posicionado(5,"B",x[8][0],x[8][1],x[9][0],x[9][1]): 
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 5")
+                    printLog("")
+
+                    if distacia_superior(6,"H",x[0][0],x[0][1],x[36][0],x[36][1],x[45][0],x[45][1],x[16][0],x[16][1],3):
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 6")
+                    printLog("")
+
+                    if distacia_superior(7,"H",x[36][0],x[36][1],x[39][0],x[39][1],x[42][0],x[42][1],x[45][0],x[45][1],1.5):
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 7")
+                    printLog("")
+
+                    if distacia_superior(8,"H",x[31][0],x[31][1],x[30][0],x[30][1],x[30][0],x[30][1],x[35][0],x[35][1],1.2):
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 8")
+                    printLog("")
+
+                    if distacia_superior(9,"H",x[48][0],x[48][1],x[51][0],x[51][1],x[51][0],x[51][1],x[54][0],x[54][1],1.2):
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 9")
+                    printLog("")
+
+                    if distacia_superior(10,"H",x[7][0],x[7][1],x[8][0],x[8][1],x[8][0],x[8][1],x[9][0],x[9][1],1.2):
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 10")
+                    printLog("")
+
+                    if distacia_superior(11,"H",x[0][0],x[0][1],x[48][0],x[48][1],x[54][0],x[54][1],x[16][0],x[16][1],2):
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 11")
+                    printLog("")
 
 
-            else: 
-                printLog("Esto no puede pasar")
-            
+                
+                elif posicion == 3: #derecha 90
+
+                    num_puebas=11
+                    sumatorio=100/num_puebas
+
+                    if posicionado(1,"R",x[30][0],x[30][1],x[16][0],x[16][1]):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 1")
+                    printLog("")
+
+                    if distacia_superior(2,"H",x[0][0],x[0][1],x[36][0],x[36][1],x[45][0],x[45][1],x[16][0],x[16][1],4):
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 2")
+                    printLog("")
+
+                    if alineados(3,"V",x[27][0],x[27][1],x[33][0],x[33][1],12):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 3")
+                    printLog("")
+
+                    if alineados(4,"V",x[36][0],x[36][1],x[48][0],x[48][1],15):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 4")
+                    printLog("")
+
+                    if posicionado(5,"B",x[8][0],x[8][1],x[7][0],x[7][1]): 
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 5")
+                    printLog("")
+
+                    if posicionado(6,"B",x[8][0],x[8][1],x[9][0],x[9][1]): 
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 6")
+                    printLog("")
+
+                    if posicionado(7,"L",x[16][0],x[16][1],x[27][0],x[27][1]): 
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 7")
+                    printLog("")
+
+                    if posicionado(8,"L",x[54][0],x[54][1],x[51][0],x[51][1]): 
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 8")
+                    printLog("")
+
+                    if distacia_superior(9,"H",x[36][0],x[36][1],x[39][0],x[39][1],x[42][0],x[42][1],x[45][0],x[45][1],1.5):
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 9")
+                    printLog("")
+
+                    if distancia_entrepuntos(10,x[33][0],x[33][1],x[35][0],x[35][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 10")
+                    printLog("")
+
+                    if posicionado(11,"R",x[57][0],x[57][1],x[8][0],x[8][1]): 
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 11")
+                    printLog("")
+
+
+
+                elif posicion == 4: #izquierda 45
+
+                    num_puebas=11
+                    sumatorio=100/num_puebas
+
+                    if alineados(1,"V",x[27][0],x[27][1],x[33][0],x[33][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 1")
+                    printLog("")
+
+                    if alineados(2,"H",x[36][0],x[36][1],x[45][0],x[45][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 2")
+                    printLog("")
+
+                    if posicionado(3,"R",x[30][0],x[30][1],x[0][0],x[0][1]): 
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 3")
+                    printLog("")
+
+                    if posicionado(4,"B",x[8][0],x[8][1],x[7][0],x[7][1]): 
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 4")
+                    printLog("")
+
+                    if posicionado(5,"B",x[8][0],x[8][1],x[9][0],x[9][1]): 
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 5")
+                    printLog("")
+
+                    if distacia_superior(6,"H",x[45][0],x[45][1],x[16][0],x[16][1],x[0][0],x[0][1],x[36][0],x[36][1],3):
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 6")
+                    printLog("")
+
+                    if distacia_superior(7,"H",x[42][0],x[42][1],x[45][0],x[45][1],x[36][0],x[36][1],x[39][0],x[39][1],1.5):
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 7")
+                    printLog("")
+
+                    if distacia_superior(8,"H",x[30][0],x[30][1],x[35][0],x[35][1],x[31][0],x[31][1],x[30][0],x[30][1],1.2):
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 8")
+                    printLog("")
+
+                    if distacia_superior(9,"H",x[51][0],x[51][1],x[54][0],x[54][1],x[48][0],x[48][1],x[51][0],x[51][1],1.2):
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 9")
+                    printLog("")
+
+                    if distacia_superior(10,"H",x[8][0],x[8][1],x[9][0],x[9][1],x[7][0],x[7][1],x[8][0],x[8][1],1.2):
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 10")
+                    printLog("")
+
+                    if distacia_superior(11,"H",x[54][0],x[54][1],x[16][0],x[16][1],x[0][0],x[0][1],x[48][0],x[48][1],2):
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 11")
+                    printLog("")
+
+
+                elif posicion == 5: #izquierda 90
+                    num_puebas=11
+                    sumatorio=100/num_puebas
+
+                    if posicionado(1,"L",x[30][0],x[30][1],x[0][0],x[0][1]):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 1")
+                    printLog("")
+
+                    if distacia_superior(2,"H",x[45][0],x[45][1],x[16][0],x[16][1],x[0][0],x[0][1],x[36][0],x[36][1],4):
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 2")
+                    printLog("")
+
+                    if alineados(3,"V",x[27][0],x[27][1],x[33][0],x[33][1],12):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 3")
+                    printLog("")
+
+                    if alineados(4,"V",x[45][0],x[45][1],x[54][0],x[54][1],15):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 4")
+                    printLog("")
+
+                    if posicionado(5,"B",x[8][0],x[8][1],x[7][0],x[7][1]): 
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 5")
+                    printLog("")
+
+                    if posicionado(6,"B",x[8][0],x[8][1],x[9][0],x[9][1]): 
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 6")
+                    printLog("")
+     
+                    if posicionado(7,"R",x[0][0],x[0][1],x[27][0],x[27][1]): 
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 7")
+                    printLog("")
+
+                    if posicionado(8,"R",x[48][0],x[48][1],x[51][0],x[51][1]): 
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 8")
+                    printLog("")
+
+                    if distacia_superior(9,"H",x[42][0],x[42][1],x[45][0],x[45][1],x[36][0],x[36][1],x[39][0],x[39][1],1.5):
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 9")
+                    printLog("")
+
+                    if distancia_entrepuntos(10,x[33][0],x[33][1],x[35][0],x[35][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 10")
+                    printLog("")
+
+                    if posicionado(11,"L",x[57][0],x[57][1],x[8][0],x[8][1]): 
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 11")
+                    printLog("")
+
+
+                elif posicion == 6: #arriba
+                    num_puebas=12
+                    sumatorio=100/num_puebas
+
+                    """
+                    if posicionado(1,"T",x[8][0],x[8][1],x[7][0],x[7][1]): 
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 1")
+                    printLog("")
+
+                    if posicionado(2,"T",x[8][0],x[8][1],x[9][0],x[9][1]): 
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 2")
+                    printLog("")
+
+                    if posicionado(3,"T",x[57][0],x[57][1],x[48][0],x[48][1]): 
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 3")
+                    printLog("")
+
+                    if posicionado(4,"T",x[57][0],x[57][1],x[54][0],x[54][1]): 
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 4")
+                    printLog("")
+                    """
+
+                    if alineados(5,"V",x[57][0],x[57][1],x[8][0],x[8][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 5")
+                    printLog("")
+
+                    if alineados(6,"H",x[36][0],x[36][1],x[45][0],x[45][1],10): 
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 6")
+                    printLog("")
+
+                    if alineados(7,"H",x[0][0],x[0][1],x[16][0],x[16][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 7")
+                    printLog("")
+
+                    if posicionado(8,"T",x[27][0],x[27][1],x[39][0],x[39][1]): 
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 8")
+                    printLog("")
+
+                    if posicionado(9,"T",x[27][0],x[27][1],x[42][0],x[42][1]): 
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 9")
+                    printLog("")
+
+                    """
+                    if posicionado(10,"T",x[30][0],x[30][1],x[39][0],x[39][1]): 
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 10")
+                    printLog("")
+
+                    if posicionado(11,"T",x[30][0],x[30][1],x[42][0],x[42][1]): 
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 11")
+                    printLog("")
+                    
+                    if alineados(12,"H",x[0][0],x[0][1],x[48][0],x[48][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 12")
+                    printLog("")
+
+                    if alineados(13,"H",x[16][0],x[16][1],x[54][0],x[54][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 13")
+                    printLog("")
+                    """
+
+                    if enmedio(14,"H",x[57][0],x[57][1],x[0][0],x[0][1],x[16][0],x[16][1],10): 
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 14")
+                    printLog("")
+
+                    if posicionado(15,"T",x[30][0],x[30][1],x[0][0],x[0][1],15): 
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 15")
+                    printLog("")
+
+                    if posicionado(16,"T",x[30][0],x[30][1],x[16][0],x[16][1],15): 
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 16")
+                    printLog("")
+
+                    if posicionado(17,"T",x[27][0],x[27][1],x[39][0],x[39][1]): 
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 17")
+                    printLog("")
+
+                    if posicionado(18,"T",x[27][0],x[27][1],x[42][0],x[42][1]): 
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 18")
+                    printLog("")
+
+                    if posicionado(19,"B",x[0][0],x[0][1],x[36][0],x[36][1]): 
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 19")
+                    printLog("")
+
+                    if posicionado(20,"B",x[16][0],x[16][1],x[45][0],x[45][1]): 
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 20")
+                    printLog("")
+
+
+                elif posicion == 7: #abajo
+                    num_puebas=11
+                    sumatorio=100/num_puebas
+
+                    if posicionado(1,"B",x[8][0],x[8][1],x[7][0],x[7][1]): 
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 1")
+                    printLog("")
+
+                    if posicionado(2,"B",x[8][0],x[8][1],x[9][0],x[9][1]): 
+                        puntuacion=puntuacion+sumatorio    
+                        printLog(".............SUPERO prueba 2")
+                    printLog("")
+
+                    if alineados(3,"H",x[36][0],x[36][1],x[45][0],x[45][1],10): 
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 3")
+                    printLog("")
+
+                    if alineados(4,"V",x[57][0],x[57][1],x[8][0],x[8][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 4")
+                    printLog("")
+
+                    if posicionado(5,"T",x[0][0],x[0][1],x[36][0],x[36][1],15):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 5")
+                    printLog("")
+
+                    if posicionado(6,"T",x[16][0],x[16][1],x[45][0],x[45][1],15):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 6")
+                    printLog("")
+
+                    if alineados(7,"H",x[0][0],x[0][1],x[16][0],x[16][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 7")
+                    printLog("")
+
+                    if enmedio(8,"H",x[57][0],x[57][1],x[0][0],x[0][1],x[16][0],x[16][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 8")
+                    printLog("")
+
+                    if distancia_entrepuntos(9,x[30][0],x[30][1],x[33][0],x[33][1],10):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 9")
+                    printLog("")
+
+                    if posicionado(10,"B",x[27][0],x[27][1],x[39][0],x[39][1]):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 10")
+                    printLog("")
+
+                    if posicionado(11,"B",x[27][0],x[27][1],x[42][0],x[42][1]):
+                        puntuacion=puntuacion+sumatorio
+                        printLog(".............SUPERO prueba 11")
+                    printLog("")
+
+
+                else: 
+                    printLog("Esto no puede pasar")
+                
         printLog("Voy a reajustar la puntuacion:" + str(puntuacion))    
         printLog("Definitivo esta enb:" + str(definitivo))    
         if puntuacion>definitivo:
