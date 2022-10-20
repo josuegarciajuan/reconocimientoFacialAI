@@ -886,10 +886,10 @@ while True:
         try:
             puntuacion=es_posicion_cara(imagePath,int(posicion))
             printLog("")        
-            printLog("PUNTUACION("+count_img+"):"+str(puntuacion))
+            printLog("PUNTUACION("+str(count_img)+"):"+str(puntuacion))
 
             if DEBUG=="1":
-                os.rename(imagePath,path+"_pruebas/"+count_img+".jpg")
+                os.rename(imagePath,path+"_pruebas/"+str(count_img)+".jpg")
                 count_img=count_img+1
 
             os.remove(imagePath)
