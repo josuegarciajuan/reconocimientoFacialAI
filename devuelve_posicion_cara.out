@@ -1,0 +1,4652 @@
+
+paso0
+path:/var/www/html/reconocimientofacialV2/admin/files/videos_registro
+path_imgs:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:3
+-------------Analizando en posicon_cara-------------
+paso0
+path:/var/www/html/reconocimientofacialV2/admin/files/videos_registro
+path_imgs:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:1
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->146.0/317.0
+16:(parte derecha cara)->441.0/297.0
+7:(barbilla1)->277.0/501.0
+8:(barbilla2)->320.0/506.0
+9:(barbilla3)->369.0/496.0
+27:(entrecejo)->320.0/321.0
+30:(toxa punta)->325.0/394.0
+33:(toxa abajo)->320.0/414.0
+31:(izq toxa)->296.0/404.0
+35:(der toxa)->344.0/404.0
+36:(ojo izq fuera)->228.0/317.0
+39:(ojo izq dentro)->277.0/317.0
+45:(ojo der fuera)->398.0/302.0
+42:(ojo der dentro)->349.0/312.0
+48:(boca izq)->272.0/452.0
+54:(boca der)->369.0/448.0
+51:(boca arriba)->320.0/443.0
+57:(boca abajo)->325.0/462.0
+Numero prueba:1
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 1
+
+Numero prueba:2
+La diferencia es:5.0
+El margen pedido es:10
+.............SUPERO prueba 2
+
+Numero prueba:3
+La diferencia es:15.0
+El margen pedido es:10
+
+Numero prueba:5
+La diferencia es:20.0
+El margen pedido es:10
+
+Numero prueba:6
+La diferencia es:4.0
+El margen pedido es:10
+.............SUPERO prueba 6
+
+Numero prueba:7
+la x1 es:228.0
+la x2 es:398.0
+el centro horizontal esta en:313.0
+la x es:320.0
+La diferencia es:7.0
+El margen pedido es:10
+.............SUPERO prueba 7
+
+Numero prueba:8
+la x1 es:146.0
+la x2 es:441.0
+el centro horizontal esta en:293.5
+la x es:320.0
+La diferencia es:26.5
+El margen pedido es:10
+
+Numero prueba:9
+la x1 es:146.0
+la x2 es:441.0
+el centro horizontal esta en:293.5
+la x es:320.0
+La diferencia es:26.5
+El margen pedido es:10
+
+Numero prueba:10
+La distancia es:0.0
+El margen pedido es:12
+.............SUPERO prueba 10
+
+Numero prueba:11
+prueba de posicionado
+punto 1:320.0/506.0
+punto 2:277.0/501.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 11
+
+Numero prueba:13
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 13
+
+Numero prueba:14
+La diferencia es:5.0
+El margen pedido es:10
+.............SUPERO prueba 14
+
+Voy a reajustar la puntuacion:66.66666666666667
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:66.66666666666667
+Finalmente devuelvo:66.66666666666667
+
+PUNTUACION(1):66.66666666666667
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:66.66666666666667
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:1
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->13.0/438.0
+16:(parte derecha cara)->276.0/342.0
+7:(barbilla1)->131.0/541.0
+8:(barbilla2)->169.0/548.0
+9:(barbilla3)->196.0/487.0
+27:(entrecejo)->101.0/449.0
+30:(toxa punta)->105.0/503.0
+33:(toxa abajo)->120.0/510.0
+31:(izq toxa)->101.0/510.0
+35:(der toxa)->139.0/506.0
+36:(ojo izq fuera)->28.0/441.0
+39:(ojo izq dentro)->70.0/441.0
+45:(ojo der fuera)->196.0/430.0
+42:(ojo der dentro)->147.0/438.0
+48:(boca izq)->97.0/529.0
+54:(boca der)->177.0/537.0
+51:(boca arriba)->124.0/529.0
+57:(boca abajo)->131.0/548.0
+Numero prueba:1
+La diferencia es:19.0
+El margen pedido es:10
+
+Numero prueba:2
+La diferencia es:38.0
+El margen pedido es:10
+
+Numero prueba:3
+La diferencia es:11.0
+El margen pedido es:10
+
+Numero prueba:5
+La diferencia es:96.0
+El margen pedido es:10
+
+Numero prueba:6
+La diferencia es:8.0
+El margen pedido es:10
+.............SUPERO prueba 6
+
+Numero prueba:7
+la x1 es:28.0
+la x2 es:196.0
+el centro horizontal esta en:112.0
+la x es:101.0
+La diferencia es:11.0
+El margen pedido es:10
+
+Numero prueba:8
+la x1 es:13.0
+la x2 es:276.0
+el centro horizontal esta en:144.5
+la x es:101.0
+La diferencia es:43.5
+El margen pedido es:10
+
+Numero prueba:9
+la x1 es:13.0
+la x2 es:276.0
+el centro horizontal esta en:144.5
+la x es:120.0
+La diferencia es:24.5
+El margen pedido es:10
+
+Numero prueba:10
+La distancia es:3.0
+El margen pedido es:12
+.............SUPERO prueba 10
+
+Numero prueba:11
+prueba de posicionado
+punto 1:169.0/548.0
+punto 2:131.0/541.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 11
+
+Numero prueba:13
+La diferencia es:3.0
+El margen pedido es:10
+.............SUPERO prueba 13
+
+Numero prueba:14
+La diferencia es:88.0
+El margen pedido es:10
+
+Voy a reajustar la puntuacion:33.333333333333336
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:33.333333333333336
+Finalmente devuelvo:33.333333333333336
+
+PUNTUACION(1):33.333333333333336
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:33.333333333333336
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:1
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->196.0/280.0
+16:(parte derecha cara)->469.0/266.0
+7:(barbilla1)->309.0/468.0
+8:(barbilla2)->351.0/477.0
+9:(barbilla3)->389.0/463.0
+27:(entrecejo)->351.0/285.0
+30:(toxa punta)->351.0/350.0
+33:(toxa abajo)->351.0/369.0
+31:(izq toxa)->332.0/365.0
+35:(der toxa)->375.0/360.0
+36:(ojo izq fuera)->266.0/285.0
+39:(ojo izq dentro)->313.0/285.0
+45:(ojo der fuera)->422.0/270.0
+42:(ojo der dentro)->379.0/280.0
+48:(boca izq)->304.0/402.0
+54:(boca der)->398.0/402.0
+51:(boca arriba)->351.0/397.0
+57:(boca abajo)->351.0/416.0
+Numero prueba:1
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 1
+
+Numero prueba:2
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 2
+
+Numero prueba:3
+La diferencia es:15.0
+El margen pedido es:10
+
+Numero prueba:5
+La diferencia es:14.0
+El margen pedido es:10
+
+Numero prueba:6
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 6
+
+Numero prueba:7
+la x1 es:266.0
+la x2 es:422.0
+el centro horizontal esta en:344.0
+la x es:351.0
+La diferencia es:7.0
+El margen pedido es:10
+.............SUPERO prueba 7
+
+Numero prueba:8
+la x1 es:196.0
+la x2 es:469.0
+el centro horizontal esta en:332.5
+la x es:351.0
+La diferencia es:18.5
+El margen pedido es:10
+
+Numero prueba:9
+la x1 es:196.0
+la x2 es:469.0
+el centro horizontal esta en:332.5
+la x es:351.0
+La diferencia es:18.5
+El margen pedido es:10
+
+Numero prueba:10
+La distancia es:5.0
+El margen pedido es:12
+.............SUPERO prueba 10
+
+Numero prueba:11
+prueba de posicionado
+punto 1:351.0/477.0
+punto 2:309.0/468.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 11
+
+Numero prueba:13
+La diferencia es:5.0
+El margen pedido es:10
+.............SUPERO prueba 13
+
+Numero prueba:14
+La diferencia es:4.0
+El margen pedido es:10
+.............SUPERO prueba 14
+
+Voy a reajustar la puntuacion:66.66666666666667
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:66.66666666666667
+Finalmente devuelvo:66.66666666666667
+
+PUNTUACION(1):66.66666666666667
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:66.66666666666667
+true
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:1
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->103.0/211.0
+16:(parte derecha cara)->419.0/172.0
+7:(barbilla1)->264.0/427.0
+8:(barbilla2)->313.0/433.0
+9:(barbilla3)->358.0/410.0
+27:(entrecejo)->297.0/222.0
+30:(toxa punta)->308.0/305.0
+33:(toxa abajo)->308.0/322.0
+31:(izq toxa)->280.0/316.0
+35:(der toxa)->330.0/311.0
+36:(ojo izq fuera)->197.0/228.0
+39:(ojo izq dentro)->253.0/222.0
+45:(ojo der fuera)->380.0/189.0
+42:(ojo der dentro)->330.0/206.0
+48:(boca izq)->253.0/361.0
+54:(boca der)->358.0/344.0
+51:(boca arriba)->308.0/350.0
+57:(boca abajo)->313.0/372.0
+Numero prueba:1
+La diferencia es:11.0
+El margen pedido es:10
+
+Numero prueba:2
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 2
+
+Numero prueba:3
+La diferencia es:39.0
+El margen pedido es:10
+
+Numero prueba:5
+La diferencia es:39.0
+El margen pedido es:10
+
+Numero prueba:6
+La diferencia es:17.0
+El margen pedido es:10
+
+Numero prueba:7
+la x1 es:197.0
+la x2 es:380.0
+el centro horizontal esta en:288.5
+la x es:297.0
+La diferencia es:8.5
+El margen pedido es:10
+.............SUPERO prueba 7
+
+Numero prueba:8
+la x1 es:103.0
+la x2 es:419.0
+el centro horizontal esta en:261.0
+la x es:297.0
+La diferencia es:36.0
+El margen pedido es:10
+
+Numero prueba:9
+la x1 es:103.0
+la x2 es:419.0
+el centro horizontal esta en:261.0
+la x es:308.0
+La diferencia es:47.0
+El margen pedido es:10
+
+Numero prueba:10
+La distancia es:17.0
+El margen pedido es:12
+
+Numero prueba:11
+prueba de posicionado
+punto 1:313.0/433.0
+punto 2:264.0/427.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 11
+
+Numero prueba:13
+La diferencia es:17.0
+El margen pedido es:10
+
+Numero prueba:14
+La diferencia es:17.0
+El margen pedido es:10
+
+Voy a reajustar la puntuacion:25.0
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:25.0
+Finalmente devuelvo:25.0
+
+PUNTUACION(1):25.0
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:25.0
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:1
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->168.0/283.0
+16:(parte derecha cara)->430.0/265.0
+7:(barbilla1)->267.0/450.0
+8:(barbilla2)->308.0/459.0
+9:(barbilla3)->349.0/450.0
+27:(entrecejo)->308.0/265.0
+30:(toxa punta)->308.0/323.0
+33:(toxa abajo)->308.0/346.0
+31:(izq toxa)->290.0/342.0
+35:(der toxa)->331.0/337.0
+36:(ojo izq fuera)->231.0/269.0
+39:(ojo izq dentro)->272.0/269.0
+45:(ojo der fuera)->385.0/260.0
+42:(ojo der dentro)->340.0/265.0
+48:(boca izq)->263.0/387.0
+54:(boca der)->353.0/382.0
+51:(boca arriba)->308.0/373.0
+57:(boca abajo)->308.0/391.0
+Numero prueba:1
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 1
+
+Numero prueba:2
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 2
+
+Numero prueba:3
+La diferencia es:9.0
+El margen pedido es:10
+.............SUPERO prueba 3
+
+Numero prueba:5
+La diferencia es:18.0
+El margen pedido es:10
+
+Numero prueba:6
+La diferencia es:5.0
+El margen pedido es:10
+.............SUPERO prueba 6
+
+Numero prueba:7
+la x1 es:231.0
+la x2 es:385.0
+el centro horizontal esta en:308.0
+la x es:308.0
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 7
+
+Numero prueba:8
+la x1 es:168.0
+la x2 es:430.0
+el centro horizontal esta en:299.0
+la x es:308.0
+La diferencia es:9.0
+El margen pedido es:10
+.............SUPERO prueba 8
+
+Numero prueba:9
+la x1 es:168.0
+la x2 es:430.0
+el centro horizontal esta en:299.0
+la x es:308.0
+La diferencia es:9.0
+El margen pedido es:10
+.............SUPERO prueba 9
+
+Numero prueba:10
+La distancia es:14.0
+El margen pedido es:12
+
+Numero prueba:11
+prueba de posicionado
+punto 1:308.0/459.0
+punto 2:267.0/450.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 11
+
+Numero prueba:13
+La diferencia es:14.0
+El margen pedido es:10
+
+Numero prueba:14
+La diferencia es:5.0
+El margen pedido es:10
+.............SUPERO prueba 14
+
+Voy a reajustar la puntuacion:75.0
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:75.0
+Finalmente devuelvo:75.0
+
+PUNTUACION(1):75.0
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:75.0
+true
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:2
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->168.0/270.0
+16:(parte derecha cara)->426.0/248.0
+7:(barbilla1)->275.0/443.0
+8:(barbilla2)->315.0/447.0
+9:(barbilla3)->350.0/438.0
+27:(entrecejo)->306.0/261.0
+30:(toxa punta)->310.0/323.0
+33:(toxa abajo)->310.0/341.0
+31:(izq toxa)->293.0/336.0
+35:(der toxa)->333.0/336.0
+36:(ojo izq fuera)->231.0/265.0
+39:(ojo izq dentro)->275.0/265.0
+45:(ojo der fuera)->381.0/252.0
+42:(ojo der dentro)->337.0/256.0
+48:(boca izq)->266.0/381.0
+54:(boca der)->359.0/376.0
+51:(boca arriba)->315.0/372.0
+57:(boca abajo)->315.0/390.0
+Numero prueba:1
+La diferencia es:4.0
+El margen pedido es:10
+.............SUPERO prueba 1
+
+Numero prueba:2
+La diferencia es:13.0
+El margen pedido es:10
+
+Numero prueba:3
+prueba de posicionado
+punto 1:310.0/323.0
+punto 2:426.0/248.0
+minimo:0
+El punto 1 tiene que estar mas a la izquierda que el 2
+Lo esta
+El minimo es 0, por lo que superaria
+.............SUPERO prueba 3
+
+Numero prueba:4
+prueba de posicionado
+punto 1:315.0/447.0
+punto 2:275.0/443.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 4
+
+Numero prueba:5
+prueba de posicionado
+punto 1:315.0/447.0
+punto 2:350.0/438.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 5
+
+Numero prueba:6
+La diferencia es:1.6666666666666667
+El margen pedido es:3
+.............SUPERO prueba 6
+
+Numero prueba:7
+La diferencia es:0.0
+El margen pedido es:1.5
+
+Numero prueba:8
+La diferencia es:10.833333333333334
+El margen pedido es:1.2
+.............SUPERO prueba 8
+
+Numero prueba:9
+La diferencia es:7.5
+El margen pedido es:1.2
+.............SUPERO prueba 9
+
+Numero prueba:10
+La diferencia es:3.3333333333333335
+El margen pedido es:1.2
+.............SUPERO prueba 10
+
+Numero prueba:11
+La diferencia es:55.5
+El margen pedido es:2
+.............SUPERO prueba 11
+
+Voy a reajustar la puntuacion:81.81818181818183
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:81.81818181818183
+Finalmente devuelvo:81.81818181818183
+
+PUNTUACION(1):81.81818181818183
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:81.81818181818183
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:3
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->178.0/292.0
+16:(parte derecha cara)->435.0/247.0
+7:(barbilla1)->237.0/454.0
+8:(barbilla2)->264.0/458.0
+9:(barbilla3)->304.0/449.0
+27:(entrecejo)->241.0/265.0
+30:(toxa punta)->228.0/328.0
+33:(toxa abajo)->241.0/346.0
+31:(izq toxa)->228.0/346.0
+35:(der toxa)->268.0/341.0
+36:(ojo izq fuera)->196.0/274.0
+39:(ojo izq dentro)->228.0/269.0
+45:(ojo der fuera)->331.0/256.0
+42:(ojo der dentro)->286.0/260.0
+48:(boca izq)->223.0/391.0
+54:(boca der)->300.0/382.0
+51:(boca arriba)->246.0/377.0
+57:(boca abajo)->246.0/395.0
+Numero prueba:1
+prueba de posicionado
+punto 1:228.0/328.0
+punto 2:178.0/292.0
+minimo:0
+El punto 1 tiene que estar mas a la derecha que el 2
+Lo esta
+El minimo es 0, por lo que superaria
+.............SUPERO prueba 1
+
+Numero prueba:2
+La diferencia es:4.5
+El margen pedido es:4
+.............SUPERO prueba 2
+
+Numero prueba:3
+La diferencia es:0.0
+El margen pedido es:12
+.............SUPERO prueba 3
+
+Numero prueba:4
+La diferencia es:27.0
+El margen pedido es:15
+
+Numero prueba:5
+prueba de posicionado
+punto 1:264.0/458.0
+punto 2:237.0/454.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 5
+
+Numero prueba:6
+prueba de posicionado
+punto 1:264.0/458.0
+punto 2:304.0/449.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 6
+
+Numero prueba:7
+prueba de posicionado
+punto 1:178.0/292.0
+punto 2:241.0/265.0
+minimo:0
+El punto 1 tiene que estar mas a la izquierda que el 2
+Lo esta
+El minimo es 0, por lo que superaria
+.............SUPERO prueba 7
+
+Numero prueba:8
+prueba de posicionado
+punto 1:300.0/382.0
+punto 2:246.0/377.0
+minimo:0
+El punto 1 tiene que estar mas a la izquierda que el 2
+NO lo esta
+
+Numero prueba:9
+La diferencia es:3.3333333333333335
+El margen pedido es:1.5
+.............SUPERO prueba 9
+
+Voy a reajustar la puntuacion:82.77777777777779
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:82.77777777777779
+Finalmente devuelvo:82.77777777777779
+
+PUNTUACION(1):82.77777777777779
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:82.77777777777779
+true
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:4
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->409.0/294.0
+16:(parte derecha cara)->533.0/272.0
+7:(barbilla1)->431.0/458.0
+8:(barbilla2)->442.0/466.0
+9:(barbilla3)->457.0/451.0
+27:(entrecejo)->395.0/287.0
+30:(toxa punta)->376.0/345.0
+33:(toxa abajo)->402.0/360.0
+31:(izq toxa)->409.0/356.0
+35:(der toxa)->409.0/356.0
+36:(ojo izq fuera)->420.0/287.0
+39:(ojo izq dentro)->413.0/283.0
+45:(ojo der fuera)->427.0/272.0
+42:(ojo der dentro)->416.0/276.0
+48:(boca izq)->435.0/396.0
+54:(boca der)->431.0/392.0
+51:(boca arriba)->405.0/385.0
+57:(boca abajo)->413.0/407.0
+Numero prueba:1
+La diferencia es:7.0
+El margen pedido es:10
+.............SUPERO prueba 1
+
+Numero prueba:2
+La diferencia es:15.0
+El margen pedido es:10
+
+Numero prueba:3
+prueba de posicionado
+punto 1:376.0/345.0
+punto 2:409.0/294.0
+minimo:0
+El punto 1 tiene que estar mas a la derecha que el 2
+NO lo esta
+
+Numero prueba:4
+prueba de posicionado
+punto 1:442.0/466.0
+punto 2:431.0/458.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 4
+
+Numero prueba:5
+prueba de posicionado
+punto 1:442.0/466.0
+punto 2:457.0/451.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 5
+
+Numero prueba:6
+La diferencia es:0.0
+El margen pedido es:3
+
+Numero prueba:7
+La diferencia es:2.6666666666666665
+El margen pedido es:1.5
+.............SUPERO prueba 7
+
+Numero prueba:8
+La diferencia es:9.166666666666668
+El margen pedido es:1.2
+.............SUPERO prueba 8
+
+Numero prueba:9
+La diferencia es:5.833333333333334
+El margen pedido es:1.2
+.............SUPERO prueba 9
+
+Numero prueba:10
+La diferencia es:12.5
+El margen pedido es:1.2
+.............SUPERO prueba 10
+
+Numero prueba:11
+La diferencia es:60.0
+El margen pedido es:2
+.............SUPERO prueba 11
+
+Voy a reajustar la puntuacion:72.72727272727273
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:72.72727272727273
+Finalmente devuelvo:72.72727272727273
+
+PUNTUACION(1):72.72727272727273
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:72.72727272727273
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:5
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->122.0/313.0
+16:(parte derecha cara)->320.0/246.0
+7:(barbilla1)->158.0/475.0
+8:(barbilla2)->180.0/484.0
+9:(barbilla3)->212.0/466.0
+27:(entrecejo)->117.0/300.0
+30:(toxa punta)->95.0/363.0
+33:(toxa abajo)->126.0/376.0
+31:(izq toxa)->126.0/372.0
+35:(der toxa)->144.0/367.0
+36:(ojo izq fuera)->122.0/304.0
+39:(ojo izq dentro)->131.0/300.0
+45:(ojo der fuera)->194.0/273.0
+42:(ojo der dentro)->162.0/286.0
+48:(boca izq)->144.0/412.0
+54:(boca der)->189.0/399.0
+51:(boca arriba)->131.0/403.0
+57:(boca abajo)->140.0/421.0
+Numero prueba:1
+prueba de posicionado
+punto 1:95.0/363.0
+punto 2:320.0/246.0
+minimo:0
+El punto 1 tiene que estar mas a la izquierda que el 2
+Lo esta
+El minimo es 0, por lo que superaria
+.............SUPERO prueba 1
+
+Numero prueba:2
+La diferencia es:6.75
+El margen pedido es:4
+.............SUPERO prueba 2
+
+Numero prueba:3
+La diferencia es:9.0
+El margen pedido es:12
+.............SUPERO prueba 3
+
+Numero prueba:4
+La diferencia es:5.0
+El margen pedido es:15
+.............SUPERO prueba 4
+
+Numero prueba:5
+prueba de posicionado
+punto 1:180.0/484.0
+punto 2:158.0/475.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 5
+
+Numero prueba:6
+prueba de posicionado
+punto 1:180.0/484.0
+punto 2:212.0/466.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 6
+
+Numero prueba:7
+prueba de posicionado
+punto 1:320.0/246.0
+punto 2:117.0/300.0
+minimo:0
+El punto 1 tiene que estar mas a la derecha que el 2
+Lo esta
+El minimo es 0, por lo que superaria
+.............SUPERO prueba 7
+
+Numero prueba:8
+prueba de posicionado
+punto 1:144.0/412.0
+punto 2:131.0/403.0
+minimo:0
+El punto 1 tiene que estar mas a la derecha que el 2
+Lo esta
+El minimo es 0, por lo que superaria
+.............SUPERO prueba 8
+
+Numero prueba:9
+La diferencia es:8.666666666666666
+El margen pedido es:1.5
+.............SUPERO prueba 9
+
+Voy a reajustar la puntuacion:105.00000000000001
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:105.00000000000001
+Finalmente devuelvo:105.00000000000001
+
+PUNTUACION(1):105.00000000000001
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:105.00000000000001
+true
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:6
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->152.0/230.0
+16:(parte derecha cara)->496.0/295.0
+7:(barbilla1)->211.0/473.0
+8:(barbilla2)->259.0/491.0
+9:(barbilla3)->318.0/497.0
+27:(entrecejo)->306.0/260.0
+30:(toxa punta)->288.0/337.0
+33:(toxa abajo)->288.0/366.0
+31:(izq toxa)->259.0/355.0
+35:(der toxa)->318.0/366.0
+36:(ojo izq fuera)->211.0/242.0
+39:(ojo izq dentro)->265.0/254.0
+45:(ojo der fuera)->407.0/277.0
+42:(ojo der dentro)->354.0/271.0
+48:(boca izq)->223.0/402.0
+54:(boca der)->342.0/426.0
+51:(boca arriba)->277.0/402.0
+57:(boca abajo)->277.0/426.0
+Numero prueba:5
+La diferencia es:18.0
+El margen pedido es:10
+
+Numero prueba:6
+La diferencia es:35.0
+El margen pedido es:10
+
+Numero prueba:7
+La diferencia es:65.0
+El margen pedido es:10
+
+Numero prueba:8
+prueba de posicionado
+punto 1:306.0/260.0
+punto 2:265.0/254.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+NO lo esta
+
+Numero prueba:9
+prueba de posicionado
+punto 1:306.0/260.0
+punto 2:354.0/271.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 9
+
+Numero prueba:14
+la x1 es:152.0
+la x2 es:496.0
+el centro horizontal esta en:324.0
+la x es:277.0
+La diferencia es:47.0
+El margen pedido es:10
+
+Numero prueba:15
+prueba de posicionado
+punto 1:288.0/337.0
+punto 2:152.0/230.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+NO lo esta
+
+Numero prueba:16
+prueba de posicionado
+punto 1:288.0/337.0
+punto 2:496.0/295.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+NO lo esta
+
+Numero prueba:17
+prueba de posicionado
+punto 1:306.0/260.0
+punto 2:265.0/254.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+NO lo esta
+
+Numero prueba:18
+prueba de posicionado
+punto 1:306.0/260.0
+punto 2:354.0/271.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 18
+
+Numero prueba:19
+prueba de posicionado
+punto 1:152.0/230.0
+punto 2:211.0/242.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+NO lo esta
+
+Numero prueba:20
+prueba de posicionado
+punto 1:496.0/295.0
+punto 2:407.0/277.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 20
+
+Voy a reajustar la puntuacion:25.0
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:25.0
+Finalmente devuelvo:25.0
+
+PUNTUACION(1):25.0
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:25.0
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:6
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->178.0/257.0
+16:(parte derecha cara)->515.0/241.0
+7:(barbilla1)->318.0/371.0
+8:(barbilla2)->375.0/371.0
+9:(barbilla3)->422.0/376.0
+27:(entrecejo)->370.0/153.0
+30:(toxa punta)->380.0/200.0
+33:(toxa abajo)->375.0/241.0
+31:(izq toxa)->349.0/241.0
+35:(der toxa)->401.0/241.0
+36:(ojo izq fuera)->271.0/184.0
+39:(ojo izq dentro)->323.0/179.0
+45:(ojo der fuera)->458.0/184.0
+42:(ojo der dentro)->406.0/179.0
+48:(boca izq)->313.0/298.0
+54:(boca der)->427.0/303.0
+51:(boca arriba)->375.0/272.0
+57:(boca abajo)->375.0/293.0
+Numero prueba:5
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 5
+
+Numero prueba:6
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 6
+
+Numero prueba:7
+La diferencia es:16.0
+El margen pedido es:10
+
+Numero prueba:8
+prueba de posicionado
+punto 1:370.0/153.0
+punto 2:323.0/179.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 8
+
+Numero prueba:9
+prueba de posicionado
+punto 1:370.0/153.0
+punto 2:406.0/179.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 9
+
+Numero prueba:14
+la x1 es:178.0
+la x2 es:515.0
+el centro horizontal esta en:346.5
+la x es:375.0
+La diferencia es:28.5
+El margen pedido es:10
+
+Numero prueba:15
+prueba de posicionado
+punto 1:380.0/200.0
+punto 2:178.0/257.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+Como el minimo es > 0
+La diferencia es:57.0
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 15
+
+Numero prueba:16
+prueba de posicionado
+punto 1:380.0/200.0
+punto 2:515.0/241.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+Como el minimo es > 0
+La diferencia es:41.0
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 16
+
+Numero prueba:17
+prueba de posicionado
+punto 1:370.0/153.0
+punto 2:323.0/179.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 17
+
+Numero prueba:18
+prueba de posicionado
+punto 1:370.0/153.0
+punto 2:406.0/179.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 18
+
+Numero prueba:19
+prueba de posicionado
+punto 1:178.0/257.0
+punto 2:271.0/184.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 19
+
+Numero prueba:20
+prueba de posicionado
+punto 1:515.0/241.0
+punto 2:458.0/184.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 20
+
+Voy a reajustar la puntuacion:83.33333333333333
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:83.33333333333333
+Finalmente devuelvo:83.33333333333333
+
+PUNTUACION(1):83.33333333333333
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:83.33333333333333
+true
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:7
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->203.0/257.0
+16:(parte derecha cara)->542.0/252.0
+7:(barbilla1)->306.0/375.0
+8:(barbilla2)->357.0/380.0
+9:(barbilla3)->404.0/380.0
+27:(entrecejo)->362.0/164.0
+30:(toxa punta)->357.0/210.0
+33:(toxa abajo)->362.0/246.0
+31:(izq toxa)->337.0/246.0
+35:(der toxa)->388.0/252.0
+36:(ojo izq fuera)->275.0/190.0
+39:(ojo izq dentro)->321.0/185.0
+45:(ojo der fuera)->460.0/190.0
+42:(ojo der dentro)->404.0/185.0
+48:(boca izq)->306.0/308.0
+54:(boca der)->419.0/308.0
+51:(boca arriba)->357.0/282.0
+57:(boca abajo)->357.0/303.0
+Numero prueba:1
+prueba de posicionado
+punto 1:357.0/380.0
+punto 2:306.0/375.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 1
+
+Numero prueba:2
+prueba de posicionado
+punto 1:357.0/380.0
+punto 2:404.0/380.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+NO lo esta
+
+Numero prueba:3
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 3
+
+Numero prueba:4
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 4
+
+Numero prueba:5
+prueba de posicionado
+punto 1:203.0/257.0
+punto 2:275.0/190.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+NO lo esta
+
+Numero prueba:6
+prueba de posicionado
+punto 1:542.0/252.0
+punto 2:460.0/190.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+NO lo esta
+
+Numero prueba:7
+La diferencia es:5.0
+El margen pedido es:10
+.............SUPERO prueba 7
+
+Numero prueba:8
+la x1 es:203.0
+la x2 es:542.0
+el centro horizontal esta en:372.5
+la x es:357.0
+La diferencia es:15.5
+El margen pedido es:10
+
+Numero prueba:9
+La diferencia es:41.0
+El margen pedido es:10
+
+Numero prueba:10
+prueba de posicionado
+punto 1:362.0/164.0
+punto 2:321.0/185.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+NO lo esta
+
+Numero prueba:11
+prueba de posicionado
+punto 1:362.0/164.0
+punto 2:404.0/185.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+NO lo esta
+
+Voy a reajustar la puntuacion:36.36363636363637
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:36.36363636363637
+Finalmente devuelvo:36.36363636363637
+
+PUNTUACION(1):36.36363636363637
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:36.36363636363637
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:7
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->164.0/288.0
+16:(parte derecha cara)->405.0/292.0
+7:(barbilla1)->258.0/476.0
+8:(barbilla2)->299.0/488.0
+9:(barbilla3)->335.0/463.0
+27:(entrecejo)->307.0/366.0
+30:(toxa punta)->307.0/435.0
+33:(toxa abajo)->303.0/435.0
+31:(izq toxa)->282.0/427.0
+35:(der toxa)->323.0/423.0
+36:(ojo izq fuera)->225.0/345.0
+39:(ojo izq dentro)->270.0/349.0
+45:(ojo der fuera)->372.0/333.0
+42:(ojo der dentro)->331.0/345.0
+48:(boca izq)->262.0/451.0
+54:(boca der)->339.0/447.0
+51:(boca arriba)->307.0/455.0
+57:(boca abajo)->303.0/468.0
+Numero prueba:1
+prueba de posicionado
+punto 1:299.0/488.0
+punto 2:258.0/476.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 1
+
+Numero prueba:2
+prueba de posicionado
+punto 1:299.0/488.0
+punto 2:335.0/463.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 2
+
+Numero prueba:3
+La diferencia es:12.0
+El margen pedido es:10
+
+Numero prueba:4
+La diferencia es:4.0
+El margen pedido es:10
+.............SUPERO prueba 4
+
+Numero prueba:5
+prueba de posicionado
+punto 1:164.0/288.0
+punto 2:225.0/345.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+Como el minimo es > 0
+La diferencia es:57.0
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 5
+
+Numero prueba:6
+prueba de posicionado
+punto 1:405.0/292.0
+punto 2:372.0/333.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+Como el minimo es > 0
+La diferencia es:41.0
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 6
+
+Numero prueba:7
+La diferencia es:4.0
+El margen pedido es:10
+.............SUPERO prueba 7
+
+Numero prueba:8
+la x1 es:164.0
+la x2 es:405.0
+el centro horizontal esta en:284.5
+la x es:303.0
+La diferencia es:18.5
+El margen pedido es:10
+
+Numero prueba:9
+La diferencia es:4.0
+El margen pedido es:10
+.............SUPERO prueba 9
+
+Numero prueba:10
+prueba de posicionado
+punto 1:307.0/366.0
+punto 2:270.0/349.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 10
+
+Numero prueba:11
+prueba de posicionado
+punto 1:307.0/366.0
+punto 2:331.0/345.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 11
+
+Voy a reajustar la puntuacion:81.81818181818183
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:81.81818181818183
+Finalmente devuelvo:81.81818181818183
+
+PUNTUACION(1):81.81818181818183
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:81.81818181818183
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+paso0
+path:/var/www/html/reconocimientofacialV2/admin/files/videos_registro
+path_imgs:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:1
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->-19.0/353.0
+16:(parte derecha cara)->237.0/278.0
+7:(barbilla1)->95.0/499.0
+8:(barbilla2)->140.0/504.0
+9:(barbilla3)->179.0/490.0
+27:(entrecejo)->91.0/340.0
+30:(toxa punta)->104.0/406.0
+33:(toxa abajo)->113.0/424.0
+31:(izq toxa)->91.0/420.0
+35:(der toxa)->131.0/411.0
+36:(ojo izq fuera)->11.0/344.0
+39:(ojo izq dentro)->56.0/336.0
+45:(ojo der fuera)->171.0/309.0
+42:(ojo der dentro)->126.0/322.0
+48:(boca izq)->78.0/468.0
+54:(boca der)->166.0/451.0
+51:(boca arriba)->117.0/455.0
+57:(boca abajo)->122.0/468.0
+Numero prueba:1
+La diferencia es:22.0
+El margen pedido es:10
+
+Numero prueba:2
+La diferencia es:18.0
+El margen pedido es:10
+
+Numero prueba:3
+La diferencia es:35.0
+El margen pedido es:10
+
+Numero prueba:5
+La diferencia es:75.0
+El margen pedido es:10
+
+Numero prueba:6
+La diferencia es:17.0
+El margen pedido es:10
+
+Numero prueba:7
+la x1 es:11.0
+la x2 es:171.0
+el centro horizontal esta en:91.0
+la x es:91.0
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 7
+
+Numero prueba:8
+la x1 es:-19.0
+la x2 es:237.0
+el centro horizontal esta en:109.0
+la x es:91.0
+La diferencia es:18.0
+El margen pedido es:10
+
+Numero prueba:9
+la x1 es:-19.0
+la x2 es:237.0
+el centro horizontal esta en:109.0
+la x es:113.0
+La diferencia es:4.0
+El margen pedido es:10
+.............SUPERO prueba 9
+
+Numero prueba:10
+La distancia es:9.0
+El margen pedido es:12
+.............SUPERO prueba 10
+
+Numero prueba:11
+prueba de posicionado
+punto 1:140.0/504.0
+punto 2:95.0/499.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 11
+
+Numero prueba:13
+La diferencia es:9.0
+El margen pedido es:10
+.............SUPERO prueba 13
+
+Numero prueba:14
+La diferencia es:31.0
+El margen pedido es:10
+
+Voy a reajustar la puntuacion:41.66666666666667
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:41.66666666666667
+Finalmente devuelvo:41.66666666666667
+
+PUNTUACION(1):41.66666666666667
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:41.66666666666667
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:1
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->107.0/326.0
+16:(parte derecha cara)->387.0/392.0
+7:(barbilla1)->267.0/528.0
+8:(barbilla2)->304.0/528.0
+9:(barbilla3)->346.0/491.0
+27:(entrecejo)->288.0/462.0
+30:(toxa punta)->300.0/511.0
+33:(toxa abajo)->292.0/503.0
+31:(izq toxa)->267.0/495.0
+35:(der toxa)->317.0/495.0
+36:(ojo izq fuera)->197.0/462.0
+39:(ojo izq dentro)->243.0/453.0
+45:(ojo der fuera)->366.0/433.0
+42:(ojo der dentro)->325.0/437.0
+48:(boca izq)->247.0/507.0
+54:(boca der)->342.0/499.0
+51:(boca arriba)->296.0/515.0
+57:(boca abajo)->300.0/528.0
+Numero prueba:1
+La diferencia es:4.0
+El margen pedido es:10
+.............SUPERO prueba 1
+
+Numero prueba:2
+La diferencia es:4.0
+El margen pedido es:10
+.............SUPERO prueba 2
+
+Numero prueba:3
+La diferencia es:29.0
+El margen pedido es:10
+
+Numero prueba:5
+La diferencia es:66.0
+El margen pedido es:10
+
+Numero prueba:6
+La diferencia es:8.0
+El margen pedido es:10
+.............SUPERO prueba 6
+
+Numero prueba:7
+la x1 es:197.0
+la x2 es:366.0
+el centro horizontal esta en:281.5
+la x es:288.0
+La diferencia es:6.5
+El margen pedido es:10
+.............SUPERO prueba 7
+
+Numero prueba:8
+la x1 es:107.0
+la x2 es:387.0
+el centro horizontal esta en:247.0
+la x es:288.0
+La diferencia es:41.0
+El margen pedido es:10
+
+Numero prueba:9
+la x1 es:107.0
+la x2 es:387.0
+el centro horizontal esta en:247.0
+la x es:292.0
+La diferencia es:45.0
+El margen pedido es:10
+
+Numero prueba:10
+La distancia es:136.0
+El margen pedido es:12
+
+Numero prueba:11
+prueba de posicionado
+punto 1:304.0/528.0
+punto 2:267.0/528.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+NO lo esta
+
+Numero prueba:13
+La diferencia es:136.0
+El margen pedido es:10
+
+Numero prueba:14
+La diferencia es:41.0
+El margen pedido es:10
+
+Voy a reajustar la puntuacion:33.333333333333336
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:33.333333333333336
+Finalmente devuelvo:33.333333333333336
+
+PUNTUACION(1):33.333333333333336
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:33.333333333333336
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:1
+-------------Analizando en posicon_cara-------------
+Voy a reajustar la puntuacion:0
+Definitivo esta enb:0
+Finalmente devuelvo:0
+
+PUNTUACION(1):0
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:0
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:1
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->170.0/288.0
+16:(parte derecha cara)->424.0/261.0
+7:(barbilla1)->277.0/452.0
+8:(barbilla2)->317.0/457.0
+9:(barbilla3)->357.0/448.0
+27:(entrecejo)->308.0/270.0
+30:(toxa punta)->312.0/332.0
+33:(toxa abajo)->312.0/350.0
+31:(izq toxa)->295.0/346.0
+35:(der toxa)->335.0/341.0
+36:(ojo izq fuera)->232.0/279.0
+39:(ojo izq dentro)->272.0/274.0
+45:(ojo der fuera)->379.0/261.0
+42:(ojo der dentro)->339.0/270.0
+48:(boca izq)->272.0/390.0
+54:(boca der)->357.0/381.0
+51:(boca arriba)->317.0/377.0
+57:(boca abajo)->317.0/399.0
+Numero prueba:1
+La diferencia es:4.0
+El margen pedido es:10
+.............SUPERO prueba 1
+
+Numero prueba:2
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 2
+
+Numero prueba:3
+La diferencia es:18.0
+El margen pedido es:10
+
+Numero prueba:5
+La diferencia es:27.0
+El margen pedido es:10
+
+Numero prueba:6
+La diferencia es:9.0
+El margen pedido es:10
+.............SUPERO prueba 6
+
+Numero prueba:7
+la x1 es:232.0
+la x2 es:379.0
+el centro horizontal esta en:305.5
+la x es:308.0
+La diferencia es:2.5
+El margen pedido es:10
+.............SUPERO prueba 7
+
+Numero prueba:8
+la x1 es:170.0
+la x2 es:424.0
+el centro horizontal esta en:297.0
+la x es:308.0
+La diferencia es:11.0
+El margen pedido es:10
+
+Numero prueba:9
+la x1 es:170.0
+la x2 es:424.0
+el centro horizontal esta en:297.0
+la x es:312.0
+La diferencia es:15.0
+El margen pedido es:10
+
+Numero prueba:10
+La distancia es:9.0
+El margen pedido es:12
+.............SUPERO prueba 10
+
+Numero prueba:11
+prueba de posicionado
+punto 1:317.0/457.0
+punto 2:277.0/452.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 11
+
+Numero prueba:13
+La diferencia es:9.0
+El margen pedido es:10
+.............SUPERO prueba 13
+
+Numero prueba:14
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 14
+
+Voy a reajustar la puntuacion:66.66666666666667
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:66.66666666666667
+Finalmente devuelvo:66.66666666666667
+
+PUNTUACION(1):66.66666666666667
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:66.66666666666667
+true
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:1
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->186.0/251.0
+16:(parte derecha cara)->451.0/270.0
+7:(barbilla1)->268.0/439.0
+8:(barbilla2)->309.0/448.0
+9:(barbilla3)->351.0/444.0
+27:(entrecejo)->332.0/256.0
+30:(toxa punta)->328.0/315.0
+33:(toxa abajo)->323.0/334.0
+31:(izq toxa)->300.0/329.0
+35:(der toxa)->346.0/334.0
+36:(ojo izq fuera)->254.0/247.0
+39:(ojo izq dentro)->296.0/256.0
+45:(ojo der fuera)->406.0/260.0
+42:(ojo der dentro)->364.0/256.0
+48:(boca izq)->273.0/370.0
+54:(boca der)->364.0/380.0
+51:(boca arriba)->323.0/366.0
+57:(boca abajo)->319.0/384.0
+Numero prueba:1
+La diferencia es:9.0
+El margen pedido es:10
+.............SUPERO prueba 1
+
+Numero prueba:2
+La diferencia es:10.0
+El margen pedido es:10
+.............SUPERO prueba 2
+
+Numero prueba:3
+La diferencia es:13.0
+El margen pedido es:10
+
+Numero prueba:5
+La diferencia es:19.0
+El margen pedido es:10
+
+Numero prueba:6
+La diferencia es:10.0
+El margen pedido es:10
+.............SUPERO prueba 6
+
+Numero prueba:7
+la x1 es:254.0
+la x2 es:406.0
+el centro horizontal esta en:330.0
+la x es:332.0
+La diferencia es:2.0
+El margen pedido es:10
+.............SUPERO prueba 7
+
+Numero prueba:8
+la x1 es:186.0
+la x2 es:451.0
+el centro horizontal esta en:318.5
+la x es:332.0
+La diferencia es:13.5
+El margen pedido es:10
+
+Numero prueba:9
+la x1 es:186.0
+la x2 es:451.0
+el centro horizontal esta en:318.5
+la x es:323.0
+La diferencia es:4.5
+El margen pedido es:10
+.............SUPERO prueba 9
+
+Numero prueba:10
+La distancia es:4.0
+El margen pedido es:12
+.............SUPERO prueba 10
+
+Numero prueba:11
+prueba de posicionado
+punto 1:309.0/448.0
+punto 2:268.0/439.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 11
+
+Numero prueba:13
+La diferencia es:4.0
+El margen pedido es:10
+.............SUPERO prueba 13
+
+Numero prueba:14
+La diferencia es:10.0
+El margen pedido es:10
+.............SUPERO prueba 14
+
+Voy a reajustar la puntuacion:75.0
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:75.0
+Finalmente devuelvo:75.0
+
+PUNTUACION(1):75.0
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:75.0
+true
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:2
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->189.0/270.0
+16:(parte derecha cara)->456.0/274.0
+7:(barbilla1)->286.0/458.0
+8:(barbilla2)->327.0/472.0
+9:(barbilla3)->369.0/463.0
+27:(entrecejo)->337.0/279.0
+30:(toxa punta)->337.0/343.0
+33:(toxa abajo)->337.0/362.0
+31:(izq toxa)->314.0/352.0
+35:(der toxa)->360.0/352.0
+36:(ojo izq fuera)->258.0/270.0
+39:(ojo izq dentro)->304.0/274.0
+45:(ojo der fuera)->415.0/270.0
+42:(ojo der dentro)->369.0/274.0
+48:(boca izq)->291.0/394.0
+54:(boca der)->378.0/398.0
+51:(boca arriba)->337.0/389.0
+57:(boca abajo)->332.0/408.0
+Numero prueba:1
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 1
+
+Numero prueba:2
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 2
+
+Numero prueba:3
+prueba de posicionado
+punto 1:337.0/343.0
+punto 2:456.0/274.0
+minimo:0
+El punto 1 tiene que estar mas a la izquierda que el 2
+Lo esta
+El minimo es 0, por lo que superaria
+.............SUPERO prueba 3
+
+Numero prueba:4
+prueba de posicionado
+punto 1:327.0/472.0
+punto 2:286.0/458.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 4
+
+Numero prueba:5
+prueba de posicionado
+punto 1:327.0/472.0
+punto 2:369.0/463.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 5
+
+Numero prueba:6
+La diferencia es:0.0
+El margen pedido es:3
+
+Numero prueba:7
+La diferencia es:2.6666666666666665
+El margen pedido es:1.5
+.............SUPERO prueba 7
+
+Numero prueba:8
+La diferencia es:7.5
+El margen pedido es:1.2
+.............SUPERO prueba 8
+
+Numero prueba:9
+La diferencia es:4.166666666666667
+El margen pedido es:1.2
+.............SUPERO prueba 9
+
+Numero prueba:10
+La diferencia es:11.666666666666668
+El margen pedido es:1.2
+.............SUPERO prueba 10
+
+Numero prueba:11
+La diferencia es:62.0
+El margen pedido es:2
+.............SUPERO prueba 11
+
+Voy a reajustar la puntuacion:90.90909090909092
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:90.90909090909092
+Finalmente devuelvo:90.90909090909092
+
+PUNTUACION(1):90.90909090909092
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:90.90909090909092
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:3
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->189.0/295.0
+16:(parte derecha cara)->442.0/250.0
+7:(barbilla1)->243.0/454.0
+8:(barbilla2)->275.0/458.0
+9:(barbilla3)->311.0/449.0
+27:(entrecejo)->248.0/264.0
+30:(toxa punta)->230.0/323.0
+33:(toxa abajo)->248.0/345.0
+31:(izq toxa)->234.0/345.0
+35:(der toxa)->275.0/336.0
+36:(ojo izq fuera)->202.0/277.0
+39:(ojo izq dentro)->234.0/273.0
+45:(ojo der fuera)->334.0/255.0
+42:(ojo der dentro)->293.0/259.0
+48:(boca izq)->230.0/391.0
+54:(boca der)->311.0/377.0
+51:(boca arriba)->252.0/372.0
+57:(boca abajo)->257.0/395.0
+Numero prueba:1
+prueba de posicionado
+punto 1:230.0/323.0
+punto 2:189.0/295.0
+minimo:0
+El punto 1 tiene que estar mas a la derecha que el 2
+Lo esta
+El minimo es 0, por lo que superaria
+.............SUPERO prueba 1
+
+Numero prueba:2
+La diferencia es:4.5
+El margen pedido es:4
+.............SUPERO prueba 2
+
+Numero prueba:3
+La diferencia es:0.0
+El margen pedido es:12
+.............SUPERO prueba 3
+
+Numero prueba:4
+La diferencia es:28.0
+El margen pedido es:15
+
+Numero prueba:5
+prueba de posicionado
+punto 1:275.0/458.0
+punto 2:243.0/454.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 5
+
+Numero prueba:6
+prueba de posicionado
+punto 1:275.0/458.0
+punto 2:311.0/449.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 6
+
+Numero prueba:7
+prueba de posicionado
+punto 1:189.0/295.0
+punto 2:248.0/264.0
+minimo:0
+El punto 1 tiene que estar mas a la izquierda que el 2
+Lo esta
+El minimo es 0, por lo que superaria
+.............SUPERO prueba 7
+
+Numero prueba:8
+prueba de posicionado
+punto 1:311.0/377.0
+punto 2:252.0/372.0
+minimo:0
+El punto 1 tiene que estar mas a la izquierda que el 2
+NO lo esta
+
+Numero prueba:9
+La diferencia es:2.6666666666666665
+El margen pedido es:1.5
+.............SUPERO prueba 9
+
+Voy a reajustar la puntuacion:82.77777777777779
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:82.77777777777779
+Finalmente devuelvo:82.77777777777779
+
+PUNTUACION(1):82.77777777777779
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:82.77777777777779
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:4
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->323.0/289.0
+16:(parte derecha cara)->488.0/252.0
+7:(barbilla1)->335.0/467.0
+8:(barbilla2)->352.0/476.0
+9:(barbilla3)->373.0/463.0
+27:(entrecejo)->306.0/277.0
+30:(toxa punta)->273.0/339.0
+33:(toxa abajo)->306.0/356.0
+31:(izq toxa)->315.0/351.0
+35:(der toxa)->323.0/347.0
+36:(ojo izq fuera)->335.0/277.0
+39:(ojo izq dentro)->331.0/277.0
+45:(ojo der fuera)->352.0/265.0
+42:(ojo der dentro)->339.0/273.0
+48:(boca izq)->348.0/389.0
+54:(boca der)->356.0/380.0
+51:(boca arriba)->315.0/380.0
+57:(boca abajo)->319.0/405.0
+Numero prueba:1
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 1
+
+Numero prueba:2
+La diferencia es:12.0
+El margen pedido es:10
+
+Numero prueba:3
+prueba de posicionado
+punto 1:273.0/339.0
+punto 2:323.0/289.0
+minimo:0
+El punto 1 tiene que estar mas a la derecha que el 2
+NO lo esta
+
+Numero prueba:4
+prueba de posicionado
+punto 1:352.0/476.0
+punto 2:335.0/467.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 4
+
+Numero prueba:5
+prueba de posicionado
+punto 1:352.0/476.0
+punto 2:373.0/463.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 5
+
+Numero prueba:6
+La diferencia es:4.333333333333333
+El margen pedido es:3
+.............SUPERO prueba 6
+
+Numero prueba:7
+La diferencia es:5.333333333333333
+El margen pedido es:1.5
+.............SUPERO prueba 7
+
+Numero prueba:8
+La diferencia es:6.666666666666667
+El margen pedido es:1.2
+.............SUPERO prueba 8
+
+Numero prueba:9
+La diferencia es:0.0
+El margen pedido es:1.2
+
+Numero prueba:10
+La diferencia es:10.833333333333334
+El margen pedido es:1.2
+.............SUPERO prueba 10
+
+Numero prueba:11
+La diferencia es:64.0
+El margen pedido es:2
+.............SUPERO prueba 11
+
+Voy a reajustar la puntuacion:72.72727272727273
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:72.72727272727273
+Finalmente devuelvo:72.72727272727273
+
+PUNTUACION(1):72.72727272727273
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:72.72727272727273
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:5
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->180.0/247.0
+16:(parte derecha cara)->461.0/271.0
+7:(barbilla1)->332.0/447.0
+8:(barbilla2)->375.0/457.0
+9:(barbilla3)->408.0/447.0
+27:(entrecejo)->403.0/243.0
+30:(toxa punta)->422.0/304.0
+33:(toxa abajo)->403.0/328.0
+31:(izq toxa)->375.0/323.0
+35:(der toxa)->418.0/328.0
+36:(ojo izq fuera)->303.0/243.0
+39:(ojo izq dentro)->351.0/243.0
+45:(ojo der fuera)->446.0/252.0
+42:(ojo der dentro)->413.0/247.0
+48:(boca izq)->337.0/371.0
+54:(boca der)->422.0/376.0
+51:(boca arriba)->399.0/362.0
+57:(boca abajo)->399.0/381.0
+Numero prueba:1
+prueba de posicionado
+punto 1:422.0/304.0
+punto 2:461.0/271.0
+minimo:0
+El punto 1 tiene que estar mas a la izquierda que el 2
+Lo esta
+El minimo es 0, por lo que superaria
+.............SUPERO prueba 1
+
+Numero prueba:2
+La diferencia es:4.75
+El margen pedido es:4
+.............SUPERO prueba 2
+
+Numero prueba:3
+La diferencia es:0.0
+El margen pedido es:12
+.............SUPERO prueba 3
+
+Numero prueba:4
+La diferencia es:24.0
+El margen pedido es:15
+
+Numero prueba:5
+prueba de posicionado
+punto 1:375.0/457.0
+punto 2:332.0/447.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 5
+
+Numero prueba:6
+prueba de posicionado
+punto 1:375.0/457.0
+punto 2:408.0/447.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 6
+
+Numero prueba:7
+prueba de posicionado
+punto 1:461.0/271.0
+punto 2:403.0/243.0
+minimo:0
+El punto 1 tiene que estar mas a la derecha que el 2
+Lo esta
+El minimo es 0, por lo que superaria
+.............SUPERO prueba 7
+
+Numero prueba:8
+prueba de posicionado
+punto 1:337.0/371.0
+punto 2:399.0/362.0
+minimo:0
+El punto 1 tiene que estar mas a la derecha que el 2
+NO lo esta
+
+Numero prueba:9
+La diferencia es:3.3333333333333335
+El margen pedido es:1.5
+.............SUPERO prueba 9
+
+Voy a reajustar la puntuacion:82.77777777777779
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:82.77777777777779
+Finalmente devuelvo:82.77777777777779
+
+PUNTUACION(1):82.77777777777779
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:82.77777777777779
+true
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:6
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->99.0/274.0
+16:(parte derecha cara)->347.0/299.0
+7:(barbilla1)->258.0/482.0
+8:(barbilla2)->293.0/492.0
+9:(barbilla3)->318.0/487.0
+27:(entrecejo)->328.0/284.0
+30:(toxa punta)->362.0/353.0
+33:(toxa abajo)->333.0/373.0
+31:(izq toxa)->313.0/368.0
+35:(der toxa)->338.0/368.0
+36:(ojo izq fuera)->243.0/274.0
+39:(ojo izq dentro)->283.0/279.0
+45:(ojo der fuera)->343.0/284.0
+42:(ojo der dentro)->328.0/284.0
+48:(boca izq)->273.0/413.0
+54:(boca der)->333.0/418.0
+51:(boca arriba)->333.0/408.0
+57:(boca abajo)->328.0/428.0
+Numero prueba:5
+La diferencia es:35.0
+El margen pedido es:10
+
+Numero prueba:6
+La diferencia es:10.0
+El margen pedido es:10
+.............SUPERO prueba 6
+
+Numero prueba:7
+La diferencia es:25.0
+El margen pedido es:10
+
+Numero prueba:8
+prueba de posicionado
+punto 1:328.0/284.0
+punto 2:283.0/279.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+NO lo esta
+
+Numero prueba:9
+prueba de posicionado
+punto 1:328.0/284.0
+punto 2:328.0/284.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+NO lo esta
+
+Numero prueba:14
+la x1 es:99.0
+la x2 es:347.0
+el centro horizontal esta en:223.0
+la x es:328.0
+La diferencia es:105.0
+El margen pedido es:10
+
+Numero prueba:15
+prueba de posicionado
+punto 1:362.0/353.0
+punto 2:99.0/274.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+NO lo esta
+
+Numero prueba:16
+prueba de posicionado
+punto 1:362.0/353.0
+punto 2:347.0/299.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+NO lo esta
+
+Numero prueba:17
+prueba de posicionado
+punto 1:328.0/284.0
+punto 2:283.0/279.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+NO lo esta
+
+Numero prueba:18
+prueba de posicionado
+punto 1:328.0/284.0
+punto 2:328.0/284.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+NO lo esta
+
+Numero prueba:19
+prueba de posicionado
+punto 1:99.0/274.0
+punto 2:243.0/274.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+NO lo esta
+
+Numero prueba:20
+prueba de posicionado
+punto 1:347.0/299.0
+punto 2:343.0/284.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 20
+
+Voy a reajustar la puntuacion:16.666666666666668
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:16.666666666666668
+Finalmente devuelvo:16.666666666666668
+
+PUNTUACION(1):16.666666666666668
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:16.666666666666668
+true
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:6
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->215.0/287.0
+16:(parte derecha cara)->498.0/276.0
+7:(barbilla1)->317.0/331.0
+8:(barbilla2)->357.0/331.0
+9:(barbilla3)->400.0/335.0
+27:(entrecejo)->360.0/157.0
+30:(toxa punta)->360.0/169.0
+33:(toxa abajo)->360.0/213.0
+31:(izq toxa)->341.0/216.0
+35:(der toxa)->384.0/216.0
+36:(ojo izq fuera)->282.0/193.0
+39:(ojo izq dentro)->325.0/185.0
+45:(ojo der fuera)->439.0/193.0
+42:(ojo der dentro)->396.0/185.0
+48:(boca izq)->317.0/268.0
+54:(boca der)->412.0/268.0
+51:(boca arriba)->360.0/236.0
+57:(boca abajo)->364.0/256.0
+Numero prueba:5
+La diferencia es:7.0
+El margen pedido es:10
+.............SUPERO prueba 5
+
+Numero prueba:6
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 6
+
+Numero prueba:7
+La diferencia es:11.0
+El margen pedido es:10
+
+Numero prueba:8
+prueba de posicionado
+punto 1:360.0/157.0
+punto 2:325.0/185.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 8
+
+Numero prueba:9
+prueba de posicionado
+punto 1:360.0/157.0
+punto 2:396.0/185.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 9
+
+Numero prueba:14
+la x1 es:215.0
+la x2 es:498.0
+el centro horizontal esta en:356.5
+la x es:364.0
+La diferencia es:7.5
+El margen pedido es:10
+.............SUPERO prueba 14
+
+Numero prueba:15
+prueba de posicionado
+punto 1:360.0/169.0
+punto 2:215.0/287.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+Como el minimo es > 0
+La diferencia es:118.0
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 15
+
+Numero prueba:16
+prueba de posicionado
+punto 1:360.0/169.0
+punto 2:498.0/276.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+Como el minimo es > 0
+La diferencia es:107.0
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 16
+
+Numero prueba:17
+prueba de posicionado
+punto 1:360.0/157.0
+punto 2:325.0/185.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 17
+
+Numero prueba:18
+prueba de posicionado
+punto 1:360.0/157.0
+punto 2:396.0/185.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 18
+
+Numero prueba:19
+prueba de posicionado
+punto 1:215.0/287.0
+punto 2:282.0/193.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 19
+
+Numero prueba:20
+prueba de posicionado
+punto 1:498.0/276.0
+punto 2:439.0/193.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 20
+
+Voy a reajustar la puntuacion:91.66666666666666
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:91.66666666666666
+Finalmente devuelvo:91.66666666666666
+
+PUNTUACION(1):91.66666666666666
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:91.66666666666666
+true
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:7
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->191.0/278.0
+16:(parte derecha cara)->482.0/270.0
+7:(barbilla1)->276.0/328.0
+8:(barbilla2)->319.0/328.0
+9:(barbilla3)->366.0/332.0
+27:(entrecejo)->323.0/150.0
+30:(toxa punta)->319.0/165.0
+33:(toxa abajo)->323.0/208.0
+31:(izq toxa)->304.0/212.0
+35:(der toxa)->346.0/212.0
+36:(ojo izq fuera)->249.0/185.0
+39:(ojo izq dentro)->292.0/177.0
+45:(ojo der fuera)->404.0/185.0
+42:(ojo der dentro)->362.0/177.0
+48:(boca izq)->280.0/266.0
+54:(boca der)->377.0/266.0
+51:(boca arriba)->323.0/235.0
+57:(boca abajo)->327.0/258.0
+Numero prueba:1
+prueba de posicionado
+punto 1:319.0/328.0
+punto 2:276.0/328.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+NO lo esta
+
+Numero prueba:2
+prueba de posicionado
+punto 1:319.0/328.0
+punto 2:366.0/332.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+NO lo esta
+
+Numero prueba:3
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 3
+
+Numero prueba:4
+La diferencia es:8.0
+El margen pedido es:10
+.............SUPERO prueba 4
+
+Numero prueba:5
+prueba de posicionado
+punto 1:191.0/278.0
+punto 2:249.0/185.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+NO lo esta
+
+Numero prueba:6
+prueba de posicionado
+punto 1:482.0/270.0
+punto 2:404.0/185.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+NO lo esta
+
+Numero prueba:7
+La diferencia es:8.0
+El margen pedido es:10
+.............SUPERO prueba 7
+
+Numero prueba:8
+la x1 es:191.0
+la x2 es:482.0
+el centro horizontal esta en:336.5
+la x es:327.0
+La diferencia es:9.5
+El margen pedido es:10
+.............SUPERO prueba 8
+
+Numero prueba:9
+La diferencia es:47.0
+El margen pedido es:10
+
+Numero prueba:10
+prueba de posicionado
+punto 1:323.0/150.0
+punto 2:292.0/177.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+NO lo esta
+
+Numero prueba:11
+prueba de posicionado
+punto 1:323.0/150.0
+punto 2:362.0/177.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+NO lo esta
+
+Voy a reajustar la puntuacion:36.36363636363637
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:36.36363636363637
+Finalmente devuelvo:36.36363636363637
+
+PUNTUACION(1):36.36363636363637
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:36.36363636363637
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:7
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->170.0/252.0
+16:(parte derecha cara)->438.0/248.0
+7:(barbilla1)->286.0/466.0
+8:(barbilla2)->331.0/475.0
+9:(barbilla3)->367.0/457.0
+27:(entrecejo)->331.0/328.0
+30:(toxa punta)->340.0/404.0
+33:(toxa abajo)->335.0/408.0
+31:(izq toxa)->309.0/399.0
+35:(der toxa)->353.0/395.0
+36:(ojo izq fuera)->242.0/310.0
+39:(ojo izq dentro)->291.0/315.0
+45:(ojo der fuera)->398.0/292.0
+42:(ojo der dentro)->358.0/306.0
+48:(boca izq)->282.0/422.0
+54:(boca der)->376.0/413.0
+51:(boca arriba)->335.0/426.0
+57:(boca abajo)->335.0/440.0
+Numero prueba:1
+prueba de posicionado
+punto 1:331.0/475.0
+punto 2:286.0/466.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 1
+
+Numero prueba:2
+prueba de posicionado
+punto 1:331.0/475.0
+punto 2:367.0/457.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 2
+
+Numero prueba:3
+La diferencia es:18.0
+El margen pedido es:10
+
+Numero prueba:4
+La diferencia es:4.0
+El margen pedido es:10
+.............SUPERO prueba 4
+
+Numero prueba:5
+prueba de posicionado
+punto 1:170.0/252.0
+punto 2:242.0/310.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+Como el minimo es > 0
+La diferencia es:58.0
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 5
+
+Numero prueba:6
+prueba de posicionado
+punto 1:438.0/248.0
+punto 2:398.0/292.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+Como el minimo es > 0
+La diferencia es:44.0
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 6
+
+Numero prueba:7
+La diferencia es:4.0
+El margen pedido es:10
+.............SUPERO prueba 7
+
+Numero prueba:8
+la x1 es:170.0
+la x2 es:438.0
+el centro horizontal esta en:304.0
+la x es:335.0
+La diferencia es:31.0
+El margen pedido es:10
+
+Numero prueba:9
+La diferencia es:9.0
+El margen pedido es:10
+.............SUPERO prueba 9
+
+Numero prueba:10
+prueba de posicionado
+punto 1:331.0/328.0
+punto 2:291.0/315.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 10
+
+Numero prueba:11
+prueba de posicionado
+punto 1:331.0/328.0
+punto 2:358.0/306.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 11
+
+Voy a reajustar la puntuacion:81.81818181818183
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:81.81818181818183
+Finalmente devuelvo:81.81818181818183
+
+PUNTUACION(1):81.81818181818183
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:81.81818181818183
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+paso0
+path:/var/www/html/reconocimientofacialV2/admin/files/videos_registro
+path_imgs:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:1
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->138.0/103.0
+16:(parte derecha cara)->581.0/96.0
+7:(barbilla1)->322.0/450.0
+8:(barbilla2)->397.0/464.0
+9:(barbilla3)->465.0/437.0
+27:(entrecejo)->403.0/158.0
+30:(toxa punta)->410.0/273.0
+33:(toxa abajo)->403.0/294.0
+31:(izq toxa)->369.0/287.0
+35:(der toxa)->437.0/280.0
+36:(ojo izq fuera)->260.0/144.0
+39:(ojo izq dentro)->335.0/144.0
+45:(ojo der fuera)->519.0/117.0
+42:(ojo der dentro)->444.0/137.0
+48:(boca izq)->322.0/348.0
+54:(boca der)->478.0/341.0
+51:(boca arriba)->403.0/341.0
+57:(boca abajo)->410.0/375.0
+Numero prueba:1
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 1
+
+Numero prueba:2
+La diferencia es:13.0
+El margen pedido es:10
+
+Numero prueba:3
+La diferencia es:27.0
+El margen pedido es:10
+
+Numero prueba:5
+La diferencia es:7.0
+El margen pedido es:10
+.............SUPERO prueba 5
+
+Numero prueba:6
+La diferencia es:7.0
+El margen pedido es:10
+.............SUPERO prueba 6
+
+Numero prueba:7
+la x1 es:260.0
+la x2 es:519.0
+el centro horizontal esta en:389.5
+la x es:403.0
+La diferencia es:13.5
+El margen pedido es:10
+
+Numero prueba:8
+la x1 es:138.0
+la x2 es:581.0
+el centro horizontal esta en:359.5
+la x es:403.0
+La diferencia es:43.5
+El margen pedido es:10
+
+Numero prueba:9
+la x1 es:138.0
+la x2 es:581.0
+el centro horizontal esta en:359.5
+la x es:403.0
+La diferencia es:43.5
+El margen pedido es:10
+
+Numero prueba:10
+La distancia es:41.0
+El margen pedido es:12
+
+Numero prueba:11
+prueba de posicionado
+punto 1:397.0/464.0
+punto 2:322.0/450.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 11
+
+Numero prueba:13
+La diferencia es:41.0
+El margen pedido es:10
+
+Numero prueba:14
+La diferencia es:21.0
+El margen pedido es:10
+
+Voy a reajustar la puntuacion:33.333333333333336
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:33.333333333333336
+Finalmente devuelvo:33.333333333333336
+
+PUNTUACION(1):33.333333333333336
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:33.333333333333336
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:1
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->79.0/397.0
+16:(parte derecha cara)->374.0/314.0
+7:(barbilla1)->207.0/530.0
+8:(barbilla2)->256.0/520.0
+9:(barbilla3)->290.0/505.0
+27:(entrecejo)->172.0/417.0
+30:(toxa punta)->182.0/491.0
+33:(toxa abajo)->197.0/491.0
+31:(izq toxa)->172.0/481.0
+35:(der toxa)->221.0/476.0
+36:(ojo izq fuera)->104.0/402.0
+39:(ojo izq dentro)->148.0/402.0
+45:(ojo der fuera)->271.0/378.0
+42:(ojo der dentro)->217.0/392.0
+48:(boca izq)->182.0/495.0
+54:(boca der)->261.0/500.0
+51:(boca arriba)->207.0/510.0
+57:(boca abajo)->217.0/525.0
+Numero prueba:1
+La diferencia es:25.0
+El margen pedido es:10
+
+Numero prueba:2
+La diferencia es:39.0
+El margen pedido es:10
+
+Numero prueba:3
+La diferencia es:24.0
+El margen pedido es:10
+
+Numero prueba:5
+La diferencia es:83.0
+El margen pedido es:10
+
+Numero prueba:6
+La diferencia es:5.0
+El margen pedido es:10
+.............SUPERO prueba 6
+
+Numero prueba:7
+la x1 es:104.0
+la x2 es:271.0
+el centro horizontal esta en:187.5
+la x es:172.0
+La diferencia es:15.5
+El margen pedido es:10
+
+Numero prueba:8
+la x1 es:79.0
+la x2 es:374.0
+el centro horizontal esta en:226.5
+la x es:172.0
+La diferencia es:54.5
+El margen pedido es:10
+
+Numero prueba:9
+la x1 es:79.0
+la x2 es:374.0
+el centro horizontal esta en:226.5
+la x es:197.0
+La diferencia es:29.5
+El margen pedido es:10
+
+Numero prueba:10
+La distancia es:5.0
+El margen pedido es:12
+.............SUPERO prueba 10
+
+Numero prueba:11
+prueba de posicionado
+punto 1:256.0/520.0
+punto 2:207.0/530.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+NO lo esta
+
+Numero prueba:13
+La diferencia es:5.0
+El margen pedido es:10
+.............SUPERO prueba 13
+
+Numero prueba:14
+La diferencia es:64.0
+El margen pedido es:10
+
+Voy a reajustar la puntuacion:25.0
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:25.0
+Finalmente devuelvo:25.0
+
+PUNTUACION(1):25.0
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:25.0
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:1
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->201.0/275.0
+16:(parte derecha cara)->434.0/267.0
+7:(barbilla1)->288.0/433.0
+8:(barbilla2)->323.0/437.0
+9:(barbilla3)->363.0/433.0
+27:(entrecejo)->323.0/271.0
+30:(toxa punta)->319.0/323.0
+33:(toxa abajo)->323.0/342.0
+31:(izq toxa)->304.0/334.0
+35:(der toxa)->343.0/334.0
+36:(ojo izq fuera)->253.0/271.0
+39:(ojo izq dentro)->292.0/271.0
+45:(ojo der fuera)->390.0/264.0
+42:(ojo der dentro)->351.0/267.0
+48:(boca izq)->284.0/374.0
+54:(boca der)->363.0/374.0
+51:(boca arriba)->323.0/366.0
+57:(boca abajo)->323.0/382.0
+Numero prueba:1
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 1
+
+Numero prueba:2
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 2
+
+Numero prueba:3
+La diferencia es:7.0
+El margen pedido es:10
+.............SUPERO prueba 3
+
+Numero prueba:5
+La diferencia es:8.0
+El margen pedido es:10
+.............SUPERO prueba 5
+
+Numero prueba:6
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 6
+
+Numero prueba:7
+la x1 es:253.0
+la x2 es:390.0
+el centro horizontal esta en:321.5
+la x es:323.0
+La diferencia es:1.5
+El margen pedido es:10
+.............SUPERO prueba 7
+
+Numero prueba:8
+la x1 es:201.0
+la x2 es:434.0
+el centro horizontal esta en:317.5
+la x es:323.0
+La diferencia es:5.5
+El margen pedido es:10
+.............SUPERO prueba 8
+
+Numero prueba:9
+la x1 es:201.0
+la x2 es:434.0
+el centro horizontal esta en:317.5
+la x es:323.0
+La diferencia es:5.5
+El margen pedido es:10
+.............SUPERO prueba 9
+
+Numero prueba:10
+La distancia es:4.0
+El margen pedido es:12
+.............SUPERO prueba 10
+
+Numero prueba:11
+prueba de posicionado
+punto 1:323.0/437.0
+punto 2:288.0/433.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 11
+
+Numero prueba:13
+La diferencia es:4.0
+El margen pedido es:10
+.............SUPERO prueba 13
+
+Numero prueba:14
+La diferencia es:3.0
+El margen pedido es:10
+.............SUPERO prueba 14
+
+Voy a reajustar la puntuacion:99.99999999999999
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:99.99999999999999
+Finalmente devuelvo:99.99999999999999
+
+PUNTUACION(1):99.99999999999999
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:99.99999999999999
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:2
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->205.0/278.0
+16:(parte derecha cara)->441.0/266.0
+7:(barbilla1)->299.0/420.0
+8:(barbilla2)->335.0/428.0
+9:(barbilla3)->370.0/420.0
+27:(entrecejo)->335.0/258.0
+30:(toxa punta)->335.0/306.0
+33:(toxa abajo)->335.0/329.0
+31:(izq toxa)->315.0/325.0
+35:(der toxa)->355.0/321.0
+36:(ojo izq fuera)->264.0/262.0
+39:(ojo izq dentro)->303.0/262.0
+45:(ojo der fuera)->398.0/254.0
+42:(ojo der dentro)->358.0/258.0
+48:(boca izq)->295.0/365.0
+54:(boca der)->374.0/361.0
+51:(boca arriba)->335.0/353.0
+57:(boca abajo)->339.0/369.0
+Numero prueba:1
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 1
+
+Numero prueba:2
+La diferencia es:8.0
+El margen pedido es:10
+.............SUPERO prueba 2
+
+Numero prueba:3
+prueba de posicionado
+punto 1:335.0/306.0
+punto 2:441.0/266.0
+minimo:0
+El punto 1 tiene que estar mas a la izquierda que el 2
+Lo esta
+El minimo es 0, por lo que superaria
+.............SUPERO prueba 3
+
+Numero prueba:4
+prueba de posicionado
+punto 1:335.0/428.0
+punto 2:299.0/420.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 4
+
+Numero prueba:5
+prueba de posicionado
+punto 1:335.0/428.0
+punto 2:370.0/420.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 5
+
+Numero prueba:6
+La diferencia es:5.333333333333333
+El margen pedido es:3
+.............SUPERO prueba 6
+
+Numero prueba:7
+La diferencia es:0.0
+El margen pedido es:1.5
+
+Numero prueba:8
+La diferencia es:15.833333333333334
+El margen pedido es:1.2
+.............SUPERO prueba 8
+
+Numero prueba:9
+La diferencia es:10.0
+El margen pedido es:1.2
+.............SUPERO prueba 9
+
+Numero prueba:10
+La diferencia es:6.666666666666667
+El margen pedido es:1.2
+.............SUPERO prueba 10
+
+Numero prueba:11
+La diferencia es:43.5
+El margen pedido es:2
+.............SUPERO prueba 11
+
+Voy a reajustar la puntuacion:90.90909090909092
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:90.90909090909092
+Finalmente devuelvo:90.90909090909092
+
+PUNTUACION(1):90.90909090909092
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:90.90909090909092
+true
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:3
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->209.0/285.0
+16:(parte derecha cara)->433.0/245.0
+7:(barbilla1)->265.0/429.0
+8:(barbilla2)->293.0/433.0
+9:(barbilla3)->325.0/425.0
+27:(entrecejo)->265.0/261.0
+30:(toxa punta)->253.0/313.0
+33:(toxa abajo)->269.0/333.0
+31:(izq toxa)->257.0/333.0
+35:(der toxa)->289.0/325.0
+36:(ojo izq fuera)->225.0/273.0
+39:(ojo izq dentro)->253.0/269.0
+45:(ojo der fuera)->341.0/249.0
+42:(ojo der dentro)->305.0/257.0
+48:(boca izq)->253.0/373.0
+54:(boca der)->321.0/361.0
+51:(boca arriba)->273.0/357.0
+57:(boca abajo)->273.0/373.0
+Numero prueba:1
+prueba de posicionado
+punto 1:253.0/313.0
+punto 2:209.0/285.0
+minimo:0
+El punto 1 tiene que estar mas a la derecha que el 2
+Lo esta
+El minimo es 0, por lo que superaria
+.............SUPERO prueba 1
+
+Numero prueba:2
+La diferencia es:3.0
+El margen pedido es:4
+.............SUPERO prueba 2
+
+Numero prueba:3
+La diferencia es:4.0
+El margen pedido es:12
+.............SUPERO prueba 3
+
+Numero prueba:4
+La diferencia es:28.0
+El margen pedido es:15
+
+Numero prueba:5
+prueba de posicionado
+punto 1:293.0/433.0
+punto 2:265.0/429.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 5
+
+Numero prueba:6
+prueba de posicionado
+punto 1:293.0/433.0
+punto 2:325.0/425.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 6
+
+Numero prueba:7
+prueba de posicionado
+punto 1:209.0/285.0
+punto 2:265.0/261.0
+minimo:0
+El punto 1 tiene que estar mas a la izquierda que el 2
+Lo esta
+El minimo es 0, por lo que superaria
+.............SUPERO prueba 7
+
+Numero prueba:8
+prueba de posicionado
+punto 1:321.0/361.0
+punto 2:273.0/357.0
+minimo:0
+El punto 1 tiene que estar mas a la izquierda que el 2
+NO lo esta
+
+Numero prueba:9
+La diferencia es:2.6666666666666665
+El margen pedido es:1.5
+.............SUPERO prueba 9
+
+Voy a reajustar la puntuacion:82.77777777777779
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:82.77777777777779
+Finalmente devuelvo:82.77777777777779
+
+PUNTUACION(1):82.77777777777779
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:82.77777777777779
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:4
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->228.0/339.0
+16:(parte derecha cara)->493.0/292.0
+7:(barbilla1)->284.0/506.0
+8:(barbilla2)->316.0/510.0
+9:(barbilla3)->353.0/506.0
+27:(entrecejo)->279.0/329.0
+30:(toxa punta)->265.0/404.0
+33:(toxa abajo)->284.0/422.0
+31:(izq toxa)->270.0/417.0
+35:(der toxa)->307.0/417.0
+36:(ojo izq fuera)->237.0/325.0
+39:(ojo izq dentro)->270.0/329.0
+45:(ojo der fuera)->372.0/320.0
+42:(ojo der dentro)->325.0/325.0
+48:(boca izq)->265.0/459.0
+54:(boca der)->339.0/459.0
+51:(boca arriba)->284.0/450.0
+57:(boca abajo)->288.0/473.0
+Numero prueba:1
+La diferencia es:5.0
+El margen pedido es:10
+.............SUPERO prueba 1
+
+Numero prueba:2
+La diferencia es:5.0
+El margen pedido es:10
+.............SUPERO prueba 2
+
+Numero prueba:3
+prueba de posicionado
+punto 1:265.0/404.0
+punto 2:228.0/339.0
+minimo:0
+El punto 1 tiene que estar mas a la derecha que el 2
+Lo esta
+El minimo es 0, por lo que superaria
+.............SUPERO prueba 3
+
+Numero prueba:4
+prueba de posicionado
+punto 1:316.0/510.0
+punto 2:284.0/506.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 4
+
+Numero prueba:5
+prueba de posicionado
+punto 1:316.0/510.0
+punto 2:353.0/506.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 5
+
+Numero prueba:6
+La diferencia es:9.333333333333334
+El margen pedido es:3
+.............SUPERO prueba 6
+
+Numero prueba:7
+La diferencia es:3.3333333333333335
+El margen pedido es:1.5
+.............SUPERO prueba 7
+
+Numero prueba:8
+La diferencia es:10.833333333333334
+El margen pedido es:1.2
+.............SUPERO prueba 8
+
+Numero prueba:9
+La diferencia es:7.5
+El margen pedido es:1.2
+.............SUPERO prueba 9
+
+Numero prueba:10
+La diferencia es:3.3333333333333335
+El margen pedido es:1.2
+.............SUPERO prueba 10
+
+Numero prueba:11
+La diferencia es:83.5
+El margen pedido es:2
+.............SUPERO prueba 11
+
+Voy a reajustar la puntuacion:100.00000000000001
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:100.00000000000001
+Finalmente devuelvo:100.00000000000001
+
+PUNTUACION(1):100.00000000000001
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:100.00000000000001
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:5
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->180.0/267.0
+16:(parte derecha cara)->436.0/271.0
+7:(barbilla1)->326.0/441.0
+8:(barbilla2)->367.0/445.0
+9:(barbilla3)->395.0/436.0
+27:(entrecejo)->381.0/248.0
+30:(toxa punta)->404.0/308.0
+33:(toxa abajo)->386.0/331.0
+31:(izq toxa)->363.0/326.0
+35:(der toxa)->399.0/326.0
+36:(ojo izq fuera)->294.0/253.0
+39:(ojo izq dentro)->335.0/253.0
+45:(ojo der fuera)->422.0/253.0
+42:(ojo der dentro)->390.0/253.0
+48:(boca izq)->335.0/367.0
+54:(boca der)->409.0/372.0
+51:(boca arriba)->386.0/358.0
+57:(boca abajo)->386.0/377.0
+Numero prueba:1
+prueba de posicionado
+punto 1:404.0/308.0
+punto 2:436.0/271.0
+minimo:0
+El punto 1 tiene que estar mas a la izquierda que el 2
+Lo esta
+El minimo es 0, por lo que superaria
+.............SUPERO prueba 1
+
+Numero prueba:2
+La diferencia es:4.5
+El margen pedido es:4
+.............SUPERO prueba 2
+
+Numero prueba:3
+La diferencia es:5.0
+El margen pedido es:12
+.............SUPERO prueba 3
+
+Numero prueba:4
+La diferencia es:13.0
+El margen pedido es:15
+.............SUPERO prueba 4
+
+Numero prueba:5
+prueba de posicionado
+punto 1:367.0/445.0
+punto 2:326.0/441.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 5
+
+Numero prueba:6
+prueba de posicionado
+punto 1:367.0/445.0
+punto 2:395.0/436.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 6
+
+Numero prueba:7
+prueba de posicionado
+punto 1:436.0/271.0
+punto 2:381.0/248.0
+minimo:0
+El punto 1 tiene que estar mas a la derecha que el 2
+Lo esta
+El minimo es 0, por lo que superaria
+.............SUPERO prueba 7
+
+Numero prueba:8
+prueba de posicionado
+punto 1:335.0/367.0
+punto 2:386.0/358.0
+minimo:0
+El punto 1 tiene que estar mas a la derecha que el 2
+NO lo esta
+
+Numero prueba:9
+La diferencia es:0.0
+El margen pedido es:1.5
+
+Voy a reajustar la puntuacion:82.77777777777779
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:82.77777777777779
+Finalmente devuelvo:82.77777777777779
+
+PUNTUACION(1):82.77777777777779
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:82.77777777777779
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:6
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->153.0/272.0
+16:(parte derecha cara)->308.0/297.0
+7:(barbilla1)->270.0/453.0
+8:(barbilla2)->287.0/465.0
+9:(barbilla3)->304.0/457.0
+27:(entrecejo)->325.0/284.0
+30:(toxa punta)->354.0/339.0
+33:(toxa abajo)->329.0/356.0
+31:(izq toxa)->317.0/352.0
+35:(der toxa)->321.0/356.0
+36:(ojo izq fuera)->279.0/280.0
+39:(ojo izq dentro)->291.0/284.0
+45:(ojo der fuera)->291.0/289.0
+42:(ojo der dentro)->300.0/284.0
+48:(boca izq)->296.0/389.0
+54:(boca der)->300.0/389.0
+51:(boca arriba)->325.0/381.0
+57:(boca abajo)->317.0/402.0
+Numero prueba:5
+La diferencia es:30.0
+El margen pedido es:10
+
+Numero prueba:6
+La diferencia es:9.0
+El margen pedido es:10
+.............SUPERO prueba 6
+
+Numero prueba:7
+La diferencia es:25.0
+El margen pedido es:10
+
+Numero prueba:8
+prueba de posicionado
+punto 1:325.0/284.0
+punto 2:291.0/284.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+NO lo esta
+
+Numero prueba:9
+prueba de posicionado
+punto 1:325.0/284.0
+punto 2:300.0/284.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+NO lo esta
+
+Numero prueba:14
+la x1 es:153.0
+la x2 es:308.0
+el centro horizontal esta en:230.5
+la x es:317.0
+La diferencia es:86.5
+El margen pedido es:10
+
+Numero prueba:15
+prueba de posicionado
+punto 1:354.0/339.0
+punto 2:153.0/272.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+NO lo esta
+
+Numero prueba:16
+prueba de posicionado
+punto 1:354.0/339.0
+punto 2:308.0/297.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+NO lo esta
+
+Numero prueba:17
+prueba de posicionado
+punto 1:325.0/284.0
+punto 2:291.0/284.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+NO lo esta
+
+Numero prueba:18
+prueba de posicionado
+punto 1:325.0/284.0
+punto 2:300.0/284.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+NO lo esta
+
+Numero prueba:19
+prueba de posicionado
+punto 1:153.0/272.0
+punto 2:279.0/280.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+NO lo esta
+
+Numero prueba:20
+prueba de posicionado
+punto 1:308.0/297.0
+punto 2:291.0/289.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 20
+
+Voy a reajustar la puntuacion:16.666666666666668
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:16.666666666666668
+Finalmente devuelvo:16.666666666666668
+
+PUNTUACION(1):16.666666666666668
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:16.666666666666668
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:6
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->221.0/277.0
+16:(parte derecha cara)->485.0/277.0
+7:(barbilla1)->316.0/357.0
+8:(barbilla2)->359.0/357.0
+9:(barbilla3)->397.0/361.0
+27:(entrecejo)->362.0/188.0
+30:(toxa punta)->366.0/219.0
+33:(toxa abajo)->366.0/254.0
+31:(izq toxa)->343.0/254.0
+35:(der toxa)->382.0/254.0
+36:(ojo izq fuera)->286.0/215.0
+39:(ojo izq dentro)->328.0/211.0
+45:(ojo der fuera)->431.0/219.0
+42:(ojo der dentro)->389.0/211.0
+48:(boca izq)->316.0/300.0
+54:(boca der)->405.0/303.0
+51:(boca arriba)->362.0/277.0
+57:(boca abajo)->362.0/292.0
+Numero prueba:5
+La diferencia es:3.0
+El margen pedido es:10
+.............SUPERO prueba 5
+
+Numero prueba:6
+La diferencia es:4.0
+El margen pedido es:10
+.............SUPERO prueba 6
+
+Numero prueba:7
+La diferencia es:0.0
+El margen pedido es:10
+.............SUPERO prueba 7
+
+Numero prueba:8
+prueba de posicionado
+punto 1:362.0/188.0
+punto 2:328.0/211.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 8
+
+Numero prueba:9
+prueba de posicionado
+punto 1:362.0/188.0
+punto 2:389.0/211.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 9
+
+Numero prueba:14
+la x1 es:221.0
+la x2 es:485.0
+el centro horizontal esta en:353.0
+la x es:362.0
+La diferencia es:9.0
+El margen pedido es:10
+.............SUPERO prueba 14
+
+Numero prueba:15
+prueba de posicionado
+punto 1:366.0/219.0
+punto 2:221.0/277.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+Como el minimo es > 0
+La diferencia es:58.0
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 15
+
+Numero prueba:16
+prueba de posicionado
+punto 1:366.0/219.0
+punto 2:485.0/277.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+Como el minimo es > 0
+La diferencia es:58.0
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 16
+
+Numero prueba:17
+prueba de posicionado
+punto 1:362.0/188.0
+punto 2:328.0/211.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 17
+
+Numero prueba:18
+prueba de posicionado
+punto 1:362.0/188.0
+punto 2:389.0/211.0
+minimo:0
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 18
+
+Numero prueba:19
+prueba de posicionado
+punto 1:221.0/277.0
+punto 2:286.0/215.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 19
+
+Numero prueba:20
+prueba de posicionado
+punto 1:485.0/277.0
+punto 2:431.0/219.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 20
+
+Voy a reajustar la puntuacion:99.99999999999999
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:99.99999999999999
+Finalmente devuelvo:99.99999999999999
+
+PUNTUACION(1):99.99999999999999
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:99.99999999999999
+true
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:7
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->206.0/293.0
+16:(parte derecha cara)->468.0/274.0
+7:(barbilla1)->297.0/339.0
+8:(barbilla2)->335.0/339.0
+9:(barbilla3)->373.0/339.0
+27:(entrecejo)->335.0/179.0
+30:(toxa punta)->335.0/198.0
+33:(toxa abajo)->335.0/232.0
+31:(izq toxa)->320.0/236.0
+35:(der toxa)->358.0/236.0
+36:(ojo izq fuera)->263.0/210.0
+39:(ojo izq dentro)->301.0/202.0
+45:(ojo der fuera)->407.0/206.0
+42:(ojo der dentro)->369.0/202.0
+48:(boca izq)->297.0/282.0
+54:(boca der)->377.0/282.0
+51:(boca arriba)->335.0/255.0
+57:(boca abajo)->339.0/274.0
+Numero prueba:1
+prueba de posicionado
+punto 1:335.0/339.0
+punto 2:297.0/339.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+NO lo esta
+
+Numero prueba:2
+prueba de posicionado
+punto 1:335.0/339.0
+punto 2:373.0/339.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+NO lo esta
+
+Numero prueba:3
+La diferencia es:4.0
+El margen pedido es:10
+.............SUPERO prueba 3
+
+Numero prueba:4
+La diferencia es:4.0
+El margen pedido es:10
+.............SUPERO prueba 4
+
+Numero prueba:5
+prueba de posicionado
+punto 1:206.0/293.0
+punto 2:263.0/210.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+NO lo esta
+
+Numero prueba:6
+prueba de posicionado
+punto 1:468.0/274.0
+punto 2:407.0/206.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+NO lo esta
+
+Numero prueba:7
+La diferencia es:19.0
+El margen pedido es:10
+
+Numero prueba:8
+la x1 es:206.0
+la x2 es:468.0
+el centro horizontal esta en:337.0
+la x es:339.0
+La diferencia es:2.0
+El margen pedido es:10
+.............SUPERO prueba 8
+
+Numero prueba:9
+La diferencia es:34.0
+El margen pedido es:10
+
+Numero prueba:10
+prueba de posicionado
+punto 1:335.0/179.0
+punto 2:301.0/202.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+NO lo esta
+
+Numero prueba:11
+prueba de posicionado
+punto 1:335.0/179.0
+punto 2:369.0/202.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+NO lo esta
+
+Voy a reajustar la puntuacion:27.272727272727273
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:27.272727272727273
+Finalmente devuelvo:27.272727272727273
+
+PUNTUACION(1):27.272727272727273
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:27.272727272727273
+true
+Ruta_imagen:/var/www/html/reconocimientofacialV2/admin/files/videos_registro/1.jpg
+basename:1.jpg
+local_id:1
+posicion:7
+-------------Analizando en posicon_cara-------------
+Tiene caras1
+0:(parte izquierda cara)->149.0/258.0
+16:(parte derecha cara)->420.0/254.0
+7:(barbilla1)->260.0/467.0
+8:(barbilla2)->309.0/481.0
+9:(barbilla3)->345.0/454.0
+27:(entrecejo)->314.0/347.0
+30:(toxa punta)->318.0/423.0
+33:(toxa abajo)->314.0/423.0
+31:(izq toxa)->291.0/414.0
+35:(der toxa)->331.0/409.0
+36:(ojo izq fuera)->224.0/329.0
+39:(ojo izq dentro)->273.0/334.0
+45:(ojo der fuera)->380.0/303.0
+42:(ojo der dentro)->336.0/320.0
+48:(boca izq)->260.0/436.0
+54:(boca der)->354.0/427.0
+51:(boca arriba)->314.0/441.0
+57:(boca abajo)->314.0/454.0
+Numero prueba:1
+prueba de posicionado
+punto 1:309.0/481.0
+punto 2:260.0/467.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 1
+
+Numero prueba:2
+prueba de posicionado
+punto 1:309.0/481.0
+punto 2:345.0/454.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 2
+
+Numero prueba:3
+La diferencia es:26.0
+El margen pedido es:10
+
+Numero prueba:4
+La diferencia es:5.0
+El margen pedido es:10
+.............SUPERO prueba 4
+
+Numero prueba:5
+prueba de posicionado
+punto 1:149.0/258.0
+punto 2:224.0/329.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+Como el minimo es > 0
+La diferencia es:71.0
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 5
+
+Numero prueba:6
+prueba de posicionado
+punto 1:420.0/254.0
+punto 2:380.0/303.0
+minimo:15
+El punto 1 tiene que estar mas arriba que el 2
+Lo esta
+Como el minimo es > 0
+La diferencia es:49.0
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 6
+
+Numero prueba:7
+La diferencia es:4.0
+El margen pedido es:10
+.............SUPERO prueba 7
+
+Numero prueba:8
+la x1 es:149.0
+la x2 es:420.0
+el centro horizontal esta en:284.5
+la x es:314.0
+La diferencia es:29.5
+El margen pedido es:10
+
+Numero prueba:9
+La diferencia es:4.0
+El margen pedido es:10
+.............SUPERO prueba 9
+
+Numero prueba:10
+prueba de posicionado
+punto 1:314.0/347.0
+punto 2:273.0/334.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 10
+
+Numero prueba:11
+prueba de posicionado
+punto 1:314.0/347.0
+punto 2:336.0/320.0
+minimo:0
+El punto 1 tiene que estar mas abajo que el 2
+Lo esta
+La diferencia es > que el minimo, superaria
+.............SUPERO prueba 11
+
+Voy a reajustar la puntuacion:81.81818181818183
+Definitivo esta enb:0
+Es > que definitivo, por lo que reajusto no se por que pero definitivo que es lo que devuelvo se queda en:81.81818181818183
+Finalmente devuelvo:81.81818181818183
+
+PUNTUACION(1):81.81818181818183
+Fichero resultados->/var/www/html/reconocimientofacialV2/admin/files/videos_registro_resultados/1.txt<- escrito:81.81818181818183
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
