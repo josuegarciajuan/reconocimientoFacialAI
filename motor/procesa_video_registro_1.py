@@ -27,8 +27,8 @@ FICHERO=sys.argv[2]
 HILO=sys.argv[3]
 CAMARA_ID="0"
 #RUTA_PROYECTO="/var/www/html/reconocimientoFacial/proyecto_definitivo/"
-RUTA_PROYECTO="/var/www/html/reconocimientofacialV2/"
-
+#RUTA_PROYECTO="/var/www/html/reconocimientofacialV2/"
+RUTA_PROYECTO=sys.argv[4]
 
 
 time_ini = time.time()

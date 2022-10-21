@@ -18,7 +18,7 @@ if(isset($argv[1]) and $argv[1]!=""){
 //$ruta=RUTA_PROYECTO."admin/files/videos_registro/";
 $ruta=RUTA_PROYECTO."admin/files/videos_registro/";
 
-
+$longitud_videos=4;  //la longitud en segundos en que se divide el video original
 
 
 $threads=[];
@@ -32,6 +32,8 @@ $nombre_fichero="prueba"; //sin el .avi
 
 $numero_videos=dividir_video($local_id,$ruta,$nombre_fichero);
 
+echo "videos divididos:".$numero_videos."\n";
+exit;
 
 
 echo "Videos:\n\n";
@@ -40,12 +42,14 @@ for($i=1;$i<=$numero_videos;$i++){
     $id="vr_".$i."_".$local_id."_".$randaux;
     
     
-    $cmd="python3.7 motor/procesa_video_registro_1.py ".$local_id." ".$nombre_fichero."_".$i.".avi ".$i;
+    $cmd="python3.7 motor/procesa_video_registro_1.py ".$local_id." ".$nombre_fichero."_".$i.".avi ".$i." '".RUTA_PROYECTO."'";
     echo "Alta hilo->".$cmd."\n";
     $threads[$id]=new Jos_Thread($id,$cmd,true);
 
     $threads[$id]->start();    
 }
+
+
 
 
 $sigue=true;
@@ -67,7 +71,7 @@ while($sigue){
 
 for($i=1;$i<=16;$i++){
     $id="vr_".$i."_".$local_id."_".$randaux;
-    $cmd="python3.7 motor/procesa_video_registro_2.py ".$local_id." ".$i." ".$nombreunico;
+    $cmd="python3.7 motor/procesa_video_registro_2.py ".$local_id." ".$i." ".$nombreunico." '".RUTA_PROYECTO."'";
     echo "Alta hilo->".$cmd."\n";
     $threads[$id]=new Jos_Thread($id,$cmd,true);
 
@@ -161,7 +165,7 @@ echo "El tiempo de ejecución del archivo ha sido de " . $tiempo . " segundos";
 
 
 
-
+/*se divide el video original en videos de 4 segundos de duracion*/
 function dividir_video($local_id,$ruta,$video){
     
     $salida=$ruta.$video;
@@ -171,7 +175,7 @@ function dividir_video($local_id,$ruta,$video){
     
     $output_salida="aux/procesa_video_registro_".$local_id."_".rand(1000000,9999999).".txt";
 
-    $longitud_videos=4;
+    global $longitud_videos;
     
     $time=0;
     $i=1;
@@ -238,18 +242,6 @@ function dividir_video($local_id,$ruta,$video){
     
     return ($i-1);
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -260,7 +260,6 @@ if(isset($_GET["info"]) and $_GET["info"]=="checkearPosicionCara2"){
     //file_put_contents($uploads_dir."/pruebas.png", $test);
     file_put_contents($uploads_dir."/".$name.".png", $test);
 
-
     
     echo "checkearPosicionCara--imagen:".$imagen."<br />";
     echo "checkearPosicionCara--imagen_jpg:".$imagen_jpg."<br />";

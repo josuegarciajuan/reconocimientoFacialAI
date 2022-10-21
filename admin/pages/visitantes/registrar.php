@@ -279,7 +279,7 @@
                                 fd.append("video",blob);
                                 //fd.append("video2",recordedMediaURL);
                                 var request = new XMLHttpRequest();
-                                request.open("POST", "<?= URL_PROGRAMA_SERVER ?>admin/index.php?page=visitantes&mode=registrar&info=subir_video2&nombre=" + encodeURIComponent(document.getElementById("nombre").value));
+                                request.open("POST", "<?= URL_PROGRAMA_SERVER ?>admin/index.php?page=visitantes&mode=registrar&info=subir_video&nombre=" + encodeURIComponent(document.getElementById("nombre").value));
                                 request.send(fd);
 
                                 alert("Supuestamente subido");
