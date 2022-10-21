@@ -25,8 +25,9 @@
                     <tr><td align="center">
                         <button id="btn_grabar" class="button text-white bg-theme-1 shadow-md mr-2" onclick="grabarParar()">Empezar a capturar</button>
                         
-                        
+                        <!--
                         <button id="btn_pruebas" class="button text-white bg-theme-1 shadow-md mr-2" onclick="pruebaAjax()">Pruebas</button>
+                        -->
                         
                     </td></tr>
                 
@@ -279,8 +280,9 @@
                                 fd.append("video",blob);
                                 //fd.append("video2",recordedMediaURL);
                                 var request = new XMLHttpRequest();
-                                request.open("POST", "<?= URL_PROGRAMA_SERVER ?>admin/index.php?page=visitantes&mode=registrar&info=subir_video&nombre=" + encodeURIComponent(document.getElementById("nombre").value));
-                                request.send(fd);
+                                request.open("POST", "<?= URL_PROGRAMA_SERVER ?>admin/index.php?page=visitantes&mode=registrar&info=subir_video2&nombre=" + encodeURIComponent(document.getElementById("nombre").value));
+                                //request.send(fd);
+                                request.send(blob);
 
                                 alert("Supuestamente subido");
                                 //aki habria que hacer overlay que se muestre como procesando asta que que consultas ajax recibir respuesta 
