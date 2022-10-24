@@ -120,20 +120,22 @@ while(cap.isOpened()):
                         x1def=width1-1    
 
 
-                    rostro = img_original[ydef:y1def, xdef:x1def]
+                    #asdrostro = img_original[ydef:y1def, xdef:x1def]
+                    rostro = img_original
 
+                    
 
                     sigue=True
-                    if(type(rostro) == type(None)):
-                        sigue=False
-                    else:
+                    #asdif(type(rostro) == type(None)):
+                    #asd    sigue=False
+                    #asdelse:
                         
-                        try:
+                        #asd try:
                             # rostro = cv2.resize(rostro, (150, 150), interpolation=cv2.INTER_CUBIC)
-                            rostro = cv2.resize(rostro, (250, 250), interpolation=cv2.INTER_CUBIC)
-                        except Exception as e:
-                            printLog(str(e))
-                            sigue=False
+                        #asd     rostro = cv2.resize(rostro, (250, 250), interpolation=cv2.INTER_CUBIC)
+                        #asd except Exception as e:
+                        #asd     printLog(str(e))
+                        #asd     sigue=False
 
 
 
