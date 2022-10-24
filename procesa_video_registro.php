@@ -59,7 +59,7 @@ while (true){
     }    
     sleep(1);
     echo "Procesados los que habian\n";
-    exit;
+
 }
 
 
