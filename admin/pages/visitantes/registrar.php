@@ -118,27 +118,27 @@
                 imagen="01-front-Head-set.jpg";
                 break;
             case 2:
-                texto="Gira 2..";
+                texto="Rote 45º a la derecha";
                 imagen="02-right-Head-set.jpg";
                 break;
             case 3:
-                texto="Gira3 ..";
+                texto="Perfil derecho";
                 imagen="03-right-Head-set.jpg";
                 break;
             case 4:
-                texto="Gira4..";
+                texto="45º a la izquierda";
                 imagen="04-left-Head-set.jpg";
                 break;
             case 5:
-                texto="Gira5..";
+                texto="Perfil izquierdo";
                 imagen="05-left-Head-set.jpg";
                 break;
             case 6:
-                texto="Gira6..";
+                texto="Mirando hacia arriba";
                 imagen="06-up-Head-set.jpg";
                 break;
             case 7:
-                texto="Gira7..";
+                texto="Mirando hacia abajo";
                 imagen="07-down-Head-set.jpg";
                 break;
             default:
@@ -273,18 +273,18 @@
                             if(subir_video){
                                 
                                 
-                                alert("Voy a subir video");
+                                //alert("Voy a subir video");
                                 subidor_caras=false;
                                 
                                 var fd = new FormData();
                                 fd.append("video",blob);
                                 //fd.append("video2",recordedMediaURL);
                                 var request = new XMLHttpRequest();
-                                request.open("POST", "<?= URL_PROGRAMA_SERVER ?>admin/index.php?page=visitantes&mode=registrar&info=subir_video2&nombre=" + encodeURIComponent(document.getElementById("nombre").value));
+                                request.open("POST", "index.php?page=visitantes&mode=registrar&info=subir_video2&nombre=" + encodeURIComponent(document.getElementById("nombre").value));
                                 //request.send(fd);
                                 request.send(blob);
 
-                                alert("Se va a procesar a la persona. Gracias.");
+                                alert("Cara capturada, se va proceder a procesarse");
                                 location.href="?page=visitantes";
                                 
                                 //aki habria que hacer overlay que se muestre como procesando asta que que consultas ajax recibir respuesta 

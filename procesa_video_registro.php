@@ -26,9 +26,11 @@ $longitud_videos=4;  //la longitud en segundos en que se divide el video origina
 
 require_once("includes/rutas.php");
 require_once("libs/Jos_thread.class.php");
+require_once("libs/mysql.class.php");
 
 $tiempo_inicial = microtime(true);
 
+$sql=new Conectar();
 
 /*
 $local_id="";
@@ -210,6 +212,19 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
     $tiempo_final = microtime(true);
     $tiempo = $tiempo_final - $tiempo_inicial;       
     echo "El tiempo de ejecución del archivo ha sido de " . $tiempo . " segundos";
+    
+    
+    $aux= explode("_", $nombre_fichero);
+    $nombre_persona=$aux[1];
+    $actualizado=false;
+    while(!$actualizado){
+        $sql->Consultar("personas","*","cod_interno=".$ganador_name);
+        if($sql->num>0){
+            $sql->Actualizar("personas",["nombre"],[$nombre_persona]);
+            $actualizado=true;
+        }
+        sleep(2);
+    }
 
 }
 

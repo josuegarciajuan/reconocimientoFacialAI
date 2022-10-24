@@ -100,6 +100,8 @@ if(isset($_GET["info"]) and $_GET["info"]=="subir_video2"){
     $uploads_dir="files/videos_registro_videos";
     $name_persona = $_GET["nombre"];
     
+    $name_persona= str_replace("_", "-", $name_persona);
+    
     $name_video=$_SESSION["local_id"]."_".$name_persona;
     
 
