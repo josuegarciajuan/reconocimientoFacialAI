@@ -293,7 +293,7 @@ def anyade_datos_def(maximo,count,knownEncoding,knownName,knownPoint,ganador_nam
 
 
 
-path_imgs=RUTA_PROYECTO + 'motor/caras/sinclasificar/'
+path_imgs=RUTA_PROYECTO + 'motor/caras/sinclasificar_videos/'
 
 
 
@@ -397,7 +397,8 @@ for (i, imagePath) in enumerate(imagePaths):
         IMAGENES_TOTAL=IMAGENES_TOTAL+1
 
         insertada=False
-        enfoque=comprueba_enfocada(imagePath,name_file)
+        # enfoque=comprueba_enfocada(imagePath,name_file)
+        enfoque=100
         if enfoque>0:
             printLog('Es enfocada de momento:'+imagePath)
             #if escara(imagePath):
@@ -472,7 +473,7 @@ for (i, imagePath) in enumerate(imagePaths):
 anyade_datos(knownEncodings,knownNames,knownPoints,ganador_name,knownIdentificadorunico,knownEnfoque)
 
 
-cadena=str(IMAGENES_TOTAL)+";;"+str(IMAGENES_DESENFOCADAS)+";;"+str(IMAGENES_NOSEPUEDERECORTARCARA)+";;"+str(IMAGENES_CONCARA)
+cadena=str(IMAGENES_TOTAL)+";;"+str(IMAGENES_DESENFOCADAS)+";;"+str(IMAGENES_NOSEPUEDERECORTARCARA)+";;"+str(IMAGENES_CONCARA)+";;"+ganador_name+";;"+fotos_identificadorunico
 with open(RUTA_PROYECTO + 'aux/procesa_video_registro_resultado_' +  LOCAL_ID + '_' +  HILO + '.txt','a') as file:
    print(cadena, file=file)
 

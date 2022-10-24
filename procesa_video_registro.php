@@ -7,35 +7,40 @@
  */
 
 
+$longitud_videos=4;  //la longitud en segundos en que se divide el video original
+
 require_once("includes/rutas.php");
 require_once("libs/Jos_thread.class.php");
+require_once("libs/mysql.class.php");
 $tiempo_inicial = microtime(true);
+
+
+$sql=new Conectar();
+
 
 $local_id="";
 if(isset($argv[1]) and $argv[1]!=""){
     $local_id=$argv[1];
+    $nombre_fichero=$argv[2]; //sin el .avi
 }
 //$ruta=RUTA_PROYECTO."admin/files/videos_registro/";
-$ruta=RUTA_PROYECTO."admin/files/videos_registro/";
+$ruta=RUTA_PROYECTO."admin/files/videos_registro_videos/";
 
-$longitud_videos=4;  //la longitud en segundos en que se divide el video original
+
 
 
 $threads=[];
 
-
 $nombreunico=shell_exec("php ws.php nombreunico");
-
 $randaux=rand(1000000,9999999);
 
-$nombre_fichero="prueba"; //sin el .avi
-
-$numero_videos=dividir_video($local_id,$ruta,$nombre_fichero);
+//divido el video en muchos videos de {longitus_video} duracion
+$numero_videos=dividir_video2($local_id,$ruta,$nombre_fichero);
 
 echo "videos divididos:".$numero_videos."\n";
-exit;
 
 
+//saca todas la caras posible a motor/caras/sinclasificar_videos/  
 echo "Videos:\n\n";
 for($i=1;$i<=$numero_videos;$i++){
     echo $ruta.$nombre_fichero."_".$i.".avi \n";
@@ -48,8 +53,6 @@ for($i=1;$i<=$numero_videos;$i++){
 
     $threads[$id]->start();    
 }
-
-
 
 
 $sigue=true;
@@ -67,6 +70,7 @@ while($sigue){
         usleep(500);
     }
 }
+
 
 
 for($i=1;$i<=16;$i++){
@@ -116,6 +120,12 @@ for($i=1;$i<=16;$i++){
     $IMAGENES_NOSEPUEDERECORTARCARA+=((int)(trim($vres[2])));
     $IMAGENES_CONCARA+=((int)(trim($vres[3])));
     
+    $ganador_name=$vres[4];
+    $fotos_identificadorunico=$vres[5];
+    
+
+    
+    
 }
 echo "\n\n\n";
 echo "TOTALES\n";
@@ -130,6 +140,8 @@ echo "\n\n\n";
 echo "CONCLUSIONES:\n";
 
 $correcto=true;
+
+
 
 //si hay muchas desenfocadas da mas luz                                   20%
 if(($IMAGENES_TOTAL*$IMAGENES_DESENFOCADAS/100)>=20){
@@ -155,6 +167,19 @@ if(($IMAGENES_TOTAL*$IMAGENES_CONCARA/100)<=70){
     echo "hay pocas imagenes con cara no te as colocado bien\n";
 }     
 
+
+
+
+$campos=["local_id","cod_interno"];
+$valores=[$local_id,$ganador_name];
+
+$sql->Insertar("personas",$campos,$valores,true);
+$persona_id=$sql->id;
+
+
+$campos=["persona_id","camara_id","fecha_ini","fecha_fin"];
+$valores=[$persona_id,0,date("Y-m-d H:i:s"),date("Y-m-d H:i:s")];
+$sql->Insertar("estancias",$campos,$valores, true);
 
 
 
@@ -237,6 +262,116 @@ function dividir_video($local_id,$ruta,$video){
         if($time==55){
             $terminado=true;
         }
+    }
+    exec("rm ".$output_salida);
+    
+    return ($i-1);
+}
+
+
+
+
+/*se divide el video original en videos de 4 segundos de duracion*/
+function dividir_video2($local_id,$ruta,$video){
+    
+    global $longitud_videos;
+    
+    $salida=$ruta.$video;
+    $video=$ruta.$video.".avi";
+    $output_salida="aux/procesa_video_registro_".$local_id."_".rand(1000000,9999999).".txt";
+
+    
+    $ss=0;
+    $mm=0;
+    
+    $i=1;
+    $terminado=false;
+    while(!$terminado){
+
+        $ss_ini=$ss;
+        if($ss_ini<10){
+            $ss_ini="0".$ss_ini;
+        }
+        $mm_ini=$mm;
+        if($mm_ini<10){
+            $mm_ini="0".$mm;
+        }
+        
+        $ss_fin=$ss+$longitud_videos;
+        $suma_mm=0;
+        if($ss_fin>=60){
+           $ss_fin=$ss_fin-60; 
+           $suma_mm=1;
+        }
+        $ss_fin_sinretoques=$ss_fin;
+        if($ss_fin<10){
+            $ss_fin="0".$ss_fin;
+        }
+        
+        
+        $mm_fin=$mm+$suma_mm;
+        $mm_fin_sinretoques=$mm_fin;
+        if($mm_fin<10){
+            $mm_fin="0".$mm_fin;
+        }
+        
+        $ss=$ss_fin_sinretoques;
+        $mm=$mm_fin_sinretoques;
+        
+        $ini_txt="00:".$mm_ini.":".$ss_ini;
+        $fin_txt="00:".$mm_fin.":".$ss_fin;
+        
+        
+        $cmd="ffmpeg -i ".$video." -ss ".$ini_txt." -to ".$fin_txt." -c:v libx264 ".$salida."_".$i.".avi > ".$output_salida." 2>&1";
+        echo "Ejecuto1:".$cmd."\n\n";
+        exec($cmd);
+
+        $test= file_get_contents($output_salida);
+        if(strpos($test, "nothing was encoded")!==false){   //esto es para los ultimos segundos del video cony
+            exec("rm ".$salida."_".$i.".avi");
+            
+            $resta=1;
+            while(!$terminado){
+                
+                $ss_fin=$ss_fin_sinretoques-$resta;
+                $resta_minutos=0;
+                if($ss_fin<0){
+                    $ss_fin+=60;
+                    $resta_minutos=1;
+                }
+                $ss_fin_sinretoques=$ss_fin;
+                
+                if($ss_fin<10){
+                    $ss_fin="0".$ss_fin;
+                }
+                
+                $mm_fin=$mm_fin_sinretoques-$resta_minutos;
+                $mm_fin_sinretoques=$mm_fin;
+                if($mm_fin<10){
+                    $mm_fin="0".$mm_fin;
+                }
+                $fin_txt="00:".$mm_fin.":".$ss_fin;
+                
+                
+                $cmd="ffmpeg -ss ".$ini_txt." -to ".$fin_txt."  -i ".$video." -c:v libx264 ".$salida."_".$i.".avi > ".$output_salida." 2>&1";
+                echo "Ejecuto2 para los ultimos seg del video:".$cmd."\n\n";
+                exec($cmd);
+                $test= file_get_contents($output_salida);
+                if(strpos($test, "nothing was encoded")===false){
+                    $terminado=true;
+                }else{
+                    exec("rm ".$salida."_".$i.".avi");
+                }
+                
+                $resta++;
+                if($resta==$longitud_videos){
+                    $terminado=true;
+                    $i--;
+                }
+            }
+        }
+        $i++;
+
     }
     exec("rm ".$output_salida);
     

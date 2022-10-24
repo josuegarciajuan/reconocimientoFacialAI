@@ -55,7 +55,7 @@ configFile = RUTA_PROYECTO + "motor/models/deploy.prototxt.txt"
 net = cv2.dnn.readNetFromCaffe(configFile, modelFile)
 
 
-name_file=os.path.join(RUTA_PROYECTO + 'admin/files/videos_registro/', FICHERO)
+name_file=os.path.join(RUTA_PROYECTO + 'admin/files/videos_registro_videos/', FICHERO)
 
 
 printLog("tenemos este video:"+name_file)
@@ -89,7 +89,8 @@ while(cap.isOpened()):
 
 
 
-            blob = cv2.dnn.blobFromImage(cv2.resize(img_original, (300, 300)),1.0, (353, 353), (104.0, 117.0, 123.0))
+            # blob = cv2.dnn.blobFromImage(cv2.resize(img_original, (300, 300)),1.0, (353, 353), (104.0, 117.0, 123.0))
+            blob = cv2.dnn.blobFromImage(img_original,1.0)
             net.setInput(blob)
             faces3 = net.forward()
             
@@ -139,7 +140,7 @@ while(cap.isOpened()):
                     if sigue:
                         segs_elapsed = time.time() - segundos_ini
                         nombrefinal=FICHERO+"_"+HILO+'_'+str(segs_elapsed)
-                        cv2.imwrite(RUTA_PROYECTO + 'motor/caras/sinclasificar/'+nombrefinal+'.jpg', rostro)
+                        cv2.imwrite(RUTA_PROYECTO + 'motor/caras/sinclasificar_videos/'+nombrefinal+'.jpg', rostro)
                             
 
                         printLog("cara guardada en /"+nombrefinal+".jpg con esta confidence:"+str(confidence))

@@ -1,0 +1,37 @@
+ffmpeg version 4.3.2-0york0~16.04 Copyright (c) 2000-2021 the FFmpeg developers
+  built with gcc 5.4.0 (Ubuntu 5.4.0-6ubuntu1~16.04.12) 20160609
+  configuration: --prefix=/usr --extra-version='0york0~16.04' --toolchain=hardened --libdir=/usr/lib/x86_64-linux-gnu --incdir=/usr/include/x86_64-linux-gnu --arch=amd64 --enable-gpl --disable-stripping --enable-avresample --disable-filter=resample --enable-gnutls --enable-ladspa --enable-libaom --enable-libass --enable-libbluray --enable-libbs2b --enable-libcaca --enable-libcdio --enable-libcodec2 --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libgsm --enable-libjack --enable-libmp3lame --enable-libmysofa --enable-libopenjpeg --enable-libopenmpt --enable-libopus --enable-libpulse --enable-librabbitmq --enable-librsvg --enable-librubberband --enable-libshine --enable-libsnappy --enable-libsoxr --enable-libspeex --enable-libsrt --enable-libssh --enable-libtheora --enable-libtwolame --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwavpack --enable-libwebp --enable-libx265 --enable-libxml2 --enable-libxvid --enable-libzmq --enable-libzvbi --enable-lv2 --enable-omx --enable-openal --enable-opencl --enable-opengl --enable-sdl2 --enable-libzimg --enable-pocketsphinx --enable-libdc1394 --enable-libdrm --enable-libiec61883 --enable-chromaprint --enable-frei0r --enable-libx264 --enable-shared
+  libavutil      56. 51.100 / 56. 51.100
+  libavcodec     58. 91.100 / 58. 91.100
+  libavformat    58. 45.100 / 58. 45.100
+  libavdevice    58. 10.100 / 58. 10.100
+  libavfilter     7. 85.100 /  7. 85.100
+  libavresample   4.  0.  0 /  4.  0.  0
+  libswscale      5.  7.100 /  5.  7.100
+  libswresample   3.  7.100 /  3.  7.100
+  libpostproc    55.  7.100 / 55.  7.100
+Input #0, matroska,webm, from '/var/www/html/reconocimientoFacial/proyecto_definitivo/admin/files/videos_registro_videos/otraprueba.avi':
+  Metadata:
+    encoder         : QTmuxingAppLibWebM-0.0.1
+  Duration: N/A, start: -0.001000, bitrate: N/A
+    Stream #0:0(eng): Video: vp8, yuv420p(progressive), 640x480, SAR 1:1 DAR 4:3, 15 tbr, 1k tbn, 1k tbc (default)
+    Stream #0:1(eng): Audio: opus, 48000 Hz, stereo, fltp (default)
+Stream mapping:
+  Stream #0:0 -> #0:0 (vp8 (native) -> h264 (libx264))
+  Stream #0:1 -> #0:1 (opus (native) -> mp3 (libmp3lame))
+Press [q] to stop, [?] for help
+[libx264 @ 0x5569f53751c0] using SAR=1/1
+[libx264 @ 0x5569f53751c0] using cpu capabilities: MMX2 SSE2Fast SSSE3 SSE4.2 AVX
+[libx264 @ 0x5569f53751c0] profile High, level 2.2
+Output #0, avi, to '/var/www/html/reconocimientoFacial/proyecto_definitivo/admin/files/videos_registro_videos/otraprueba_15.avi':
+  Metadata:
+    ISFT            : Lavf58.45.100
+    Stream #0:0(eng): Video: h264 (libx264) (H264 / 0x34363248), yuv420p, 640x480 [SAR 1:1 DAR 4:3], q=-1--1, 15 fps, 15 tbn, 15 tbc (default)
+    Metadata:
+      encoder         : Lavc58.91.100 libx264
+    Side data:
+      cpb: bitrate max/min/avg: 0/0/0 buffer size: 0 vbv_delay: N/A
+    Stream #0:1(eng): Audio: mp3 (libmp3lame) (U[0][0][0] / 0x0055), 48000 Hz, stereo, fltp (default)
+    Metadata:
+      encoder         : Lavc58.91.100 libmp3lame
+frame=    0 fps=0.0 q=0.0 size=      10kB time=00:00:00.00 bitrate=N/A speed=   0x    

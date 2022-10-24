@@ -1,0 +1,288 @@
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root         1  0.0  0.0 185476  6044 ?        Ss   oct20   0:03 /sbin/init splash
+root         2  0.0  0.0      0     0 ?        S    oct20   0:00 [kthreadd]
+root         4  0.0  0.0      0     0 ?        I<   oct20   0:00 [kworker/0:0H]
+root         6  0.0  0.0      0     0 ?        I<   oct20   0:00 [mm_percpu_wq]
+root         7  0.0  0.0      0     0 ?        S    oct20   0:00 [ksoftirqd/0]
+root         8  0.0  0.0      0     0 ?        I    oct20   0:43 [rcu_sched]
+root         9  0.0  0.0      0     0 ?        I    oct20   0:00 [rcu_bh]
+root        10  0.0  0.0      0     0 ?        S    oct20   0:00 [migration/0]
+root        11  0.0  0.0      0     0 ?        S    oct20   0:00 [watchdog/0]
+root        12  0.0  0.0      0     0 ?        S    oct20   0:00 [cpuhp/0]
+root        13  0.0  0.0      0     0 ?        S    oct20   0:00 [cpuhp/1]
+root        14  0.0  0.0      0     0 ?        S    oct20   0:00 [watchdog/1]
+root        15  0.0  0.0      0     0 ?        S    oct20   0:00 [migration/1]
+root        16  0.0  0.0      0     0 ?        S    oct20   0:01 [ksoftirqd/1]
+root        18  0.0  0.0      0     0 ?        I<   oct20   0:00 [kworker/1:0H]
+root        19  0.0  0.0      0     0 ?        S    oct20   0:00 [cpuhp/2]
+root        20  0.0  0.0      0     0 ?        S    oct20   0:00 [watchdog/2]
+root        21  0.0  0.0      0     0 ?        S    oct20   0:00 [migration/2]
+root        22  0.0  0.0      0     0 ?        S    oct20   0:01 [ksoftirqd/2]
+root        24  0.0  0.0      0     0 ?        I<   oct20   0:00 [kworker/2:0H]
+root        25  0.0  0.0      0     0 ?        S    oct20   0:00 [cpuhp/3]
+root        26  0.0  0.0      0     0 ?        S    oct20   0:00 [watchdog/3]
+root        27  0.0  0.0      0     0 ?        S    oct20   0:00 [migration/3]
+root        28  0.0  0.0      0     0 ?        S    oct20   0:01 [ksoftirqd/3]
+root        30  0.0  0.0      0     0 ?        I<   oct20   0:00 [kworker/3:0H]
+root        31  0.0  0.0      0     0 ?        S    oct20   0:00 [kdevtmpfs]
+root        32  0.0  0.0      0     0 ?        I<   oct20   0:00 [netns]
+root        33  0.0  0.0      0     0 ?        S    oct20   0:00 [rcu_tasks_kthre]
+root        34  0.0  0.0      0     0 ?        S    oct20   0:00 [kauditd]
+root        38  0.0  0.0      0     0 ?        S    oct20   0:00 [khungtaskd]
+root        39  0.0  0.0      0     0 ?        S    oct20   0:00 [oom_reaper]
+root        40  0.0  0.0      0     0 ?        I<   oct20   0:00 [writeback]
+root        41  0.0  0.0      0     0 ?        S    oct20   0:00 [kcompactd0]
+root        42  0.0  0.0      0     0 ?        SN   oct20   0:00 [ksmd]
+root        43  0.0  0.0      0     0 ?        SN   oct20   0:00 [khugepaged]
+root        44  0.0  0.0      0     0 ?        I<   oct20   0:00 [crypto]
+root        45  0.0  0.0      0     0 ?        I<   oct20   0:00 [kintegrityd]
+root        46  0.0  0.0      0     0 ?        I<   oct20   0:00 [kblockd]
+root        47  0.0  0.0      0     0 ?        I<   oct20   0:00 [ata_sff]
+root        48  0.0  0.0      0     0 ?        I<   oct20   0:00 [md]
+root        49  0.0  0.0      0     0 ?        I<   oct20   0:00 [edac-poller]
+root        50  0.0  0.0      0     0 ?        I<   oct20   0:00 [devfreq_wq]
+root        51  0.0  0.0      0     0 ?        I<   oct20   0:00 [watchdogd]
+root        54  0.0  0.0      0     0 ?        S    oct20   0:01 [kswapd0]
+root        55  0.0  0.0      0     0 ?        I<   oct20   0:00 [kworker/u33:0]
+root        56  0.0  0.0      0     0 ?        S    oct20   0:00 [ecryptfs-kthrea]
+root        98  0.0  0.0      0     0 ?        I<   oct20   0:00 [kthrotld]
+root       100  0.0  0.0      0     0 ?        I<   oct20   0:00 [acpi_thermal_pm]
+root       101  0.0  0.0      0     0 ?        S    oct20   0:00 [scsi_eh_0]
+root       102  0.0  0.0      0     0 ?        I<   oct20   0:00 [scsi_tmf_0]
+root       103  0.0  0.0      0     0 ?        S    oct20   0:00 [scsi_eh_1]
+root       104  0.0  0.0      0     0 ?        I<   oct20   0:00 [scsi_tmf_1]
+root       110  0.0  0.0      0     0 ?        I<   oct20   0:00 [ipv6_addrconf]
+root       120  0.0  0.0      0     0 ?        I<   oct20   0:00 [kstrp]
+root       137  0.0  0.0      0     0 ?        I<   oct20   0:00 [charger_manager]
+root       184  0.0  0.0      0     0 ?        S    oct20   0:00 [scsi_eh_2]
+root       185  0.0  0.0      0     0 ?        I<   oct20   0:00 [scsi_tmf_2]
+root       186  0.0  0.0      0     0 ?        S    oct20   0:00 [scsi_eh_3]
+root       187  0.0  0.0      0     0 ?        I<   oct20   0:00 [scsi_tmf_3]
+root       188  0.0  0.0      0     0 ?        S    oct20   0:00 [scsi_eh_4]
+root       189  0.0  0.0      0     0 ?        I<   oct20   0:00 [scsi_tmf_4]
+root       190  0.0  0.0      0     0 ?        S    oct20   0:00 [scsi_eh_5]
+root       191  0.0  0.0      0     0 ?        I<   oct20   0:00 [scsi_tmf_5]
+root       192  0.0  0.0      0     0 ?        S    oct20   0:00 [scsi_eh_6]
+root       193  0.0  0.0      0     0 ?        I<   oct20   0:00 [scsi_tmf_6]
+root       194  0.0  0.0      0     0 ?        S    oct20   0:00 [scsi_eh_7]
+root       195  0.0  0.0      0     0 ?        I<   oct20   0:00 [scsi_tmf_7]
+root       200  0.0  0.0      0     0 ?        I<   oct20   0:00 [e1000e]
+root       202  0.0  0.0      0     0 ?        S    oct20   0:08 [i915/signal:0]
+root       203  0.0  0.0      0     0 ?        S    oct20   0:00 [i915/signal:1]
+root       204  0.0  0.0      0     0 ?        S    oct20   0:00 [i915/signal:2]
+root       209  0.0  0.0      0     0 ?        I<   oct20   0:02 [kworker/2:1H]
+root       211  0.0  0.0      0     0 ?        I<   oct20   0:00 [kworker/1:1H]
+root       235  0.0  0.0      0     0 ?        S    oct20   0:04 [jbd2/sda1-8]
+root       236  0.0  0.0      0     0 ?        I<   oct20   0:00 [ext4-rsv-conver]
+root       276  0.0  0.0  35524  5468 ?        Ss   oct20   0:00 /lib/systemd/systemd-journald
+root       279  0.0  0.0      0     0 ?        I<   oct20   0:00 [kworker/0:1H]
+root       283  0.0  0.0      0     0 ?        I<   oct20   0:00 [kworker/3:1H]
+root       306  0.0  0.0  46036  4568 ?        Ss   oct20   0:00 /lib/systemd/systemd-udevd
+root       372  0.0  0.0      0     0 ?        S    oct20   0:00 [irq/29-mei_me]
+systemd+   608  0.0  0.0 102384  2572 ?        Ssl  oct20   0:00 /lib/systemd/systemd-timesyncd
+root       799  0.0  0.0 278688  6816 ?        Ssl  oct20   0:01 /usr/lib/accountsservice/accounts-daemon
+message+   807  0.0  0.0  44408  5488 ?        Ss   oct20   0:05 /usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation
+root       816  0.0  0.0  28664  3248 ?        Ss   oct20   0:01 /lib/systemd/systemd-logind
+root       818  0.0  0.0 168952  8832 ?        Ssl  oct20   0:03 /usr/sbin/thermald --no-daemon --dbus-enable
+root       822  0.0  0.1 451944 16396 ?        Ssl  oct20   0:00 /usr/sbin/NetworkManager --no-daemon
+avahi      824  0.0  0.0  44920  3152 ?        Ss   oct20   0:01 avahi-daemon: running [camaras-OptiPlex-990.local]
+syslog     825  0.0  0.0 256392  3196 ?        Ssl  oct20   0:00 /usr/sbin/rsyslogd -n
+root       836  0.0  0.0  31528  2896 ?        Ss   oct20   0:00 /usr/sbin/cron -f
+root       844  0.0  0.0   4396  1260 ?        Ss   oct20   0:02 /usr/sbin/acpid
+root       859  0.0  0.1 1019516 22916 ?       Ssl  oct20   0:06 /usr/bin/anydesk --service
+avahi      867  0.0  0.0  44788   336 ?        S    oct20   0:00 avahi-daemon: chroot helper
+root       893  0.0  0.0 276652  6092 ?        Ssl  oct20   0:00 /usr/sbin/lightdm
+root       901  0.0  0.0 284752  8952 ?        Ssl  oct20   0:00 /usr/lib/policykit-1/polkitd --no-debug
+root       934  0.0  0.0  19476   240 ?        Ss   oct20   0:02 /usr/sbin/irqbalance --pid=/var/run/irqbalance.pid
+root      1024  0.0  0.0      0     0 ?        I<   oct20   0:00 [iprt-VBoxWQueue]
+root      1030  0.0  0.0      0     0 ?        S    oct20   0:00 [iprt-VBoxTscThr]
+root      1049  0.8  2.3 744232 337288 tty7    Ssl+ oct20  12:05 /usr/lib/xorg/Xorg -core :0 -seat seat0 -auth /var/run/lightdm/root/:0 -nolisten tcp vt7 -novtswitch
+root      1051  0.0  0.1 450784 27936 ?        Ss   oct20   0:02 php-fpm: master process (/etc/php/7.3/fpm/php-fpm.conf)
+mysql     1081  0.0  1.0 1245884 147836 ?      Ssl  oct20   0:33 /usr/sbin/mysqld
+www-data  1113  0.0  0.0 450784  7072 ?        S    oct20   0:00 php-fpm: pool www
+www-data  1114  0.0  0.0 450784  7076 ?        S    oct20   0:00 php-fpm: pool www
+root      1165  0.0  0.0 228244  6212 ?        Sl   oct20   0:00 lightdm --session-child 12 15
+camaras   1170  0.0  0.0  45324  4692 ?        Ss   oct20   0:00 /lib/systemd/systemd --user
+camaras   1171  0.0  0.0  63556  2108 ?        S    oct20   0:00 (sd-pam)
+camaras   1177  0.0  0.0  49172  4860 ?        Ss   oct20   0:00 /sbin/upstart --user
+nobody    1237  0.0  0.0  55444  4256 ?        S    oct20   0:01 /usr/sbin/dnsmasq --no-resolv --keep-in-foreground --no-hosts --bind-interfaces --pid-file=/var/run/NetworkManager/dnsmasq.pid --listen-address=127.0.1.1 --cache-size=0 --conf-file=/dev/null --proxy-dnssec --enable-dbus=org.freedesktop.NetworkManager.dnsmasq --conf-dir=/etc/NetworkManager/dnsmasq.d
+camaras   1443  0.0  0.0  35416   276 ?        S    oct20   0:00 upstart-udev-bridge --daemon --user
+camaras   1453  0.0  0.0  44104  4612 ?        Ss   oct20   0:05 dbus-daemon --fork --session --address=unix:abstract=/tmp/dbus-TJI4HO558m
+camaras   1465  0.0  0.0  88868 10156 ?        Ss   oct20   0:00 /usr/lib/x86_64-linux-gnu/hud/window-stack-bridge
+camaras   1499  0.0  0.0  35428  1692 ?        S    oct20   0:00 upstart-dbus-bridge --daemon --session --user --bus-name session
+camaras   1501  0.0  0.0  35348   328 ?        S    oct20   0:01 upstart-dbus-bridge --daemon --system --user --bus-name system
+camaras   1505  0.0  0.0  43988  1852 ?        S    oct20   0:00 upstart-file-bridge --daemon --user
+camaras   1507  0.0  0.0 355620  7884 ?        SLl  oct20   0:00 gnome-keyring-daemon --start --components ssh
+camaras   1520  0.0  0.0 352252 11836 ?        Ssl  oct20   0:40 /usr/bin/ibus-daemon --daemonize --xim --address unix:tmpdir=/tmp/ibus
+camaras   1532  0.0  0.0 277240  6708 ?        Sl   oct20   0:00 /usr/lib/gvfs/gvfsd
+camaras   1540  0.0  0.0 406868  4968 ?        Sl   oct20   0:00 /usr/lib/gvfs/gvfsd-fuse /run/user/1000/gvfs -f -o big_writes
+camaras   1542  0.0  0.0 267060  6508 ?        Sl   oct20   0:00 /usr/lib/ibus/ibus-dconf
+camaras   1543  0.0  0.2 482524 32636 ?        Sl   oct20   0:08 /usr/lib/ibus/ibus-ui-gtk3
+camaras   1545  0.0  0.1 430992 22136 ?        Sl   oct20   0:08 /usr/lib/ibus/ibus-x11 --kill-daemon
+camaras   1580  0.0  0.2 531168 33032 ?        Ssl  oct20   0:14 /usr/lib/x86_64-linux-gnu/bamf/bamfdaemon
+camaras   1582  0.0  0.0 338012  5772 ?        Sl   oct20   0:00 /usr/lib/at-spi2-core/at-spi-bus-launcher
+camaras   1587  0.0  0.0  43028  4108 ?        S    oct20   0:00 /usr/bin/dbus-daemon --config-file=/etc/at-spi2/accessibility.conf --nofork --print-address 3
+camaras   1589  0.0  0.0 206872  6480 ?        Sl   oct20   0:03 /usr/lib/at-spi2-core/at-spi2-registryd --use-gnome-session
+camaras   1604  0.0  0.0 191316  6272 ?        Sl   oct20   0:12 /usr/lib/ibus/ibus-engine-simple
+camaras   1607  0.0  0.0 169248   732 ?        Ss   oct20   0:01 gpg-agent --homedir /home/camaras/.gnupg --use-standard-socket --daemon
+camaras   1617  0.0  0.5 718908 75488 ?        Ssl  oct20   0:07 /usr/lib/x86_64-linux-gnu/hud/hud-service
+camaras   1619  0.0  0.2 1065100 33340 ?       Ssl  oct20   0:02 /usr/lib/unity-settings-daemon/unity-settings-daemon
+camaras   1626  0.0  0.1 640612 15380 ?        Ssl  oct20   0:00 /usr/lib/gnome-session/gnome-session-binary --session=ubuntu
+camaras   1638  0.0  0.4 672472 65688 ?        Ssl  oct20   0:08 /usr/lib/x86_64-linux-gnu/unity/unity-panel-service
+camaras   1672  0.0  0.0 357212  7308 ?        Ssl  oct20   0:00 /usr/lib/x86_64-linux-gnu/indicator-messages/indicator-messages-service
+camaras   1673  0.0  0.0 409924  5776 ?        Ssl  oct20   0:00 /usr/lib/x86_64-linux-gnu/indicator-bluetooth/indicator-bluetooth-service
+camaras   1674  0.0  0.0 573868 11100 ?        Ssl  oct20   0:00 /usr/lib/x86_64-linux-gnu/indicator-power/indicator-power-service
+camaras   1675  0.0  0.1 1236620 17632 ?       Ssl  oct20   0:00 /usr/lib/x86_64-linux-gnu/indicator-datetime/indicator-datetime-service
+camaras   1676  0.0  0.1 652320 27692 ?        Ssl  oct20   0:00 /usr/lib/x86_64-linux-gnu/indicator-keyboard/indicator-keyboard-service --use-gtk
+camaras   1677  0.0  0.0 740328 11460 ?        Ssl  oct20   0:00 /usr/lib/x86_64-linux-gnu/indicator-sound/indicator-sound-service
+camaras   1678  0.0  0.1 550724 23796 ?        Ssl  oct20   0:00 /usr/lib/x86_64-linux-gnu/indicator-printers/indicator-printers-service
+camaras   1679  0.0  0.0 890148  6764 ?        Ssl  oct20   0:00 /usr/lib/x86_64-linux-gnu/indicator-session/indicator-session-service
+camaras   1680  0.0  0.0 403152 12840 ?        Ssl  oct20   0:00 /usr/lib/x86_64-linux-gnu/indicator-application/indicator-application-service
+camaras   1724  0.0  0.0 178800  5036 ?        Sl   oct20   0:00 /usr/lib/dconf/dconf-service
+whoopsie  1731  0.0  0.3 498572 46632 ?        Ssl  oct20   0:00 /usr/bin/whoopsie -f
+root      1752  0.0  0.0  18452  1788 tty1     Ss+  oct20   0:00 /sbin/agetty --noclear tty1 linux
+root      1776  0.0  0.0 349740  9996 ?        Ssl  oct20   0:00 /usr/lib/upower/upowerd
+camaras   1781  0.2  0.1 506440 16544 ?        S<l  oct20   3:16 /usr/bin/pulseaudio --start --log-target=syslog
+rtkit     1782  0.0  0.0 183548  3000 ?        SNsl oct20   0:00 /usr/lib/rtkit/rtkit-daemon
+camaras   1800  0.0  0.2 491372 31832 ?        Sl   oct20   0:04 /usr/lib/x86_64-linux-gnu/notify-osd
+camaras   1856  0.8  1.2 1512660 173472 ?      Ssl  oct20  12:36 compiz
+camaras   1862  0.0  0.1 841372 24156 ?        Sl   oct20   0:02 /usr/bin/anydesk --tray
+camaras   1864  0.0  0.1 580204 22512 ?        Sl   oct20   0:00 /usr/lib/unity-settings-daemon/unity-fallback-mount-helper
+camaras   1865  0.0  0.1 432396 20444 ?        Sl   oct20   0:00 /usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1
+camaras   1866  0.0  0.7 1362832 104452 ?      SLl  oct20   0:03 /usr/bin/gnome-software --gapplication-service
+camaras   1870  0.0  0.2 592812 33356 ?        Sl   oct20   0:00 nm-applet
+camaras   1890  0.0  0.0 288328  7944 ?        Sl   oct20   0:00 /usr/lib/gvfs/gvfs-udisks2-volume-monitor
+colord    1893  0.0  0.0 304004 11364 ?        Ssl  oct20   0:00 /usr/lib/colord/colord
+camaras   1923  0.0  0.1 1245812 24092 ?       Sl   oct20   0:00 /usr/lib/evolution/evolution-source-registry
+root      1933  0.0  0.0 432328  8068 ?        Ssl  oct20   0:08 /usr/lib/udisks2/udisksd --no-debug
+root      1942  0.0  0.0 1115820 11972 ?       Sl   oct20   1:05 /opt/teamviewer/tv_bin/teamviewerd -d
+camaras   1972  0.0  0.4 865720 59940 ?        Sl   oct20   0:00 /usr/lib/evolution/evolution-calendar-factory
+root      2004  0.0  0.2 494100 29648 ?        Ss   oct20   0:02 /usr/sbin/apache2 -k start
+camaras   2016  0.0  0.0 274520  6208 ?        Sl   oct20   0:00 /usr/lib/gvfs/gvfs-gphoto2-volume-monitor
+camaras   2037  0.0  0.0 262196  4456 ?        Sl   oct20   0:00 /usr/lib/gvfs/gvfs-mtp-volume-monitor
+camaras   2047  0.0  0.0 406308  9060 ?        Sl   oct20   0:00 /usr/lib/gvfs/gvfs-afc-volume-monitor
+camaras   2053  0.0  0.0 260232  4292 ?        Sl   oct20   0:00 /usr/lib/gvfs/gvfs-goa-volume-monitor
+root      2057  0.0  0.2 507536 33124 ?        Ssl  oct20   0:00 /usr/lib/x86_64-linux-gnu/fwupd/fwupd
+camaras   2074  0.0  0.0 354468  7516 ?        Sl   oct20   0:00 /usr/lib/gvfs/gvfsd-trash --spawner :1.5 /org/gtk/gvfs/exec_spaw/0
+camaras   2101  0.0  0.3 884164 50112 ?        Sl   oct20   0:00 /usr/lib/evolution/evolution-calendar-factory-subprocess --factory contacts --bus-name org.gnome.evolution.dataserver.Subprocess.Backend.Calendarx1972x2 --own-path /org/gnome/evolution/dataserver/Subprocess/Backend/Calendar/1972/2
+camaras   2114  0.0  0.1 693488 18604 ?        Sl   oct20   0:00 /usr/lib/evolution/evolution-addressbook-factory
+camaras   2116  0.0  0.3 803008 49740 ?        Sl   oct20   0:00 /usr/lib/evolution/evolution-calendar-factory-subprocess --factory local --bus-name org.gnome.evolution.dataserver.Subprocess.Backend.Calendarx1972x3 --own-path /org/gnome/evolution/dataserver/Subprocess/Backend/Calendar/1972/3
+camaras   2139  0.0  0.1 769000 17788 ?        Sl   oct20   0:00 /usr/lib/evolution/evolution-addressbook-factory-subprocess --factory local --bus-name org.gnome.evolution.dataserver.Subprocess.Backend.AddressBookx2114x2 --own-path /org/gnome/evolution/dataserver/Subprocess/Backend/AddressBook/2114/2
+camaras   2172  0.0  0.0 194536 10444 ?        Sl   oct20   0:00 /usr/lib/gvfs/gvfsd-metadata
+camaras   2178  0.0  0.1 584368 16332 ?        Sl   oct20   0:00 zeitgeist-datahub
+camaras   2185  0.0  0.0   4504   848 ?        S    oct20   0:00 /bin/sh -c /usr/lib/x86_64-linux-gnu/zeitgeist/zeitgeist-maybe-vacuum; /usr/bin/zeitgeist-daemon
+camaras   2199  0.0  0.0 410488  7480 ?        Sl   oct20   0:00 /usr/bin/zeitgeist-daemon
+camaras   2206  0.0  3.3 780152 478912 ?       Sl   oct20   0:06 /usr/lib/x86_64-linux-gnu/zeitgeist-fts
+camaras   2235  0.0  0.1 647896 17908 ?        Sl   oct20   0:00 /usr/lib/x86_64-linux-gnu/unity-scope-home/unity-scope-home
+camaras   2244  0.0  0.1 653084 24132 ?        Sl   oct20   0:01 /usr/bin/unity-scope-loader applications/applications.scope applications/scopes.scope commands.scope
+camaras   2246  0.0  0.1 723776 14548 ?        Sl   oct20   0:00 /usr/lib/x86_64-linux-gnu/unity-lens-files/unity-files-daemon
+camaras   2308  0.0  0.0 429528  6516 ?        Sl   oct20   0:00 /usr/lib/gvfs/gvfsd-network --spawner :1.5 /org/gtk/gvfs/exec_spaw/3
+camaras   2314  0.0  0.1 740968 16836 ?        Sl   oct20   0:00 /usr/lib/gvfs/gvfsd-smb-browse --spawner :1.5 /org/gtk/gvfs/exec_spaw/4
+camaras   2318  0.3  3.2 1515912 467892 ?      SLl  oct20   4:24 /opt/google/chrome/chrome
+camaras   2324  0.0  0.0   9960   688 ?        S    oct20   0:00 cat
+camaras   2325  0.0  0.0   9960   724 ?        S    oct20   0:00 cat
+camaras   2335  0.1  0.3 671668 43000 ?        Sl   oct20   1:48 /usr/lib/gnome-terminal/gnome-terminal-server
+camaras   2337  1.3  2.9 3531908 420224 ?      Sl   oct20  18:19 /usr/lib/firefox/firefox
+camaras   2348  0.0  0.0  25200  5084 pts/13   Ss   oct20   0:00 bash
+camaras   2352  0.0  0.0  15304  3444 ?        S    oct20   0:00 /bin/bash /usr/local/netbeans-12.0/netbeans/platform/lib/nbexec --userdir /home/camaras/.netbeans/12.0 --cachedir /home/camaras/.cache/netbeans/12.0 --jdkhome /usr --branding nb --clusters /usr/local/netbeans-12.0/netbeans/nb:/usr/local/netbeans-12.0/netbeans/ergonomics:/usr/local/netbeans-12.0/netbeans/ide:/usr/local/netbeans-12.0/netbeans/extide:/usr/local/netbeans-12.0/netbeans/java:/usr/local/netbeans-12.0/netbeans/apisupport:/usr/local/netbeans-12.0/netbeans/webcommon:/usr/local/netbeans-12.0/netbeans/websvccommon:/usr/local/netbeans-12.0/netbeans/enterprise:/usr/local/netbeans-12.0/netbeans/mobility:/usr/local/netbeans-12.0/netbeans/profiler:/usr/local/netbeans-12.0/netbeans/python:/usr/local/netbeans-12.0/netbeans/php:/usr/local/netbeans-12.0/netbeans/identity:/usr/local/netbeans-12.0/netbeans/harness:/usr/local/netbeans-12.0/netbeans/cnd:/usr/local/netbeans-12.0/netbeans/cndext:/usr/local/netbeans-12.0/netbeans/dlight:/usr/local/netbeans-12.0/netbeans/groovy:/usr/local/netbeans-12.0/netbeans/extra:/usr/local/netbeans-12.0/netbeans/javacard:/usr/local/netbeans-12.0/netbeans/javafx: -J-Dnetbeans.importclass=org.netbeans.upgrade.AutoUpgrade -J-XX:+UseStringDeduplication -J-Xss2m -J-Djdk.gtk.version=2.2 -J-Dapple.laf.useScreenMenuBar=true -J-Dapple.awt.graphics.UseQuartz=true -J-Dsun.java2d.noddraw=true -J-Dsun.java2d.dpiaware=true -J-Dsun.zip.disableMemoryMapping=true -J-Dplugin.manager.check.updates=false -J-Dnetbeans.extbrowser.manual_chrome_plugin_install=yes -J--add-opens=java.base/java.net=ALL-UNNAMED -J--add-opens=java.base/java.lang.ref=ALL-UNNAMED -J--add-opens=java.base/java.lang=ALL-UNNAMED -J--add-opens=java.base/java.security=ALL-UNNAMED -J--add-opens=java.base/java.util=ALL-UNNAMED -J--add-opens=java.desktop/javax.swing.plaf.basic=ALL-UNNAMED -J--add-opens=java.desktop/javax.swing.text=ALL-UNNAMED -J--add-opens=java.desktop/javax.swing=ALL-UNNAMED -J--add-opens=java.desktop/java.awt=ALL-UNNAMED -J--add-opens=java.desktop/java.awt.event=ALL-UNNAMED -J--add-opens=java.prefs/java.util.prefs=ALL-UNNAMED -J--add-opens=jdk.jshell/jdk.jshell=ALL-UNNAMED -J--add-modules=jdk.jshell -J--add-exports=java.desktop/sun.awt=ALL-UNNAMED -J--add-exports=java.desktop/java.awt.peer=ALL-UNNAMED -J--add-exports=java.desktop/com.sun.beans.editors=ALL-UNNAMED -J--add-exports=java.desktop/sun.swing=ALL-UNNAMED -J--add-exports=java.desktop/sun.awt.im=ALL-UNNAMED -J--add-exports=jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED -J--add-exports=java.management/sun.management=ALL-UNNAMED -J--add-exports=java.base/sun.reflect.annotation=ALL-UNNAMED -J-XX:+IgnoreUnrecognizedVMOptions
+camaras   2420  0.2  2.0 1268016 286380 ?      Ssl  oct20   3:03 /opt/sublime_text/sublime_text
+camaras   2509  0.0  0.0 210376  5860 ?        Sl   oct20   0:00 /usr/lib/libreoffice/program/oosplash --calc
+camaras   2512  0.0  0.3 472144 45604 ?        S    oct20   0:00 /opt/google/chrome/chrome --type=zygote --no-zygote-sandbox --enable-crash-reporter=35e5a100-4ecc-46f2-9184-10185ec35daa,
+camaras   2513  0.0  0.3 472144 45844 ?        S    oct20   0:00 /opt/google/chrome/chrome --type=zygote --enable-crash-reporter=35e5a100-4ecc-46f2-9184-10185ec35daa,
+camaras   2580  2.7 11.1 7657360 1592788 ?     Sl   oct20  39:14 /usr/bin/java -Djdk.home=/usr -classpath /usr/local/netbeans-12.0/netbeans/platform/lib/boot.jar:/usr/local/netbeans-12.0/netbeans/platform/lib/org-openide-modules.jar:/usr/local/netbeans-12.0/netbeans/platform/lib/org-openide-util.jar:/usr/local/netbeans-12.0/netbeans/platform/lib/org-openide-util-lookup.jar:/usr/local/netbeans-12.0/netbeans/platform/lib/org-openide-util-ui.jar -Dnetbeans.default_userdir_root=/home/camaras/.netbeans -Dnetbeans.running.environment=gnome -Dnetbeans.dirs=/usr/local/netbeans-12.0/netbeans/nb:/usr/local/netbeans-12.0/netbeans/ergonomics:/usr/local/netbeans-12.0/netbeans/ide:/usr/local/netbeans-12.0/netbeans/extide:/usr/local/netbeans-12.0/netbeans/java:/usr/local/netbeans-12.0/netbeans/apisupport:/usr/local/netbeans-12.0/netbeans/webcommon:/usr/local/netbeans-12.0/netbeans/websvccommon:/usr/local/netbeans-12.0/netbeans/enterprise:/usr/local/netbeans-12.0/netbeans/mobility:/usr/local/netbeans-12.0/netbeans/profiler:/usr/local/netbeans-12.0/netbeans/python:/usr/local/netbeans-12.0/netbeans/php:/usr/local/netbeans-12.0/netbeans/identity:/usr/local/netbeans-12.0/netbeans/harness:/usr/local/netbeans-12.0/netbeans/cnd:/usr/local/netbeans-12.0/netbeans/cndext:/usr/local/netbeans-12.0/netbeans/dlight:/usr/local/netbeans-12.0/netbeans/groovy:/usr/local/netbeans-12.0/netbeans/extra:/usr/local/netbeans-12.0/netbeans/javacard:/usr/local/netbeans-12.0/netbeans/javafx: -Dnetbeans.home=/usr/local/netbeans-12.0/netbeans/platform -Dnetbeans.importclass=org.netbeans.upgrade.AutoUpgrade -XX:+UseStringDeduplication -Xss2m -Djdk.gtk.version=2.2 -Dapple.laf.useScreenMenuBar=true -Dapple.awt.graphics.UseQuartz=true -Dsun.java2d.noddraw=true -Dsun.java2d.dpiaware=true -Dsun.zip.disableMemoryMapping=true -Dplugin.manager.check.updates=false -Dnetbeans.extbrowser.manual_chrome_plugin_install=yes --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.lang.ref=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.security=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.desktop/javax.swing.plaf.basic=ALL-UNNAMED --add-opens=java.desktop/javax.swing.text=ALL-UNNAMED --add-opens=java.desktop/javax.swing=ALL-UNNAMED --add-opens=java.desktop/java.awt=ALL-UNNAMED --add-opens=java.desktop/java.awt.event=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-opens=jdk.jshell/jdk.jshell=ALL-UNNAMED --add-modules=jdk.jshell --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/java.awt.peer=ALL-UNNAMED --add-exports=java.desktop/com.sun.beans.editors=ALL-UNNAMED --add-exports=java.desktop/sun.swing=ALL-UNNAMED --add-exports=java.desktop/sun.awt.im=ALL-UNNAMED --add-exports=jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED --add-exports=java.management/sun.management=ALL-UNNAMED --add-exports=java.base/sun.reflect.annotation=ALL-UNNAMED -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/home/camaras/.netbeans/12.0/var/log/heapdump.hprof org.netbeans.Main --cachedir /home/camaras/.cache/netbeans/12.0 --userdir /home/camaras/.netbeans/12.0 --branding nb
+camaras   2609  0.0  0.1 122116 18600 ?        Sl   oct20   0:01 /opt/sublime_text/plugin_host 2420
+camaras   2627  0.0  0.0 364420  6924 ?        Sl   oct20   0:00 /usr/lib/gvfs/gvfsd-dnssd --spawner :1.5 /org/gtk/gvfs/exec_spaw/5
+camaras   2641  0.0  0.2 570160 31296 ?        Sl   oct20   0:01 update-notifier
+root      2644  0.0  0.0 108956  3876 ?        Ss   oct20   0:02 sendmail: MTA: accepting connections
+camaras   2649  0.0  0.0  26440  2896 ?        S    oct20   0:00 /opt/google/chrome/nacl_helper
+camaras   2650  0.0  0.0  26440  3624 ?        S    oct20   0:00 /opt/google/chrome/nacl_helper
+camaras   2661  0.0  0.1 472144 15888 ?        S    oct20   0:00 /opt/google/chrome/chrome --type=zygote --enable-crash-reporter=35e5a100-4ecc-46f2-9184-10185ec35daa,
+camaras   2703  0.0  2.2 1634704 313828 ?      Sl   oct20   0:25 /usr/lib/libreoffice/program/soffice.bin --calc --splash-pipe=5
+camaras   2731  0.1  0.9 690768 128720 ?       Sl   oct20   1:42 /opt/google/chrome/chrome --type=gpu-process --field-trial-handle=15702454438361524038,2299554059888823964,131072 --enable-crash-reporter=35e5a100-4ecc-46f2-9184-10185ec35daa, --gpu-preferences=MAAAAAAAAAAgAAAQAAAAAAAAAAAAAAAAAABgAAAAAAAQAAAAAAAAAAAAAAAAAAAACAAAAAAAAAA= --shared-files
+camaras   2733  0.1  0.5 558212 73880 ?        SLl  oct20   1:30 /opt/google/chrome/chrome --type=utility --utility-sub-type=network.mojom.NetworkService --field-trial-handle=15702454438361524038,2299554059888823964,131072 --lang=es --service-sandbox-type=network --enable-crash-reporter=35e5a100-4ecc-46f2-9184-10185ec35daa, --shared-files
+camaras   2746  0.0  0.2 371392 39704 ?        Sl   oct20   0:00 /usr/lib/firefox/firefox -contentproc -parentBuildID 20210415204500 -prefsLen 1 -prefMapSize 239253 -appdir /usr/lib/firefox/browser 2337 true socket
+camaras   2774  0.0  0.1 538232 26844 ?        S    oct20   0:00 /opt/google/chrome/chrome --type=broker
+camaras   2790  0.0  0.3 487500 44732 ?        Sl   oct20   0:00 /opt/google/chrome/chrome --type=utility --utility-sub-type=storage.mojom.StorageService --field-trial-handle=15702454438361524038,2299554059888823964,131072 --lang=es --service-sandbox-type=none --enable-crash-reporter=35e5a100-4ecc-46f2-9184-10185ec35daa, --shared-files
+camaras   2827  0.0  1.0 2665948 149236 ?      Sl   oct20   0:11 /usr/lib/firefox/firefox -contentproc -childID 1 -isForBrowser -prefsLen 86 -prefMapSize 239253 -parentBuildID 20210415204500 -appdir /usr/lib/firefox/browser 2337 true tab
+camaras   2852  0.2  1.5 2864844 220716 ?      Sl   oct20   3:22 /usr/lib/firefox/firefox -contentproc -childID 2 -isForBrowser -prefsLen 190 -prefMapSize 239253 -parentBuildID 20210415204500 -appdir /usr/lib/firefox/browser 2337 true tab
+camaras   2884  0.0  0.8 2641388 117120 ?      Sl   oct20   0:22 /usr/lib/firefox/firefox -contentproc -childID 3 -isForBrowser -prefsLen 5085 -prefMapSize 239253 -parentBuildID 20210415204500 -appdir /usr/lib/firefox/browser 2337 true tab
+camaras   3009  0.0  0.6 4798240 88508 ?       Sl   oct20   0:00 /opt/google/chrome/chrome --type=renderer --field-trial-handle=15702454438361524038,2299554059888823964,131072 --lang=es --enable-crash-reporter=35e5a100-4ecc-46f2-9184-10185ec35daa, --extension-process --enable-auto-reload --num-raster-threads=2 --enable-main-frame-before-activation --renderer-client-id=5 --no-v8-untrusted-code-mitigations --shared-files
+camaras   3026  0.2  0.7 4829536 111316 ?      Sl   oct20   2:51 /opt/google/chrome/chrome --type=renderer --field-trial-handle=15702454438361524038,2299554059888823964,131072 --lang=es --enable-crash-reporter=35e5a100-4ecc-46f2-9184-10185ec35daa, --extension-process --enable-auto-reload --num-raster-threads=2 --enable-main-frame-before-activation --renderer-client-id=6 --no-v8-untrusted-code-mitigations --shared-files
+camaras   3084  0.2  2.2 19749928 313232 ?     Sl   oct20   3:13 /opt/google/chrome/chrome --type=renderer --field-trial-handle=15702454438361524038,2299554059888823964,131072 --lang=es --enable-crash-reporter=35e5a100-4ecc-46f2-9184-10185ec35daa, --enable-auto-reload --num-raster-threads=2 --enable-main-frame-before-activation --renderer-client-id=10 --no-v8-untrusted-code-mitigations --shared-files
+camaras   3163  1.2  2.0 5277720 295316 ?      Sl   oct20  17:54 /opt/google/chrome/chrome --type=renderer --field-trial-handle=15702454438361524038,2299554059888823964,131072 --lang=es --enable-crash-reporter=35e5a100-4ecc-46f2-9184-10185ec35daa, --extension-process --enable-auto-reload --num-raster-threads=2 --enable-main-frame-before-activation --renderer-client-id=13 --no-v8-untrusted-code-mitigations --shared-files
+camaras   3201  0.0  0.7 4807932 111132 ?      Sl   oct20   0:02 /opt/google/chrome/chrome --type=renderer --field-trial-handle=15702454438361524038,2299554059888823964,131072 --lang=es --enable-crash-reporter=35e5a100-4ecc-46f2-9184-10185ec35daa, --enable-auto-reload --num-raster-threads=2 --enable-main-frame-before-activation --renderer-client-id=15 --no-v8-untrusted-code-mitigations --shared-files
+camaras   3202  0.0  0.5 4779804 81368 ?       Sl   oct20   0:00 /opt/google/chrome/chrome --type=renderer --field-trial-handle=15702454438361524038,2299554059888823964,131072 --lang=es --enable-crash-reporter=35e5a100-4ecc-46f2-9184-10185ec35daa, --enable-auto-reload --num-raster-threads=2 --enable-main-frame-before-activation --renderer-client-id=16 --no-v8-untrusted-code-mitigations --shared-files
+camaras   3223  0.0  0.7 4810664 113748 ?      Sl   oct20   0:16 /opt/google/chrome/chrome --type=renderer --field-trial-handle=15702454438361524038,2299554059888823964,131072 --lang=es --enable-crash-reporter=35e5a100-4ecc-46f2-9184-10185ec35daa, --enable-auto-reload --num-raster-threads=2 --enable-main-frame-before-activation --renderer-client-id=17 --no-v8-untrusted-code-mitigations --shared-files
+camaras   3266  0.0  0.7 4802504 106192 ?      Sl   oct20   0:02 /opt/google/chrome/chrome --type=renderer --field-trial-handle=15702454438361524038,2299554059888823964,131072 --lang=es --enable-crash-reporter=35e5a100-4ecc-46f2-9184-10185ec35daa, --enable-auto-reload --num-raster-threads=2 --enable-main-frame-before-activation --renderer-client-id=20 --no-v8-untrusted-code-mitigations --shared-files
+camaras   3284  0.0  0.3 654200 44692 ?        Sl   oct20   0:48 /opt/google/chrome/chrome --type=utility --utility-sub-type=audio.mojom.AudioService --field-trial-handle=15702454438361524038,2299554059888823964,131072 --lang=es --service-sandbox-type=audio --enable-crash-reporter=35e5a100-4ecc-46f2-9184-10185ec35daa, --shared-files
+camaras   3304  0.0  0.0 438292  6656 ?        Sl   oct20   0:00 /usr/lib/x86_64-linux-gnu/deja-dup/deja-dup-monitor
+camaras   3415  0.0  0.0  12816  1800 ?        S    oct20   0:00 /tmp/dlight_camaras/d06d3583/0804929892/pty --set-erase-key --env DYLD_LIBRARY_PATH= --env LD_LIBRARY_PATH= --env PROMPT_COMMAND=printf "?]3;${PWD}?"; ideopen() { printf "?]10;ext[::] ideopen $*;?"; printf "Opening $# file(s) ... ";} --env TERM=xterm /bin/bash --login
+camaras   3416  0.0  0.0  25308  5328 pts/2    Ss+  oct20   0:00 /bin/bash --login
+camaras   3430  0.0  0.0   4368   652 ?        Ss   oct20   0:00 /tmp/dlight_camaras/d06d3583/0804929892/pty --no-pty --env LC_ALL=C /bin/sh -s
+camaras   3432  0.0  0.0   4504   744 ?        Ss   oct20   0:00 /bin/sh -s
+root      3490  0.0  0.0  57624  4132 pts/13   S    oct20   0:00 sudo su
+root      3491  0.0  0.0  56896  3608 pts/13   S    oct20   0:00 su
+root      3492  0.0  0.0  23916  4036 pts/13   S    oct20   0:00 bash
+root      3503  0.0  0.2 659204 39584 pts/13   Sl   oct20   0:40 gedit /var/www/html/todo.txt
+root      3509  0.0  0.0  43604  2584 pts/13   S    oct20   0:00 dbus-launch --autolaunch=183e0d2a1bfe4d2ab88e863a6a3b190c --binary-syntax --close-stderr
+root      3510  0.0  0.0  42976  3356 ?        Ss   oct20   0:00 /usr/bin/dbus-daemon --fork --print-pid 5 --print-address 7 --session
+root      3515  0.0  0.0 178536  4620 ?        Sl   oct20   0:00 /usr/lib/dconf/dconf-service
+camaras   3537  0.0  0.0  25200  5028 pts/18   Ss   oct20   0:00 bash
+root      3569  0.0  0.0  57624  4092 pts/18   S    oct20   0:00 sudo su
+root      3572  0.0  0.0  56896  3528 pts/18   S    oct20   0:00 su
+root      3573  0.0  0.0  24236  4312 pts/18   S    oct20   0:01 bash
+camaras   3663  0.6  2.6 3256964 375812 ?      Sl   oct20   8:58 /usr/lib/firefox/firefox -contentproc -childID 4 -isForBrowser -prefsLen 6072 -prefMapSize 239253 -parentBuildID 20210415204500 -appdir /usr/lib/firefox/browser 2337 true tab
+camaras   3699  0.6  1.9 3405960 282188 ?      Sl   oct20   9:07 /usr/lib/firefox/firefox -contentproc -childID 5 -isForBrowser -prefsLen 6072 -prefMapSize 239253 -parentBuildID 20210415204500 -appdir /usr/lib/firefox/browser 2337 true tab
+camaras   5793  0.0  0.3 390464 43408 ?        Sl   oct20   0:00 /usr/lib/firefox/firefox -contentproc -parentBuildID 20210415204500 -prefsLen 8464 -prefMapSize 239253 -appdir /usr/lib/firefox/browser 2337 true rdd
+root      7209  0.0  0.0   4504   780 ?        S    13:07   0:00 /bin/sh -c /usr/lib/x86_64-linux-gnu/zeitgeist/zeitgeist-maybe-vacuum; /usr/bin/zeitgeist-daemon
+root      7216  0.0  0.0 336496  7276 ?        Sl   13:07   0:00 /usr/bin/zeitgeist-daemon
+root      7222  0.0  0.1 518168 15896 ?        Sl   13:07   0:00 zeitgeist-datahub
+root      7240  0.0  0.0      0     0 ?        I    13:07   0:00 [kworker/1:0]
+camaras   9483  0.0  0.0  25200  5040 pts/19   Ss   13:19   0:00 bash
+root      9494  0.0  0.0  57624  4112 pts/19   S    13:19   0:00 sudo su
+root      9495  0.0  0.0  56896  3532 pts/19   S    13:19   0:00 su
+root      9496  0.0  0.0  24356  4432 pts/19   S+   13:19   0:00 bash
+root     11231  1.7  0.0  29148  4668 pts/13   S+   13:26   3:28 htop
+www-data 17227  0.0  0.0 494172  8528 ?        S    07:35   0:00 /usr/sbin/apache2 -k start
+www-data 17228  0.0  0.0 494132  8528 ?        S    07:35   0:00 /usr/sbin/apache2 -k start
+www-data 17229  0.0  0.0 494132  8528 ?        S    07:35   0:00 /usr/sbin/apache2 -k start
+www-data 17230  0.0  0.0 494132  8528 ?        S    07:35   0:00 /usr/sbin/apache2 -k start
+www-data 17231  0.0  0.0 494132  8528 ?        S    07:35   0:00 /usr/sbin/apache2 -k start
+root     17261  0.0  0.0  96052  7912 ?        Ss   07:35   0:00 /usr/sbin/cupsd -l
+root     17262  0.0  0.0 274816  9040 ?        Ssl  07:35   0:00 /usr/sbin/cups-browsed
+lp       17263  0.0  0.0  81248  5836 ?        S    07:35   0:00 /usr/lib/cups/notifier/dbus dbus://
+lp       17264  0.0  0.0  81248  5848 ?        S    07:35   0:00 /usr/lib/cups/notifier/dbus dbus://
+root     18959  0.0  0.0      0     0 ?        I    14:09   0:00 [kworker/2:2]
+root     19940  0.0  0.0      0     0 ?        I    15:09   0:00 [kworker/0:0]
+root     20071  0.0  0.0 277120  6340 ?        Sl   10:21   0:00 /usr/lib/gvfs/gvfsd
+root     20076  0.0  0.0 406868  5280 ?        Sl   10:21   0:00 /usr/lib/gvfs/gvfsd-fuse /root/.gvfs -f -o big_writes
+root     20085  0.0  0.0 288336  7760 ?        Sl   10:21   0:00 /usr/lib/gvfs/gvfs-udisks2-volume-monitor
+root     20090  0.0  0.0 274524  6228 ?        Sl   10:21   0:00 /usr/lib/gvfs/gvfs-gphoto2-volume-monitor
+root     20095  0.0  0.0 262196  4616 ?        Sl   10:21   0:00 /usr/lib/gvfs/gvfs-mtp-volume-monitor
+root     20100  0.0  0.0 406316  9200 ?        Sl   10:21   0:00 /usr/lib/gvfs/gvfs-afc-volume-monitor
+root     20106  0.0  0.0 260232  4948 ?        Sl   10:21   0:00 /usr/lib/gvfs/gvfs-goa-volume-monitor
+root     20113  0.0  0.1 433420 23340 ?        Sl   10:21   0:00 /usr/bin/gnome-screensaver --no-daemon
+root     20128  0.0  0.0 188680  5452 ?        Sl   10:21   0:00 /usr/lib/gvfs/gvfsd-metadata
+root     20205  0.0  0.0      0     0 ?        I    15:26   0:00 [kworker/3:0]
+root     20465  0.0  0.0      0     0 ?        I    15:39   0:00 [kworker/1:2]
+root     20988  0.0  0.0      0     0 ?        I    16:09   0:00 [kworker/3:2]
+root     20992  0.0  0.0      0     0 ?        I    16:09   0:00 [kworker/0:1]
+root     21005  0.0  0.0      0     0 ?        D    16:10   0:00 [kworker/u32:1]
+root     21196  0.0  0.0      0     0 ?        I    16:21   0:00 [kworker/u32:3]
+root     21303  0.1  0.0      0     0 ?        I    16:30   0:00 [kworker/u32:0]
+root     21355  0.0  0.0      0     0 ?        D    16:33   0:00 [kworker/u32:4]
+root     21470  1.0  0.1 306064 26312 pts/18   S+   16:38   0:02 php procesa_video_registro.php 1 otraprueba
+camaras  22201  0.0  1.4 3049860 199516 ?      Sl   11:13   0:16 /usr/lib/firefox/firefox -contentproc -childID 14 -isForBrowser -prefsLen 9697 -prefMapSize 239253 -parentBuildID 20210415204500 -appdir /usr/lib/firefox/browser 2337 true tab
+root     22316  0.0  0.0      0     0 ?        I    16:38   0:00 [kworker/u32:2]
+root     23175  0.0  0.0      0     0 ?        I    16:39   0:00 [kworker/2:1]
+root     23739 28.3  1.8 1211196 269384 pts/18 Rl+  16:39   0:47 python3.7 motor/procesa_video_registro_2.py 1 16 NkQObQgKyEXMz7rCe77nMVD1n /var/www/html/reconocimientoFacial/proyecto_definitivo/ SYD7Yt5gCfo9
+root     28738  0.0  0.0      0     0 pts/18   Z+   16:42   0:00 [sh] <defunct>
+root     28751  0.0  0.0   4504   844 pts/18   S+   16:42   0:00 sh -c ps aux > libs/threads_files_aux/aux_vr_1_1_3467978.txt
+root     28752  0.0  0.0  39936  3444 pts/18   R+   16:42   0:00 ps aux
+root     32471  0.3  1.8 1278884 269104 ?      Ssl  12:27   0:56 /opt/sublime_text/sublime_text motor/
+root     32484  0.0  0.1 122248 18880 ?        Sl   12:27   0:00 /opt/sublime_text/plugin_host 32471
+camaras  32512  0.0  0.5 1146292 80212 ?       Sl   12:28   0:02 /usr/bin/nautilus --gapplication-service
+root     32539  0.0  0.0      0     0 ?        I    12:28   0:00 [kworker/2:0]
+camaras  32562  4.2  2.3 5171848 328656 ?      Sl   12:30  10:41 /opt/google/chrome/chrome --type=renderer --field-trial-handle=15702454438361524038,2299554059888823964,131072 --lang=es --enable-crash-reporter=35e5a100-4ecc-46f2-9184-10185ec35daa, --extension-process --enable-auto-reload --num-raster-threads=2 --enable-main-frame-before-activation --renderer-client-id=37 --no-v8-untrusted-code-mitigations --shared-files
+camaras  32589  0.0  0.3 4770320 55204 ?       Sl   12:30   0:00 /opt/google/chrome/chrome --type=renderer --field-trial-handle=15702454438361524038,2299554059888823964,131072 --lang=es --enable-crash-reporter=35e5a100-4ecc-46f2-9184-10185ec35daa, --enable-auto-reload --num-raster-threads=2 --enable-main-frame-before-activation --renderer-client-id=38 --no-v8-untrusted-code-mitigations --shared-files
+camaras  32658  0.0  0.5 2595540 82372 ?       Sl   12:31   0:00 /usr/lib/firefox/firefox -contentproc -childID 16 -isForBrowser -prefsLen 9980 -prefMapSize 239253 -parentBuildID 20210415204500 -appdir /usr/lib/firefox/browser 2337 true tab
