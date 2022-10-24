@@ -132,7 +132,10 @@
             if(isset($_GET["buscador"]) and $_GET["buscador"]!=""){ //de todas las fechas de todas las camaras por nombre
                 $query="select distinct(persona_id) from ".PREFIJO_TABLAS."estancias a, ".PREFIJO_TABLAS."camaras c, personas u where a.camara_id=c.id and a.persona_id=u.id and (u.nombre like '%".$_GET["buscador"]."%' or u.cod_interno like '%".$_GET["buscador"]."%') order by persona_id desc";
             }else{
-                $query="select distinct(persona_id) from ".PREFIJO_TABLAS."estancias a, ".PREFIJO_TABLAS."camaras c , ".PREFIJO_TABLAS."personas u where a.camara_id=c.id and a.persona_id=u.id and c.local_id=".$_SESSION["local_id"]." and a.fecha_ini>='".$desde_sql."' and a.fecha_ini<='".$hasta_sql."' and ".$where_camara.$where_trabajador." order by persona_id desc";
+                //$query="select distinct(persona_id) from ".PREFIJO_TABLAS."estancias a, ".PREFIJO_TABLAS."camaras c , ".PREFIJO_TABLAS."personas u where a.camara_id=c.id and a.persona_id=u.id and c.local_id=".$_SESSION["local_id"]." and a.fecha_ini>='".$desde_sql."' and a.fecha_ini<='".$hasta_sql."' and ".$where_camara.$where_trabajador." order by persona_id desc";
+                
+                
+                $query="select distinct(persona_id) from ".PREFIJO_TABLAS."estancias a, ".PREFIJO_TABLAS."personas u where a.persona_id=u.id and u.local_id=".$_SESSION["local_id"]." and a.fecha_ini>='".$desde_sql."' and a.fecha_ini<='".$hasta_sql."' and ".$where_camara.$where_trabajador." order by persona_id desc";
             }
             //echo $query;
             $sql->Ejecutar($query);

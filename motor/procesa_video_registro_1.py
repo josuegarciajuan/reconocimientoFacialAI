@@ -37,7 +37,7 @@ time_ini = time.time()
 def printLog(*args, **kwargs):
     print(*args, **kwargs)
     
-    with open(RUTA_PROYECTO + 'motor/procesa_videos_registro_1_' + HILO + '.out','a') as file:
+    with open(RUTA_PROYECTO + 'motor/logs/procesa_videos_registro_1_' + HILO + '.out','a') as file:
        print(*args, **kwargs, file=file)
 
 
@@ -139,7 +139,13 @@ while(cap.isOpened()):
 
                     if sigue:
                         segs_elapsed = time.time() - segundos_ini
-                        nombrefinal=FICHERO+"_"+HILO+'_'+str(segs_elapsed)
+                        # nombrefinal=FICHERO+"_"+HILO+'_'+str(segs_elapsed)
+
+                        now = str(datetime.now())
+                        now=now.replace(" ","_");
+                        nombrefinal='0_'+now+'.avi_'+str(segs_elapsed)
+
+
                         cv2.imwrite(RUTA_PROYECTO + 'motor/caras/sinclasificar_videos/'+nombrefinal+'.jpg', rostro)
                             
 

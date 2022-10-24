@@ -33,10 +33,10 @@ for (i, imagePath) in enumerate(imagePaths):
     encodings = face_recognition.face_encodings(rgb, boxes)
     # loop over the encodings
     for encoding in encodings:
-        if not os.path.exists('/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/inicial'):
-            os.makedirs('/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/inicial')
+        # if not os.path.exists('/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/inicial'):
+        #     os.makedirs('/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/inicial')
         k = str(i)    
-        copyfile(imagePath, '/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/inicial/'+name)
+        # copyfile(imagePath, '/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/inicial/'+name)
         i=i+1
         knownEncodings.append(encoding)
         knownNames.append(name)

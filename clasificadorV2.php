@@ -34,7 +34,8 @@ while(true){
     
     recorre_dir($path,1);
     sleep(1);
-    
+    echo "\n\nclasificado!\n\n";
+    //exit;
 }
 
 
@@ -45,17 +46,25 @@ function recorre_dir($path,$nivel){
     if($nivel==4){
         $archivos=[];
     }
-
+    echo "\n\nrecorre_dir:".$path."--".$nivel."\n";
     $dir = opendir($path);
+    if(!$dir){
+        echo "No es directorio:".$path."\n";
+        exit;
+    }
     while ($elemento = readdir($dir)){
+        echo "Elemento1:".$path.$elemento."(".$nivel.")\n";
+        
         if( $elemento != "." && $elemento != ".."){
+            echo "Elemento2:".$path.$elemento."(".$nivel.")\n";
             
             if( is_dir($path.$elemento) ){
                 switch($nivel){
                     case 1:
                         $local_id=$elemento;
                         echo "<p><strong>local_id: ". $local_id ."</strong></p>\n";
-                        if($local_id!="aux" and $local_id!="sinclasificar"){
+                        if($local_id!="aux" and $local_id!="sinclasificar" and $local_id!="inicial" and $local_id!="sinclasificar_videos"){
+                            echo "hago llamada para la camara\n";
                             recorre_dir($path.$local_id."/",2);
                         }
                         break;
@@ -86,6 +95,10 @@ function recorre_dir($path,$nivel){
                 $camara_id=$aux[3];
                 $persona=$aux[4];
 
+                if($camara_id=="C0"){
+                    $camara_id=0;
+                }
+                
                 echo "Datos:\n";
                 echo "local_id:".$local_id."\n";
                 echo "camara_id:".$camara_id."\n";  
@@ -137,7 +150,7 @@ function recorre_dir($path,$nivel){
                 
             
                 echo "\n\n";
-
+                
                 
                 $persona= str_replace("'", "", $persona);
                 $sql->Consultar ( "personas", "id", "cod_interno='".$persona."'", "id asc", true);
@@ -158,7 +171,10 @@ function recorre_dir($path,$nivel){
 
                     echo "estancia_id:".$estancia_id."\n";
 
-                    control_aforo($camara_id,$local_id);    
+                    if($camara_id!="0"){
+                        control_aforo($camara_id,$local_id);        
+                    }
+                    
                     
                 }else{
                     echo "Esta persona ya existe\n";
@@ -176,7 +192,7 @@ function recorre_dir($path,$nivel){
                     $sql->Consultar ( "estancias", 
                             "id,fecha_fin", 
                             "camara_id=".$camara_id." and fecha_fin>='".$fecha_ultima."' and fecha_fin<='".$datos["entrada"]["fecha_completa_consegs"]."'", "id asc", true);
-                    if($sql->num>0){
+                    if($sql->num>0 and $camara_id!=0){
                         echo "ya hay una estancia de hace menos de 5 segundos, su fecha es:".$sql->row["fecha_fin"]."\n";
 
                         //if($datos["entrada"]["fecha_completa_consegs"]>$sql->row["fecha_fin"]){
@@ -219,7 +235,9 @@ function recorre_dir($path,$nivel){
 
                         echo "estancia_id2:".$estancia_id."\n";
                         
-                        control_aforo($camara_id,$local_id);
+                        if($camara_id!="0"){
+                            control_aforo($camara_id,$local_id);
+                        }
                     }
 
 
@@ -241,6 +259,9 @@ function recorre_dir($path,$nivel){
 
 
 function extrae_datos($file){
+    echo "extrae_datos(file:->".$file."<-)\n";
+        
+    
     $return=[];
     $file= str_replace(".jpg", "", $file);
     $file= str_replace(".avi", "", $file);

@@ -26,7 +26,7 @@ CAMARA_ID=sys.argv[6]
 def printLog(*args, **kwargs):
     print(*args, **kwargs)
     
-    with open('motor/guarda_movimientos_'+CAMARA_ID+'.out','a') as file:
+    with open('motor/logs/guarda_movimientos_'+CAMARA_ID+'.out','a') as file:
         print(*args, **kwargs, file=file)
     
 

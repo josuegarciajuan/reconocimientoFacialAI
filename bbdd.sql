@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS locales(
   created timestamp DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id)
 );
+INSERT INTO `locales` VALUES (1,'Oficina','https://ichef.bbci.co.uk/news/976/cpsprodpb/3066/production/_111609321_1-1.jpg',100,0,'ofi','a',NULL,'2021-09-30 14:39:28'),(2,'Luna Azul','https://www.pikpng.com/pngl/m/429-4298683_media-luna-azul-png-imagenes-de-media-luna.png',100,0,'lunaazul','a',NULL,'2021-09-30 14:39:53');
 
 drop table if exists camaras;
 CREATE TABLE IF NOT EXISTS camaras(

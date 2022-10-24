@@ -284,7 +284,9 @@
                                 //request.send(fd);
                                 request.send(blob);
 
-                                alert("Supuestamente subido");
+                                alert("Se va a procesar a la persona. Gracias.");
+                                location.href="?page=visitantes";
+                                
                                 //aki habria que hacer overlay que se muestre como procesando asta que que consultas ajax recibir respuesta 
                                 //del procesardor del video que es: procesa_video_registro.php                                
                             }

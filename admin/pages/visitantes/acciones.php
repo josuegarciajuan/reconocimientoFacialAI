@@ -98,20 +98,20 @@ if(isset($_GET["info"]) and $_GET["info"]=="subir_video"){
 if(isset($_GET["info"]) and $_GET["info"]=="subir_video2"){
     //$video=$_FILES["video"];
     $uploads_dir="files/videos_registro_videos";
-    $name = $_GET["nombre"];
+    $name_persona = $_GET["nombre"];
+    
+    $name_video=$_SESSION["local_id"]."_".$name_persona;
     
 
     $test=file_get_contents('php://input');
     //file_put_contents($uploads_dir."/pruebas.png", $test);
-    file_put_contents($uploads_dir."/".$name.".avi", $test);
+    file_put_contents($uploads_dir."/".$name_video.".avi", $test);
 
-    echo "Subido a:".$uploads_dir."/".$name.".avi"."<br />";
+    echo "Subido a:".$uploads_dir."/".$name_video.".avi"."<br />";
 
-    $cmd=RUTA_PROYECTO."procesa_video_registro.php ".$_SESSION["local_id"];
-    
-    echo "-->".$cmd."<--<br />";
+    //$cmd=RUTA_PROYECTO."procesa_video_registro.php ".$_SESSION["local_id"];
+    //echo "-->".$cmd."<--<br />";
     //exec($cmd);
-    
     
     exit;
 }

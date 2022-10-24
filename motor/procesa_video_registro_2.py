@@ -26,7 +26,7 @@ HILO=sys.argv[2] #SIRVE PARA SABER DE QUE HILO VIENE ADEMAS DE QUE SEGUN CUAL CL
 NOMBRE_UNICO=sys.argv[3]
 
 
-CAMARA_ID="0"
+CAMARA_ID="C0"
 #RUTA_PROYECTO="/var/www/html/reconocimientoFacial/proyecto_definitivo/"
 #RUTA_PROYECTO="/var/www/html/reconocimientofacialV2/"
 RUTA_PROYECTO=sys.argv[4]
@@ -60,7 +60,7 @@ time_ini = time.time()
 def printLog(*args, **kwargs):
     print(*args, **kwargs)
     
-    with open(RUTA_PROYECTO + 'motor/procesa_videos_registro_2_' +  HILO + '.out','a') as file:
+    with open(RUTA_PROYECTO + 'motor/logs/procesa_videos_registro_2_' +  HILO + '.out','a') as file:
        print(*args, **kwargs, file=file)
 
 
@@ -323,7 +323,6 @@ for (i, imagePath) in enumerate(imagePaths):
     name_file = imagePath.split(os.path.sep)[-1]
 
     
-
     printLog("-------------------")    
 
     printLog('analizando:'+name_file)
