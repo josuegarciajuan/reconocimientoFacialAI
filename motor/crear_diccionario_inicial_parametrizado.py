@@ -47,7 +47,8 @@ for (i, imagePath) in enumerate(imagePaths):
 #save emcodings along with their names in dictionary data
 data = {"encodings": knownEncodings, "names": knownNames, "points": knownPoints, "identificadoresunicos": knownIdentificadorunico, "enfoque": knownEnfoques}
 #use pickle to save data into a file for later use
-f = open("/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/bbdd_reconocimiento/"+LOCAL_ID+"/face_enc", "wb")
+# f = open("/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/bbdd_reconocimiento/"+LOCAL_ID+"/face_enc", "wb")
+f = open("bbdd_reconocimiento/"+LOCAL_ID+"/face_enc", "wb")
 #f = open("face_enc", "wb")
 f.write(pickle.dumps(data))
 f.close()
