@@ -20,6 +20,11 @@ rm admin/caras_procesadas/*
 python3.7 motor/crear_diccionario_inicial_parametrizado.py 1
 mysql -u root -pcamaras reconocimientofacial3 < bbdd.sql
 
+
+clasificadorV2
+procesos_panel_control
+procesa_video_registro
+
 */
 
 $longitud_videos=4;  //la longitud en segundos en que se divide el video original
@@ -213,24 +218,22 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
     $tiempo = $tiempo_final - $tiempo_inicial;       
     echo "El tiempo de ejecución del archivo ha sido de " . $tiempo . " segundos";
     
-    
+    global $sql;
     $aux= explode("_", $nombre_fichero);
     $nombre_persona=$aux[1];
     $actualizado=false;
     while(!$actualizado){
-        $sql->Consultar("personas","*","cod_interno=".$ganador_name);
+        echo "Viendo a que acabe para acualizar su nombre\n";
+        $sql->Consultar("personas","*","cod_interno=".$ganador_name,"id",true);
         if($sql->num>0){
-            $sql->Actualizar("personas",["nombre"],[$nombre_persona]);
+            $sql->Actualizar("personas",["nombre"],[$nombre_persona],true);
             $actualizado=true;
+        }else{
+            echo "sleep..\n";
+            sleep(2);    
         }
-        sleep(2);
     }
-
 }
-
-
-
-
 
 
 /*se divide el video original en videos de 4 segundos de duracion*/
