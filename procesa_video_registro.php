@@ -75,7 +75,7 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
     $numero_videos=dividir_video2($local_id,$ruta,$nombre_fichero);
 
     echo "videos divididos:".$numero_videos."\n";
-    exit;
+    
 
     //saca todas la caras posible a motor/caras/sinclasificar_videos/  
     echo "Videos:\n\n";
@@ -110,7 +110,7 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
         }
     }
     
-    
+    exit;
 
     for($i=1;$i<=16;$i++){
         $id="vr_".$i."_".$local_id."_".$randaux;
