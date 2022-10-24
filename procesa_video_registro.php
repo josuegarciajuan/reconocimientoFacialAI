@@ -45,6 +45,7 @@ while (true){
     $dir = opendir($ruta);
     while ($elemento = readdir($dir)){
         if( $elemento != "." && $elemento != ".."){
+            
             $test= str_replace(".avi", "", $elemento);
             $aux= explode("_", $test);
             $local_id=$aux[0];
@@ -58,7 +59,7 @@ while (true){
     }    
     sleep(1);
     echo "Procesados los que habian\n";
-    //exit;
+    exit;
 }
 
 
@@ -74,7 +75,7 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
     $numero_videos=dividir_video2($local_id,$ruta,$nombre_fichero);
 
     echo "videos divididos:".$numero_videos."\n";
-    
+    exit;
 
     //saca todas la caras posible a motor/caras/sinclasificar_videos/  
     echo "Videos:\n\n";
