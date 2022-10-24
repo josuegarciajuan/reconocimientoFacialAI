@@ -110,7 +110,7 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
         }
     }
     
-    exit;
+    
 
     for($i=1;$i<=16;$i++){
         $id="vr_".$i."_".$local_id."_".$randaux;
