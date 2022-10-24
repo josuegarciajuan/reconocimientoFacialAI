@@ -25,7 +25,7 @@ clasificadorV2
 procesos_panel_control
 procesa_video_registro
 
-*/
+*/  
 
 $longitud_videos=4;  //la longitud en segundos en que se divide el video original
 
@@ -116,7 +116,7 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
             usleep(500);
         }
     }
-    exit;
+    
     
     
 
