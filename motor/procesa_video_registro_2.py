@@ -331,7 +331,7 @@ for (i, imagePath) in enumerate(imagePaths):
 
     printLog('ultimos 7:'+lastseven)
 
-    =int(lastseven[0:1])
+    antesp=int(lastseven[0:1])
     primero=int(lastseven[1:2])
     segundo=int(lastseven[2:3])
     tercero=int(lastseven[3:4])
@@ -389,8 +389,6 @@ for (i, imagePath) in enumerate(imagePaths):
     if antesp%2 == 0 and primero%2 == 1 and segundo%2 == 1 and tercero%2 == 1 and cuarto%2 == 1 and HILO=="16":
         continua=True
         printLog("paso16!!")
-
-
     if antesp%2 == 1 and primero%2 == 0 and segundo%2 == 0 and tercero%2 == 0 and cuarto%2 == 0 and HILO=="17":
         continua=True
         printLog("paso17!!")
