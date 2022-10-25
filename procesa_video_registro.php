@@ -242,7 +242,7 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
     $tiempo = $tiempo_final - $tiempo_inicial;       
     echo "El tiempo de ejecución del archivo ha sido de " . $tiempo . " segundos";
     
-
+    exit;
 }
 
 
