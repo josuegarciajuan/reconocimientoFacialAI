@@ -98,7 +98,7 @@ function recorre_dir($path,$nivel){
                 $persona=$aux[4];
 
                 if($camara_id=="C0"){
-                    $camara_id=0;
+                    $camara_id="0";
                 }
                 
                 echo "Datos:\n";
@@ -149,7 +149,8 @@ function recorre_dir($path,$nivel){
                 echo "segundos:".$datos["salida"]["segundos"]."\n";
                 echo "fecha_completa:".$datos["salida"]["fecha_completa"]."\n";
                 echo "fecha_completa_consegs:".$datos["salida"]["fecha_completa_consegs"]."\n";
-                if($camara_id==0){
+                if($camara_id=="0"){
+                    $datos["entrada"]["fecha_completa_consegs"]=$datos["entrada"]["fecha_completa"];
                     $datos["salida"]["fecha_completa_consegs"]=$datos["salida"]["fecha_completa"];
                 }
             
