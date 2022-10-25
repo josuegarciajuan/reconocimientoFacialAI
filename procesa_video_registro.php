@@ -161,7 +161,8 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
         }
     }
 
-
+    $ganador_name="";
+    
     echo "\n\n\n";
     echo "RESULTADOS\n";
 
@@ -170,7 +171,7 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
     $IMAGENES_NOSEPUEDERECORTARCARA=0;
     $IMAGENES_CONCARA=0;
 
-    for($i=1;$i<=16;$i++){
+    for($i=1;$i<=32;$i++){
         $file='aux/procesa_video_registro_resultado_'.$local_id.'_'.$i.'.txt';
         $res=file_get_contents($file);
         echo "Para el hilo:".$i.", los resultados son:".$res."\n";
@@ -183,11 +184,10 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
         $IMAGENES_NOSEPUEDERECORTARCARA+=((int)(trim($vres[2])));
         $IMAGENES_CONCARA+=((int)(trim($vres[3])));
 
-        $ganador_name=$vres[4];
+        if($ganador_name==""){
+            $ganador_name=trim($vres[4]);
+        }
         $fotos_identificadorunico=$vres[5];
-
-
-
 
     }
     
