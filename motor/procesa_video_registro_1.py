@@ -75,7 +75,7 @@ while(cap.isOpened()):
         printLog('tenemos(' + HILO + ') frame k lo guardo ..')
         num_frame=num_frame+1
 
-        if num_frame % 2 == 0:
+        if num_frame % 3 == 0:
 
 
             #img = cv2.resize(img, None, fx=0.25, fy=0.25)
@@ -123,7 +123,7 @@ while(cap.isOpened()):
                     #asdrostro = img_original[ydef:y1def, xdef:x1def]
                     rostro = img_original
 
-                    
+
 
                     sigue=True
                     #asdif(type(rostro) == type(None)):

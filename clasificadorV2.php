@@ -192,7 +192,8 @@ function recorre_dir($path,$nivel){
                     $sql->Consultar ( "estancias", 
                             "id,fecha_fin", 
                             "camara_id=".$camara_id." and fecha_fin>='".$fecha_ultima."' and fecha_fin<='".$datos["entrada"]["fecha_completa_consegs"]."'", "id asc", true);
-                    if($sql->num>0 and $camara_id!=0){
+                    //if($sql->num>0 and $camara_id!=0){
+                    if($sql->num>0){
                         echo "ya hay una estancia de hace menos de 5 segundos, su fecha es:".$sql->row["fecha_fin"]."\n";
 
                         //if($datos["entrada"]["fecha_completa_consegs"]>$sql->row["fecha_fin"]){

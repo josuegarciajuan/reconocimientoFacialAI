@@ -175,6 +175,24 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
 
 
     }
+    
+    global $sql;
+    $aux= explode("_", $nombre_fichero);
+    $nombre_persona=$aux[1];
+    $actualizado=false;
+    while(!$actualizado){
+        echo "Viendo a que acabe para acualizar su nombre\n";
+        $sql->Consultar("personas","*","cod_interno='".$ganador_name."'","id",true);
+        if($sql->num>0){
+            $sql->Actualizar("personas",["nombre"],[$nombre_persona],true);
+            $actualizado=true;
+        }else{
+            echo "sleep..\n";
+            sleep(2);    
+        }
+    }
+    
+    
     echo "\n\n\n";
     echo "TOTALES\n";
 
@@ -223,21 +241,7 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
     $tiempo = $tiempo_final - $tiempo_inicial;       
     echo "El tiempo de ejecución del archivo ha sido de " . $tiempo . " segundos";
     
-    global $sql;
-    $aux= explode("_", $nombre_fichero);
-    $nombre_persona=$aux[1];
-    $actualizado=false;
-    while(!$actualizado){
-        echo "Viendo a que acabe para acualizar su nombre\n";
-        $sql->Consultar("personas","*","cod_interno='".$ganador_name."'","id",true);
-        if($sql->num>0){
-            $sql->Actualizar("personas",["nombre"],[$nombre_persona],true);
-            $actualizado=true;
-        }else{
-            echo "sleep..\n";
-            sleep(2);    
-        }
-    }
+
 }
 
 

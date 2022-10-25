@@ -396,8 +396,8 @@ for (i, imagePath) in enumerate(imagePaths):
         IMAGENES_TOTAL=IMAGENES_TOTAL+1
 
         insertada=False
-        # enfoque=comprueba_enfocada(imagePath,name_file)
-        enfoque=100
+        enfoque=comprueba_enfocada(imagePath,name_file)
+        # enfoque=100
         if enfoque>0:
             printLog('Es enfocada de momento:'+imagePath)
             #if escara(imagePath):
