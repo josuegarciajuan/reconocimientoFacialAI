@@ -327,66 +327,118 @@ for (i, imagePath) in enumerate(imagePaths):
 
     printLog('analizando:'+name_file)
 
-    lastseven=name_file[-8:]
+    lastseven=name_file[-9:]
 
     printLog('ultimos 7:'+lastseven)
 
-    primero=int(lastseven[0:1])
-    segundo=int(lastseven[1:2])
-    tercero=int(lastseven[2:3])
-    cuarto=int(lastseven[3:4])
+    =int(lastseven[0:1])
+    primero=int(lastseven[1:2])
+    segundo=int(lastseven[2:3])
+    tercero=int(lastseven[3:4])
+    cuarto=int(lastseven[4:5])
+
 
 
 
     continua=False
-    if primero%2 == 0 and segundo%2 == 0 and tercero%2 == 0 and cuarto%2 == 0 and HILO=="1":
+    if antesp%2 == 0 and primero%2 == 0 and segundo%2 == 0 and tercero%2 == 0 and cuarto%2 == 0 and HILO=="1":
         continua=True
         printLog("paso1!!")
-    if primero%2 == 0 and segundo%2 == 0 and tercero%2 == 0 and cuarto%2 == 1 and HILO=="2":
+    if antesp%2 == 0 and primero%2 == 0 and segundo%2 == 0 and tercero%2 == 0 and cuarto%2 == 1 and HILO=="2":
         continua=True
         printLog("paso2!!")
-    if primero%2 == 0 and segundo%2 == 0 and tercero%2 == 1 and cuarto%2 == 0 and HILO=="3":
+    if antesp%2 == 0 and primero%2 == 0 and segundo%2 == 0 and tercero%2 == 1 and cuarto%2 == 0 and HILO=="3":
         continua=True
         printLog("paso3!!")
-    if primero%2 == 0 and segundo%2 == 0 and tercero%2 == 1 and cuarto%2 == 1 and HILO=="4":
+    if antesp%2 == 0 and primero%2 == 0 and segundo%2 == 0 and tercero%2 == 1 and cuarto%2 == 1 and HILO=="4":
         continua=True
         printLog("paso4!!")
-    if primero%2 == 0 and segundo%2 == 1 and tercero%2 == 0 and cuarto%2 == 0 and HILO=="5":
+    if antesp%2 == 0 and primero%2 == 0 and segundo%2 == 1 and tercero%2 == 0 and cuarto%2 == 0 and HILO=="5":
         continua=True
         printLog("paso5!!")
-    if primero%2 == 0 and segundo%2 == 1 and tercero%2 == 0 and cuarto%2 == 1 and HILO=="6":
+    if antesp%2 == 0 and primero%2 == 0 and segundo%2 == 1 and tercero%2 == 0 and cuarto%2 == 1 and HILO=="6":
         continua=True
         printLog("paso6!!")
-    if primero%2 == 0 and segundo%2 == 1 and tercero%2 == 1 and cuarto%2 == 0 and HILO=="7":
+    if antesp%2 == 0 and primero%2 == 0 and segundo%2 == 1 and tercero%2 == 1 and cuarto%2 == 0 and HILO=="7":
         continua=True
         printLog("paso7!!")
-    if primero%2 == 0 and segundo%2 == 1 and tercero%2 == 1 and cuarto%2 == 1 and HILO=="8":
+    if antesp%2 == 0 and primero%2 == 0 and segundo%2 == 1 and tercero%2 == 1 and cuarto%2 == 1 and HILO=="8":
         continua=True
         printLog("paso8!!")
-    if primero%2 == 1 and segundo%2 == 0 and tercero%2 == 0 and cuarto%2 == 0 and HILO=="9":
+    if antesp%2 == 0 and primero%2 == 1 and segundo%2 == 0 and tercero%2 == 0 and cuarto%2 == 0 and HILO=="9":
         continua=True
         printLog("paso9!!")
-    if primero%2 == 1 and segundo%2 == 0 and tercero%2 == 0 and cuarto%2 == 1 and HILO=="10":
+    if antesp%2 == 0 and primero%2 == 1 and segundo%2 == 0 and tercero%2 == 0 and cuarto%2 == 1 and HILO=="10":
         continua=True
         printLog("paso10!!")
-    if primero%2 == 1 and segundo%2 == 0 and tercero%2 == 1 and cuarto%2 == 0 and HILO=="11":
+    if antesp%2 == 0 and primero%2 == 1 and segundo%2 == 0 and tercero%2 == 1 and cuarto%2 == 0 and HILO=="11":
         continua=True
         printLog("paso11!!")
-    if primero%2 == 1 and segundo%2 == 0 and tercero%2 == 1 and cuarto%2 == 1 and HILO=="12":
+    if antesp%2 == 0 and primero%2 == 1 and segundo%2 == 0 and tercero%2 == 1 and cuarto%2 == 1 and HILO=="12":
         continua=True
         printLog("paso12!!")
-    if primero%2 == 1 and segundo%2 == 1 and tercero%2 == 0 and cuarto%2 == 0 and HILO=="13":
+    if antesp%2 == 0 and primero%2 == 1 and segundo%2 == 1 and tercero%2 == 0 and cuarto%2 == 0 and HILO=="13":
         continua=True
         printLog("paso13!!")
-    if primero%2 == 1 and segundo%2 == 1 and tercero%2 == 0 and cuarto%2 == 1 and HILO=="14":
+    if antesp%2 == 0 and primero%2 == 1 and segundo%2 == 1 and tercero%2 == 0 and cuarto%2 == 1 and HILO=="14":
         continua=True
         printLog("paso14!!")
-    if primero%2 == 1 and segundo%2 == 1 and tercero%2 == 1 and cuarto%2 == 0 and HILO=="15":
+    if antesp%2 == 0 and primero%2 == 1 and segundo%2 == 1 and tercero%2 == 1 and cuarto%2 == 0 and HILO=="15":
         continua=True
         printLog("paso15!!")
-    if primero%2 == 1 and segundo%2 == 1 and tercero%2 == 1 and cuarto%2 == 1 and HILO=="16":
+    if antesp%2 == 0 and primero%2 == 1 and segundo%2 == 1 and tercero%2 == 1 and cuarto%2 == 1 and HILO=="16":
         continua=True
         printLog("paso16!!")
+
+
+    if antesp%2 == 1 and primero%2 == 0 and segundo%2 == 0 and tercero%2 == 0 and cuarto%2 == 0 and HILO=="17":
+        continua=True
+        printLog("paso17!!")
+    if antesp%2 == 1 and primero%2 == 0 and segundo%2 == 0 and tercero%2 == 0 and cuarto%2 == 1 and HILO=="18":
+        continua=True
+        printLog("paso18!!")
+    if antesp%2 == 1 and primero%2 == 0 and segundo%2 == 0 and tercero%2 == 1 and cuarto%2 == 0 and HILO=="19":
+        continua=True
+        printLog("paso19!!")
+    if antesp%2 == 1 and primero%2 == 0 and segundo%2 == 0 and tercero%2 == 1 and cuarto%2 == 1 and HILO=="20":
+        continua=True
+        printLog("paso20!!")
+    if antesp%2 == 1 and primero%2 == 0 and segundo%2 == 1 and tercero%2 == 0 and cuarto%2 == 0 and HILO=="21":
+        continua=True
+        printLog("paso21!!")
+    if antesp%2 == 1 and primero%2 == 0 and segundo%2 == 1 and tercero%2 == 0 and cuarto%2 == 1 and HILO=="22":
+        continua=True
+        printLog("paso22!!")
+    if antesp%2 == 1 and primero%2 == 0 and segundo%2 == 1 and tercero%2 == 1 and cuarto%2 == 0 and HILO=="23":
+        continua=True
+        printLog("paso23!!")
+    if antesp%2 == 1 and primero%2 == 0 and segundo%2 == 1 and tercero%2 == 1 and cuarto%2 == 1 and HILO=="24":
+        continua=True
+        printLog("paso24!!")
+    if antesp%2 == 1 and primero%2 == 1 and segundo%2 == 0 and tercero%2 == 0 and cuarto%2 == 0 and HILO=="25":
+        continua=True
+        printLog("paso25!!")
+    if antesp%2 == 1 and primero%2 == 1 and segundo%2 == 0 and tercero%2 == 0 and cuarto%2 == 1 and HILO=="26":
+        continua=True
+        printLog("paso26!!")
+    if antesp%2 == 1 and primero%2 == 1 and segundo%2 == 0 and tercero%2 == 1 and cuarto%2 == 0 and HILO=="27":
+        continua=True
+        printLog("paso27!!")
+    if antesp%2 == 1 and primero%2 == 1 and segundo%2 == 0 and tercero%2 == 1 and cuarto%2 == 1 and HILO=="28":
+        continua=True
+        printLog("paso28!!")
+    if antesp%2 == 1 and primero%2 == 1 and segundo%2 == 1 and tercero%2 == 0 and cuarto%2 == 0 and HILO=="29":
+        continua=True
+        printLog("paso29!!")
+    if antesp%2 == 1 and primero%2 == 1 and segundo%2 == 1 and tercero%2 == 0 and cuarto%2 == 1 and HILO=="30":
+        continua=True
+        printLog("paso30!!")
+    if antesp%2 == 1 and primero%2 == 1 and segundo%2 == 1 and tercero%2 == 1 and cuarto%2 == 0 and HILO=="31":
+        continua=True
+        printLog("paso31!!")
+    if antesp%2 == 1 and primero%2 == 1 and segundo%2 == 1 and tercero%2 == 1 and cuarto%2 == 1 and HILO=="32":
+        continua=True
+        printLog("paso32!!")
 
 
 

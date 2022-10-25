@@ -18,6 +18,7 @@ rm motor/bbdd_reconocimiento/1/face_enc
 rm -R motor/logs/*
 rm admin/caras_procesadas/*
 rm motor/caras/sinclasificar_videos/*
+rm libs/threads_files_aux/*_vr_*
 python3.7 crear_diccionario_inicial_parametrizado.py 1
 mysql -u root -pcamaras reconocimientofacial3 < bbdd.sql
 
@@ -106,14 +107,18 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
 
 
     $sigue=true;
+    $tt=[];
     while($sigue){
         $terminados=0;
         for($i=1;$i<=$numero_videos;$i++){
             $id="vr_".$i."_".$local_id."_".$randaux;
-            if(!$threads[$id]->isrunning()){
-                $terminados++;
-                exec("rm libs/threads_files_aux/aux_".$id.".txt");
-
+            if(!in_array($id, $tt)){
+                if(!$threads[$id]->isrunning()){
+                    $threads[$id]->stop();
+                    $terminados++;
+                    exec("rm libs/threads_files_aux/aux_".$id.".txt");
+                    $tt[]=$id;
+                }
             }
         }
         if($terminados==$numero_videos){
@@ -126,7 +131,7 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
     //exit;
     
 
-    for($i=1;$i<=16;$i++){
+    for($i=1;$i<=32;$i++){
         $id="vr_".$i."_".$local_id."_".$randaux;
         $cmd="python3.7 motor/procesa_video_registro_2.py ".$local_id." ".$i." ".$nombreunico." '".RUTA_PROYECTO."'";
         echo "Alta hilo->".$cmd."\n";
@@ -136,16 +141,21 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
     }
 
     $sigue=true;
+    $tt=[];
     while($sigue){
         $terminados=0;
-        for($i=1;$i<=16;$i++){
+        for($i=1;$i<=32;$i++){
             $id="vr_".$i."_".$local_id."_".$randaux;
-            if(!$threads[$id]->isrunning()){
-                $terminados++;
-                exec("rm libs/threads_files_aux/aux_".$id.".txt");
+            if(!in_array($id, $tt)){
+                if(!$threads[$id]->isrunning()){
+                    $threads[$id]->stop();
+                    $terminados++;
+                    exec("rm libs/threads_files_aux/aux_".$id.".txt");
+                    $tt[]=$id;
+                }
             }
         }
-        if($terminados==16){
+        if($terminados==32){
             $sigue=false;
         }else{
             usleep(1000);

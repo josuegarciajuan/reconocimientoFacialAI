@@ -90,6 +90,8 @@ function recorre_dir($path,$nivel){
                 echo "Foto:". $ruta."\n";
                 
                 
+                //0_2022-10-25_11:57:31.999732.avi_24.896596670150757.jpg_bqBPdw7c27dWQoOeUCJ4p4teFM.jpg
+                
                 $aux= explode("/", $path);
                 $local_id=$aux[2];
                 $camara_id=$aux[3];
@@ -150,6 +152,8 @@ function recorre_dir($path,$nivel){
                 
             
                 echo "\n\n";
+                
+                exit;
                 
                 
                 $persona= str_replace("'", "", $persona);
