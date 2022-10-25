@@ -66,7 +66,8 @@ segundos_ini=time.time()
 num_frame=0
 
 
-
+now = str(datetime.now())
+now=now.replace(" ","_");
 
 while(cap.isOpened()):
     printLog('voy(' + HILO + ') leyendo el video..')
@@ -143,8 +144,6 @@ while(cap.isOpened()):
                         segs_elapsed = time.time() - segundos_ini
                         # nombrefinal=FICHERO+"_"+HILO+'_'+str(segs_elapsed)
 
-                        now = str(datetime.now())
-                        now=now.replace(" ","_");
                         nombrefinal='0_'+now+'.avi_'+str(segs_elapsed)
 
 

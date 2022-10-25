@@ -33,9 +33,8 @@ require_once("includes/rutas.php");
 require_once("libs/Jos_thread.class.php");
 require_once("libs/mysql.class.php");
 
-$tiempo_inicial = microtime(true);
 
-$sql=new Conectar();
+
 
 /*
 $local_id="";
@@ -71,7 +70,10 @@ while (true){
 
 
 function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta){
-
+    $sql=new Conectar();
+    
+    $tiempo_inicial = microtime(true);
+    
     $threads=[];
 
     $nombreunico=shell_exec("php ws.php nombreunico");
@@ -176,7 +178,6 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
 
     }
     
-    global $sql;
     $aux= explode("_", $nombre_fichero);
     $nombre_persona=$aux[1];
     $actualizado=false;
