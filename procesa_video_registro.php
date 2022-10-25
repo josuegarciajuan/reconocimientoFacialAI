@@ -118,7 +118,7 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
         if($terminados==$numero_videos){
             $sigue=false;
         }else{
-            usleep(500);
+            usleep(1000);
         }
     }
     
@@ -147,7 +147,7 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
         if($terminados==16){
             $sigue=false;
         }else{
-            usleep(500);
+            usleep(1000);
         }
     }
 
