@@ -5,12 +5,12 @@ import sys
 
 URL_CONEXION=sys.argv[2]
 CAMARA_ID=sys.argv[1]
+RUTA_PROYECTO=sys.argv[3]
 
-filename="/var/www/html/reconocimientoFacial/proyecto_definitivo/admin/fotos_camara/"+CAMARA_ID+".png"
+filename=RUTA_PROYECTO+"admin/fotos_camara/"+CAMARA_ID+".png"
 
 if os.path.isfile(filename):
     os.remove(filename)
-
 
 
 cap= cv2.VideoCapture(URL_CONEXION)
