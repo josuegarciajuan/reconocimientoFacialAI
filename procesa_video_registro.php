@@ -19,6 +19,7 @@ rm -R motor/logs/*
 rm admin/caras_procesadas/*
 rm motor/caras/sinclasificar_videos/*
 rm libs/threads_files_aux/*_vr_*
+cd motor
 python3.7 crear_diccionario_inicial_parametrizado.py 1
 mysql -u root -pcamaras reconocimientofacial3 < bbdd.sql
 
@@ -127,9 +128,7 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
             usleep(1000);
         }
     }
-    
-    exit;
-    
+      
 
     for($i=1;$i<=32;$i++){
         $id="vr_".$i."_".$local_id."_".$randaux;
