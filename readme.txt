@@ -269,6 +269,7 @@ http://camaras.vps.webdock.io/reconocimientoFacial/proyecto_definitivo/admin/ind
 
 FUNCIONAMIENTO MOTOR:
 screen -XS <session-id> quit
+screen -S <session_name>
 cd /var/www/html/reconocimientoFacial/proyecto_definitivo/
 
 cada uno de estos procesos dentro de 1 screen:
@@ -294,6 +295,40 @@ php detector.php
 
 509.pts-0.camaras
 php clasificadorV2.php
+
+
+----------------------------------------------------------------
+
+
+-php procesos_panel_control.php {DEBUG(0=>NO,1=>si)}  
+llama a motor/devuelve_posicion_cara.py y lo mantiene en marcha con threads.
+Se encarga de recorrer esta ruta: RUTA_PROYECTO + "admin/files/videos_registro" y devolver si es la posicion de cara que se espera con una puntuacion
+
+-php procesa_video_registro.php
+esperando que haya un video de registro. Si lo hay, lo divide en minivideos de 4 segundos y llama a:
+motor/procesa_video_registro_1.py y motor/procesa_video_registro_2.py
+el 1º se encarga de sacar caras de los minivideos
+el 2º se encarga de recorrer estas fotos, descartas las no enfocadas y las enfocadas sacar los encodings y guardarlos
+
+-php clasificadorV2.php
+con las fotos que ya han guardado los encodings, recorre su lugar de donde se han giuardado, y ya crea las estancias y mueve las fotos a su lugar difinitivo y crea tambien si es persona nueva
+
+-capturador.php {local_id} {desde(si se pasa un valor es que se usa desde el server si no se pasa es que es desde local)}
+habrá que encender uno de estos procesos por cada local
+llama y mantiene a motor/guarda_movimientos.py que es llamado por cada camara en el local
+graba videos cuando detecta movimiento
+
+-detector.php
+llama y mantiene comprobando que no se desborde la ram de estos procesos
+procesa_videosV6.py  y  procesa_fotos_def_borrosaparteV2.py
+el 1º: procesa los cruces de lineas y saca caras del video
+el 2º: busca a quien pertence la cara de las fotos sacadas del 1º
+
+
+
+
+
+
 
 
 

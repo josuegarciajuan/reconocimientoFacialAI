@@ -29,6 +29,8 @@ CAMARA_ID="0"
 #RUTA_PROYECTO="/var/www/html/reconocimientoFacial/proyecto_definitivo/"
 #RUTA_PROYECTO="/var/www/html/reconocimientofacialV2/"
 RUTA_PROYECTO=sys.argv[4]
+fecha_aux=sys.argv[5]
+
 
 
 time_ini = time.time()
@@ -66,8 +68,7 @@ segundos_ini=time.time()
 num_frame=0
 
 
-now = str(datetime.now())
-now=now.replace(" ","_");
+
 
 while(cap.isOpened()):
     printLog('voy(' + HILO + ') leyendo el video..')
@@ -76,7 +77,7 @@ while(cap.isOpened()):
         printLog('tenemos(' + HILO + ') frame k lo guardo ..')
         num_frame=num_frame+1
 
-        if num_frame % 3 == 0:
+        if num_frame % 5 == 0:
 
 
             #img = cv2.resize(img, None, fx=0.25, fy=0.25)
@@ -143,6 +144,11 @@ while(cap.isOpened()):
                     if sigue:
                         segs_elapsed = time.time() - segundos_ini
                         # nombrefinal=FICHERO+"_"+HILO+'_'+str(segs_elapsed)
+
+                        aux = str(datetime.now())
+                        lastsix_fecha=aux[-6:]
+                        now=fecha_aux+"."+lastsix
+
 
                         nombrefinal='0_'+now+'.avi_'+str(segs_elapsed)
 

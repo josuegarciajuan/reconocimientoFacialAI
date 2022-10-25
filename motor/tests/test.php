@@ -1,5 +1,13 @@
 <?php
 
+
+//2022-10-25 12:57:32.302218
+$fecha=date("Y-m-d H:i:s");
+$fecha=str_replace(" ", "_", $fecha);
+echo "->".$fecha."<-\n\n";
+exec("python3.7 test.py ".$fecha);
+
+/*
 test("/home/videos","var/www/html/videos");
 
 function test($path,$destino){
@@ -19,4 +27,5 @@ function test($path,$destino){
 	unset($dir);
 }
 
+*/
 ?>

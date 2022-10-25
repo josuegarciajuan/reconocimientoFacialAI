@@ -85,15 +85,18 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
 
     echo "videos divididos:".$numero_videos."\n";
     
-
+    $fecha=date("Y-m-d H:i:s");
+    $fecha=str_replace(" ", "_", $fecha);
+    //echo "->".$fecha."<-\n\n";
+    
+    
     //saca todas la caras posible a motor/caras/sinclasificar_videos/  
     echo "Videos:\n\n";
     for($i=1;$i<=$numero_videos;$i++){
         echo $ruta.$nombre_fichero."_".$i.".avi \n";
         $id="vr_".$i."_".$local_id."_".$randaux;
 
-
-        $cmd="python3.7 motor/procesa_video_registro_1.py ".$local_id." ".$nombre_fichero."_".$i.".avi ".$i." '".RUTA_PROYECTO."'";
+        $cmd="python3.7 motor/procesa_video_registro_1.py ".$local_id." ".$nombre_fichero."_".$i.".avi ".$i." '".RUTA_PROYECTO."' ".$fecha;
         echo "Alta hilo->".$cmd."\n";
         $threads[$id]=new Jos_Thread($id,$cmd,true);
 
