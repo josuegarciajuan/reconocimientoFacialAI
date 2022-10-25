@@ -77,7 +77,7 @@ while(cap.isOpened()):
         printLog('tenemos(' + HILO + ') frame k lo guardo ..')
         num_frame=num_frame+1
 
-        if num_frame % 7 == 0:
+        if num_frame % 4 == 0:
 
 
             #img = cv2.resize(img, None, fx=0.25, fy=0.25)
