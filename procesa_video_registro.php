@@ -108,8 +108,8 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
 
     $sigue=true;
     $tt=[];
+    $terminados=0;
     while($sigue){
-        $terminados=0;
         for($i=1;$i<=$numero_videos;$i++){
             $id="vr_".$i."_".$local_id."_".$randaux;
             if(!in_array($id, $tt)){
@@ -142,8 +142,8 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
 
     $sigue=true;
     $tt=[];
+    $terminados=0;
     while($sigue){
-        $terminados=0;
         for($i=1;$i<=32;$i++){
             $id="vr_".$i."_".$local_id."_".$randaux;
             if(!in_array($id, $tt)){
