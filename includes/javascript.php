@@ -41,7 +41,7 @@
                             vaux1=vaux[i].split("///");
                             
                             
-                            $return.=$cod_interno." - (".$nombre.")///".$descripcion_camara."///".$mode."///".$imagen1."///".$imagen2."###";
+                            //$return.=$cod_interno." - (".$nombre.")///".$descripcion_camara."///".$mode."///".$imagen1."///".$imagen2."###";
                             
                             persona=vaux1[0];
                             camara=vaux1[1];
