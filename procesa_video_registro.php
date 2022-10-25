@@ -182,6 +182,10 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
     echo "IMAGENES_DESENFOCADAS:".$IMAGENES_DESENFOCADAS."\n";
     echo "IMAGENES_NOSEPUEDERECORTARCARA:".$IMAGENES_NOSEPUEDERECORTARCARA."\n";
     echo "IMAGENES_CONCARA:".$IMAGENES_CONCARA."\n";
+    
+    echo "ganador_name:".$ganador_name."\n";
+    echo "fotos_identificadorunico:".$fotos_identificadorunico."\n";
+    
 
     echo "\n\n\n";
 

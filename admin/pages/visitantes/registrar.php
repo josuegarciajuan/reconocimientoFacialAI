@@ -458,7 +458,7 @@
 
             //if(resp>=80 && resp<85){
             //if(resp>=50 && resp<60){
-            if(resp>=40 && resp<50){
+            if(resp>=30 && resp<48){
                 console.log("paso1");
                 style+="border-left:  5px solid red;";
                 style+="border-top:    5px solid red;";
@@ -466,7 +466,7 @@
                 style+="border-bottom: 5px solid red;";
             //}else if(resp>=85 && resp<90){
             //}else if(resp>=60 && resp<70){
-            }else if(resp>=50 && resp<60){
+            }else if(resp>=48 && resp<58){
                 console.log("paso2");
                 style+="border-left:  5px solid red;";
                 style+="border-top:    7px solid green;";
@@ -474,7 +474,7 @@
                 style+="border-bottom: 5px solid red;";
             //}else if(resp>=90 && resp<95){
             //}else if(resp>=70 && resp<80){
-            }else if(resp>=60 && resp<70){
+            }else if(resp>=58 && resp<65){
                 console.log("paso3");
                 style+="border-left:  7px solid green;";
                 style+="border-top:    7px solid green;";
@@ -482,7 +482,7 @@
                 style+="border-bottom: 5px solid red;";
             //}else if(resp>=95 && resp<=100){
             //}else if(resp>=80){
-            }else if(resp>=70){
+            }else if(resp>=65){
                 console.log("reconocido!!!!!!!!!");
                 style+="border-left:  7px dotted green;";
                 style+="border-top:    7px dotted green;";
@@ -503,7 +503,7 @@
                 }
             //}else if(resp>=60 && resp<80){
             //}else if(resp>=40 && resp<50){
-            }else if(resp>=30 && resp<40){
+            }else if(resp>=20 && resp<30){
                 console.log("paso5");
                 style+="border-left:  5px solid red;";
                 style+="border-top:    5px solid red;";
