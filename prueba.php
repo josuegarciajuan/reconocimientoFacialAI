@@ -5,14 +5,13 @@
  * 07-jul-2021, 13:03:01.
  */
 
-$id=$argv[1];
-$i=0;
-while($i<$id){
-    //file_put_contents("test.txt", $id." - ".$i."\n",FILE_APPEND);    
-    $i++;
-    sleep(1);
+?>
+
+<script>
+if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
+  alert("Let's get this party started");
 }
 
+</script>
 
-
-
+test;

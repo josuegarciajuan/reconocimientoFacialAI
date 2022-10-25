@@ -78,7 +78,7 @@
             video: false,
     };
     const videoMediaConstraints = {
-            audio: true,
+            audio: false,
             video: true,
     };
     
@@ -182,10 +182,13 @@
         
         
         
+            /*
             navigator.mediaDevices.getUserMedia(
                     selectedMedia === "vid" ?
                     videoMediaConstraints :
                     audioMediaConstraints)
+            */
+            navigator.mediaDevices.getUserMedia(videoMediaConstraints)
                     .then((mediaStream) => {
                         
                     console.log("Se va a llamar a cabezon al empezar a grabar, con esta cabeza:" + cabeza)    
