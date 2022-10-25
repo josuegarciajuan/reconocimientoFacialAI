@@ -147,7 +147,7 @@ while(cap.isOpened()):
 
                         aux = str(datetime.now())
                         lastsix_fecha=aux[-6:]
-                        now=fecha_aux+"."+lastsix
+                        now=fecha_aux+"."+lastsix_fecha
 
 
                         nombrefinal='0_'+now+'.avi_'+str(segs_elapsed)
