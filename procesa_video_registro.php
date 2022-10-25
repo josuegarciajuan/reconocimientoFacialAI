@@ -128,7 +128,7 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
         }
     }
     
-    //exit;
+    exit;
     
 
     for($i=1;$i<=32;$i++){
