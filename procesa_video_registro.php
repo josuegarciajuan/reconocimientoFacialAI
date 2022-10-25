@@ -15,8 +15,9 @@ rm admin/files/videos_registro_resultados/*
 rm admin/files/videos_registro_videos/*
 cp admin/files/otraprueba.avi admin/files/videos_registro_videos/1_otraprueba.avi
 rm motor/bbdd_reconocimiento/1/face_enc
-rm motor/logs/*
+rm -R motor/logs/*
 rm admin/caras_procesadas/*
+rm motor/caras/sinclasificar_videos/*
 python3.7 crear_diccionario_inicial_parametrizado.py 1
 mysql -u root -pcamaras reconocimientofacial3 < bbdd.sql
 
@@ -122,7 +123,7 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
         }
     }
     
-    
+    exit;
     
 
     for($i=1;$i<=16;$i++){
