@@ -191,7 +191,7 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
 
     }
     
-    /*
+    
     $aux= explode("_", $nombre_fichero);
     $nombre_persona=$aux[1];
     $actualizado=false;
@@ -206,7 +206,7 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
             sleep(2);    
         }
     }
-    */
+    
     
     echo "\n\n\n";
     echo "TOTALES\n";
@@ -256,7 +256,7 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
     $tiempo = $tiempo_final - $tiempo_inicial;       
     echo "El tiempo de ejecución del archivo ha sido de " . $tiempo . " segundos";
     
-    exit;
+    
 }
 
 
