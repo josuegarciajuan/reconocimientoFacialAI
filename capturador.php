@@ -19,20 +19,17 @@ if(isset($argv[2]) and $argv[2]!=""){
 }
 
 
-define("INTERVAL", 60*10 ); // 5 minutes
+//define("INTERVAL", 60*10 ); // 5 minutes
 
 
-require_once("includes/rutas.php");
+require_once("config/rutas.php");
 require_once("libs/Jos_thread.class.php");
 
 
 $threads=[];
 
 
-$nextTime   = microtime(true) + INTERVAL;
-
-
-define("TIEMPO_MAXIMO_CAMARAS_ENCENDIDAS",60*10); //en segundos
+//$nextTime   = microtime(true) + INTERVAL;
 
 
 $primera=[];
@@ -64,9 +61,26 @@ while(true){
             }
             
             $cmd="python3.7 motor/guarda_movimientos.py ".FTP_SERVER." ".FTP_USER." ".FTP_PASS." '".$cadena_conexion;
-            $cmd.="' ".$data["valores"][$i]["local_id"]." ".$data["valores"][$i]["id"];
+            $cmd.="' ".$data["valores"][$i]["local_id"]." ".$data["valores"][$i]["id"]." ";
+            $cmd.=CONFIG_VAR1." ";
+            $cmd.=CONFIG_VAR2." ";
+            $cmd.=CONFIG_VAR3." ";
+            $cmd.=CONFIG_VAR4." ";
+            $cmd.=CONFIG_contourArea." ";
+            $cmd.=CONFIG_maximo_videos." ";
+            $cmd.=CONFIG_frames_a_analizar." ";
+            $cmd.=CONFIG_frames_con_movimiento." ";
+            $cmd.=CONFIG_FRAMES_DESPUES." ";
+            $cmd.=CONFIG_frames_guardados." ";
+            $cmd.=CONFIG_REDIMENSIONFRAME." ";
+            $cmd.=CONFIG_FPS;
+
+
+
+            $cmd.="";
+                    
             echo $cmd."\n\n";
-            //exit;
+            exit;
 
             
             if(!isset($threads[$data["valores"][$i]["id"]]) or $threads[$data["valores"][$i]["id"]]==NULL){
@@ -86,7 +100,7 @@ while(true){
             $tiempo = $tiempo_final - $threads[$data["valores"][$i]["id"]]->tiempo_inicial; 
             //echo "tiempo en marcha:".$tiempo."\n";
 
-            if($tiempo>TIEMPO_MAXIMO_CAMARAS_ENCENDIDAS){
+            if($tiempo>CONFIG_TIEMPO_MAXIMO_CAMARAS_ENCENDIDAS){
                 echo "\n\nSupero el tiempo maximo\n\n";
                 //$threads[$data["valores"][$i]["id"]]->tiempo_inicial = microtime(true);
                 
@@ -118,7 +132,7 @@ while(true){
                     $tiempo = $tiempo_final - $threads[$data["valores"][$i]["id"]]->tiempo_inicial; 
                     echo "tiempo en marcha:".$tiempo."\n";
                     
-                    if($tiempo>TIEMPO_MAXIMO_CAMARAS_ENCENDIDAS){
+                    if($tiempo>CONFIG_TIEMPO_MAXIMO_CAMARAS_ENCENDIDAS){
                         echo "\n\nSupero el tiempo maximo\n\n";
                         //$threads[$data["valores"][$i]["id"]]->tiempo_inicial = microtime(true);
                         $threads[$data["valores"][$i]["id"]]->stop();
@@ -187,7 +201,7 @@ while(true){
     $tiempo = $tiempo_final - $tiempo_inicial; 
     echo "tiempo en marcha:".$tiempo."\n";
 
-    if($tiempo>TIEMPO_MAXIMO_CAMARAS_ENCENDIDAS){
+    if($tiempo>CONFIG_TIEMPO_MAXIMO_CAMARAS_ENCENDIDAS){
         echo "\n\nSupero el tiempo maximo\n\n";
         $tiempo_inicial = microtime(true);
         foreach($threads as $camara_id=>$th){

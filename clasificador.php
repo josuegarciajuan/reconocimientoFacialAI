@@ -8,7 +8,7 @@
 
 define("UMBRAL_ESTANCIA",5);
 
-require_once("includes/rutas.php");
+require_once("config/rutas.php");
 require_once("libs/mysql.class.php");
 
 

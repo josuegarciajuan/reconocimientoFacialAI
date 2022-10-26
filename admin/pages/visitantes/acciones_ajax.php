@@ -5,7 +5,7 @@
  * Author: Josué García Juan
  * 10/08/2020
  */
-require_once '../../../includes/rutas.php';
+require_once '../../../config/rutas.php';
 require_once '../../../libs/mysql.class.php';
 
 $tmp = new Conectar();

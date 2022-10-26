@@ -30,39 +30,43 @@ def printLog(*args, **kwargs):
         print(*args, **kwargs, file=file)
     
 
-
 # Converting gray scale image to GaussianBlur
-var1=21
-var2=21
+var1=cint(sys.argv[7])
+var2=cint(sys.argv[8])
 
 # If change in between static background and
 # current frame is greater than 30 it will show white color(255)
 #var3=42
-var3=42
-var4=255
+var3=cint(sys.argv[9])
+var4=cint(sys.argv[10])
 
 # if cv2.contourArea(contour) < 10000:
 #var5=1500
 #->var5=1200
-var5=800
+var5=cint(sys.argv[11])
 
-maximo_videos=60
+maximo_videos=cint(sys.argv[12])
 
 
 #CUANTOS FRAMES PARA QUE HAYA MOVIMIENTO
 #->frames_a_analizar=20
-frames_a_analizar=30
+frames_a_analizar=cint(sys.argv[13])
 #->frames_con_movimiento=16
-frames_con_movimiento=24
+frames_con_movimiento=cint(sys.argv[14])
 
 
 #CUANTOS FRAMES DESPUES SIGO GRAMABANDO
 #->FRAMES_DESPUES=100
-FRAMES_DESPUES=100
+FRAMES_DESPUES=cint(sys.argv[15])
 
 #CUANTOS FRAMES ANTES DEQUE HAYA MOVIMIENTO GRAMABANDO
 #->frames_guardados=100
-frames_guardados=120
+frames_guardados=cint(sys.argv[16])
+
+
+REDIMENSIONFRAME=float(sys.argv[17])
+FPS=float(sys.argv[18])
+
 
 
 def hay_movimiento(the_motion_list):
@@ -159,7 +163,9 @@ while True:
 
 
     #frame = cv2.resize(frame, None, fx=0.25, fy=0.25)
-    frame = cv2.resize(frame, None, fx=0.60, fy=0.60)
+    #frame = cv2.resize(frame, None, fx=0.60, fy=0.60)
+    frame = cv2.resize(frame, None, fx=REDIMENSIONFRAME, fy=REDIMENSIONFRAME)
+
 
     # Initializing motion = 0(no motion)
     motion = 0
@@ -245,7 +251,8 @@ while True:
         now=now.replace(" ","_");
         video_actual=CAMARA_ID+'_'+now+'.avi'
         #out = cv2.VideoWriter('videos/'+video_actual, fourcc, 20.0, size)
-        out = cv2.VideoWriter('motor/videos/'+LOCAL_ID+'/'+video_actual, fourcc, 10.0, size)
+        #out = cv2.VideoWriter('motor/videos/'+LOCAL_ID+'/'+video_actual, fourcc, 10.0, size)
+        out = cv2.VideoWriter('motor/videos/'+LOCAL_ID+'/'+video_actual, fourcc, FPS, size)
         # out = cv2.VideoWriter('/home/testuser/motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/'+video_actual, fourcc, 15.0, size)
         #out = cv2.VideoWriter('/home/testuser/motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/'+video_actual, fourcc, 10.0, size)
 
@@ -285,7 +292,7 @@ while True:
         grabando=False
         out.release()
         # #subir_video(video_actual)
-        _thread.start_new_thread(subir_video, (video_actual,))
+        #_thread.start_new_thread(subir_video, (video_actual,))
         num_video=num_video+1
         #if motion_list[-1] == 1 and motion_list[-2] == 1 and motion_list[-3] == 1 and motion_list[-4] == 1 and motion_list[-5] == 1 and motion_list[-6] == 0:
         
@@ -308,7 +315,7 @@ while True:
     # cv2.imshow("Threshold Frame", thresh_frame)
 
     # Displaying color frame with contour of motion of object
-    # cv2.imshow("Color Frame", frame)
+    cv2.imshow("Color Frame", frame)
 
     #->key = cv2.waitKey(10)
 

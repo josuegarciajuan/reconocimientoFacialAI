@@ -6,13 +6,8 @@
  * 19-jul-2021, 13:46:23.
  */
 
-echo "paso0\n";
 
-define("UMBRAL_ESTANCIA",10);
-
-echo "paso1\n";
-
-require_once("includes/rutas.php");
+require_once("config/rutas.php");
 require_once("libs/mysql.class.php");
 
 echo "paso2\n";
@@ -88,8 +83,6 @@ function recorre_dir($path,$nivel){
             
                 $ruta=$path."/".$elemento;
                 echo "Foto:". $ruta."\n";
-                
-                
                 
                 
                 $aux= explode("/", $path);
@@ -191,7 +184,7 @@ function recorre_dir($path,$nivel){
 
 
                     $aux=date($datos["entrada"]["fecha_completa_consegs"]);
-                    $fecha_ultima=strtotime('-'.UMBRAL_ESTANCIA.' second', strtotime($aux));
+                    $fecha_ultima=strtotime('-'.CONFIG_UMBRAL_ESTANCIA.' second', strtotime($aux));
                     $fecha_ultima=date('Y-m-d H:i:s',$fecha_ultima);
 
 

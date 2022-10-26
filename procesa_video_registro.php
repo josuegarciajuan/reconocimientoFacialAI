@@ -30,9 +30,8 @@ procesa_video_registro
 
 */  
 
-$longitud_videos=4;  //la longitud en segundos en que se divide el video original
 
-require_once("includes/rutas.php");
+require_once("config/rutas.php");
 require_once("libs/Jos_thread.class.php");
 require_once("libs/mysql.class.php");
 
@@ -99,7 +98,7 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
         echo $ruta.$nombre_fichero."_".$i.".avi \n";
         $id="vr_".$i."_".$local_id."_".$randaux;
 
-        $cmd="python3.7 motor/procesa_video_registro_1.py ".$local_id." ".$nombre_fichero."_".$i.".avi ".$i." '".RUTA_PROYECTO."' ".$fecha;
+        $cmd="python3.7 motor/procesa_video_registro_1.py ".$local_id." ".$nombre_fichero."_".$i.".avi ".$i." '".RUTA_PROYECTO."' ".$fecha." ".CONFIG_CADACUANTOSFRAMESSECOGEUNOPARAVERSIHAYCARA." ".CONFIG_SENSIBILIDAD_ES_CARA_VIDEOREGISTRO;
         echo "Alta hilo->".$cmd."\n";
         $threads[$id]=new Jos_Thread($id,$cmd,true);
 
@@ -132,7 +131,7 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
 
     for($i=1;$i<=32;$i++){
         $id="vr_".$i."_".$local_id."_".$randaux;
-        $cmd="python3.7 motor/procesa_video_registro_2.py ".$local_id." ".$i." ".$nombreunico." '".RUTA_PROYECTO."'";
+        $cmd="python3.7 motor/procesa_video_registro_2.py ".$local_id." ".$i." ".$nombreunico." '".RUTA_PROYECTO."' ".CONFIG_UMBRAL_ENFOQUE_MAXIMO_CARA;
         echo "Alta hilo->".$cmd."\n";
         $threads[$id]=new Jos_Thread($id,$cmd,true);
 
@@ -270,7 +269,7 @@ function dividir_video($local_id,$ruta,$video){
     
     $output_salida="aux/procesa_video_registro_".$local_id."_".rand(1000000,9999999).".txt";
 
-    global $longitud_videos;
+    
     
     $time=0;
     $i=1;
@@ -281,11 +280,11 @@ function dividir_video($local_id,$ruta,$video){
         if($time<10){
             $ini_txt.="0";
         }
-        if(($time+$longitud_videos)<10){
+        if(($time+CONFIG_LONGITUD_VIDEOS)<10){
             $fin_txt.="0";
         }
         $ini_txt.=$time;
-        $fin_txt.=$time+$longitud_videos;
+        $fin_txt.=$time+CONFIG_LONGITUD_VIDEOS;
        
         
        
@@ -304,7 +303,7 @@ function dividir_video($local_id,$ruta,$video){
                 if($time<10){
                     $ini_txt.="0";
                 }
-                if(($time+$longitud_videos)<10){
+                if(($time+CONFIG_LONGITUD_VIDEOS)<10){
                     $fin_txt.="0";
                 }
                 $ini_txt.=$time;
@@ -320,14 +319,14 @@ function dividir_video($local_id,$ruta,$video){
                 }
                 
                 $resta++;
-                if($resta==$longitud_videos){
+                if($resta==CONFIG_LONGITUD_VIDEOS){
                     $terminado=true;
                     $i--;
                 }
             }
         }
         
-        $time+=$longitud_videos;
+        $time+=CONFIG_LONGITUD_VIDEOS;
         $i++;
         if($time==55){
             $terminado=true;
@@ -344,7 +343,7 @@ function dividir_video($local_id,$ruta,$video){
 /*se divide el video original en videos de 4 segundos de duracion*/
 function dividir_video2($local_id,$ruta,$video){
     
-    global $longitud_videos;
+    
     
     $salida=$ruta.$video;
     $video=$ruta.$video.".avi";
@@ -367,7 +366,7 @@ function dividir_video2($local_id,$ruta,$video){
             $mm_ini="0".$mm;
         }
         
-        $ss_fin=$ss+$longitud_videos;
+        $ss_fin=$ss+CONFIG_LONGITUD_VIDEOS;
         $suma_mm=0;
         if($ss_fin>=60){
            $ss_fin=$ss_fin-60; 
@@ -434,7 +433,7 @@ function dividir_video2($local_id,$ruta,$video){
                 }
                 
                 $resta++;
-                if($resta==$longitud_videos){
+                if($resta==CONFIG_LONGITUD_VIDEOS){
                     $terminado=true;
                     $i--;
                 }

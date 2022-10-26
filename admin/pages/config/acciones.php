@@ -38,11 +38,11 @@ switch($_GET["accion"]){
             $cmds[]="mkdir ".URL_FTP_BASE."motor/videos_lineas/".$_SESSION["local_id"]."/".$sql->id;
             $cmds[]="chmod -R 777 ".URL_FTP_BASE."motor/videos_lineas/".$_SESSION["local_id"]."/".$sql->id;
         }
-        $cmds[]="mkdir /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/".$_SESSION["local_id"]."/".$sql->id;
-        $cmds[]="mkdir /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/sinclasificar/".$_SESSION["local_id"]."/".$sql->id;
+        $cmds[]="mkdir ".RUTA_PROYECTO."motor/caras/".$_SESSION["local_id"]."/".$sql->id;
+        $cmds[]="mkdir ".RUTA_PROYECTO."motor/caras/sinclasificar/".$_SESSION["local_id"]."/".$sql->id;
         
-        $cmds[]="chmod -R 777 /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/".$_SESSION["local_id"]."/".$sql->id;
-        $cmds[]="chmod -R 777 /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/sinclasificar/".$_SESSION["local_id"]."/".$sql->id;
+        $cmds[]="chmod -R 777 ".RUTA_PROYECTO."motor/caras/".$_SESSION["local_id"]."/".$sql->id;
+        $cmds[]="chmod -R 777 ".RUTA_PROYECTO."motor/caras/sinclasificar/".$_SESSION["local_id"]."/".$sql->id;
         
         
         echo "<br />-----EJECUTAR---<br /><br />";
@@ -135,10 +135,10 @@ switch($_GET["accion"]){
                 exec("chmod -R 777 ".URL_FTP_BASE."motor/videos_lineas/".$_SESSION["local_id"]."/".$camara_id."/".$sql->id);
             
                 
-                $cmd="mkdir /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/fotos_lineas/".$sql->id;
+                $cmd="mkdir ".RUTA_PROYECTO."motor/fotos_lineas/".$sql->id;
                 //echo $cmd."<br />";
                 exec($cmd);
-                $cmd="chmod -R 777 /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/fotos_lineas/".$sql->id;
+                $cmd="chmod -R 777 ".RUTA_PROYECTO."motor/fotos_lineas/".$sql->id;
                 //echo $cmd."<br />";
                 exec($cmd);
                 //exit;

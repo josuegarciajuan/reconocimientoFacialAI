@@ -5,7 +5,7 @@
  * 06/08/2020
  */
 @session_start();
-require_once '../includes/rutas.php';
+require_once '../config/rutas.php';
 require_once '../libs/mysql.class.php';
 
 //echo "Prueba!\n"; exit;

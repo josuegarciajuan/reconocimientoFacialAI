@@ -9,13 +9,7 @@
 //para cada video le paso el reconocedor, y creo las imagenes sumando los segundos pasados del video con su tiempo y borro el video luego
 //para cada imagen generada tendremos que pertenece a una persona, compruebo qe para esa persona y esa camara haga mas de X segundos qe no se haya guardado y la guardo
 
-
-define("LIMITE_RAM",85);
-define("LIMITE_VIDEOS",25);
-
-
-
-require_once("includes/rutas.php");
+require_once("config/rutas.php");
 require_once("libs/Jos_thread.class.php");
 require_once("libs/mysql.class.php");
 
@@ -36,11 +30,10 @@ if($ram->queda_ram()){
 exit;
 */
 
-define("TIEMPO_MAXIMO_CAMARAS_ENCENDIDAS",60*10); //10 minutos
 
 while(true){
     
-    
+
     if(!$ram->queda_espacio()){
         $ram->libera_espacio();
     }
@@ -67,11 +60,53 @@ while(true){
                             break;
                     }
                      */
-
-
+                    
+                    $params="";
+                    $params.=CONFIG_umbral_parecidosentresi." ";
+                    $params.=CONFIG_umbral." ";
+                    $params.=CONFIG_umbral_solounaodos." ";
+                    $params.=CONFIG_umbral_delasmedias." ";
+                    $params.=CONFIG_umbral_segurisimo." ";
+                    $params.=CONFIG_veces_umbral_medias_augmenta." ";
+                    $params.=CONFIG_umbral_junto." ";
+                    $params.=CONFIG_umbral_junto2." ";
+                    $params.=CONFIG_porcentaje_veces_supera." ";
+                    $params.=CONFIG_umbral_enfocado." ";
+                    $params.=CONFIG_umbral_solounaodos_enfocado." ";
+                    $params.=CONFIG_umbral_delasmedias_enfocado." ";
+                    $params.=CONFIG_umbral_segurisimo_enfocado." ";
+                    $params.=CONFIG_veces_umbral_medias_augmenta_enfocado." ";
+                    $params.=CONFIG_umbral_junto_enfocado." ";
+                    $params.=CONFIG_umbral_junto2_enfocado." ";
+                    $params.=CONFIG_porcentaje_veces_supera_enfocado." ";
+                    $params.=CONFIG_umbral_desenfocado." ";
+                    $params.=CONFIG_umbral_solounaodos_desenfocado." ";
+                    $params.=CONFIG_umbral_delasmedias_desenfocado." ";
+                    $params.=CONFIG_umbral_segurisimo_desenfocado." ";
+                    $params.=CONFIG_veces_umbral_medias_augmenta_desenfocado." ";
+                    $params.=CONFIG_umbral_junto_desenfocado." ";
+                    $params.=CONFIG_umbral_junto2_desenfocado." ";
+                    $params.=CONFIG_porcentaje_veces_supera_desenfocado." ";
+                    $params.=CONFIG_umbral_desenfocado_globales." ";
+                    $params.=CONFIG_umbral_solounaodos_desenfocado_globales." ";
+                    $params.=CONFIG_umbral_delasmedias_desenfocado_globales." ";
+                    $params.=CONFIG_umbral_segurisimo_desenfocado_globales." ";
+                    $params.=CONFIG_veces_umbral_medias_augmenta_desenfocado_globales." ";
+                    $params.=CONFIG_umbral_junto_desenfocado_globales." ";
+                    $params.=CONFIG_umbral_junto2_desenfocado_globales." ";
+                    $params.=CONFIG_porcentaje_veces_supera_desenfocado_globales." ";
+                    $params.=CONFIG_DIFERENCIA_PROMERO_Y_SEGUNDO." ";
+                    $params.=CONFIG_MAXIMAS_REPETICIONES_GUARDADO." ";
+                    $params.=CONFIG_DIFERENCIA_ANCHO_OJOS." ";
+                    $params.=CONFIG_DIFERENCIA_ALTURAS." ";
+                    $params.=CONFIG_UMBRAL_ENFOQUE." ";
+                    $params.=CONFIG_UMBRAL_ENFOQUE_MAXIMO." ";
+                    $params.=CONFIG_UMBRAL_ENFOQUE_MAXIMO_CARA." ";
+                    $params.=CONFIG_UMBRAL_DIFERENCIA_ENFOQUE." ";
+                    $params.=CONFIG_UMBRAL_ENFOQUE_GLOBALES;
 
                     
-                    $cmd[]="python3.7 motor/procesa_fotos_def_borrosaparteV2.py ".$sql->row["id"]." ".$tmp->row["id"];
+                    $cmd[]="python3.7 motor/procesa_fotos_def_borrosaparteV2.py ".$sql->row["id"]." ".$tmp->row["id"]." '".RUTA_PROYECTO."' ".$params;
                     //$cmd[]="python3.7 motor/cruza_lineas_V2.py ".$sql->row["id"]." ".$tmp->row["id"];
                     //var_dump($cmd);
                     //exit;
@@ -95,7 +130,7 @@ while(true){
                                 $tiempo_final = microtime(true);
                                 $tiempo = $tiempo_final - $tiempo_inicial; 
 
-                                if($tiempo>TIEMPO_MAXIMO_CAMARAS_ENCENDIDAS){
+                                if($tiempo>CONFIG_TIEMPOPROCESODECLISIFICARCARAS){
                                     echo "Supero el tiempo maximo\n";
                                     $tiempo_inicial = microtime(true);
                                     $threads[$tmp->row["id"]."_".$i]->stop();
@@ -109,9 +144,9 @@ while(true){
                     //exit;
                     
 
-                    if($ram->queda_ram(LIMITE_RAM)){
+                    if($ram->queda_ram(CONFIG_LIMITE_RAM)){
                         
-                        $directorio_videos='/home/testuser/motor/videos/'.$sql->row["id"].'/'.$tmp->row["id"].'/';
+                        $directorio_videos=URL_FTP_BASE.'motor/videos/'.$sql->row["id"].'/'.$tmp->row["id"].'/';
                         $pesos=[];
                         $dir = opendir($directorio_videos);
                         while ($elemento = readdir($dir)){
@@ -148,9 +183,9 @@ while(true){
                                         }
                                     }
                                 }
-                                if($numero_videos<LIMITE_VIDEOS){
+                                if($numero_videos<CONFIG_LIMITE_VIDEOS){
 
-                                    while(!$ram->queda_ram(LIMITE_RAM)){
+                                    while(!$ram->queda_ram(CONFIG_LIMITE_RAM)){
                                         echo "Esperando.. no queda ram...\n";
                                         sleep(5);
                                     }
@@ -167,7 +202,31 @@ while(true){
                                     exec($cmd1);
 
 
-                                    $cmd1="python3.7 /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/procesa_videosV6.py ".$sql->row["id"]." ".$tmp->row["id"]." '".$subidos[$s]."'"." > /dev/null 2>/dev/null &";
+                                    $params="";
+                                    $params.=CONFIG_desiredFaceWidth." ";
+                                    $params.=CONFIG_margen_cruce_linea." ";
+                                    $params.=CONFIG_frame_rate." ";
+                                    $params.=CONFIG_redimensionVideoWidth." ";
+                                    $params.=CONFIG_redimensionVideoHeight." ";
+                                    $params.=CONFIG_analisisLineasImagenWidth." ";
+                                    $params.=CONFIG_analisisLineasImagenHeight." ";
+                                    $params.=CONFIG_margenGrosorLinea." ";
+                                    $params.=CONFIG_contornoAreaCruceLinea." ";
+                                    $params.=CONFIG_MinimoContornoConsiderarloCruce." ";
+                                    $params.=CONFIG_TiempoTrascurridoUltimoCruce." ";
+                                    $params.=CONFIG_TiempoDeCruce." ";
+                                    $params.=CONFIG_redimension_imagen_captura_caras_w." ";
+                                    $params.=CONFIG_redimension_imagen_captura_caras_h." ";
+                                    $params.=CONFIG_scale_factor." ";
+                                    $params.=CONFIG_resize_w." ";
+                                    $params.=CONFIG_resize_h." ";
+                                    $params.=CONFIG_mean1." ";
+                                    $params.=CONFIG_mean2." ";
+                                    $params.=CONFIG_mean3." ";
+                                    $params.=CONFIG_recuadro_tamanyo_rostro." ";
+                                    $params.=CONFIG_redimension_rostro;
+                                    
+                                    $cmd1=RUTA_PYTHON." ".RUTA_PROYECTO."motor/procesa_videosV6.py ".$sql->row["id"]." ".$tmp->row["id"]." '".$subidos[$s]."'"." '".RUTA_PROYECTO."' ".CONFIG_SENSIBILIDAD_ES_CARA." '".URL_FTP_BASE."' ".$params." > /dev/null 2>/dev/null &";
                                     echo $cmd1."\n";
                                     exec($cmd1);
                                     //exit;

@@ -39,7 +39,7 @@ if(isset($_GET["descargar"]) and $_GET["descargar"]!=""){
 
 }
 
-require_once '../includes/rutas.php';
+require_once '../config/rutas.php';
 require_once '../libs/mysql.class.php';
 
 $sql=new Conectar();

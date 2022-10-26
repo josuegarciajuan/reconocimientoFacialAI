@@ -11,12 +11,11 @@ if(isset($argv[1]) and $argv[1]!=""){
     $debug=$argv[1];
 }
 
-require_once("includes/rutas.php");
+require_once("config/rutas.php");
 require_once("libs/Jos_thread.class.php");
 
-define("VALIDACION",10); //en segundos
 
-$cmd=RUTA_PYTHON." motor/devuelve_posicion_cara.py '".RUTA_PROYECTO."' ".$debug;
+$cmd=RUTA_PYTHON." motor/devuelve_posicion_cara.py '".RUTA_PROYECTO."' ".$debug." ".CONFIG_HOLGURA_DEFRENTE_ALINEADOS_VERTICAL." ".CONFIG_HOLGURA_DEFRENTE_ALINEADOS_HORIZONTAL." ".CONFIG_HOLGURA_DEFRENTE_PUNTOENMEDIO_HORIZONTAL." ".CONFIG_HOLGURA_DEFRENTE_DISTANCIASSIMILARES_HORIZONTAL." ".CONFIG_HOLGURA_45GRADOS_ALINEADOS_VERTICAL." ".CONFIG_HOLGURA_45GRADOS_ALINEADOS_HORIZONTAL." ".CONFIG_HOLGURA_90GRADOS_ALINEADOS_VERTICAL." ".CONFIG_HOLGURA_ARRIBA_ALINEADOS_HORIZONTAL." ".CONFIG_HOLGURA_ARRIBA_ALINEADOS_VERTICAL." ".CONFIG_HOLGURA_ARRIBA_PUNTOENMEDIO_HORIZONTAL." ".CONFIG_HOLGURA_ABAJO_ALINEADOS_VERTICAL." ".CONFIG_HOLGURA_ABAJO_ALINEADOS_HORIZONTAL." ".CONFIG_HOLGURA_ABAJO_PUNTOENMEDIO_HORIZONTAL." ".CONFIG_HOLGURA_ABAJO_DISTANCIASSIMILARES." ".CONFIG_HOLGURA_ARRIBA_NARIZARRIBAOREJAS." ".CONFIG_HOLGURA_ABAJO_OREJASNARIZ;
 echo $cmd;
 
 //exit;
@@ -36,7 +35,7 @@ while(true){
         $tiempo_inicial = microtime(true);
     }
 
-    if((microtime(true) - $tiempo_inicial)>VALIDACION){
+    if((microtime(true) - $tiempo_inicial)>CONFIG_VALIDACION_PROCESOENMARCHA){
         echo "Tiempo de comprobar..\n";
         if(!$threads[$proc]->isrunning()){
             echo "Estaba apagado, reiniciando!\n";

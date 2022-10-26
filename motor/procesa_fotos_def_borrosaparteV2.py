@@ -41,115 +41,60 @@ from facealigner import FaceAligner
 
 
 #umbral_parecidosentresi=0.29        # cuando va a clasificar las fotos y los que son parecidos entre si para decir qe esla misma persona
-umbral_parecidosentresi=0.38        # cuando va a clasificar las fotos y los que son parecidos entre si para decir qe esla misma persona
+umbral_parecidosentresi=float(sys.argv[3])        # cuando va a clasificar las fotos y los que son parecidos entre si para decir qe esla misma persona
+
+umbral=float(sys.argv[4])                   # umbral para comprara foto a foto y ver con cual supera y el qe se usa para recompara cuando ya se tiene la media
+umbral_solounaodos=float(sys.argv[5])            # para comparar con las medias pero solo hay 1 o 2 fotos
+umbral_delasmedias=float(sys.argv[6])             # umbral cuando se a exo las medias
+umbral_segurisimo=float(sys.argv[7])              # si 1 foto supera esto es ese
+veces_umbral_medias_augmenta=float(sys.argv[8])     # si se hay mas de X vces influya en los 2 umbrales de abajo
+umbral_junto=float(sys.argv[9])                 # la media de los qe superan y los qe no para esa persona qe se comparó
+umbral_junto2=float(sys.argv[10])                # la media de los qe superan y los qe no para esa persona qe se comparó
+porcentaje_veces_supera=float(sys.argv[11])          # si de todas las veces no supera este porcentaje de veces supera 
+
+umbral_enfocado=float(sys.argv[12])  # umbral para comprara foto a foto y ver con cual supera y el qe se usa para recompara cuando ya se tiene la media
+umbral_solounaodos_enfocado=float(sys.argv[13]) # para comparar con las medias pero solo hay 1 o 2 fotos
+umbral_delasmedias_enfocado=float(sys.argv[14])  # umbral cuando se a exo las medias
+umbral_segurisimo_enfocado=float(sys.argv[15])  # si 1 foto supera esto es ese
+veces_umbral_medias_augmenta_enfocado=float(sys.argv[16])  # si se hay mas de X vces influya en los 2 umbrales de abajo
+umbral_junto_enfocado=float(sys.argv[17])   # la media de los qe superan y los qe no para esa persona qe se comparó
+umbral_junto2_enfocado=float(sys.argv[18])  # la media de los qe superan y los qe no para esa persona qe se comparó
+porcentaje_veces_supera_enfocado=float(sys.argv[19])
+
+umbral_desenfocado=float(sys.argv[20])
+umbral_solounaodos_desenfocado=float(sys.argv[21])
+umbral_delasmedias_desenfocado=float(sys.argv[22])
+umbral_segurisimo_desenfocado=float(sys.argv[23])
+veces_umbral_medias_augmenta_desenfocado=float(sys.argv[24])
+umbral_junto_desenfocado=float(sys.argv[25])
+umbral_junto2_desenfocado=float(sys.argv[26])
+porcentaje_veces_supera_desenfocado=float(sys.argv[27])
+
+umbral_desenfocado_globales=float(sys.argv[28])
+umbral_solounaodos_desenfocado_globales=float(sys.argv[29])
+umbral_delasmedias_desenfocado_globales=float(sys.argv[30])
+umbral_segurisimo_desenfocado_globales=float(sys.argv[31])
+veces_umbral_medias_augmenta_desenfocado_globales=float(sys.argv[32])
+umbral_junto_desenfocado_globales=float(sys.argv[33])
+umbral_junto2_desenfocado_globales=float(sys.argv[34])
+porcentaje_veces_supera_desenfocado_globales=float(sys.argv[35])
 
 
-
-umbral=0                   # umbral para comprara foto a foto y ver con cual supera y el qe se usa para recompara cuando ya se tiene la media
-umbral_solounaodos=0            # para comparar con las medias pero solo hay 1 o 2 fotos
-umbral_delasmedias=0             # umbral cuando se a exo las medias
-umbral_segurisimo=0              # si 1 foto supera esto es ese
-veces_umbral_medias_augmenta=0     # si se hay mas de X vces influya en los 2 umbrales de abajo
-umbral_junto=0                 # la media de los qe superan y los qe no para esa persona qe se comparó
-umbral_junto2=0                # la media de los qe superan y los qe no para esa persona qe se comparó
-porcentaje_veces_supera=0          # si de todas las veces no supera este porcentaje de veces supera 
-
-
-"""
-umbral_enfocado=0.531
-umbral_solounaodos_enfocado=0.515
-umbral_delasmedias_enfocado=0.531
-umbral_segurisimo_enfocado=0.35
-veces_umbral_medias_augmenta_enfocado=15
-umbral_junto_enfocado=0.62
-umbral_junto2_enfocado=0.66
-porcentaje_veces_supera_enfocado=2
-
-
-
-umbral_desenfocado=0.471      # umbral para comprara foto a foto y ver con cual supera y el qe se usa para recompara cuando ya se tiene la media
-umbral_solounaodos_desenfocado=0.455     # para comparar con las medias pero solo hay 1 o 2 fotos
-umbral_delasmedias_desenfocado=0.471       # umbral cuando se a exo las medias
-umbral_segurisimo_desenfocado=0.3       # si 1 foto supera esto es ese
-veces_umbral_medias_augmenta_desenfocado=25     # si se hay mas de X vces influya en los 2 umbrales de abajo
-umbral_junto_desenfocado=0.56              # la media de los qe superan y los qe no para esa persona qe se comparó
-umbral_junto2_desenfocado=0.6              # la media de los qe superan y los qe no para esa persona qe se comparó
-porcentaje_veces_supera_desenfocado=4  
-
-
-
-umbral_desenfocado_globales=0.5      # umbral para comprara foto a foto y ver con cual supera y el qe se usa para recompara cuando ya se tiene la media
-umbral_solounaodos_desenfocado_globales=0.485     # para comparar con las medias pero solo hay 1 o 2 fotos
-umbral_delasmedias_desenfocado_globales=0.499       # umbral cuando se a exo las medias
-umbral_segurisimo_desenfocado_globales=0.39       # si 1 foto supera esto es ese
-veces_umbral_medias_augmenta_desenfocado_globales=25     # si se hay mas de X vces influya en los 2 umbrales de abajo
-umbral_junto_desenfocado_globales=0.59              # la media de los qe superan y los qe no para esa persona qe se comparó
-umbral_junto2_desenfocado_globales=0.62              # la media de los qe superan y los qe no para esa persona qe se comparó
-porcentaje_veces_supera_desenfocado_globales=2  
-"""
-
-
-
-
-umbral_enfocado=0.551  # umbral para comprara foto a foto y ver con cual supera y el qe se usa para recompara cuando ya se tiene la media
-umbral_solounaodos_enfocado=0.535 # para comparar con las medias pero solo hay 1 o 2 fotos
-umbral_delasmedias_enfocado=0.551  # umbral cuando se a exo las medias
-umbral_segurisimo_enfocado=0.37  # si 1 foto supera esto es ese
-veces_umbral_medias_augmenta_enfocado=12  # si se hay mas de X vces influya en los 2 umbrales de abajo
-umbral_junto_enfocado=0.61   # la media de los qe superan y los qe no para esa persona qe se comparó
-umbral_junto2_enfocado=0.63  # la media de los qe superan y los qe no para esa persona qe se comparó
-porcentaje_veces_supera_enfocado=2
-
-
-
-umbral_desenfocado=0.511
-umbral_solounaodos_desenfocado=0.491
-umbral_delasmedias_desenfocado=0.511
-umbral_segurisimo_desenfocado=0.35
-veces_umbral_medias_augmenta_desenfocado=20
-umbral_junto_desenfocado=0.58
-umbral_junto2_desenfocado=0.61
-porcentaje_veces_supera_desenfocado=4
-
-
-
-umbral_desenfocado_globales=0.531
-umbral_solounaodos_desenfocado_globales=0.515 
-umbral_delasmedias_desenfocado_globales=0.521 
-umbral_segurisimo_desenfocado_globales=0.36 
-veces_umbral_medias_augmenta_desenfocado_globales=15 
-umbral_junto_desenfocado_globales=0.58
-umbral_junto2_desenfocado_globales=0.611
-porcentaje_veces_supera_desenfocado_globales=4 
-
-
-
-
-
-DIFERENCIA_PROMERO_Y_SEGUNDO=0.04   # en los ganadores la diferencia qe tienen qe tener para qe alomejor sea el 2º
-MAXIMAS_REPETICIONES_GUARDADO=500   # 
+DIFERENCIA_PROMERO_Y_SEGUNDO=float(sys.argv[36])   # en los ganadores la diferencia qe tienen qe tener para qe alomejor sea el 2º
+MAXIMAS_REPETICIONES_GUARDADO=float(sys.argv[37])   # 
 #DIFERENCIA_ANCHO_OJOS=8
-DIFERENCIA_ANCHO_OJOS=9
-DIFERENCIA_ALTURAS=300
+DIFERENCIA_ANCHO_OJOS=float(sys.argv[38])
+DIFERENCIA_ALTURAS=float(sys.argv[39])
 
 
+UMBRAL_ENFOQUE=float(sys.argv[40]) #para considerar una foto desenfocada ya y al comparar 1 a 1 con todo el diccionario, ya pasaria a ver si las 2 tienen muxa diferencia de enfoque
+UMBRAL_ENFOQUE_MAXIMO=float(sys.argv[41]) # menos de este desenfoque , se descartan
+UMBRAL_ENFOQUE_MAXIMO_CARA=float(sys.argv[42]) #menos de este enfoque se descartan ,pero solo actuando sobre la cara
 
-"""
-UMBRAL_ENFOQUE=700 #para considerar una foto desenfocada ya y al comparar 1 a 1 con todo el diccionario, ya pasaria a ver si las 2 tienen muxa diferencia de enfoque
-UMBRAL_ENFOQUE_MAXIMO=1700 # mas de este desenfoque , se descartan
-UMBRAL_DIFERENCIA_ENFOQUE=400  #al comparar una a una si alguna de las 2 esta desenfocada, la de muestra y la del diccionario, comprar si hay muxa diferencia, para aplicar los umbrales restrictivos    (solo afecta a umbral y umbral segurisimo)
-UMBRAL_ENFOQUE_GLOBALES=1300 #para considrar una foto desenfocada despues de haber comparado con todas, ya pra el calculo de las medias
-"""
-UMBRAL_ENFOQUE=1000 #para considerar una foto desenfocada ya y al comparar 1 a 1 con todo el diccionario, ya pasaria a ver si las 2 tienen muxa diferencia de enfoque
-#UMBRAL_ENFOQUE_MAXIMO=600 # menos de este desenfoque , se descartan
-#UMBRAL_ENFOQUE_MAXIMO_CARA=200 #menos de este enfoque se descartan ,pero solo actuando sobre la cara
-UMBRAL_ENFOQUE_MAXIMO=120 # menos de este desenfoque , se descartan
-UMBRAL_ENFOQUE_MAXIMO_CARA=90 #menos de este enfoque se descartan ,pero solo actuando sobre la cara
+UMBRAL_DIFERENCIA_ENFOQUE=float(sys.argv[43])  #al comparar una a una si alguna de las 2 esta desenfocada, la de muestra y la del diccionario, comprar si hay muxa diferencia, para aplicar los umbrales restrictivos    (solo afecta a umbral y umbral segurisimo)
+UMBRAL_ENFOQUE_GLOBALES=float(sys.argv[44]) #para considrar una foto desenfocada despues de haber comparado con todas, ya pra el calculo de las medias
 
 
-#UMBRAL_DIFERENCIA_ENFOQUE=400  #al comparar una a una si alguna de las 2 esta desenfocada, la de muestra y la del diccionario, comprar si hay muxa diferencia, para aplicar los umbrales restrictivos    (solo afecta a umbral y umbral segurisimo)
-UMBRAL_DIFERENCIA_ENFOQUE=450  #al comparar una a una si alguna de las 2 esta desenfocada, la de muestra y la del diccionario, comprar si hay muxa diferencia, para aplicar los umbrales restrictivos    (solo afecta a umbral y umbral segurisimo)
-UMBRAL_ENFOQUE_GLOBALES=1200 #para considrar una foto desenfocada despues de haber comparado con todas, ya pra el calculo de las medias
 
 
 cinco_segundos = timedelta(0, 10)

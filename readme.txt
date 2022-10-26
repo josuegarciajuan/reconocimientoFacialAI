@@ -280,26 +280,6 @@ python3.7 motor/guarda_movimientos.py camaras.vps.webdock.io testuser prueba123 
 python3.7 motor/guarda_movimientos.py camaras.vps.webdock.io testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.52:554/cam/realmonitor?channel=1&subtype=0' 1 3
 
 
-
-2007.pts-0.vps-ev632391
-php capturador.php 2 1
-
-
-1993.pts-0.vps-ev632391
-php capturador.php 1 1
-
-
-521.pts-0.camaras
-php detector.php
-
-
-509.pts-0.camaras
-php clasificadorV2.php
-
-
-----------------------------------------------------------------
-
-
 -php procesos_panel_control.php {DEBUG(0=>NO,1=>si)}  
 llama a motor/devuelve_posicion_cara.py y lo mantiene en marcha con threads.
 Se encarga de recorrer esta ruta: RUTA_PROYECTO + "admin/files/videos_registro" y devolver si es la posicion de cara que se espera con una puntuacion
@@ -317,6 +297,7 @@ con las fotos que ya han guardado los encodings, recorre su lugar de donde se ha
 habrá que encender uno de estos procesos por cada local
 llama y mantiene a motor/guarda_movimientos.py que es llamado por cada camara en el local
 graba videos cuando detecta movimiento
+(este proceso se puede poner en un ordenador a parte, por que luego sube los videos por ftp al server bueno, así libera memoria)
 
 -detector.php
 llama y mantiene comprobando que no se desborde la ram de estos procesos

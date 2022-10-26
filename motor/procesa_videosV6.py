@@ -30,25 +30,52 @@ def rect_to_bb(rect):
 
     # return a tuple of (x, y, w, h)
     return (x, y, w, h)
-detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor("./motor/models/shape_predictor_68_face_landmarks.dat")
-fa = FaceAligner(predictor, desiredFaceWidth=150)
 
 
 
-
-
-# SENSIBILIDAD_ES_CARA=0.73
-SENSIBILIDAD_ES_CARA=0.68
 
 LOCAL_ID=sys.argv[1]
 CAMARA_ID=sys.argv[2]
 FICHERO=sys.argv[3]
+RUTA_PROYECTO=sys.argv[4]
+SENSIBILIDAD_ES_CARA=float(sys.argv[5])
+URL_FTP_BASE=sys.argv[6]
+
+CONFIG_desiredFaceWidth=sys.argv[7]
+CONFIG_margen_cruce_linea=sys.argv[8]
+CONFIG_frame_rate=sys.argv[9]
+CONFIG_redimensionVideoWidth=sys.argv[10]
+CONFIG_redimensionVideoHeight=sys.argv[11]
+CONFIG_analisisLineasImagenWidth=sys.argv[12]
+CONFIG_analisisLineasImagenHeight=sys.argv[13]
+CONFIG_margenGrosorLinea=sys.argv[14]
+CONFIG_contornoAreaCruceLinea=sys.argv[15]
+CONFIG_MinimoContornoConsiderarloCruce=sys.argv[16]
+CONFIG_TiempoTrascurridoUltimoCruce=sys.argv[17]
+CONFIG_TiempoDeCruce=sys.argv[18]
+CONFIG_redimension_imagen_captura_caras_w=sys.argv[19]
+CONFIG_redimension_imagen_captura_caras_h=sys.argv[20]
+CONFIG_scale_factor=sys.argv[21]
+CONFIG_resize_w=sys.argv[22]
+CONFIG_resize_h=sys.argv[23]
+CONFIG_mean1=sys.argv[24]
+CONFIG_mean2=sys.argv[25]
+CONFIG_mean3=sys.argv[26]
+CONFIG_recuadro_tamanyo_rostro=sys.argv[27]
+CONFIG_redimension_rostro=sys.argv[28]
+
+
+
+detector = dlib.get_frontal_face_detector()
+predictor = dlib.shape_predictor("./motor/models/shape_predictor_68_face_landmarks.dat")
+#fa = FaceAligner(predictor, desiredFaceWidth=150)
+fa = FaceAligner(predictor, desiredFaceWidth=int(CONFIG_desiredFaceWidth))
+
 
 def printLog(*args, **kwargs):
     print(*args, **kwargs)
     
-    with open('/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/procesa_videosV6_'+CAMARA_ID+'.out','a') as file:
+    with open(RUTA_PROYECTO+'motor/procesa_videosV6_'+CAMARA_ID+'.out','a') as file:
        print(*args, **kwargs, file=file)
 
 
@@ -108,8 +135,10 @@ def hay_cruce(x1_lin,y1_lin,x2_lin,y2_lin,x,y,w,h):
 
 
     cruce_h=False
-    i=izq-5
-    while i<=(der+5):
+    # i=izq-5
+    i=izq-cint(CONFIG_margen_cruce_linea)
+    # while i<=(der+5):
+    while i<=(der+cint(CONFIG_margen_cruce_linea)):
         #printLog("i1:"+str(i))
         c=x
         while c<=(x+w):
@@ -121,8 +150,10 @@ def hay_cruce(x1_lin,y1_lin,x2_lin,y2_lin,x,y,w,h):
 
 
     cruce_v=False
-    i=abajo-5
-    while i<=(arriba+5):
+    # i=abajo-5
+    i=abajo-cint(CONFIG_margen_cruce_linea)
+    # while i<=(arriba+5):
+    while i<=(arriba+cint(CONFIG_margen_cruce_linea)):    
         #printLog("i2:"+str(i))
         c=y
         while c<=(y+h):
@@ -144,8 +175,8 @@ def hay_cruce(x1_lin,y1_lin,x2_lin,y2_lin,x,y,w,h):
 
 
 
-modelFile = "/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/models/res10_300x300_ssd_iter_140000.caffemodel"
-configFile = "/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/models/deploy.prototxt.txt"
+modelFile = RUTA_PROYECTO+"motor/models/res10_300x300_ssd_iter_140000.caffemodel"
+configFile = RUTA_PROYECTO+"motor/models/deploy.prototxt.txt"
 net = cv2.dnn.readNetFromCaffe(configFile, modelFile)
 
 
@@ -165,7 +196,9 @@ FIN procesaro lineas
 
 
 #frame_rate = 10 #cuanto mas alto menos fluido va, osea mas delay, y detecta mas rapido
-frame_rate = 10 #cuanto mas alto menos fluido va, osea mas delay, y detecta mas rapido
+# frame_rate = 10 #cuanto mas alto menos fluido va, osea mas delay, y detecta mas rapido
+frame_rate = CONFIG_frame_rate #cuanto mas alto menos fluido va, osea mas delay, y detecta mas rapido
+
 
 
 aux=True
@@ -175,21 +208,13 @@ printLog("procesando...")
 
 
 
-
-
-
 # exit()
-
-
-
-
-
 
 
 #-INI-procesamiento de lineas
 
-printLog("php /var/www/html/reconocimientoFacial/proyecto_definitivo/ws.php listado_lineas "+CAMARA_ID)
-proc = subprocess.Popen("php /var/www/html/reconocimientoFacial/proyecto_definitivo/ws.php listado_lineas "+CAMARA_ID, shell=True, stdout=subprocess.PIPE)
+printLog("php "+RUTA_PROYECTO+"ws.php listado_lineas "+CAMARA_ID)
+proc = subprocess.Popen("php "+RUTA_PROYECTO+"ws.php listado_lineas "+CAMARA_ID, shell=True, stdout=subprocess.PIPE)
 lineas = str(proc.stdout.read())
 lineas = lineas.replace("'", "")
 lineas = lineas.replace("b", "")
@@ -228,7 +253,7 @@ for iii in range(longitud):
 
         LINEA_ID=v_lineas[iii]
         printLog("linea_id:"+LINEA_ID)
-        proc = subprocess.Popen("php /var/www/html/reconocimientoFacial/proyecto_definitivo/ws.php coordenadas_linea "+LINEA_ID, shell=True, stdout=subprocess.PIPE)
+        proc = subprocess.Popen("php "+RUTA_PROYECTO+"ws.php coordenadas_linea "+LINEA_ID, shell=True, stdout=subprocess.PIPE)
         coordenadas = str(proc.stdout.read())
         coordenadas = coordenadas.replace("'", "")
         coordenadas = coordenadas.replace("b", "")
@@ -284,7 +309,7 @@ for iii in range(longitud):
 
 
 aux=False
-name_file=os.path.join('/home/testuser/motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/', FICHERO)
+name_file=os.path.join(URL_FTP_BASE+'motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/', FICHERO)
 printLog("tenemos este video:"+name_file)
 
 cap = cv2.VideoCapture(name_file)
@@ -292,9 +317,11 @@ prev=0
 segundos_ini=time.time()
 
 
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 750)
+#cap.set(cv2.CAP_PROP_FRAME_WIDTH, 750)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, cint(CONFIG_redimensionVideoWidth))
 #cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 420)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 562)
+#cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 562)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, cint(CONFIG_redimensionVideoHeight))
 
 
 while(cap.isOpened()):
@@ -322,9 +349,11 @@ while(cap.isOpened()):
 
             frame_ini=img
             
-            img = imutils.resize(img, width=750)
+            #img = imutils.resize(img, width=750)
+            img = imutils.resize(img, width=cint(CONFIG_analisisLineasImagenWidth))
             #img = imutils.resize(img, height=420)
-            img = imutils.resize(img, height=562)
+            #img = imutils.resize(img, height=562)
+            img = imutils.resize(img, height=cint(CONFIG_analisisLineasImagenHeight))
 
             """
             height, width, channels = img.shape
@@ -341,7 +370,7 @@ while(cap.isOpened()):
                 X2=int(v_x2[ii])
                 Y2=int(v_y2[ii])
 
-
+                """
                 X1_1=X1-3
                 Y1_1=Y1-3
                 X1_2=X1+3
@@ -352,7 +381,17 @@ while(cap.isOpened()):
                 Y2_1=Y2-3
                 X2_2=X2+3
                 Y2_2=Y2+3
+                """
+                X1_1=X1-cint(CONFIG_margenGrosorLinea)
+                Y1_1=Y1-cint(CONFIG_margenGrosorLinea)
+                X1_2=X1+cint(CONFIG_margenGrosorLinea)
+                Y1_2=Y1+cint(CONFIG_margenGrosorLinea)
 
+
+                X2_1=X2-cint(CONFIG_margenGrosorLinea)
+                Y2_1=Y2-cint(CONFIG_margenGrosorLinea)
+                X2_2=X2+cint(CONFIG_margenGrosorLinea)
+                Y2_2=Y2+cint(CONFIG_margenGrosorLinea)
 
                 cv2.line(img, (X1, Y1), (X2, Y2), (0, 255, 255), 1)
                 
@@ -368,7 +407,8 @@ while(cap.isOpened()):
 
                 # printLog("(X1,Y1) , (X2,Y2): ("+str(X1)+","+str(Y1)+") , ("+str(X2)+","+str(Y2)+")")
 
-                area_pts = np.array([[X1-5, Y1-5], [X1+5, Y1+5], [X2+5, Y2+5], [X2-5, Y2-5]])
+                # area_pts = np.array([[X1-5, Y1-5], [X1+5, Y1+5], [X2+5, Y2+5], [X2-5, Y2-5]])
+                area_pts = np.array([[X1-cint(CONFIG_contornoAreaCruceLinea), Y1-cint(CONFIG_contornoAreaCruceLinea)], [X1+cint(CONFIG_contornoAreaCruceLinea), Y1+cint(CONFIG_contornoAreaCruceLinea)], [X2+cint(CONFIG_contornoAreaCruceLinea), Y2+cint(CONFIG_contornoAreaCruceLinea)], [X2-cint(CONFIG_contornoAreaCruceLinea), Y2-cint(CONFIG_contornoAreaCruceLinea)]])
 
                 imAux = np.zeros(shape=(img.shape[:2]), dtype= np.uint8)
 
@@ -387,7 +427,8 @@ while(cap.isOpened()):
                 cnts = cv2.findContours(fgmask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0]
                 for cnt in cnts:
                     #printLog("paso1:"+str(cv2.contourArea(cnt)))
-                    if cv2.contourArea(cnt) > 1500:
+                    #if cv2.contourArea(cnt) > 1500:
+                    if cv2.contourArea(cnt) > cint(CONFIG_MinimoContornoConsiderarloCruce):
                         x, y, w, h = cv2.boundingRect(cnt)
                         cv2.rectangle(img, (x,y), (x+w,y+h), (0,100,100), 1)   
 
@@ -454,7 +495,8 @@ while(cap.isOpened()):
 
                             #if (transcurrido>=3 or transcurrido==0) and frame_cruce1[ii]>5 and time_elapsed_cruce[ii]>0.01:
                             #if (transcurrido>=3 or transcurrido==0) and time_elapsed_cruce[ii]>1:
-                            if (transcurrido>=3 or transcurrido==0) and time_elapsed_cruce[ii]>0.15:
+                            #if (transcurrido>=3 or transcurrido==0) and time_elapsed_cruce[ii]>0.15:
+                            if (transcurrido>=cint(CONFIG_TiempoTrascurridoUltimoCruce) or transcurrido==0) and time_elapsed_cruce[ii]>float(CONFIG_TiempoDeCruce):
                                 
                                 ultima_creacion[ii]=time.time()
                                 printLog("asiganado a ultima_creacion["+str(ii)+"]:"+str(ultima_creacion[ii]))
@@ -500,15 +542,15 @@ while(cap.isOpened()):
                                 printLog("El cruce a sido a estos segundos1:"+str(segundos_datetime))
                                 printLog("El cruce a sido a estos segundos2:"+str(segs_elapsed))
 
-                                proc = subprocess.Popen("php /var/www/html/reconocimientoFacial/proyecto_definitivo/ws.php lineas_identificadorunico", shell=True, stdout=subprocess.PIPE)
+                                proc = subprocess.Popen("php "+RUTA_PROYECTO+"ws.php lineas_identificadorunico", shell=True, stdout=subprocess.PIPE)
                                 numrandom = str(proc.stdout.read())
                                 numrandom = numrandom.replace("'", "")
                                 printLog("numrandom asignado:"+numrandom)
 
 
-                                cv2.imwrite("/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/fotos_lineas/"+lineas_ids[ii]+"/"+numrandom+".jpg",frame_ini)
+                                cv2.imwrite(RUTA_PROYECTO+"motor/fotos_lineas/"+lineas_ids[ii]+"/"+numrandom+".jpg",frame_ini)
 
-                                cmd="php /var/www/html/reconocimientoFacial/proyecto_definitivo/ws.php guarda_cruce "+str(lineas_ids[ii])+" '"+str(fecha_datetime_definitiva)+"' "+str(direccion)+" "+str(x+w)+" "+str(y+h)+" "+str(numrandom)
+                                cmd="php "+RUTA_PROYECTO+"ws.php guarda_cruce "+str(lineas_ids[ii])+" '"+str(fecha_datetime_definitiva)+"' "+str(direccion)+" "+str(x+w)+" "+str(y+h)+" "+str(numrandom)
                                 printLog(cmd)
                                 proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
 
@@ -529,7 +571,8 @@ while(cap.isOpened()):
         
         # blob = cv2.dnn.blobFromImage(cv2.resize(img, (300, 300)),1.0, (300, 300), (104.0, 117.0, 123.0))
         #blob = cv2.dnn.blobFromImage(cv2.resize(img, (300, 300)),1.0, (323, 323), (104.0, 117.0, 123.0))
-        blob = cv2.dnn.blobFromImage(cv2.resize(img_original, (300, 300)),1.0, (353, 353), (104.0, 117.0, 123.0))
+        # blob = cv2.dnn.blobFromImage(cv2.resize(img_original, (300, 300)),1.0, (353, 353), (104.0, 117.0, 123.0))
+        blob = cv2.dnn.blobFromImage(cv2.resize(img_original, (cint(CONFIG_redimension_imagen_captura_caras_w), cint(CONFIG_redimension_imagen_captura_caras_h))),float(CONFIG_scale_factor), (cint(CONFIG_resize_w), cint(CONFIG_resize_h)), (float(CONFIG_mean1), float(CONFIG_mean2), float(CONFIG_mean3)))
         #blob = cv2.dnn.blobFromImage(cv2.resize(img, (300, 300)),1.0, (351, 353), (104.0, 117.0, 123.0))
         net.setInput(blob)
         faces3 = net.forward()
@@ -545,6 +588,7 @@ while(cap.isOpened()):
                 #cv2.rectangle(img2, (x, y), (x1, y1), (0, 0, 255), 2)
 
 
+                """
                 ydef=y-100
                 if ydef<0:
                     ydef=0
@@ -558,6 +602,21 @@ while(cap.isOpened()):
                 x1def=x1+100
                 if x1def>width1:
                     x1def=width1-1    
+                """
+                ydef=y-cint(CONFIG_recuadro_tamanyo_rostro)
+                if ydef<0:
+                    ydef=0
+                y1def=y1+cint(CONFIG_recuadro_tamanyo_rostro)
+                if y1def>height1:
+                    y1def=height1-1
+
+                xdef=x-cint(CONFIG_recuadro_tamanyo_rostro)
+                if xdef<0:
+                    xdef=0
+                x1def=x1+cint(CONFIG_recuadro_tamanyo_rostro)
+                if x1def>width1:
+                    x1def=width1-1    
+
 
 
                 rostro = img_original[ydef:y1def, xdef:x1def]
@@ -569,7 +628,8 @@ while(cap.isOpened()):
                     sigue=False
                 else:
                     try:
-                        rostro = cv2.resize(rostro, (150, 150), interpolation=cv2.INTER_CUBIC)
+                        # rostro = cv2.resize(rostro, (150, 150), interpolation=cv2.INTER_CUBIC)
+                        rostro = cv2.resize(rostro, (cint(CONFIG_redimension_rostro), cint(CONFIG_redimension_rostro)), interpolation=cv2.INTER_CUBIC)
                     except Exception as e:
                         printLog(str(e))
                         sigue=False
@@ -606,7 +666,7 @@ while(cap.isOpened()):
 
                     if not alineado:
                         printLog("No se puede alinear")
-                        cv2.imwrite('/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/sinclasificar/'+LOCAL_ID+'/'+CAMARA_ID+'/'+nombrefinal+'.jpg', rostro)
+                        cv2.imwrite(RUTA_PROYECTO+'motor/caras/sinclasificar/'+LOCAL_ID+'/'+CAMARA_ID+'/'+nombrefinal+'.jpg', rostro)
 
 
                     printLog("cara guardada en /"+str(LOCAL_ID)+"/"+str(CAMARA_ID)+"/"+nombrefinal+".jpg con esta confidence:"+str(confidence))
@@ -623,7 +683,7 @@ cap.release()
 
 
 os.remove(name_file)
-os.remove("/var/www/html/reconocimientoFacial/proyecto_definitivo/aux/"+FICHERO+".txt")
+os.remove(RUTA_PROYECTO+"aux/"+FICHERO+".txt")
 
 
 
@@ -632,4 +692,4 @@ cv2.destroyAllWindows()
 
 
 printLog("Llego al final!")
-    
+

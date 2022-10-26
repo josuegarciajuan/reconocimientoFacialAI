@@ -24,6 +24,23 @@ fa = face_alignment.FaceAlignment(face_alignment.LandmarksType._2D, flip_input=F
 RUTA_PROYECTO=sys.argv[1]
 DEBUG=sys.argv[2]
 
+HOLGURA_DEFRENTE_ALINEADOS_VERTICAL=sys.argv[3]
+HOLGURA_DEFRENTE_ALINEADOS_HORIZONTAL=sys.argv[4]
+HOLGURA_DEFRENTE_PUNTOENMEDIO_HORIZONTAL=sys.argv[5]
+HOLGURA_DEFRENTE_DISTANCIASSIMILARES_HORIZONTAL=sys.argv[6]
+HOLGURA_45GRADOS_ALINEADOS_VERTICAL=sys.argv[7]
+HOLGURA_45GRADOS_ALINEADOS_HORIZONTAL=sys.argv[8]
+HOLGURA_90GRADOS_ALINEADOS_VERTICAL=sys.argv[9]
+HOLGURA_ARRIBA_ALINEADOS_HORIZONTAL=sys.argv[10]
+HOLGURA_ARRIBA_ALINEADOS_VERTICAL=sys.argv[11]
+HOLGURA_ARRIBA_PUNTOENMEDIO_HORIZONTAL=sys.argv[12]
+HOLGURA_ABAJO_ALINEADOS_VERTICAL=sys.argv[13]
+HOLGURA_ABAJO_ALINEADOS_HORIZONTAL=sys.argv[14]
+HOLGURA_ABAJO_PUNTOENMEDIO_HORIZONTAL=sys.argv[15]
+HOLGURA_ABAJO_DISTANCIASSIMILARES=sys.argv[16]
+HOLGURA_ARRIBA_NARIZARRIBAOREJAS=sys.argv[17]
+HOLGURA_ABAJO_OREJASNARIZ=sys.argv[18]
+
 
 # https://towardsdatascience.com/face-landmark-detection-using-python-1964cb620837
 
@@ -148,17 +165,17 @@ def es_posicion_cara(imagePath,posicion):
                 num_puebas=9
                 sumatorio=100/num_puebas
 
-                if alineados(1,"V",x[27][0],x[27][1],x[33][0],x[33][1],15):
+                if alineados(1,"V",x[27][0],x[27][1],x[33][0],x[33][1],cint(HOLGURA_DEFRENTE_ALINEADOS_VERTICAL)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 1")
                 printLog("")
 
-                if alineados(2,"V",x[57][0],x[57][1],x[8][0],x[8][1],15):
+                if alineados(2,"V",x[57][0],x[57][1],x[8][0],x[8][1],cint(HOLGURA_DEFRENTE_ALINEADOS_VERTICAL)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 2")
                 printLog("")
 
-                if alineados(3,"H",x[36][0],x[36][1],x[45][0],x[45][1],20):
+                if alineados(3,"H",x[36][0],x[36][1],x[45][0],x[45][1],cint(HOLGURA_DEFRENTE_ALINEADOS_HORIZONTAL)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 3")
                 printLog("")
@@ -170,32 +187,32 @@ def es_posicion_cara(imagePath,posicion):
                 printLog("")
                 """
 
-                if alineados(5,"H",x[0][0],x[0][1],x[16][0],x[16][1],20):
+                if alineados(5,"H",x[0][0],x[0][1],x[16][0],x[16][1],cint(HOLGURA_DEFRENTE_ALINEADOS_HORIZONTAL)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 5")
                 printLog("")
 
-                if alineados(6,"H",x[48][0],x[48][1],x[54][0],x[54][1],20):
+                if alineados(6,"H",x[48][0],x[48][1],x[54][0],x[54][1],cint(HOLGURA_DEFRENTE_ALINEADOS_HORIZONTAL)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 6")
                 printLog("")
 
-                if enmedio(7,"H",x[27][0],x[27][1],x[36][0],x[36][1],x[45][0],x[45][1],15):
+                if enmedio(7,"H",x[27][0],x[27][1],x[36][0],x[36][1],x[45][0],x[45][1],cint(HOLGURA_DEFRENTE_PUNTOENMEDIO_HORIZONTAL)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 7")
                 printLog("")
 
-                if enmedio(8,"H",x[27][0],x[27][1],x[0][0],x[0][1],x[16][0],x[16][1],20):
+                if enmedio(8,"H",x[27][0],x[27][1],x[0][0],x[0][1],x[16][0],x[16][1],cint(HOLGURA_DEFRENTE_PUNTOENMEDIO_HORIZONTAL)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 8")
                 printLog("")
 
-                if enmedio(9,"H",x[33][0],x[33][1],x[0][0],x[0][1],x[16][0],x[16][1],20):
+                if enmedio(9,"H",x[33][0],x[33][1],x[0][0],x[0][1],x[16][0],x[16][1],cint(HOLGURA_DEFRENTE_PUNTOENMEDIO_HORIZONTAL)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 9")
                 printLog("")
 
-                if distancias_similares(10,"H",x[0][0],x[0][1],x[36][0],x[36][1],x[45][0],x[45][1],x[16][0],x[16][1],20):
+                if distancias_similares(10,"H",x[0][0],x[0][1],x[36][0],x[36][1],x[45][0],x[45][1],x[16][0],x[16][1],cint(HOLGURA_DEFRENTE_DISTANCIASSIMILARES_HORIZONTAL)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 10")
                 printLog("")
@@ -230,12 +247,12 @@ def es_posicion_cara(imagePath,posicion):
                 num_puebas=11
                 sumatorio=100/num_puebas
 
-                if alineados(1,"V",x[27][0],x[27][1],x[33][0],x[33][1],10):
+                if alineados(1,"V",x[27][0],x[27][1],x[33][0],x[33][1],cint(HOLGURA_45GRADOS_ALINEADOS_VERTICAL)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 1")
                 printLog("")
 
-                if alineados(2,"H",x[36][0],x[36][1],x[45][0],x[45][1],10):
+                if alineados(2,"H",x[36][0],x[36][1],x[45][0],x[45][1],cint(HOLGURA_45GRADOS_ALINEADOS_HORIZONTAL)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 2")
                 printLog("")
@@ -302,12 +319,12 @@ def es_posicion_cara(imagePath,posicion):
                     printLog(".............SUPERO prueba 2")
                 printLog("")
 
-                if alineados(3,"V",x[27][0],x[27][1],x[33][0],x[33][1],12):
+                if alineados(3,"V",x[27][0],x[27][1],x[33][0],x[33][1],cin(HOLGURA_90GRADOS_ALINEADOS_VERTICAL)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 3")
                 printLog("")
 
-                if alineados(4,"V",x[36][0],x[36][1],x[48][0],x[48][1],15):
+                if alineados(4,"V",x[36][0],x[36][1],x[48][0],x[48][1],cint(HOLGURA_90GRADOS_ALINEADOS_VERTICAL)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 4")
                 printLog("")
@@ -354,12 +371,12 @@ def es_posicion_cara(imagePath,posicion):
                 num_puebas=11
                 sumatorio=100/num_puebas
 
-                if alineados(1,"V",x[27][0],x[27][1],x[33][0],x[33][1],10):
+                if alineados(1,"V",x[27][0],x[27][1],x[33][0],x[33][1],cint(HOLGURA_45GRADOS_ALINEADOS_VERTICAL)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 1")
                 printLog("")
 
-                if alineados(2,"H",x[36][0],x[36][1],x[45][0],x[45][1],10):
+                if alineados(2,"H",x[36][0],x[36][1],x[45][0],x[45][1],cint(HOLGURA_45GRADOS_ALINEADOS_VERTICAL)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 2")
                 printLog("")
@@ -424,12 +441,12 @@ def es_posicion_cara(imagePath,posicion):
                     printLog(".............SUPERO prueba 2")
                 printLog("")
 
-                if alineados(3,"V",x[27][0],x[27][1],x[33][0],x[33][1],12):
+                if alineados(3,"V",x[27][0],x[27][1],x[33][0],x[33][1],cint(HOLGURA_90GRADOS_ALINEADOS_VERTICAL)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 3")
                 printLog("")
 
-                if alineados(4,"V",x[45][0],x[45][1],x[54][0],x[54][1],15):
+                if alineados(4,"V",x[45][0],x[45][1],x[54][0],x[54][1],cint(HOLGURA_90GRADOS_ALINEADOS_VERTICAL)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 4")
                 printLog("")
@@ -497,17 +514,17 @@ def es_posicion_cara(imagePath,posicion):
                 printLog("")
                 """
 
-                if alineados(5,"V",x[57][0],x[57][1],x[8][0],x[8][1],10):
+                if alineados(5,"V",x[57][0],x[57][1],x[8][0],x[8][1],cint(HOLGURA_ARRIBA_ALINEADOS_VERTICAL)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 5")
                 printLog("")
 
-                if alineados(6,"H",x[36][0],x[36][1],x[45][0],x[45][1],10): 
+                if alineados(6,"H",x[36][0],x[36][1],x[45][0],x[45][1],cint(HOLGURA_ARRIBA_ALINEADOS_HORIZONTAL)): 
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 6")
                 printLog("")
 
-                if alineados(7,"H",x[0][0],x[0][1],x[16][0],x[16][1],10):
+                if alineados(7,"H",x[0][0],x[0][1],x[16][0],x[16][1],cint(HOLGURA_ARRIBA_ALINEADOS_HORIZONTAL)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 7")
                 printLog("")
@@ -544,17 +561,17 @@ def es_posicion_cara(imagePath,posicion):
                 printLog("")
                 """
 
-                if enmedio(14,"H",x[57][0],x[57][1],x[0][0],x[0][1],x[16][0],x[16][1],10): 
+                if enmedio(14,"H",x[57][0],x[57][1],x[0][0],x[0][1],x[16][0],x[16][1],cint(HOLGURA_ARRIBA_PUNTOENMEDIO_HORIZONTAL)): 
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 14")
                 printLog("")
 
-                if posicionado(15,"T",x[30][0],x[30][1],x[0][0],x[0][1],15): 
+                if posicionado(15,"T",x[30][0],x[30][1],x[0][0],x[0][1],cint(HOLGURA_ARRIBA_NARIZARRIBAOREJAS)): 
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 15")
                 printLog("")
 
-                if posicionado(16,"T",x[30][0],x[30][1],x[16][0],x[16][1],15): 
+                if posicionado(16,"T",x[30][0],x[30][1],x[16][0],x[16][1],cint(HOLGURA_ARRIBA_NARIZARRIBAOREJAS)): 
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 16")
                 printLog("")
@@ -594,37 +611,37 @@ def es_posicion_cara(imagePath,posicion):
                     printLog(".............SUPERO prueba 2")
                 printLog("")
 
-                if alineados(3,"H",x[36][0],x[36][1],x[45][0],x[45][1],20): 
+                if alineados(3,"H",x[36][0],x[36][1],x[45][0],x[45][1],cint(HOLGURA_ABAJO_ALINEADOS_HORIZONTAL)): 
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 3")
                 printLog("")
 
-                if alineados(4,"V",x[57][0],x[57][1],x[8][0],x[8][1],20):
+                if alineados(4,"V",x[57][0],x[57][1],x[8][0],x[8][1],cint(HOLGURA_ABAJO_ALINEADOS_VERTICAL)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 4")
                 printLog("")
 
-                if posicionado(5,"T",x[0][0],x[0][1],x[36][0],x[36][1],15):
+                if posicionado(5,"T",x[0][0],x[0][1],x[36][0],x[36][1],cint(HOLGURA_ABAJO_OREJASNARIZ)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 5")
                 printLog("")
 
-                if posicionado(6,"T",x[16][0],x[16][1],x[45][0],x[45][1],15):
+                if posicionado(6,"T",x[16][0],x[16][1],x[45][0],x[45][1],cint(HOLGURA_ABAJO_OREJASNARIZ)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 6")
                 printLog("")
 
-                if alineados(7,"H",x[0][0],x[0][1],x[16][0],x[16][1],20):
+                if alineados(7,"H",x[0][0],x[0][1],x[16][0],x[16][1],cint(HOLGURA_ABAJO_ALINEADOS_HORIZONTAL)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 7")
                 printLog("")
 
-                if enmedio(8,"H",x[57][0],x[57][1],x[0][0],x[0][1],x[16][0],x[16][1],20):
+                if enmedio(8,"H",x[57][0],x[57][1],x[0][0],x[0][1],x[16][0],x[16][1],cint(HOLGURA_ABAJO_PUNTOENMEDIO_HORIZONTAL)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 8")
                 printLog("")
 
-                if distancia_entrepuntos(9,x[30][0],x[30][1],x[33][0],x[33][1],20):
+                if distancia_entrepuntos(9,x[30][0],x[30][1],x[33][0],x[33][1],cint(HOLGURA_ABAJO_DISTANCIASSIMILARES)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 9")
                 printLog("")

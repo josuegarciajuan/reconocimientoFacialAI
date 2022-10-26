@@ -22,16 +22,18 @@ if(isset($_GET["submit"]) and $_GET["submit"]!=""){
         $cmds=[
             "mkdir ".URL_FTP_BASE."motor/videos/".$id,
             "mkdir ".URL_FTP_BASE."motor/videos_lineas/".$id,
-            "mkdir /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/".$id,
-            "mkdir /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/sinclasificar/".$id,
-            "mkdir /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/bbdd_reconocimiento/".$id,
+            "mkdir ".RUTA_PROYECTO."motor/caras/".$id,
+            "chmod -R 777 ".RUTA_PROYECTO."motor/caras/".$id,
+            "mkdir ".RUTA_PROYECTO."motor/caras/".$id."/C0",
+            "mkdir ".RUTA_PROYECTO."motor/caras/sinclasificar/".$id,
+            "mkdir ".RUTA_PROYECTO."motor/bbdd_reconocimiento/".$id,
             "chmod -R 777 ".URL_FTP_BASE."motor/videos/".$id,
             "chmod -R 777 ".URL_FTP_BASE."motor/videos_lineas/".$id,
-            "chmod -R 777 /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/".$id,
-            "chmod -R 777 /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/sinclasificar/".$id,
-            "chmod -R 777 /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/bbdd_reconocimiento/".$id,
-            "python3.7 /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/crear_diccionario_inicial_parametrizado.py ".$id,
-            "chmod -R 777 /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/bbdd_reconocimiento/".$id."/face_enc"
+            "chmod -R 777 ".RUTA_PROYECTO."motor/caras/".$id."/C0",
+            "chmod -R 777 ".RUTA_PROYECTO."motor/caras/sinclasificar/".$id,
+            "chmod -R 777 ".RUTA_PROYECTO."motor/bbdd_reconocimiento/".$id,
+            RUTA_PYTHON." ".RUTA_PROYECTO."motor/crear_diccionario_inicial_parametrizado.py ".$id,
+            "chmod -R 777 ".RUTA_PROYECTO."motor/bbdd_reconocimiento/".$id."/face_enc"
         ];
         
         echo "<br />-----EJECUTAR---<br /><br />";

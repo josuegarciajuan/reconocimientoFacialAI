@@ -20,7 +20,7 @@ import dlib
 sys.path.append(".")
 from facealigner import FaceAligner
 
-SENSIBILIDAD_ES_CARA=0.68
+
 
 LOCAL_ID=sys.argv[1]
 FICHERO=sys.argv[2]
@@ -30,7 +30,8 @@ CAMARA_ID="0"
 #RUTA_PROYECTO="/var/www/html/reconocimientofacialV2/"
 RUTA_PROYECTO=sys.argv[4]
 fecha_aux=sys.argv[5]
-
+CADACUANTOSFRAMESSECOGEUNOPARAVERSIHAYCARA=sys.argv[6]
+SENSIBILIDAD_ES_CARA=float(sys.argv[7])
 
 
 time_ini = time.time()
@@ -77,7 +78,7 @@ while(cap.isOpened()):
         printLog('tenemos(' + HILO + ') frame k lo guardo ..')
         num_frame=num_frame+1
 
-        if num_frame % 7 == 0:
+        if num_frame % cint(CADACUANTOSFRAMESSECOGEUNOPARAVERSIHAYCARA) == 0:
 
 
             #img = cv2.resize(img, None, fx=0.25, fy=0.25)
