@@ -26,6 +26,8 @@ sshpass -p 'Prueba123!' ssh root@217.61.112.100
 46.249.32.179
 http://45.136.71.235/reconocimientofacialV2/admin/
 
+https://scrapscrap.xyz/admin
+
 
 instalacion php
   sudo apt update
