@@ -109,7 +109,7 @@ while(true){
                     $cmd[]="python3.7 motor/procesa_fotos_def_borrosaparteV2.py ".$sql->row["id"]." ".$tmp->row["id"]." '".RUTA_PROYECTO."' ".$params;
                     //$cmd[]="python3.7 motor/cruza_lineas_V2.py ".$sql->row["id"]." ".$tmp->row["id"];
                     //var_dump($cmd);
-                    //exit;
+                    
                     for($i=0;$i<count($cmd);$i++){
                         echo $cmd[$i]."\n";
                         
