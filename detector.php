@@ -101,7 +101,7 @@ while(true){
                     $params.=CONFIG_DIFERENCIA_ALTURAS." ";
                     $params.=CONFIG_UMBRAL_ENFOQUE." ";
                     $params.=CONFIG_UMBRAL_ENFOQUE_MAXIMO." ";
-                    $params.=CONFIG_UMBRAL_ENFOQUE_MAXIMO_CARA." ";
+                    $params.=CONFIG_UMBRAL_ENFOQUE_MAXIMO_CARA_procesafoto." ";
                     $params.=CONFIG_UMBRAL_DIFERENCIA_ENFOQUE." ";
                     $params.=CONFIG_UMBRAL_ENFOQUE_GLOBALES;
 

@@ -145,7 +145,7 @@ define("CONFIG_DIFERENCIA_ANCHO_OJOS","9");
 define("CONFIG_DIFERENCIA_ALTURAS","300");
 define("CONFIG_UMBRAL_ENFOQUE","1000"); //para considerar una foto desenfocada ya y al comparar 1 a 1 con todo el diccionario, ya pasaria a ver si las 2 tienen muxa diferencia de enfoque
 define("CONFIG_UMBRAL_ENFOQUE_MAXIMO","120"); // menos de este desenfoque , se descartan
-define("CONFIG_UMBRAL_ENFOQUE_MAXIMO_CARA","90"); //menos de este enfoque se descartan ,pero solo actuando sobre la cara
+define("CONFIG_UMBRAL_ENFOQUE_MAXIMO_CARA_procesafoto","90"); //menos de este enfoque se descartan ,pero solo actuando sobre la cara
 define("CONFIG_UMBRAL_DIFERENCIA_ENFOQUE","450");  //al comparar una a una si alguna de las 2 esta desenfocada, la de muestra y la del diccionario, comprar si hay muxa diferencia, para aplicar los umbrales restrictivos    (solo afecta a umbral y umbral segurisimo)
 define("CONFIG_UMBRAL_ENFOQUE_GLOBALES","1200"); //para considrar una foto desenfocada despues de haber comparado con todas, ya pra el calculo de las medias
         
