@@ -139,24 +139,6 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
 
     
     
-    
-    $aux= explode("_", $nombre_fichero);
-    $nombre_persona=$aux[1];
-    $actualizado=false;
-    while(!$actualizado){
-        echo "Viendo a que acabe para acualizar su nombre\n";
-        $sql->Consultar("personas","*","cod_interno='".$nombre_persona."'","id",true);
-        if($sql->num>0){
-            $sql->Actualizar("personas",["nombre"],[$nombre_persona],true);
-            $actualizado=true;
-        }else{
-            echo "sleep..\n";
-            sleep(2);    
-        }
-    }
-    
-    
-    
     $sigue=true;
     $tt=[];
     $terminados=0;
@@ -210,7 +192,23 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
     }
     
     
-
+    
+    
+    $aux= explode("_", $nombre_fichero);
+    $nombre_persona=$aux[1];
+    $actualizado=false;
+    while(!$actualizado){
+        echo "Viendo a que acabe para acualizar su nombre\n";
+        $sql->Consultar("personas","*","cod_interno='".$ganador_name."'","id",true);
+        if($sql->num>0){
+            $sql->Actualizar("personas",["nombre"],[$nombre_persona],true);
+            $actualizado=true;
+        }else{
+            echo "sleep..\n";
+            sleep(2);    
+        }
+    }
+    
     
     
     echo "\n\n\n";
