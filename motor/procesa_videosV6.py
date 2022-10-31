@@ -136,9 +136,9 @@ def hay_cruce(x1_lin,y1_lin,x2_lin,y2_lin,x,y,w,h):
 
     cruce_h=False
     # i=izq-5
-    i=izq-cint(CONFIG_margen_cruce_linea)
+    i=izq-int(CONFIG_margen_cruce_linea)
     # while i<=(der+5):
-    while i<=(der+cint(CONFIG_margen_cruce_linea)):
+    while i<=(der+int(CONFIG_margen_cruce_linea)):
         #printLog("i1:"+str(i))
         c=x
         while c<=(x+w):
@@ -151,9 +151,9 @@ def hay_cruce(x1_lin,y1_lin,x2_lin,y2_lin,x,y,w,h):
 
     cruce_v=False
     # i=abajo-5
-    i=abajo-cint(CONFIG_margen_cruce_linea)
+    i=abajo-int(CONFIG_margen_cruce_linea)
     # while i<=(arriba+5):
-    while i<=(arriba+cint(CONFIG_margen_cruce_linea)):    
+    while i<=(arriba+int(CONFIG_margen_cruce_linea)):    
         #printLog("i2:"+str(i))
         c=y
         while c<=(y+h):
@@ -318,10 +318,10 @@ segundos_ini=time.time()
 
 
 #cap.set(cv2.CAP_PROP_FRAME_WIDTH, 750)
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, cint(CONFIG_redimensionVideoWidth))
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, int(CONFIG_redimensionVideoWidth))
 #cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 420)
 #cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 562)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, cint(CONFIG_redimensionVideoHeight))
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, int(CONFIG_redimensionVideoHeight))
 
 
 while(cap.isOpened()):
@@ -350,10 +350,10 @@ while(cap.isOpened()):
             frame_ini=img
             
             #img = imutils.resize(img, width=750)
-            img = imutils.resize(img, width=cint(CONFIG_analisisLineasImagenWidth))
+            img = imutils.resize(img, width=int(CONFIG_analisisLineasImagenWidth))
             #img = imutils.resize(img, height=420)
             #img = imutils.resize(img, height=562)
-            img = imutils.resize(img, height=cint(CONFIG_analisisLineasImagenHeight))
+            img = imutils.resize(img, height=int(CONFIG_analisisLineasImagenHeight))
 
             """
             height, width, channels = img.shape
@@ -382,16 +382,16 @@ while(cap.isOpened()):
                 X2_2=X2+3
                 Y2_2=Y2+3
                 """
-                X1_1=X1-cint(CONFIG_margenGrosorLinea)
-                Y1_1=Y1-cint(CONFIG_margenGrosorLinea)
-                X1_2=X1+cint(CONFIG_margenGrosorLinea)
-                Y1_2=Y1+cint(CONFIG_margenGrosorLinea)
+                X1_1=X1-int(CONFIG_margenGrosorLinea)
+                Y1_1=Y1-int(CONFIG_margenGrosorLinea)
+                X1_2=X1+int(CONFIG_margenGrosorLinea)
+                Y1_2=Y1+int(CONFIG_margenGrosorLinea)
 
 
-                X2_1=X2-cint(CONFIG_margenGrosorLinea)
-                Y2_1=Y2-cint(CONFIG_margenGrosorLinea)
-                X2_2=X2+cint(CONFIG_margenGrosorLinea)
-                Y2_2=Y2+cint(CONFIG_margenGrosorLinea)
+                X2_1=X2-int(CONFIG_margenGrosorLinea)
+                Y2_1=Y2-int(CONFIG_margenGrosorLinea)
+                X2_2=X2+int(CONFIG_margenGrosorLinea)
+                Y2_2=Y2+int(CONFIG_margenGrosorLinea)
 
                 cv2.line(img, (X1, Y1), (X2, Y2), (0, 255, 255), 1)
                 
@@ -408,7 +408,7 @@ while(cap.isOpened()):
                 # printLog("(X1,Y1) , (X2,Y2): ("+str(X1)+","+str(Y1)+") , ("+str(X2)+","+str(Y2)+")")
 
                 # area_pts = np.array([[X1-5, Y1-5], [X1+5, Y1+5], [X2+5, Y2+5], [X2-5, Y2-5]])
-                area_pts = np.array([[X1-cint(CONFIG_contornoAreaCruceLinea), Y1-cint(CONFIG_contornoAreaCruceLinea)], [X1+cint(CONFIG_contornoAreaCruceLinea), Y1+cint(CONFIG_contornoAreaCruceLinea)], [X2+cint(CONFIG_contornoAreaCruceLinea), Y2+cint(CONFIG_contornoAreaCruceLinea)], [X2-cint(CONFIG_contornoAreaCruceLinea), Y2-cint(CONFIG_contornoAreaCruceLinea)]])
+                area_pts = np.array([[X1-int(CONFIG_contornoAreaCruceLinea), Y1-int(CONFIG_contornoAreaCruceLinea)], [X1+int(CONFIG_contornoAreaCruceLinea), Y1+int(CONFIG_contornoAreaCruceLinea)], [X2+int(CONFIG_contornoAreaCruceLinea), Y2+int(CONFIG_contornoAreaCruceLinea)], [X2-int(CONFIG_contornoAreaCruceLinea), Y2-int(CONFIG_contornoAreaCruceLinea)]])
 
                 imAux = np.zeros(shape=(img.shape[:2]), dtype= np.uint8)
 
@@ -428,7 +428,7 @@ while(cap.isOpened()):
                 for cnt in cnts:
                     #printLog("paso1:"+str(cv2.contourArea(cnt)))
                     #if cv2.contourArea(cnt) > 1500:
-                    if cv2.contourArea(cnt) > cint(CONFIG_MinimoContornoConsiderarloCruce):
+                    if cv2.contourArea(cnt) > int(CONFIG_MinimoContornoConsiderarloCruce):
                         x, y, w, h = cv2.boundingRect(cnt)
                         cv2.rectangle(img, (x,y), (x+w,y+h), (0,100,100), 1)   
 
@@ -496,7 +496,7 @@ while(cap.isOpened()):
                             #if (transcurrido>=3 or transcurrido==0) and frame_cruce1[ii]>5 and time_elapsed_cruce[ii]>0.01:
                             #if (transcurrido>=3 or transcurrido==0) and time_elapsed_cruce[ii]>1:
                             #if (transcurrido>=3 or transcurrido==0) and time_elapsed_cruce[ii]>0.15:
-                            if (transcurrido>=cint(CONFIG_TiempoTrascurridoUltimoCruce) or transcurrido==0) and time_elapsed_cruce[ii]>float(CONFIG_TiempoDeCruce):
+                            if (transcurrido>=int(CONFIG_TiempoTrascurridoUltimoCruce) or transcurrido==0) and time_elapsed_cruce[ii]>float(CONFIG_TiempoDeCruce):
                                 
                                 ultima_creacion[ii]=time.time()
                                 printLog("asiganado a ultima_creacion["+str(ii)+"]:"+str(ultima_creacion[ii]))
@@ -572,7 +572,7 @@ while(cap.isOpened()):
         # blob = cv2.dnn.blobFromImage(cv2.resize(img, (300, 300)),1.0, (300, 300), (104.0, 117.0, 123.0))
         #blob = cv2.dnn.blobFromImage(cv2.resize(img, (300, 300)),1.0, (323, 323), (104.0, 117.0, 123.0))
         # blob = cv2.dnn.blobFromImage(cv2.resize(img_original, (300, 300)),1.0, (353, 353), (104.0, 117.0, 123.0))
-        blob = cv2.dnn.blobFromImage(cv2.resize(img_original, (cint(CONFIG_redimension_imagen_captura_caras_w), cint(CONFIG_redimension_imagen_captura_caras_h))),float(CONFIG_scale_factor), (cint(CONFIG_resize_w), cint(CONFIG_resize_h)), (float(CONFIG_mean1), float(CONFIG_mean2), float(CONFIG_mean3)))
+        blob = cv2.dnn.blobFromImage(cv2.resize(img_original, (int(CONFIG_redimension_imagen_captura_caras_w), int(CONFIG_redimension_imagen_captura_caras_h))),float(CONFIG_scale_factor), (int(CONFIG_resize_w), int(CONFIG_resize_h)), (float(CONFIG_mean1), float(CONFIG_mean2), float(CONFIG_mean3)))
         #blob = cv2.dnn.blobFromImage(cv2.resize(img, (300, 300)),1.0, (351, 353), (104.0, 117.0, 123.0))
         net.setInput(blob)
         faces3 = net.forward()
@@ -603,17 +603,17 @@ while(cap.isOpened()):
                 if x1def>width1:
                     x1def=width1-1    
                 """
-                ydef=y-cint(CONFIG_recuadro_tamanyo_rostro)
+                ydef=y-int(CONFIG_recuadro_tamanyo_rostro)
                 if ydef<0:
                     ydef=0
-                y1def=y1+cint(CONFIG_recuadro_tamanyo_rostro)
+                y1def=y1+int(CONFIG_recuadro_tamanyo_rostro)
                 if y1def>height1:
                     y1def=height1-1
 
-                xdef=x-cint(CONFIG_recuadro_tamanyo_rostro)
+                xdef=x-int(CONFIG_recuadro_tamanyo_rostro)
                 if xdef<0:
                     xdef=0
-                x1def=x1+cint(CONFIG_recuadro_tamanyo_rostro)
+                x1def=x1+int(CONFIG_recuadro_tamanyo_rostro)
                 if x1def>width1:
                     x1def=width1-1    
 
@@ -629,7 +629,7 @@ while(cap.isOpened()):
                 else:
                     try:
                         # rostro = cv2.resize(rostro, (150, 150), interpolation=cv2.INTER_CUBIC)
-                        rostro = cv2.resize(rostro, (cint(CONFIG_redimension_rostro), cint(CONFIG_redimension_rostro)), interpolation=cv2.INTER_CUBIC)
+                        rostro = cv2.resize(rostro, (int(CONFIG_redimension_rostro), int(CONFIG_redimension_rostro)), interpolation=cv2.INTER_CUBIC)
                     except Exception as e:
                         printLog(str(e))
                         sigue=False

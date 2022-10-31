@@ -31,37 +31,37 @@ def printLog(*args, **kwargs):
     
 
 # Converting gray scale image to GaussianBlur
-var1=cint(sys.argv[7])
-var2=cint(sys.argv[8])
+var1=int(sys.argv[7])
+var2=int(sys.argv[8])
 
 # If change in between static background and
 # current frame is greater than 30 it will show white color(255)
 #var3=42
-var3=cint(sys.argv[9])
-var4=cint(sys.argv[10])
+var3=int(sys.argv[9])
+var4=int(sys.argv[10])
 
 # if cv2.contourArea(contour) < 10000:
 #var5=1500
 #->var5=1200
-var5=cint(sys.argv[11])
+var5=int(sys.argv[11])
 
-maximo_videos=cint(sys.argv[12])
+maximo_videos=int(sys.argv[12])
 
 
 #CUANTOS FRAMES PARA QUE HAYA MOVIMIENTO
 #->frames_a_analizar=20
-frames_a_analizar=cint(sys.argv[13])
+frames_a_analizar=int(sys.argv[13])
 #->frames_con_movimiento=16
-frames_con_movimiento=cint(sys.argv[14])
+frames_con_movimiento=int(sys.argv[14])
 
 
 #CUANTOS FRAMES DESPUES SIGO GRAMABANDO
 #->FRAMES_DESPUES=100
-FRAMES_DESPUES=cint(sys.argv[15])
+FRAMES_DESPUES=int(sys.argv[15])
 
 #CUANTOS FRAMES ANTES DEQUE HAYA MOVIMIENTO GRAMABANDO
 #->frames_guardados=100
-frames_guardados=cint(sys.argv[16])
+frames_guardados=int(sys.argv[16])
 
 
 REDIMENSIONFRAME=float(sys.argv[17])
