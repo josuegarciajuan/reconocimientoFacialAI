@@ -27,13 +27,16 @@ if(isset($_GET["submit"]) and $_GET["submit"]!=""){
             "mkdir ".RUTA_PROYECTO."motor/caras/".$id."/C0",
             "mkdir ".RUTA_PROYECTO."motor/caras/sinclasificar/".$id,
             "mkdir ".RUTA_PROYECTO."motor/bbdd_reconocimiento/".$id,
+            "mkdir ".RUTA_PROYECTO."motor/videos/".$id,
+            
             "chmod -R 777 ".URL_FTP_BASE."motor/videos/".$id,
             "chmod -R 777 ".URL_FTP_BASE."motor/videos_lineas/".$id,
             "chmod -R 777 ".RUTA_PROYECTO."motor/caras/".$id."/C0",
             "chmod -R 777 ".RUTA_PROYECTO."motor/caras/sinclasificar/".$id,
             "chmod -R 777 ".RUTA_PROYECTO."motor/bbdd_reconocimiento/".$id,
             RUTA_PYTHON." ".RUTA_PROYECTO."motor/crear_diccionario_inicial_parametrizado.py ".$id,
-            "chmod -R 777 ".RUTA_PROYECTO."motor/bbdd_reconocimiento/".$id."/face_enc"
+            "chmod -R 777 ".RUTA_PROYECTO."motor/bbdd_reconocimiento/".$id."/face_enc",
+            "chmod -R 777 ".RUTA_PROYECTO."motor/videos/".$id,
         ];
         
         echo "<br />-----EJECUTAR---<br /><br />";

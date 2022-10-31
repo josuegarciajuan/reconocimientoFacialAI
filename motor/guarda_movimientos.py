@@ -243,7 +243,7 @@ while True:
     if not hay_movimiento(motion_list) and grabando:
         time_r.append(datetime.now())
         parando=True
-        # printLog ("Ya no hay moviemiento, paro de grabar...")
+        printLog ("Ya no hay moviemiento, paro de grabar...")
 
     if grabando_primera:
         grabando_primera=False
@@ -280,9 +280,10 @@ while True:
         # key = cv2.waitKey(500)
         if time_elapsed>maximo_videos:
             parando=True            
-            #printLog ("han pasdo mas de "+str(maximo_videos)+" segs, marco pa qe se pare..")
+            printLog ("han pasdo mas de "+str(maximo_videos)+" segs, marco pa qe se pare..")
     if parando and grabando:
         count_para=count_para+1
+        printLog("Proceso de frenado:"+str(count_para))
 
 
     if count_para==FRAMES_DESPUES:
@@ -291,8 +292,8 @@ while True:
         parando=False    
         grabando=False
         out.release()
-        subir_video(video_actual)
-        #_thread.start_new_thread(subir_video, (video_actual,))
+        #subir_video(video_actual)
+        _thread.start_new_thread(subir_video, (video_actual,))
         num_video=num_video+1
         #if motion_list[-1] == 1 and motion_list[-2] == 1 and motion_list[-3] == 1 and motion_list[-4] == 1 and motion_list[-5] == 1 and motion_list[-6] == 0:
         

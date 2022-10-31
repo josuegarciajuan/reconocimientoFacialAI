@@ -80,40 +80,55 @@ while(true){
             $cmd.="";
 //python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.52:554/cam/realmonitor?channel=1&subtype=0' 1 1 21 21 42 255 1200 60 30 24 100 120 0.60 10.0
         
+            
+        /*    
+python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@nouesmalt.duckdns.org:779/cam/realmonitor?channel=1&subtype=0' 1 1 21 21 42 255 1300 60 30 24 100 120 0.60 10.0
+
+python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@nouesmalt.duckdns.org:777/cam/realmonitor?channel=1&subtype=0' 1 2 21 21 42 255 1300 60 30 24 100 120 0.60 10.0
+
+python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@nouesmalt.duckdns.org:778/cam/realmonitor?channel=1&subtype=0' 1 3 21 21 42 255 1300 60 30 24 100 120 0.60 10.0
+
+python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@nouesmalt.duckdns.org:780/cam/realmonitor?channel=1&subtype=0' 1 4 21 21 42 255 1300 60 30 24 100 120 0.60 10.0
+
+python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@nouesmalt.duckdns.org:781/cam/realmonitor?channel=1&subtype=0' 1 5 21 21 42 255 1300 60 30 24 100 120 0.60 10.0
+
+python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@nouesmalt.duckdns.org:782/cam/realmonitor?channel=1&subtype=0' 1 6 21 21 42 255 1300 60 30 24 100 120 0.60 10.0
+*/
+            
 
             echo $cmd."\n\n";
   
 
             
-//            if(!isset($threads[$data["valores"][$i]["id"]]) or $threads[$data["valores"][$i]["id"]]==NULL){
-//                echo "No existia el proceso, es una camara nueva encendida\n";
-//                echo $cmd."\n\n";
-//                $threads[$data["valores"][$i]["id"]]=new Jos_Thread($data["valores"][$i]["id"],$cmd,true);
-//                $threads[$data["valores"][$i]["id"]]->start();
-//            }
+            if(!isset($threads[$data["valores"][$i]["id"]]) or $threads[$data["valores"][$i]["id"]]==NULL){
+                echo "No existia el proceso, es una camara nueva encendida\n";
+                echo $cmd."\n\n";
+                $threads[$data["valores"][$i]["id"]]=new Jos_Thread($data["valores"][$i]["id"],$cmd,true);
+                $threads[$data["valores"][$i]["id"]]->start();
+            }
             
             
-//            $tiempo_final = microtime(true);
+            $tiempo_final = microtime(true);
             
             //echo "tiempo_final:".$tiempo_final."\n";
             //echo "tiempo_inicial:".$threads[$data["valores"][$i]["id"]]->tiempo_inicial."\n";
             
             
-//            $tiempo = $tiempo_final - $threads[$data["valores"][$i]["id"]]->tiempo_inicial; 
+            $tiempo = $tiempo_final - $threads[$data["valores"][$i]["id"]]->tiempo_inicial; 
             //echo "tiempo en marcha:".$tiempo."\n";
 
-//            if($tiempo>CONFIG_TIEMPO_MAXIMO_CAMARAS_ENCENDIDAS){
-//                echo "\n\nSupero el tiempo maximo\n\n";
+            if($tiempo>CONFIG_TIEMPO_MAXIMO_CAMARAS_ENCENDIDAS){
+                echo "\n\nSupero el tiempo maximo\n\n";
                 //$threads[$data["valores"][$i]["id"]]->tiempo_inicial = microtime(true);
                 
                 
-//                $threads[$data["valores"][$i]["id"]]->stop();
-//                $threads[$data["valores"][$i]["id"]]=NULL;
-//                sleep(3);
-//                $threads[$data["valores"][$i]["id"]]=new Jos_Thread($data["valores"][$i]["id"],$cmd,true);
-//                $threads[$data["valores"][$i]["id"]]->start();
-//                echo "Camara ".$data["valores"][$i]["id"]." reiniciada\n";
-//            }
+                $threads[$data["valores"][$i]["id"]]->stop();
+                $threads[$data["valores"][$i]["id"]]=NULL;
+                sleep(3);
+                $threads[$data["valores"][$i]["id"]]=new Jos_Thread($data["valores"][$i]["id"],$cmd,true);
+                $threads[$data["valores"][$i]["id"]]->start();
+                echo "Camara ".$data["valores"][$i]["id"]." reiniciada\n";
+            }
             
             
             
@@ -152,7 +167,7 @@ while(true){
             
         }
     }
-    exit;
+    //exit;
     
     /*
     foreach($threads as $camara_id=>$th){
