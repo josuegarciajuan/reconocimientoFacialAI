@@ -484,7 +484,7 @@ def enfocar_imagen(image, kernel_size=(7, 7), sigma=2.0, amount=1.5, threshold=0
 def es_frontal_new(imagePath):
     
     input = io.imread(imagePath)
-    preds = fa.get_landmarks(input)
+    preds = fa.get_landmarks(input) 
 
     es_frontal=False
 
@@ -569,7 +569,8 @@ while sigue:
         if enfoque>0:
             printLog('Es enfocada de momento:'+imagePath)
             #if esfrontal(imagePath):
-            if es_frontal_new(imagePath):
+            # if es_frontal_new(imagePath):
+            if True:
                 ficheros.append(name_file)
                 ficheros_path.append(imagePath)
                 ficheros_enfoque.append(enfoque)
