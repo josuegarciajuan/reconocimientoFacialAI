@@ -116,7 +116,7 @@ printLog("paso0")
 
 def anyade_datos_def(maximo,count,knownEncoding,knownName,knownPoint,ganador_name,knownIdentificadorunic,knownEnfoque):
 
-    # printLog("anyade_datos_def, count:"+str(count))
+    printLog("anyade_datos_def, count:"+str(count))
 
     knownEncodings_def=[]
     knownNames_def=[]
@@ -128,14 +128,14 @@ def anyade_datos_def(maximo,count,knownEncoding,knownName,knownPoint,ganador_nam
 
 
     if count<MAXIMAS_REPETICIONES_GUARDADO:
-        #printLog("cokmo count < MAXIMAS_REPETICIONES_GUARDADO("+str(MAXIMAS_REPETICIONES_GUARDADO)+")")
+        printLog("cokmo count < MAXIMAS_REPETICIONES_GUARDADO("+str(MAXIMAS_REPETICIONES_GUARDADO)+")")
         knownEncodings_def.append(knownEncoding)
         knownNames_def.append(knownName)
         knownPoints_def.append(knownPoint)
         knownIdentificadorunico_def.append(knownIdentificadorunic)
         knownEnfoque_def.append(knownEnfoque)
 
-        #printLog("anyado el encoding pasado, y el enfoque pasado:"+str(knownEnfoque))
+        printLog("anyado el encoding pasado, y el enfoque pasado:"+str(knownEnfoque))
 
         for ff in range(0,len(data["encodings"])):
             knownEncodings_def.append(data["encodings"][ff])
@@ -143,7 +143,7 @@ def anyade_datos_def(maximo,count,knownEncoding,knownName,knownPoint,ganador_nam
             knownPoints_def.append(data["points"][ff])
             knownIdentificadorunico_def.append(data["identificadoresunicos"][ff])
             knownEnfoque_def.append(data["enfoque"][ff])
-            #printLog("anyado encoding q ya abia de este name"+data["names"][ff]+", y el enfoque:"+data["enfoque"][ff])
+            printLog("anyado encoding q ya abia de este name"+data["names"][ff]+", y el enfoque:"+data["enfoque"][ff])
 
     else:
         if knownPoint >= maximo:      
@@ -175,7 +175,7 @@ def anyade_datos_def(maximo,count,knownEncoding,knownName,knownPoint,ganador_nam
                     knownEnfoque_def.append(data["enfoque"][ff])
 
 
-    #printLog("anyado todo lo recabado")
+    printLog("anyado todo lo recabado")
     data = {"encodings": knownEncodings_def, "names": knownNames_def, "points": knownPoints_def, "identificadoresunicos": knownIdentificadorunico_def, "enfoque": knownEnfoque_def}
     with FileLock('motor/bbdd_reconocimiento/'+LOCAL_ID+'/face_enc'):
         f = open('motor/bbdd_reconocimiento/'+LOCAL_ID+'/face_enc', "wb")
@@ -184,7 +184,7 @@ def anyade_datos_def(maximo,count,knownEncoding,knownName,knownPoint,ganador_nam
 
 def anyade_datos(knownEncodings1,knownNames1,knownPoints1,ganador_name,knownIdentificadorunico1,knownEnfoque1):
 
-    #printLog("blokeado fichero y anyade_datos de "+ganador_name)
+    printLog("blokeado fichero y anyade_datos de "+ganador_name)
 
     count=0
     maximo=0
@@ -192,18 +192,18 @@ def anyade_datos(knownEncodings1,knownNames1,knownPoints1,ganador_name,knownIden
     data = pickle.loads(open('motor/bbdd_reconocimiento/'+LOCAL_ID+'/face_enc', "rb").read())
     for ff in range(0,len(data["encodings"])):
         if data["names"][ff]==ganador_name:
-            #printLog("ya tenia encoding")
+            printLog("ya tenia encoding")
             count=count+1
             if data["points"][ff]>maximo:
                 maximo=data["points"][ff]
-                #printLog("este es el maximo de momento:"+str(maximo))
+                printLog("este es el maximo de momento:"+str(maximo))
         
-    #printLog("maximo definitivo:"+str(maximo))
+    printLog("maximo definitivo:"+str(maximo))
 
     for ff in range(0,len(knownEncodings1)):
-        #printLog("nuevo encoding pasado qe se va a anyadir:"+knownEncodings1[ff])
+        printLog("nuevo encoding pasado qe se va a anyadir:"+knownEncodings1[ff])
         anyade_datos_def(maximo,count,knownEncodings1[ff],knownNames1[ff],knownPoints1[ff],ganador_name,knownIdentificadorunico1[ff],knownEnfoque1[ff])
-    #printLog("Finalmente fichero desbloekado")
+    printLog("Finalmente fichero desbloekado")
 
 def rect_to_bb(rect):
 
@@ -533,23 +533,23 @@ def es_frontal_new(imagePath):
 
     return es_frontal
 
-#printLog("paso1")
+printLog("paso1")
 
 
 path_imgs='motor/caras/sinclasificar/'+LOCAL_ID+"/"+CAMARA_ID+"/"
 #path_imgs="/home/testuser/motor/pruebas/"
 
 
-# printLog("paso2")
+printLog("paso2")
 count_global=0
 sigue=True
 while sigue:
-    #printLog("INI procesando......")
+    printLog("INI procesando......")
 
 
     #vale esto es para 
 
-    # printLog("recojo ficheros disponibles..")
+    printLog("recojo ficheros disponibles..")
 
     imagePaths = list(paths.list_images(path_imgs))
 
@@ -574,7 +574,7 @@ while sigue:
                 ficheros.append(name_file)
                 ficheros_path.append(imagePath)
                 ficheros_enfoque.append(enfoque)
-                # printLog('en ficheros anyado:'+name_file)
+                printLog('en ficheros anyado:'+name_file)
                 printLog('es frontal y enfocada:'+imagePath)
                 pasaprimerosfiltros=True
             
@@ -596,10 +596,10 @@ while sigue:
         ficheros.append(name_file)
         ficheros_path.append(imagePath)
         """
-        # printLog('en ficheros anyado:'+name_file)
-        # printLog('en ficheros_path anyado:'+imagePath)
+        printLog('en ficheros anyado:'+name_file)
+        printLog('en ficheros_path anyado:'+imagePath)
         
-    # printLog("Llego")    
+    printLog("Llego")    
     # exit()
 
 
@@ -637,13 +637,15 @@ while sigue:
     iniciado=False
 
 
-    # printLog("ordenando ficheros por proximidad")
+    printLog("ordenando ficheros por proximidad")
     for (i, fichero) in enumerate(ficheros):
         """
         printLog("->i:"+str(i))
         printLog('ordenando ficheros por proximidad,   Nombre fichero:'+fichero) 
         printLog('Pero este Path?:'+ficheros_path[i]) 
         """
+        printLog('ordenando ficheros por proximidad,   Nombre fichero:'+fichero) 
+
 
         aux=fichero.split('_')
         camara_id=aux[0]
@@ -669,18 +671,18 @@ while sigue:
 
         fecha_completa=fecha+' '+hora
 
-        # printLog("fecha_completa:"+str(fecha_completa))
+        printLog("fecha_completa:"+str(fecha_completa))
         
 
         fecha_datetime = datetime.strptime(fecha_completa, '%Y-%m-%d %H:%M:%S')
         segundos_datetime = timedelta(0, int(segundos))
 
-        # printLog("segundos:"+segundos)
-        # printLog("segundos_datetime:"+str(segundos_datetime))
+        printLog("segundos:"+segundos)
+        printLog("segundos_datetime:"+str(segundos_datetime))
 
         fecha_datetime_definitiva = fecha_datetime+segundos_datetime
 
-        # printLog("fecha_datetime_definitiva:"+str(fecha_datetime_definitiva))
+        printLog("fecha_datetime_definitiva:"+str(fecha_datetime_definitiva))
         
 
 
@@ -691,23 +693,23 @@ while sigue:
 
 
         if len(encodings)>0:
-            # printLog("tiene encodings")
+            printLog("tiene encodings")
             if iniciado:
 
                 diferencia=fecha_datetime_definitiva-anterior
 
-                # printLog("Ya no es el 1º en analizar, y la diferencia con el anterior es "+str(diferencia)+" - pues el anterior es:"+str(anterior)+" - y la actual es:"+str(fecha_datetime_definitiva))
+                printLog("Ya no es el 1º en analizar, y la diferencia con el anterior es "+str(diferencia)+" - pues el anterior es:"+str(anterior)+" - y la actual es:"+str(fecha_datetime_definitiva))
 
                 if diferencia<=cinco_segundos:
-                    # printLog("pertenece al mismo grupo pues la diferencia es < 5 segs con el anterior")
-                    # printLog("lo anyado a:"+str(count-1))
+                    printLog("pertenece al mismo grupo pues la diferencia es < 5 segs con el anterior")
+                    printLog("lo anyado a:"+str(count-1))
 
                     baterias[count-1].append(fecha_datetime_definitiva)
                     baterias_ficheros[count-1].append(fichero)
                     encoders[count-1].append(encodings[0])
                     baterias_enfoques[count-1].append(ficheros_enfoque[i])
                 else:
-                    # printLog("El grupo es nuevo por que la diferencia es >5segs con el anterior")
+                    printLog("El grupo es nuevo por que la diferencia es >5segs con el anterior")
 
                     new_bateria=[fecha_datetime_definitiva]
                     baterias.append(new_bateria)
@@ -721,12 +723,12 @@ while sigue:
                     new_bateria_enfoques=[ficheros_enfoque[i]]
                     baterias_enfoques.append(new_bateria_enfoques)
 
-                    # printLog("lo anyado a:"+str(count))
+                    printLog("lo anyado a:"+str(count))
 
                     count=count+1
 
             else:
-                # printLog("Es el 1º en analizar")
+                printLog("Es el 1º en analizar")
                 iniciado=True
 
                 new_bateria=[fecha_datetime_definitiva]
@@ -750,13 +752,13 @@ while sigue:
             printLog("Esta imagen no tiene caras1")
             copyfile(ficheros_path[i] , "./motor/removidas/notienecaras/"+fichero)
             os.remove(ficheros_path[i])
-            # printLog("imagen removida:"+ficheros_path[i])
+            printLog("imagen removida:"+ficheros_path[i])
 
-        # printLog()    
-        # printLog()    
+        printLog()    
+        printLog()    
 
 
-    """
+    
     printLog("Ficheros ordenados por proximidad:")
     printLog(baterias_ficheros)
     printLog()
@@ -765,7 +767,7 @@ while sigue:
     printLog()
     printLog('----')
     printLog("creo array de comparacion ")
-    """
+    
 
     comparaciones = []
 
@@ -782,7 +784,7 @@ while sigue:
         i=i+1                       
 
     
-    """
+    
     printLog("Array bateria fechas")
     printLog(baterias)
 
@@ -795,10 +797,10 @@ while sigue:
 
     printLog()
     printLog()
-    # printLog()
-    """
+    printLog()
+    
 
-    # printLog("veo cuales superan")    
+    printLog("veo cuales superan")    
     superan = []
     i=0
     for b in comparaciones:
@@ -813,14 +815,14 @@ while sigue:
             j=j+1    
         i=i+1                       
         
-    """        
+    
     printLog("Array superan")
     printLog(superan)
     printLog()
     printLog()
-    # printLog()
-    """
-    #printLog("Ara ya creo grupos de la misma hora y de mismas personas")
+    printLog()
+    
+    printLog("Ara ya creo grupos de la misma hora y de mismas personas")
 
 
 
@@ -835,31 +837,31 @@ while sigue:
             k=0
 
             if j==0:
-                # printLog("estoy en el j=0,preparo qe tenemos 1 grupo")
+                printLog("estoy en el j=0,preparo qe tenemos 1 grupo")
                 num_grupos=1
             else:    
-                # printLog("estamos en j="+str(j)+", por lo qe preparo a ver si este o alguno de sus compañeros los meto donde")
+                printLog("estamos en j="+str(j)+", por lo qe preparo a ver si este o alguno de sus compañeros los meto donde")
                 esta_alguno=False
                 encual=0
 
 
             for b3 in superan[i][j]: 
                 if j==0:
-                    # printLog("para superan de i,j:"+str(i)+","+str(j)+"anyado elemento a grupo inicial")
+                    printLog("para superan de i,j:"+str(i)+","+str(j)+"anyado elemento a grupo inicial")
                     grupos[i][num_grupos-1].append(superan[i][j][k])
                     veces[i][num_grupos-1].append(1)
                 else:
-                    # printLog("Ya no estoy en el j inicial de este grupo de imgs:"+str(i)+", por lo qe voy a ver donde los meto, tenemos:"+str(superan[i][j][k]))
+                    printLog("Ya no estoy en el j inicial de este grupo de imgs:"+str(i)+", por lo qe voy a ver donde los meto, tenemos:"+str(superan[i][j][k]))
 
                     
                     h=0
                     for b4 in grupos[i]: 
                         w=0
                         for b5 in grupos[i][h]: 
-                            # printLog("recorriendo los grupos, tenemos ("+str(i)+","+str(h)+","+str(w)+") :"+str(grupos[i][h][w]))
+                            printLog("recorriendo los grupos, tenemos ("+str(i)+","+str(h)+","+str(w)+") :"+str(grupos[i][h][w]))
 
                             if superan[i][j][k]==grupos[i][h][w]:
-                                # printLog("como ya estaba metido, marco como qe esta y ara metere a todos sus compañeros meto todos sus compañeros:")
+                                printLog("como ya estaba metido, marco como qe esta y ara metere a todos sus compañeros meto todos sus compañeros:")
                                 esta_alguno=True
                                 encual=h
                                 veces[i][h][w]=veces[i][h][w]+1
@@ -871,37 +873,37 @@ while sigue:
             if j>0:
                 if not esta_alguno:
                     #creo nuevo grupo
-                    # printLog("no habia ninguno metido, por lo qe creo nuevo grupo con estos")
+                    printLog("no habia ninguno metido, por lo qe creo nuevo grupo con estos")
 
                     l=0
                     num_grupos=num_grupos+1
                     for b3 in superan[i][j]: 
-                        # printLog("Voy a anyadir:"+str(superan[i][j][l]))
+                        printLog("Voy a anyadir:"+str(superan[i][j][l]))
                         grupos[i][num_grupos-1].append(superan[i][j][l])
                         veces[i][num_grupos-1].append(1)
                         l=l+1
                     
                 else:
-                    # printLog("ya habia alguno metido por lo qe los demas los meto en el grupo en el cual habia alguno")
+                    printLog("ya habia alguno metido por lo qe los demas los meto en el grupo en el cual habia alguno")
 
                     l=0
                     for b6 in superan[i][j]: 
-                        # printLog("trato de meter "+str(superan[i][j][l]))
+                        printLog("trato de meter "+str(superan[i][j][l]))
                         if not superan[i][j][l] in grupos[i][encual]:
                             grupos[i][encual].append(superan[i][j][l])
                             veces[i][encual].append(1)
-                            # printLog("como no estaba, lo meto")
+                            printLog("como no estaba, lo meto")
                         else:
-                            # printLog("ya estaba")    
+                            printLog("ya estaba")    
                             josue=True # sentencia auxiliar para no dejar el else vacio qe sino peta
                         l=l+1
                 
             j=j+1 
-            # printLog("traceando2:")
-            # printLog(grupos)   
+            printLog("traceando2:")
+            printLog(grupos)   
         i=i+1  
     
-    """
+    
     printLog("grupos") 
     printLog(grupos) 
     printLog("veces") 
@@ -909,7 +911,7 @@ while sigue:
     printLog('-----------------------------------------------------------------------')    
     # exit()
 
-    """
+
     """
     i=0
     for b in grupos:
@@ -940,9 +942,9 @@ while sigue:
         for b2 in grupos[i]: 
             if len(grupos[i][j])>0:
                 k=0
-                # printLog()
-                # printLog()
-                # printLog()
+                printLog()
+                printLog()
+                printLog()
                 printLog("tenemos grupo de imagenes qe son supuestamente la misma persona")
 
 
@@ -1057,7 +1059,7 @@ while sigue:
                         boxes = face_recognition.face_locations(rgb,model='cnn')
                         encodings = face_recognition.face_encodings(rgb, boxes)
 
-                        # printLog("analizando esta imagen:"+path_imgs+name_file)
+                        printLog("analizando esta imagen:"+path_imgs+name_file)
 
                         if(len(encodings)>1):
                             printLog("Esto no puede pasar")
@@ -1071,7 +1073,7 @@ while sigue:
                             if veces[i][j][k]>ganador_vec:
                                 ganador_idx=k
                                 ganador_vec=veces[i][j][k]
-                                # printLog("ganador_idx:"+str(ganador_idx))
+                                printLog("ganador_idx:"+str(ganador_idx))
 
                             hay_cara=True 
 
@@ -1090,18 +1092,18 @@ while sigue:
                             for encoding in encodings:
                                 data = pickle.loads(open('motor/bbdd_reconocimiento/'+LOCAL_ID+'/face_enc', "rb").read())
 
-                                # printLog("numero encodings")
-                                # printLog(len(encodings))
-                                # printLog()
-                                # printLog()
-                                # printLog("encodings guardados")
-                                # printLog(data["encodings"])
-                                # printLog()
-                                # printLog()
-                                # printLog("encoding actual")
-                                # printLog(encoding)
-                                # printLog()
-                                # printLog()
+                                printLog("numero encodings")
+                                printLog(len(encodings))
+                                printLog()
+                                printLog()
+                                printLog("encodings guardados")
+                                printLog(data["encodings"])
+                                printLog()
+                                printLog()
+                                printLog("encoding actual")
+                                printLog(encoding)
+                                printLog()
+                                printLog()
 
                                 face_distances = face_recognition.face_distance(data["encodings"],encoding)
 
@@ -1112,18 +1114,18 @@ while sigue:
 
                                 for fa, face_distance in enumerate(face_distances):
 
-                                    #printLog()
-                                    #printLog("para este name:"+data["names"][fa]+", es "+str(face_distance))
-                                    #printLog("para este name:"+data["names"][fa]+", su enfoque era: "+str(data["enfoque"][fa])+", y la img que estoy analizando:"+str(enfoque))
+                                    printLog()
+                                    printLog("para este name:"+data["names"][fa]+", es "+str(face_distance))
+                                    printLog("para este name:"+data["names"][fa]+", su enfoque era: "+str(data["enfoque"][fa])+", y la img que estoy analizando:"+str(enfoque))
 
 
                                     if data["names"][fa] in puntuaciones:
-                                        # printLog("paso1")
+                                        printLog("paso1")
                                         veces2[data["names"][fa]]=veces2[data["names"][fa]]+1
                                         puntuaciones[data["names"][fa]]=puntuaciones[data["names"][fa]]+face_distance
 
                                     else:
-                                        # printLog("paso2:"+str(face_distance))
+                                        printLog("paso2:"+str(face_distance))
                                         puntuaciones[data["names"][fa]] = face_distance
                                         veces2[data["names"][fa]] = 1
 
@@ -1137,7 +1139,7 @@ while sigue:
                                     #if enfoque<=UMBRAL_ENFOQUE and data["enfoque"][fa]<=UMBRAL_ENFOQUE:
                                     if enfoque>UMBRAL_ENFOQUE and data["enfoque"][fa]>UMBRAL_ENFOQUE:
                                         #cojo el enfocado
-                                        #printLog("Las 2 son enfocadas")
+                                        printLog("Las 2 son enfocadas")
                                         umbral=umbral_enfocado
                                         umbral_solounaodos=umbral_solounaodos_enfocado
                                         umbral_delasmedias=umbral_delasmedias_enfocado
@@ -1147,11 +1149,11 @@ while sigue:
                                         umbral_junto2=umbral_junto2_enfocado
                                         porcentaje_veces_supera=porcentaje_veces_supera_enfocado
                                     else:
-                                        #printLog("alguna de las 2 esta desenfocada")
+                                        printLog("alguna de las 2 esta desenfocada")
                                         #si la diferencia de las 2 del enfoque es < UMBRAL_DIFERENCIA_ENFOQUE
                                         diferencia_enfoque=abs(enfoque - data["enfoque"][fa])
                                         if diferencia_enfoque<=UMBRAL_DIFERENCIA_ENFOQUE:
-                                            #printLog("hay muy poca diferencia entre el enfoque de de las 2, la diferencia es:"+str(diferencia_enfoque))
+                                            printLog("hay muy poca diferencia entre el enfoque de de las 2, la diferencia es:"+str(diferencia_enfoque))
                                             umbral=umbral_enfocado
                                             umbral_solounaodos=umbral_solounaodos_enfocado
                                             umbral_delasmedias=umbral_delasmedias_enfocado
@@ -1161,7 +1163,7 @@ while sigue:
                                             umbral_junto2=umbral_junto2_enfocado
                                             porcentaje_veces_supera=porcentaje_veces_supera_enfocado
                                         else:
-                                            #printLog("la diferencia de enfoque entre las 2 es muy grande, la diferencia es:"+str(diferencia_enfoque))
+                                            printLog("la diferencia de enfoque entre las 2 es muy grande, la diferencia es:"+str(diferencia_enfoque))
                                             #cojo el desenfocado
                                             umbral=umbral_desenfocado
                                             umbral_solounaodos=umbral_solounaodos_desenfocado
@@ -1187,27 +1189,27 @@ while sigue:
                                     
 
                                         if data["names"][fa] in puntuaciones_supera:
-                                            # printLog("paso1")
+                                            printLog("paso1")
                                             veces_supera[data["names"][fa]]=veces_supera[data["names"][fa]]+1
                                             puntuaciones_supera[data["names"][fa]]=puntuaciones_supera[data["names"][fa]]+face_distance
 
                                         else:
-                                            # printLog("paso2:"+str(face_distance))
+                                            printLog("paso2:"+str(face_distance))
                                             puntuaciones_supera[data["names"][fa]] = face_distance
                                             veces_supera[data["names"][fa]] = 1
 
 
 
                                         if not data["names"][fa] in ganadores:
-                                            # printLog("Como no estaba en ganadores, lo anyado")    
+                                            printLog("Como no estaba en ganadores, lo anyado")    
                                             ganadores.append(data["names"][fa])
 
 
                                         printLog("!!!!!!!supera el umbral con este nombre:"+data["names"][fa])
                                         printLog("puntuacion:"+str(face_distance))
                                     #else:
-                                        #printLog("No supera los umbrales de que es la misma")    
-                                    # printLog("veces superado:"+str(veces_supera[data["names"][fa]]))
+                                        printLog("No supera los umbrales de que es la misma")    
+                                    printLog("veces superado:"+str(veces_supera[data["names"][fa]]))
 
                                     printLog()
 
@@ -1280,11 +1282,11 @@ while sigue:
                         media=puntuaciones[g]/veces2[g]
                         media_supera=puntuaciones_supera[g]/veces_supera[g]
                         # definitivo=media/veces2[g]
-                        # printLog("el nombre:"+g+", tienes esta media:"+str(media)+" y aparece estas veces:"+str(veces2[g]))
-                        # printLog("el nombre:"+g+", tienes esta media_supera:"+str(media_supera)+" y supera estas veces:"+str(veces_supera[g]))
-                        # printLog("ademas la puntuacion definitiva es (media/veces):"+str(definitivo))
+                        printLog("el nombre:"+g+", tienes esta media:"+str(media)+" y aparece estas veces:"+str(veces2[g]))
+                        printLog("el nombre:"+g+", tienes esta media_supera:"+str(media_supera)+" y supera estas veces:"+str(veces_supera[g]))
+                        printLog("ademas la puntuacion definitiva es (media/veces):"+str(definitivo))
 
-                        # printLog("Pero Voy a recalcular las medias con el metodo de eliminar el ruido:")
+                        printLog("Pero Voy a recalcular las medias con el metodo de eliminar el ruido:")
 
                         m1=0 #supera
                         m2=0
@@ -1295,7 +1297,7 @@ while sigue:
                         count_supera=0
                         for r1 in range(0,len(listado_puntuaciones[g])):
 
-                            # printLog("efectivamente es lista:"+str(listado_puntuaciones[g][r1]))
+                            printLog("efectivamente es lista:"+str(listado_puntuaciones[g][r1]))
 
                             m1=m1+listado_puntuaciones[g][r1]
                             if listado_puntuaciones[g][r1]>max1:
@@ -1414,10 +1416,10 @@ while sigue:
 
 
                                 if activate:
-                                    # printLog("la media supera el umbral con esta media:"+str(media)+", y esta puntuacion qe supera:"+str(puntuacion))
+                                    printLog("la media supera el umbral con esta media:"+str(media)+", y esta puntuacion qe supera:"+str(puntuacion))
                                     #if media<puntuacion:
                                     if lapuntuaciondefinitiva<puntuacion:
-                                        # printLog("voy a actualizar el segundo con estos datos:"+ganador+" - "+str(puntuacion)+" - "+str(veces_ganador)+" - "+str(veces_supera_ganador))
+                                        printLog("voy a actualizar el segundo con estos datos:"+ganador+" - "+str(puntuacion)+" - "+str(veces_ganador)+" - "+str(veces_supera_ganador))
 
 
                                         tercero_def=segundo
@@ -1437,9 +1439,9 @@ while sigue:
 
 
 
-                                        # printLog("Es menor qe la puntuacion actual y lo guardo como ganador")
-                                        # printLog()
-                                        # printLog()
+                                        printLog("Es menor qe la puntuacion actual y lo guardo como ganador")
+                                        printLog()
+                                        printLog()
                                         ganador = g
                                         puntuacion = media
                                         veces_ganador=veces2[g]
@@ -1518,7 +1520,7 @@ while sigue:
                         
 
 
-                # printLog("img analizada!!!!!!!!!!!!!!!!!!!!!!!!!")
+                printLog("img analizada!!!!!!!!!!!!!!!!!!!!!!!!!")
                 printLog()
 
                 #k=k+1
@@ -1610,7 +1612,7 @@ while sigue:
 
 
                     if hay_ganador:
-                        #printLog("Hay ganador con estos puntos: "+ganador_pts+" y el umbral de las medias es: "+umbral_delasmedias)
+                        printLog("Hay ganador con estos puntos: "+ganador_pts+" y el umbral de las medias es: "+umbral_delasmedias)
                         #if ganador_pts>umbral_delasmedias:
                         printLog("Hay ganador con estos puntos: "+str(lapuntuaciondefinitiva)+" y el umbral de las medias es: "+str(umbral_delasmedias))
                         if puntuacion>umbral_delasmedias:
@@ -1636,10 +1638,10 @@ while sigue:
                     # encoding=losencodings[ganador_idx]
                     
                     
-                    # printLog("el encoding qe voy a guardar al final para esta imagen es:")
-                    # printLog(encoding1)
-                    # printLog("qe sale de es este ganador_idx:"+str(ganador_idx))
-                    # printLog()
+                    printLog("el encoding qe voy a guardar al final para esta imagen es:")
+                    printLog(encoding1)
+                    printLog("qe sale de es este ganador_idx:"+str(ganador_idx))
+                    printLog()
 
 
                     proc = subprocess.Popen("php ws.php fotos_identificadorunico", shell=True, stdout=subprocess.PIPE)
@@ -1727,21 +1729,21 @@ while sigue:
 
 printLog('-----------------------------------------------------------------------')
 
-# printLog("baterias")
-# printLog(baterias)
-# printLog()
-# printLog()
-# printLog()
+printLog("baterias")
+printLog(baterias)
+printLog()
+printLog()
+printLog()
 printLog("baterias_ficheros")
 printLog(baterias_ficheros)
 printLog()
 printLog()
 printLog()
-# printLog("encoders")
-# printLog(encoders)
-# printLog()
-# printLog()
-# printLog()
+printLog("encoders")
+printLog(encoders)
+printLog()
+printLog()
+printLog()
 printLog("comparaciones")
 printLog(comparaciones)
 printLog()

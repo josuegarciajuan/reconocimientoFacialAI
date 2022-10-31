@@ -9,7 +9,7 @@ ssh -i ~/.ssh/id_rsa eladmin@reconocimien.vps.webdock.cloud
 mc . sftp://eladmin:prueba123@reconocimien.vps.webdock.cloud/var/www/
 MYSQL: Prueba123!
 
-scp eladmin@45.136.71.235:/var/www/html/reconocimientofacialV2/motor/removidas/nopasafiltros .
+scp eladmin@45.136.71.235:/var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/1/1/* .
 /home/testuser/motor/videos/1/1
 
 camaras
