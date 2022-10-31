@@ -303,8 +303,6 @@ for iii in range(longitud):
 
 
 
-#-FIN-procesamiento de lineas
-
 
 
 
@@ -619,9 +617,9 @@ while(cap.isOpened()):
 
 
 
-                rostro = img_original[ydef:y1def, xdef:x1def]
+                # rostro = img_original[ydef:y1def, xdef:x1def]
                 # rostro = img[y-50:y1+50, x-50:x1+50]
-
+                rostro = img_original
 
                 sigue=True
                 if(type(rostro) == type(None)):

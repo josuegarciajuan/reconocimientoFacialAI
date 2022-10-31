@@ -291,7 +291,7 @@ while True:
         parando=False    
         grabando=False
         out.release()
-        # #subir_video(video_actual)
+        subir_video(video_actual)
         #_thread.start_new_thread(subir_video, (video_actual,))
         num_video=num_video+1
         #if motion_list[-1] == 1 and motion_list[-2] == 1 and motion_list[-3] == 1 and motion_list[-4] == 1 and motion_list[-5] == 1 and motion_list[-6] == 0:
@@ -315,7 +315,7 @@ while True:
     # cv2.imshow("Threshold Frame", thresh_frame)
 
     # Displaying color frame with contour of motion of object
-    cv2.imshow("Color Frame", frame)
+    # cv2.imshow("Color Frame", frame)
 
     #->key = cv2.waitKey(10)
 

@@ -78,7 +78,9 @@ while(true){
 
 
             $cmd.="";
-                    
+//python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.52:554/cam/realmonitor?channel=1&subtype=0' 1 1 21 21 42 255 1200 60 30 24 100 120 0.60 10.0
+        
+
             echo $cmd."\n\n";
             exit;
 
