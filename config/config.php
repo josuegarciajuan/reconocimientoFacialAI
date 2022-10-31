@@ -37,7 +37,7 @@ define("CONFIG_UBRAL1","20");
 define("CONFIG_UBRAL2","30");
 define("CONFIG_UBRAL3","48");
 define("CONFIG_UBRAL4","58");
-define("CONFIG_UBRAL5","65"); //> que esto es correcta
+define("CONFIG_UBRAL5","69"); //> que esto es correcta
 
 /*
  * procesa_video_registro.php  ->  procesa_video_registro_1.py y procesa_video_registro_2.py
