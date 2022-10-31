@@ -42,7 +42,7 @@ while(true){
     $sql->Consultar("locales", "*", "id>0", "id asc", false);
     if($sql->num>0){
         do{
-            $tmp->Consultar("camaras", "*", "local_id=".$sql->row["id"]." and encendida=1", "id asc", false);
+            $tmp->Consultar("camaras", "*", "local_id=".$sql->row["id"]." and encendida=1", "id asc", true);
             if($tmp->num>0){
                 
                 echo "el local ".$sql->row["id"]." tiene camaras encendidas\n";
