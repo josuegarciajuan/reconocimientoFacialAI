@@ -577,6 +577,7 @@ while sigue:
                 printLog('en ficheros anyado:'+name_file)
                 printLog('es frontal y enfocada:'+imagePath)
                 pasaprimerosfiltros=True
+                printLog("test")
             
 
 
