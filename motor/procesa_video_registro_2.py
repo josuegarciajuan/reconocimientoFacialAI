@@ -37,7 +37,7 @@ RUTA_PROYECTO=sys.argv[4]
 
 # UMBRAL_ENFOQUE_MAXIMO=300 # menos de este desenfoque , se descartan
 #UMBRAL_ENFOQUE_MAXIMO_CARA=120 #menos de este enfoque se descartan ,pero solo actuando sobre la cara
-UMBRAL_ENFOQUE_MAXIMO_CARA==sys.argv[5]
+UMBRAL_ENFOQUE_MAXIMO_CARA=sys.argv[5]
 
 
 """
