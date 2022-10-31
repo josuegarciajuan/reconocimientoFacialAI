@@ -590,14 +590,14 @@ while sigue:
 
 
         
-        printLog()
+        printLog("buclend")
         printLog()
         """
         ficheros.append(name_file)
         ficheros_path.append(imagePath)
         """
-        printLog('en ficheros anyado:'+name_file)
-        printLog('en ficheros_path anyado:'+imagePath)
+        # printLog('en ficheros anyado:'+name_file)
+        # printLog('en ficheros_path anyado:'+imagePath)
         
     printLog("Llego")    
     # exit()
