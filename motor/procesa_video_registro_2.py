@@ -266,7 +266,7 @@ def anyade_datos_def(maximo,count,knownEncoding,knownName,knownPoint,ganador_nam
 
     printLog("pruebas")
     for ff in range(0,len(knownNames_def)):
-        printLog("este name"+knownNames_def[ff]+", y el enfoque:"+knownEnfoque_def[ff])
+        printLog("este name"+knownNames_def[ff]+", y el enfoque:"+str(knownEnfoque_def[ff]))
 
 
 
@@ -278,7 +278,7 @@ def anyade_datos_def(maximo,count,knownEncoding,knownName,knownPoint,ganador_nam
         knownPoints_def.append(data["points"][ff])
         knownIdentificadorunico_def.append(data["identificadoresunicos"][ff])
         knownEnfoque_def.append(data["enfoque"][ff])
-        printLog("anyado encoding q ya abia de este name"+data["names"][ff]+", y el enfoque:"+data["enfoque"][ff])
+        printLog("anyado encoding q ya abia de este name"+data["names"][ff]+", y el enfoque:"+str(data["enfoque"][ff]))
 
 
     #printLog("anyado todo lo recabado")
