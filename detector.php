@@ -109,7 +109,7 @@ while(true){
                     $cmd[]="python3.7 motor/procesa_fotos_def_borrosaparteV2.py ".$sql->row["id"]." ".$tmp->row["id"]." '".RUTA_PROYECTO."' ".$params;
                     //$cmd[]="python3.7 motor/cruza_lineas_V2.py ".$sql->row["id"]." ".$tmp->row["id"];
                     //var_dump($cmd);
-                    
+                    /*
                     for($i=0;$i<count($cmd);$i++){
                         echo $cmd[$i]."\n";
                         
@@ -140,7 +140,7 @@ while(true){
                                 }
                             }
                         }
-                    }
+                    }*/
                     //exit;
                     
 
@@ -229,7 +229,7 @@ while(true){
                                     $cmd1=RUTA_PYTHON." ".RUTA_PROYECTO."motor/procesa_videosV6.py ".$sql->row["id"]." ".$tmp->row["id"]." '".$subidos[$s]."'"." '".RUTA_PROYECTO."' ".CONFIG_SENSIBILIDAD_ES_CARA." '".URL_FTP_BASE."' ".$params." > /dev/null 2>/dev/null &";
                                     echo $cmd1."\n";
                                     exec($cmd1);
-                                    //exit;
+                                    exit;
                                     
                                 }else{
                                     echo "Muchos videos en cola (".$numero_videos."), espero y sigo...\n";

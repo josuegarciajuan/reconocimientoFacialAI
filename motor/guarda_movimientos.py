@@ -316,7 +316,7 @@ while True:
     # cv2.imshow("Threshold Frame", thresh_frame)
 
     # Displaying color frame with contour of motion of object
-    # cv2.imshow("Color Frame", frame)
+    cv2.imshow("Color Frame", frame)
 
     #->key = cv2.waitKey(10)
 
