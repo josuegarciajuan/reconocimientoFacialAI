@@ -228,8 +228,9 @@ while(true){
                                     
                                     $cmd1=RUTA_PYTHON." ".RUTA_PROYECTO."motor/procesa_videosV6.py ".$sql->row["id"]." ".$tmp->row["id"]." '".$subidos[$s]."'"." '".RUTA_PROYECTO."' ".CONFIG_SENSIBILIDAD_ES_CARA." '".URL_FTP_BASE."' ".$params." > /dev/null 2>/dev/null &";
                                     echo $cmd1."\n";
-                                    exec($cmd1);
                                     exit;
+                                    exec($cmd1);
+                                    
                                     
                                 }else{
                                     echo "Muchos videos en cola (".$numero_videos."), espero y sigo...\n";
