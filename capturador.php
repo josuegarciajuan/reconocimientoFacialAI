@@ -82,7 +82,7 @@ while(true){
         
 
             echo $cmd."\n\n";
-            exit;
+  
 
             
             if(!isset($threads[$data["valores"][$i]["id"]]) or $threads[$data["valores"][$i]["id"]]==NULL){
