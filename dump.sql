@@ -51,6 +51,38 @@ INSERT INTO `camaras` VALUES (1,1,'Camara fichador',NULL,'rtsp://admin:bakcAse4@
 /*!40000 ALTER TABLE `camaras` ENABLE KEYS */;
 UNLOCK TABLES;
 
+Camara Josué
+rtsp://admin:bakcAse4@172.16.51.52:554/cam/realmonitor?channel=1&subtype=0
+rtsp://admin:bakcAse4@nouesmalt.duckdns.org:779/cam/realmonitor?channel=1&subtype=0
+
+
+Camara Lorenzo
+172.16.51.223:554 desde local
+nouesmalt.duckdns.org:777 desde fuera
+rtsp://admin:bakcAse4@nouesmalt.duckdns.org:777/cam/realmonitor?channel=1&subtype=0
+
+Camara Recepcion
+172.16.51.225:554 desde local
+nouesmalt.duckdns.org:778 desde fuera
+rtsp://admin:bakcAse4@nouesmalt.duckdns.org:778/cam/realmonitor?channel=1&subtype=0
+
+Camara Escalera
+172.16.51.228:554 desde local
+nouesmalt.duckdns.org:780 desde fuera
+rtsp://admin:bakcAse4@nouesmalt.duckdns.org:780/cam/realmonitor?channel=1&subtype=0
+
+Camara Pasillo
+172.16.51.232:554 desde local
+nouesmalt.duckdns.org:781 desde fuera
+rtsp://admin:bakcAse4@nouesmalt.duckdns.org:781/cam/realmonitor?channel=1&subtype=0
+
+Camara Puerta
+172.16.51.233:554 desde local
+nouesmalt.duckdns.org:782 desde fuera
+rtsp://admin:bakcAse4@nouesmalt.duckdns.org:782/cam/realmonitor?channel=1&subtype=0
+
+
+
 --
 -- Table structure for table `cruces_lineas`
 --
