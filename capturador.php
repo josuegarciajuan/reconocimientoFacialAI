@@ -97,7 +97,7 @@ python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser pr
             
 
             echo $cmd."\n\n";
-            exit;
+            //exit;
 
             
             if(!isset($threads[$data["valores"][$i]["id"]]) or $threads[$data["valores"][$i]["id"]]==NULL){
