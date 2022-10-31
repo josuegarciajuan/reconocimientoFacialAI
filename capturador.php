@@ -85,35 +85,35 @@ while(true){
   
 
             
-            if(!isset($threads[$data["valores"][$i]["id"]]) or $threads[$data["valores"][$i]["id"]]==NULL){
-                echo "No existia el proceso, es una camara nueva encendida\n";
-                echo $cmd."\n\n";
-                $threads[$data["valores"][$i]["id"]]=new Jos_Thread($data["valores"][$i]["id"],$cmd,true);
-                $threads[$data["valores"][$i]["id"]]->start();
-            }
+//            if(!isset($threads[$data["valores"][$i]["id"]]) or $threads[$data["valores"][$i]["id"]]==NULL){
+//                echo "No existia el proceso, es una camara nueva encendida\n";
+//                echo $cmd."\n\n";
+//                $threads[$data["valores"][$i]["id"]]=new Jos_Thread($data["valores"][$i]["id"],$cmd,true);
+//                $threads[$data["valores"][$i]["id"]]->start();
+//            }
             
             
-            $tiempo_final = microtime(true);
+//            $tiempo_final = microtime(true);
             
             //echo "tiempo_final:".$tiempo_final."\n";
             //echo "tiempo_inicial:".$threads[$data["valores"][$i]["id"]]->tiempo_inicial."\n";
             
             
-            $tiempo = $tiempo_final - $threads[$data["valores"][$i]["id"]]->tiempo_inicial; 
+//            $tiempo = $tiempo_final - $threads[$data["valores"][$i]["id"]]->tiempo_inicial; 
             //echo "tiempo en marcha:".$tiempo."\n";
 
-            if($tiempo>CONFIG_TIEMPO_MAXIMO_CAMARAS_ENCENDIDAS){
-                echo "\n\nSupero el tiempo maximo\n\n";
+//            if($tiempo>CONFIG_TIEMPO_MAXIMO_CAMARAS_ENCENDIDAS){
+//                echo "\n\nSupero el tiempo maximo\n\n";
                 //$threads[$data["valores"][$i]["id"]]->tiempo_inicial = microtime(true);
                 
                 
-                $threads[$data["valores"][$i]["id"]]->stop();
-                $threads[$data["valores"][$i]["id"]]=NULL;
-                sleep(3);
-                $threads[$data["valores"][$i]["id"]]=new Jos_Thread($data["valores"][$i]["id"],$cmd,true);
-                $threads[$data["valores"][$i]["id"]]->start();
-                echo "Camara ".$data["valores"][$i]["id"]." reiniciada\n";
-            }
+//                $threads[$data["valores"][$i]["id"]]->stop();
+//                $threads[$data["valores"][$i]["id"]]=NULL;
+//                sleep(3);
+//                $threads[$data["valores"][$i]["id"]]=new Jos_Thread($data["valores"][$i]["id"],$cmd,true);
+//                $threads[$data["valores"][$i]["id"]]->start();
+//                echo "Camara ".$data["valores"][$i]["id"]." reiniciada\n";
+//            }
             
             
             
@@ -152,7 +152,7 @@ while(true){
             
         }
     }
-    //exit;
+    exit;
     
     /*
     foreach($threads as $camara_id=>$th){
