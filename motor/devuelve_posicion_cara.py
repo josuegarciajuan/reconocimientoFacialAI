@@ -319,7 +319,7 @@ def es_posicion_cara(imagePath,posicion):
                     printLog(".............SUPERO prueba 2")
                 printLog("")
 
-                if alineados(3,"V",x[27][0],x[27][1],x[33][0],x[33][1],cin(HOLGURA_90GRADOS_ALINEADOS_VERTICAL)):
+                if alineados(3,"V",x[27][0],x[27][1],x[33][0],x[33][1],int(HOLGURA_90GRADOS_ALINEADOS_VERTICAL)):
                     puntuacion=puntuacion+sumatorio
                     printLog(".............SUPERO prueba 3")
                 printLog("")
