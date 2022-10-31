@@ -1117,6 +1117,8 @@ while sigue:
 
                                     printLog()
                                     printLog("para este name:"+data["names"][fa]+", es "+str(face_distance))
+                                    printLog("el enfoque es:"+str(data["enfoque"][fa]))
+                                    printLog("Y el actual es:"+enfoque)
                                     printLog("para este name:"+data["names"][fa]+", su enfoque era: "+str(data["enfoque"][fa])+", y la img que estoy analizando:"+str(enfoque))
 
 
