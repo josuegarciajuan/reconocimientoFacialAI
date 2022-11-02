@@ -319,7 +319,9 @@ llama y mantiene a motor/guarda_movimientos.py que es llamado por cada camara en
 graba videos cuando detecta movimiento
 (este proceso se puede poner en un ordenador a parte, por que luego sube los videos por ftp al server bueno, así libera memoria)
 ##crea una copia en motor/videos/'+LOCAL_ID+'/'+nombre  que se autoelimina y sube a: FTP_RUTA/motor/videos/'+LOCAL_ID+'/'+CAM_ID+'/'+nombre
-
+(si me lo quiero saltar:
+cp /home/testuser/pruebas/p4/* /home/testuser/motor/videos/1/1 
+)
 
 p5-detector.php
 llama y mantiene comprobando que no se desborde la ram de estos procesos
@@ -329,6 +331,9 @@ el 2º: busca a quien pertence la cara de las fotos sacadas del 1º
 ##p5.1.- guarda las lineas en:motor/fotos_lineas/"+lineas_ids[ii]+"/"+numrandom+".jpg
 ##p5.1.- guarda las caras en motor/caras/sinclasificar/'+LOCAL_ID+'/'+CAMARA_ID+'/'+FICHERO+'_'+str(segs_elapsed)+'.jpg
 ##p5.2.- finalmente las mete en: 'motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name+'/'+name_file+'_'+fotos_identificadorunico+".jpg"
+
+
+
 
 
 rm -R motor/caras/1/C0/*
@@ -377,7 +382,7 @@ procesa_video_registro
 scp eladmin@45.136.71.235:/home/testuser/pruebas/p1/* /home/testuser/pruebas/p1/
 scp eladmin@45.136.71.235:/home/testuser/pruebas/p2/5w7AF4sNu7X6OJYtVU38I3fun/* /home/testuser/pruebas/p2/5w7AF4sNu7X6OJYtVU38I3fun
 scp eladmin@45.136.71.235:/home/testuser/pruebas/p2/face_enc /home/testuser/pruebas/p2/
-
+scp eladmin@45.136.71.235:/home/testuser/pruebas/p4/* /home/testuser/pruebas/p4/
 
 
 
