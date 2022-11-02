@@ -297,9 +297,9 @@ el 1º se encarga de sacar caras de los minivideos
 el 2º se encarga de recorrer estas fotos, descartas las no enfocadas y las enfocadas sacar los encodings y guardarlos
 ##lo separa en minivideos que se guardan en admin/files/videos_registro_videos_partidos
 ##por cada video saca caras que las guarda en: 'motor/caras/sinclasificar_videos/'+'0_'+now+'.avi_'+str(segs_elapsed)+'.jpg'
-##finalmente las mete en: 'motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name+'/'+name_file+'_'+fotos_identificadorunico+".jpg"
+##finalmente las mete en: 'motor/caras/'+LOCAL_ID+'/C0/'+ganador_name+'/'+name_file+'_'+fotos_identificadorunico+".jpg"
 (si me lo quiero saltar:
-cp -R /home/testuser/pruebas/p2/safasf motor/caras/1/1/
+cp -R /home/testuser/pruebas/p2/5w7AF4sNu7X6OJYtVU38I3fun motor/caras/1/C0/
 cp /home/testuser/pruebas/p2/face_enc motor/bbdd_reconocimiento/1/
 )
 
@@ -308,7 +308,10 @@ cp /home/testuser/pruebas/p2/face_enc motor/bbdd_reconocimiento/1/
 p3-php clasificadorV2.php
 con las fotos que ya han guardado los encodings, recorre su lugar de donde se han giuardado, y ya crea las estancias y mueve las fotos a su lugar difinitivo y crea tambien si es persona nueva
 ##las clasifica dependiendo de la carpeta donde estan alojadas y las mete en:admin/caras_procesadas/".$sql->id.".jpg
-(no se puede saltar para hacer prueba pues hace varios inserts)
+(no se puede saltar para hacer prueba pues hace varios inserts, por lo que: php clasificadorV2.php)
+(si me lo quiero saltar:
+cp /home/testuser/pruebas/p3/ 
+)
 
 p4-capturador.php {local_id} {desde(si se pasa un valor es que se usa desde el server si no se pasa es que es desde local)}
 habrá que encender uno de estos procesos por cada local
@@ -347,6 +350,7 @@ rm /home/testuser/motor/videos/1/1/*
 rm motor/*.out
 rm motor/fotos_lineas/1/*
 rm motor/caras/sinclasificar/1/1/*
+rm motor/caras/1/1/*
 rm motor/removidas/tmp/*
 rm motor/removidas/nopasafiltros/*
 rm motor/removidas/notienecaras/*
@@ -370,7 +374,9 @@ exit;
 clasificadorV2
 procesos_panel_control
 procesa_video_registro
-
+scp eladmin@45.136.71.235:/home/testuser/pruebas/p1/* /home/testuser/pruebas/p1/
+scp eladmin@45.136.71.235:/home/testuser/pruebas/p2/5w7AF4sNu7X6OJYtVU38I3fun/* /home/testuser/pruebas/p2/5w7AF4sNu7X6OJYtVU38I3fun
+scp eladmin@45.136.71.235:/home/testuser/pruebas/p2/face_enc /home/testuser/pruebas/p2/
 
 
 
