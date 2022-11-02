@@ -359,6 +359,7 @@ rm motor/caras/1/1/*
 rm motor/removidas/tmp/*
 rm motor/removidas/nopasafiltros/*
 rm motor/removidas/notienecaras/*
+rm aux/*
 cd motor
 python3.7 crear_diccionario_inicial_parametrizado.py 1
 cd ..
