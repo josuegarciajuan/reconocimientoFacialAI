@@ -110,11 +110,11 @@ while(true){
                     //$cmd[]="python3.7 motor/cruza_lineas_V2.py ".$sql->row["id"]." ".$tmp->row["id"];
                     //var_dump($cmd);
                     //python3.7 motor/procesa_fotos_def_borrosaparteV2.py 1 1 0.38 0 0 0 0 0 0 0 0 0.551 0.535 0.551 0.37 12 0.61 0.63 2 0.511 0.491 0.511 0.35 20 0.58 0.61 4 0.531 0.515 0.521 0.36 15 0.58 0.611 4 0.04 500 9 300 1000 120 90 450 1200
-/*                    
+                    
                     for($i=0;$i<count($cmd);$i++){
                         echo $cmd[$i]."\n";
                         
-                        
+                        /*
                         if(!isset($threads[$tmp->row["id"]."_".$i]) or $threads[$tmp->row["id"]."_".$i]==NULL){
                             echo "No existia el proceso:".$tmp->row["id"]."_".$i."\n";
                             $threads[$tmp->row["id"]."_".$i]=new Jos_Thread($tmp->row["id"]."_".$i,$cmd[$i],true);
@@ -141,9 +141,10 @@ while(true){
                                 }
                             }
                         }
+                         * 
+                         */
                     }
-* 
-*/
+
                     //exit;
                     //python3.7 /var/www/html/reconocimientofacialV2/motor/procesa_videosV6.py 1 1 '1_2022-10-31_15:35:20.022061.avi' '/var/www/html/reconocimientofacialV2/' 0.68 '/home/testuser/' 150 5 10 750 562 750 562 3 5 1500 3 0.15 300 300 1.0 353 353 104.0 117.0 123.0 100 150
 
