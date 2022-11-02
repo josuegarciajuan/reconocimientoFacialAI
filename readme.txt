@@ -287,7 +287,7 @@ llama a motor/devuelve_posicion_cara.py y lo mantiene en marcha con threads.
 Se encarga de recorrer esta ruta: RUTA_PROYECTO + "admin/files/videos_registro" y devolver si es la posicion de cara que se espera con una puntuacion
 ##El video de registro se sube a: admin/files/videos_registro_videos/{local_id}_{nombre_persona}.avi
 (si me lo quiero saltar:
-cp home/testuser/pruebas/1_josue.avi admin/files/videos_registro_videos/1_josue.avi
+cp /home/testuser/pruebas/p1/1_josue.avi admin/files/videos_registro_videos/1_josue.avi
 )
 
 p2-php procesa_video_registro.php
@@ -298,12 +298,17 @@ el 2º se encarga de recorrer estas fotos, descartas las no enfocadas y las enfo
 ##lo separa en minivideos que se guardan en admin/files/videos_registro_videos_partidos
 ##por cada video saca caras que las guarda en: 'motor/caras/sinclasificar_videos/'+'0_'+now+'.avi_'+str(segs_elapsed)+'.jpg'
 ##finalmente las mete en: 'motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name+'/'+name_file+'_'+fotos_identificadorunico+".jpg"
+(si me lo quiero saltar:
+cp -R /home/testuser/pruebas/p2/safasf motor/caras/1/1/
+cp /home/testuser/pruebas/p2/face_enc motor/bbdd_reconocimiento/1/
+)
+
 
 
 p3-php clasificadorV2.php
 con las fotos que ya han guardado los encodings, recorre su lugar de donde se han giuardado, y ya crea las estancias y mueve las fotos a su lugar difinitivo y crea tambien si es persona nueva
 ##las clasifica dependiendo de la carpeta donde estan alojadas y las mete en:admin/caras_procesadas/".$sql->id.".jpg
-
+(no se puede saltar para hacer prueba pues hace varios inserts)
 
 p4-capturador.php {local_id} {desde(si se pasa un valor es que se usa desde el server si no se pasa es que es desde local)}
 habrá que encender uno de estos procesos por cada local

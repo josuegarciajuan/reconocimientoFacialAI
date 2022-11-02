@@ -42,7 +42,7 @@ for (i, imagePath) in enumerate(imagePaths):
         knownNames.append(name)
         knownPoints.append(1.0)
         knownIdentificadorunico.append(1)
-        knownEnfoques.append(0.0)
+        knownEnfoques.append(1)
 
 #save emcodings along with their names in dictionary data
 data = {"encodings": knownEncodings, "names": knownNames, "points": knownPoints, "identificadoresunicos": knownIdentificadorunico, "enfoque": knownEnfoques}
