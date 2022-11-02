@@ -1286,8 +1286,8 @@ while sigue:
                         media_supera=puntuaciones_supera[g]/veces_supera[g]
                         # definitivo=media/veces2[g]
                         printLog("el nombre:"+g+", tienes esta media:"+str(media)+" y aparece estas veces:"+str(veces2[g]))
+                        # printLog("ademas la puntuacion definitiva es (media/veces):"+str(definitivo))  
                         printLog("el nombre:"+g+", tienes esta media_supera:"+str(media_supera)+" y supera estas veces:"+str(veces_supera[g]))
-                        printLog("ademas la puntuacion definitiva es (media/veces):"+str(definitivo))
 
                         printLog("Pero Voy a recalcular las medias con el metodo de eliminar el ruido:")
 

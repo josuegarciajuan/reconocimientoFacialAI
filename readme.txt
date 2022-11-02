@@ -320,6 +320,7 @@ graba videos cuando detecta movimiento
 (este proceso se puede poner en un ordenador a parte, por que luego sube los videos por ftp al server bueno, así libera memoria)
 ##crea una copia en motor/videos/'+LOCAL_ID+'/'+nombre  que se autoelimina y sube a: FTP_RUTA/motor/videos/'+LOCAL_ID+'/'+CAM_ID+'/'+nombre
 (si me lo quiero saltar:
+cp /home/testuser/pruebas/p2/face_enc motor/bbdd_reconocimiento/1/
 cp /home/testuser/pruebas/p4/* /home/testuser/motor/videos/1/1 
 )
 
