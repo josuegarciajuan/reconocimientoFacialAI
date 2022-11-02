@@ -58,7 +58,7 @@ configFile = RUTA_PROYECTO + "motor/models/deploy.prototxt.txt"
 net = cv2.dnn.readNetFromCaffe(configFile, modelFile)
 
 
-name_file=os.path.join(RUTA_PROYECTO + 'admin/files/videos_registro_videos/', FICHERO)
+name_file=os.path.join(RUTA_PROYECTO + 'admin/files/videos_registro_videos_partidos/', FICHERO)
 
 
 printLog("tenemos este video:"+name_file)

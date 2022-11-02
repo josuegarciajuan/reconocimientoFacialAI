@@ -75,7 +75,7 @@ fa = FaceAligner(predictor, desiredFaceWidth=int(CONFIG_desiredFaceWidth))
 def printLog(*args, **kwargs):
     print(*args, **kwargs)
     
-    with open(RUTA_PROYECTO+'motor/procesa_videosV6_'+CAMARA_ID+'.out','a') as file:
+    with open(RUTA_PROYECTO+'motor/logs/procesa_videosV6_'+CAMARA_ID+'.out','a') as file:
        print(*args, **kwargs, file=file)
 
 
@@ -659,12 +659,13 @@ while(cap.isOpened()):
                         #cv2.imshow("Aligned", faceAligned)
 
                         cv2.imwrite('/var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/sinclasificar/'+LOCAL_ID+'/'+CAMARA_ID+'/'+nombrefinal+'.jpg', faceAligned)
+                    
+
                     """
-
-
                     if not alineado:
                         printLog("No se puede alinear")
                         cv2.imwrite(RUTA_PROYECTO+'motor/caras/sinclasificar/'+LOCAL_ID+'/'+CAMARA_ID+'/'+nombrefinal+'.jpg', rostro)
+                    
 
 
                     printLog("cara guardada en /"+str(LOCAL_ID)+"/"+str(CAMARA_ID)+"/"+nombrefinal+".jpg con esta confidence:"+str(confidence))

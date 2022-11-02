@@ -4,30 +4,6 @@
  * Author: Josué García Juan
  * 27-jul-2022, 11:12:21.
  */
-/*
-rm -R motor/caras/1/C0/*
-rm motor/removidas/nopasafiltros/*
-rm admin/files/videos_registro/*
-rm admin/files/videos_registro_posiciones/*
-rm admin/files/videos_registro_pruebas/*
-rm admin/files/videos_registro_resultados/*
-rm admin/files/videos_registro_videos/*
-cp admin/files/1_josue.avi admin/files/videos_registro_videos/1_josue.avi
-rm motor/bbdd_reconocimiento/1/face_enc
-rm -R motor/logs/*
-rm admin/caras_procesadas/*
-rm motor/caras/sinclasificar_videos/*
-rm libs/threads_files_aux/*_vr_*
-cd motor
-python3.7 crear_diccionario_inicial_parametrizado.py 1
-mysql -u root -pcamaras reconocimientofacial3 < bbdd.sql
-
-
-clasificadorV2
-procesos_panel_control
-procesa_video_registro
-
-*/  
 
 
 require_once("config/rutas.php");
@@ -45,6 +21,7 @@ if(isset($argv[1]) and $argv[1]!=""){
 }
 */
 $ruta=RUTA_PROYECTO."admin/files/videos_registro_videos/";
+$ruta_minivideos=RUTA_PROYECTO."admin/files/videos_registro_videos_partidos/";
 
 
 while (true){
@@ -61,7 +38,7 @@ while (true){
                 $nombre_persona.=$aux[$i];
             }
             $nombre_fichero= str_replace(".avi", "", $elemento);
-            procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta);
+            procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta,$ruta_minivideos);
         }
     }    
     sleep(1);
@@ -70,7 +47,7 @@ while (true){
 }
 
 
-function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta){
+function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta,$ruta_minivideos){
     $sql=new Conectar();
     
     $tiempo_inicial = microtime(true);
@@ -82,7 +59,7 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta)
 
     
     //divido el video en muchos videos de {longitus_video} duracion
-    $numero_videos=dividir_video2($local_id,$ruta,$nombre_fichero);
+    $numero_videos=dividir_video2($local_id,$ruta,$nombre_fichero,$ruta_minivideos);
 
     echo "videos divididos:".$numero_videos."\n";
     
@@ -345,11 +322,11 @@ function dividir_video($local_id,$ruta,$video){
 
 
 /*se divide el video original en videos de 4 segundos de duracion*/
-function dividir_video2($local_id,$ruta,$video){
+function dividir_video2($local_id,$ruta,$video,$ruta_minivideos){
     
     
     
-    $salida=$ruta.$video;
+    $salida=$ruta_minivideos.$video;
     $video=$ruta.$video.".avi";
     $output_salida="aux/procesa_video_registro_".$local_id."_".rand(1000000,9999999).".txt";
 

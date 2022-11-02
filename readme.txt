@@ -276,37 +276,95 @@ cd /var/www/html/reconocimientoFacial/proyecto_definitivo/
 
 cada uno de estos procesos dentro de 1 screen:
 
+
 python3.7 motor/guarda_movimientos.py camaras.vps.webdock.io testuser prueba123 'rtsp://admin:bakcAse4@nouesmalt.duckdns.org:778/cam/realmonitor?channel=1&subtype=0' 1 3
-
-
 python3.7 motor/guarda_movimientos.py camaras.vps.webdock.io testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.52:554/cam/realmonitor?channel=1&subtype=0' 1 3
 
 
--php procesos_panel_control.php {DEBUG(0=>NO,1=>si)}  
+
+p1-php procesos_panel_control.php {DEBUG(0=>NO,1=>si)}  
 llama a motor/devuelve_posicion_cara.py y lo mantiene en marcha con threads.
 Se encarga de recorrer esta ruta: RUTA_PROYECTO + "admin/files/videos_registro" y devolver si es la posicion de cara que se espera con una puntuacion
+##El video de registro se sube a: admin/files/videos_registro_videos/{local_id}_{nombre_persona}.avi
+(si me lo quiero saltar:
+cp home/testuser/pruebas/1_josue.avi admin/files/videos_registro_videos/1_josue.avi
+)
 
--php procesa_video_registro.php
+p2-php procesa_video_registro.php
 esperando que haya un video de registro. Si lo hay, lo divide en minivideos de 4 segundos y llama a:
 motor/procesa_video_registro_1.py y motor/procesa_video_registro_2.py
 el 1º se encarga de sacar caras de los minivideos
 el 2º se encarga de recorrer estas fotos, descartas las no enfocadas y las enfocadas sacar los encodings y guardarlos
+##lo separa en minivideos que se guardan en admin/files/videos_registro_videos_partidos
+##por cada video saca caras que las guarda en: 'motor/caras/sinclasificar_videos/'+'0_'+now+'.avi_'+str(segs_elapsed)+'.jpg'
+##finalmente las mete en: 'motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name+'/'+name_file+'_'+fotos_identificadorunico+".jpg"
 
--php clasificadorV2.php
+
+p3-php clasificadorV2.php
 con las fotos que ya han guardado los encodings, recorre su lugar de donde se han giuardado, y ya crea las estancias y mueve las fotos a su lugar difinitivo y crea tambien si es persona nueva
+##las clasifica dependiendo de la carpeta donde estan alojadas y las mete en:admin/caras_procesadas/".$sql->id.".jpg
 
--capturador.php {local_id} {desde(si se pasa un valor es que se usa desde el server si no se pasa es que es desde local)}
+
+p4-capturador.php {local_id} {desde(si se pasa un valor es que se usa desde el server si no se pasa es que es desde local)}
 habrá que encender uno de estos procesos por cada local
 llama y mantiene a motor/guarda_movimientos.py que es llamado por cada camara en el local
 graba videos cuando detecta movimiento
 (este proceso se puede poner en un ordenador a parte, por que luego sube los videos por ftp al server bueno, así libera memoria)
+##crea una copia en motor/videos/'+LOCAL_ID+'/'+nombre  que se autoelimina y sube a: FTP_RUTA/motor/videos/'+LOCAL_ID+'/'+CAM_ID+'/'+nombre
 
--detector.php
+
+p5-detector.php
 llama y mantiene comprobando que no se desborde la ram de estos procesos
 procesa_videosV6.py  y  procesa_fotos_def_borrosaparteV2.py
 el 1º: procesa los cruces de lineas y saca caras del video
 el 2º: busca a quien pertence la cara de las fotos sacadas del 1º
+##p5.1.- guarda las lineas en:motor/fotos_lineas/"+lineas_ids[ii]+"/"+numrandom+".jpg
+##p5.1.- guarda las caras en motor/caras/sinclasificar/'+LOCAL_ID+'/'+CAMARA_ID+'/'+FICHERO+'_'+str(segs_elapsed)+'.jpg
+##p5.2.- finalmente las mete en: 'motor/caras/'+LOCAL_ID+'/'+CAMARA_ID+'/'+ganador_name+'/'+name_file+'_'+fotos_identificadorunico+".jpg"
 
+
+rm -R motor/caras/1/C0/*
+rm motor/removidas/nopasafiltros/*
+rm admin/files/videos_registro/*
+rm admin/files/videos_registro_posiciones/*
+rm admin/files/videos_registro_pruebas/*
+rm admin/files/videos_registro_resultados/*
+rm admin/files/videos_registro_videos/*
+rm admin/files/videos_registro_videos_partidos/*
+rm motor/bbdd_reconocimiento/1/face_enc
+rm -R motor/logs/*
+rm admin/caras_procesadas/*
+rm motor/caras/sinclasificar_videos/*
+rm libs/threads_files_aux/*_vr_*
+rm -R motor/caras/1/1/*
+rm motor/videos/1/*
+rm /home/testuser/motor/videos/1/1/*
+rm motor/*.out
+rm motor/fotos_lineas/1/*
+rm motor/caras/sinclasificar/1/1/*
+rm motor/removidas/tmp/*
+rm motor/removidas/nopasafiltros/*
+rm motor/removidas/notienecaras/*
+cd motor
+python3.7 crear_diccionario_inicial_parametrizado.py 1
+cd ..
+
+
+mysql -u root -pcamaras reconocimientofacial3
+mysql -u newuser -p reconocimientofacial2
+prueba123@4522gwrQWWERw
+
+delete from cruces_lineas;
+delete from estancias;
+delete from fotos;
+delete from personas;
+exit;
+
+
+
+clasificadorV2
+procesos_panel_control
+procesa_video_registro
 
 
 
