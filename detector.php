@@ -114,7 +114,7 @@ while(true){
                     for($i=0;$i<count($cmd);$i++){
                         echo $cmd[$i]."\n";
                         
-                        /*
+                        
                         if(!isset($threads[$tmp->row["id"]."_".$i]) or $threads[$tmp->row["id"]."_".$i]==NULL){
                             echo "No existia el proceso:".$tmp->row["id"]."_".$i."\n";
                             $threads[$tmp->row["id"]."_".$i]=new Jos_Thread($tmp->row["id"]."_".$i,$cmd[$i],true);
@@ -141,8 +141,7 @@ while(true){
                                 }
                             }
                         }
-                         * 
-                         */
+                         
                     }
 
                     //exit;
@@ -233,7 +232,7 @@ while(true){
                                     $cmd1=RUTA_PYTHON." ".RUTA_PROYECTO."motor/procesa_videosV6.py ".$sql->row["id"]." ".$tmp->row["id"]." '".$subidos[$s]."'"." '".RUTA_PROYECTO."' ".CONFIG_SENSIBILIDAD_ES_CARA." '".URL_FTP_BASE."' ".$params." > /dev/null 2>/dev/null &";
                                     echo $cmd1."\n";
                                     //exit;
-//                                    exec($cmd1);
+                                    exec($cmd1);
                                     
                                     
                                 }else{

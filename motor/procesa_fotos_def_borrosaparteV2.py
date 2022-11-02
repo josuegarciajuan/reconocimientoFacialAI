@@ -201,7 +201,7 @@ def anyade_datos(knownEncodings1,knownNames1,knownPoints1,ganador_name,knownIden
     printLog("maximo definitivo:"+str(maximo))
 
     for ff in range(0,len(knownEncodings1)):
-        printLog("nuevo encoding pasado qe se va a anyadir:"+knownEncodings1[ff])
+        # printLog("nuevo encoding pasado qe se va a anyadir:"+knownEncodings1[ff])
         anyade_datos_def(maximo,count,knownEncodings1[ff],knownNames1[ff],knownPoints1[ff],ganador_name,knownIdentificadorunico1[ff],knownEnfoque1[ff])
     printLog("Finalmente fichero desbloekado")
 
