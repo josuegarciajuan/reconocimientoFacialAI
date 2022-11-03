@@ -410,6 +410,8 @@ scp eladmin@45.136.71.235:/home/testuser/pruebas/p5/2/5w7AF4sNu7X6OJYtVU38I3fun/
 
 
 
+
+
 ------------------------------------------------
 -resetear y empezar de 0:
 rm -R /var/www/html/reconocimientoFacial/proyecto_definitivo/admin/caras_procesadas/*

@@ -62,9 +62,8 @@ while(true){
             
             
             $sensibilidad_movimiento=$data["valores"][$i]["sensibilidad_movimiento"];
-            $sensibilidad1=$sensibilidad_movimiento*CONFIG_VAR3_MAXIMO/100;
-            $sensibilidad2=$sensibilidad_movimiento*CONFIG_contourArea_MAXIMO/100;
-            
+            $sensibilidad1=round($sensibilidad_movimiento*CONFIG_VAR3_MAXIMO/100);
+            $sensibilidad2=round($sensibilidad_movimiento*CONFIG_contourArea_MAXIMO/100);
             
             
             $cmd="python3.7 motor/guarda_movimientos.py ".FTP_SERVER." ".FTP_USER." ".FTP_PASS." '".$cadena_conexion;
