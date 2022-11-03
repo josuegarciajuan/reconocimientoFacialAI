@@ -363,7 +363,6 @@ rm motor/bbdd_reconocimiento/1/face_enc
 rm motor/videos/1/*
 rm motor/fotos_lineas/1/*
 
-
 rm -R motor/logs/*
 rm motor/removidas/nopasafiltros/*
 rm motor/caras/sinclasificar_videos/*
