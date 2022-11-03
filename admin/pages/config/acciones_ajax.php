@@ -17,7 +17,9 @@ switch ($_GET["a"]) {
     case "1": //pide los datos de una camara
         $camara=$_GET["camara"];
         $sql->Consultar("camaras","*","id=".$camara);
-        echo $sql->row["descripcion"].";;;".$sql->row["directorio"].";;;".$sql->row["x"].";;;".$sql->row["y"].";;;".$sql->row["puerta"].";;;".$sql->row["salida"].";;;".$sql->row["encendida"].";;;".$sql->row["url_conexion"].";;;".$sql->row["sistema"].";;;".$sql->row["ipcamlive_alias"].";;;".$sql->row["url_desdeserver"];
+        
+        
+        echo $sql->row["descripcion"].";;;".$sql->row["directorio"].";;;".$sql->row["x"].";;;".$sql->row["y"].";;;".$sql->row["puerta"].";;;".$sql->row["salida"].";;;".$sql->row["encendida"].";;;".$sql->row["url_conexion"].";;;".$sql->row["sistema"].";;;".$sql->row["ipcamlive_alias"].";;;".$sql->row["url_desdeserver"].";;;".$sql->row["sensibilidad_movimiento"];
         break;
         
     case "2":

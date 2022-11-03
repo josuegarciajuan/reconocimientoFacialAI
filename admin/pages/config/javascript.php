@@ -265,7 +265,8 @@ function guardar(){
     url_conexion=document.getElementById("url_conexion").value;
     url_desdeserver=document.getElementById("url_desdeserver").value;
     x_camara=document.getElementById("x_camara").value;
-    y_camara=document.getElementById("y_camara").value;
+    y_camara=document.getElementById("y_camara").value;sensibilidad_movimiento
+    sensibilidad_movimiento=document.getElementById("sensibilidad_movimiento").value;
     
     /*
     eos=document.getElementById("eos2");
@@ -313,7 +314,7 @@ function guardar(){
     url_conexion=url_conexion.replace('&', '--jos--');
     url_desdeserver=url_desdeserver.replace('&', '--jos--');
     
-    uri="?page=config&accion=guardar&camara="+camara+"&nombre="+nombre+"&encendida="+encendida+"&x="+x_camara+"&y="+y_camara+"&puerta="+puerta+"&salida="+salida+"&url_conexion="+url_conexion+"&url_desdeserver="+url_desdeserver+"&sistema="+tipo_camara+"&ipcamlive_alias="+ipcamlive_alias;
+    uri="?page=config&accion=guardar&camara="+camara+"&nombre="+nombre+"&encendida="+encendida+"&x="+x_camara+"&y="+y_camara+"&puerta="+puerta+"&salida="+salida+"&url_conexion="+url_conexion+"&url_desdeserver="+url_desdeserver+"&sistema="+tipo_camara+"&ipcamlive_alias="+ipcamlive_alias+"&sensibilidad_movimiento="+sensibilidad_movimiento;
     var res = encodeURI(uri);
     location.href=res;
 }
@@ -388,6 +389,12 @@ function seleccionar_camara(){
             }else{
                 document.getElementById("tipo_camara_grabador_ed").checked = true;   
             }
+            
+            
+            sensibilidad=res[11];
+            document.getElementById("sensibilidad_movimiento").value=sensibilidad;
+             
+            
 
         }
     }

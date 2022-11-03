@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS camaras(
   created timestamp DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id)
 );
+alter table camaras add column sensibilidad_movimiento int(11) default 50;
+
 
 
 drop table if exists nodos;

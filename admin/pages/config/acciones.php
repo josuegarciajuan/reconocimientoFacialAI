@@ -25,6 +25,7 @@ switch($_GET["accion"]){
         
         
         $campos=["local_id","descripcion","url_conexion","sistema","puerta","salida","encendida","ipcamlive_alias"];
+        
         $valores=[$_SESSION["local_id"],$_GET["nombre_nueva"],$url_conexion,$_GET["sistema"],$_GET["puerta"],$_GET["salida"],$_GET["encendida_nueva"],$_GET["ipcamlive_alias"]];
         $sql->Insertar("camaras",$campos,$valores,false);
         
@@ -65,8 +66,8 @@ switch($_GET["accion"]){
         $url_conexion= str_replace("--jos--", "&", $_GET["url_conexion"]);
         $url_desdeserver= str_replace("--jos--", "&", $_GET["url_desdeserver"]);
         
-        $campos=["local_id","descripcion","url_conexion","sistema","puerta","salida","encendida","x","y","ipcamlive_alias","url_desdeserver"];
-        $valores=[$_SESSION["local_id"],$_GET["nombre"],$url_conexion,$_GET["sistema"],$_GET["puerta"],$_GET["salida"],$_GET["encendida"],$_GET["x"],$_GET["y"],$_GET["ipcamlive_alias"],$url_desdeserver];
+        $campos=["local_id","descripcion","url_conexion","sistema","puerta","salida","encendida","x","y","ipcamlive_alias","url_desdeserver","sensibilidad","sensibilidad_movimiento"];
+        $valores=[$_SESSION["local_id"],$_GET["nombre"],$url_conexion,$_GET["sistema"],$_GET["puerta"],$_GET["salida"],$_GET["encendida"],$_GET["x"],$_GET["y"],$_GET["ipcamlive_alias"],$url_desdeserver,$_GET["sensibilidad_movimiento"]];
         
         $sql->Actualizar("camaras",$campos,$valores,"id=".$_GET["camara"],false);
         

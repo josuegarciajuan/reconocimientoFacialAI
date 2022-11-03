@@ -60,13 +60,22 @@ while(true){
                 $cadena_conexion=$data["valores"][$i]["url_desdeserver"];
             }
             
+            
+            $sensibilidad_movimiento=$data["valores"][$i]["sensibilidad_movimiento"];
+            $sensibilidad1=$sensibilidad_movimiento*CONFIG_VAR3_MAXIMO/100;
+            $sensibilidad2=$sensibilidad_movimiento*CONFIG_contourArea_MAXIMO/100;
+            
+            
+            
             $cmd="python3.7 motor/guarda_movimientos.py ".FTP_SERVER." ".FTP_USER." ".FTP_PASS." '".$cadena_conexion;
             $cmd.="' ".$data["valores"][$i]["local_id"]." ".$data["valores"][$i]["id"]." ";
             $cmd.=CONFIG_VAR1." ";
             $cmd.=CONFIG_VAR2." ";
-            $cmd.=CONFIG_VAR3." ";
+            //$cmd.=CONFIG_VAR3." ";
+            $cmd.=$sensibilidad1." ";
             $cmd.=CONFIG_VAR4." ";
-            $cmd.=CONFIG_contourArea." ";
+            //$cmd.=CONFIG_contourArea." ";
+            $cmd.=$sensibilidad2." ";
             $cmd.=CONFIG_maximo_videos." ";
             $cmd.=CONFIG_frames_a_analizar." ";
             $cmd.=CONFIG_frames_con_movimiento." ";

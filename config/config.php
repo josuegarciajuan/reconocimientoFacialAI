@@ -59,12 +59,21 @@ define("CONFIG_UMBRAL_ESTANCIA",10); //margen en segundos para considerar que 2 
  * 
  */
 define("CONFIG_TIEMPO_MAXIMO_CAMARAS_ENCENDIDAS",60*10); //en segundos
-        
+
 define("CONFIG_VAR1","21"); //# Converting gray scale image to GaussianBlur
 define("CONFIG_VAR2","21"); //# Converting gray scale image to GaussianBlur
-define("CONFIG_VAR3","42"); //# current frame is greater than 30 it will show white color(255)
+
+//define("CONFIG_VAR3","42"); //# current frame is greater than 30 it will show white color(255)
+define("CONFIG_VAR3","5"); //# current frame is greater than 30 it will show white color(255)   (cuanto mas bajo menos mov detecta)
+//rango desde 5-55
+
 define("CONFIG_VAR4","255"); //# current frame is greater than 30 it will show white color(255)
-define("CONFIG_contourArea","1300"); //si el contorno es menor que esto no lo considera movimiento
+
+//define("CONFIG_contourArea","1300"); //si el contorno es menor que esto no lo considera movimiento
+define("CONFIG_contourArea","5"); //si el contorno es menor que esto no lo considera movimiento     (cuanto mas alto mas sensiblre)
+//rango 5-1500
+
+
 define("CONFIG_maximo_videos","60"); //en segundos longitud maxima de captura de videos
 define("CONFIG_frames_a_analizar","30"); //CUANTOS FRAMES PARA QUE HAYA MOVIMIENTO, tamaño del buffer
 define("CONFIG_frames_con_movimiento","24"); //CUANTOS FRAMES PARA QUE HAYA MOVIMIENTO
@@ -73,6 +82,12 @@ define("CONFIG_frames_guardados","120"); //CUANTOS FRAMES ANTES DEQUE HAYA MOVIM
 define("CONFIG_REDIMENSIONFRAME","0.60"); //frame = cv2.resize(frame, None, fx=0.60, fy=0.60)  l.160
 define("CONFIG_FPS","10.0"); //out = cv2.VideoWriter('motor/videos/'+LOCAL_ID+'/'+video_actual, fourcc, 10.0, size)  fps l.248
         
+
+
+define("CONFIG_VAR3_MAXIMO","55");
+define("CONFIG_contourArea_MAXIMO","1500");
+
+
 /*
  *  detector.php  ->  procesa_videosV6.py  y  procesa_fotos_def_borrosaparteV2.py
  */

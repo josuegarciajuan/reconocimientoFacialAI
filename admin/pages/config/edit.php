@@ -85,6 +85,15 @@
                     <br />
                     &nbsp;Cámara IP:<input type="radio" name="tipo_camara_ed" id="tipo_camara_ip_ed" value="ip">
                     &nbsp;Grabador:<input type="radio" name="tipo_camara_ed" id="tipo_camara_grabador_ed" value="grabador">
+                    <br />
+                    &nbsp;Sensibilidad:
+                    <select name="sensibilidad_movimiento" id="sensibilidad_movimiento">
+                        <?php
+                        for($i=1;$i<=100;$i++){
+                            echo "<option value='".$i."'>".$i."</option>";
+                        }
+                        ?>
+                    </select>
                     
                     <br /><br />
                     <input type="text" style="width:40px" name="x_camara" id="x_camara" disabled="disabled">&nbsp;

@@ -337,8 +337,9 @@ si me quiero saltar la 1º parte:
 cp /home/testuser/pruebas/p5/1/* /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/1/1/
 cp /home/testuser/pruebas/p2/face_enc motor/bbdd_reconocimiento/1/
 
-si me quiero saltar la 1º parte:
-
+si me quiero saltar la 2º parte:
+cp -R /home/testuser/pruebas/p5/2/5w7AF4sNu7X6OJYtVU38I3fun motor/caras/1/1/
+cp /home/testuser/pruebas/p2/face_enc motor/bbdd_reconocimiento/1/
 )
 
 python3.7 /var/www/html/reconocimientofacialV2/motor/procesa_videosV6.py 1 1 '1_2022-11-02_11:01:20.318914.avi' '/var/www/html/reconocimientofacialV2/' 0.68 '/home/testuser/' 150 5 10 750 562 750 562 3 5 1500 3 0.15 300 300 1.0 353 353 104.0 117.0 123.0 100 150
@@ -346,6 +347,9 @@ python3.7 /var/www/html/reconocimientofacialV2/motor/procesa_videosV6.py 1 1 '1_
 python3.7 motor/procesa_fotos_def_borrosaparteV2.py 1 1 0.38 0 0 0 0 0 0 0 0 0.551 0.535 0.551 0.37 12 0.61 0.63 2 0.511 0.491 0.511 0.35 20 0.58 0.61 4 0.531 0.515 0.521 0.36 15 0.58 0.611 4 0.04 500 9 300 1000 120 90 450 1200
 
 
+
+anyadir sensibilidad de movimiento por camara
+anyadir que en el procesamiento del video inicial solo se guarde ciertas de cada posicion
 
 
 
@@ -370,7 +374,7 @@ rm /home/testuser/motor/videos/1/1/*
 rm motor/*.out
 rm motor/fotos_lineas/1/*
 rm motor/caras/sinclasificar/1/1/*
-rm motor/caras/1/1/*
+rm -R motor/caras/1/1/*
 rm motor/removidas/tmp/*
 rm motor/removidas/nopasafiltros/*
 rm motor/removidas/notienecaras/*
@@ -400,7 +404,7 @@ scp eladmin@45.136.71.235:/home/testuser/pruebas/p2/5w7AF4sNu7X6OJYtVU38I3fun/* 
 scp eladmin@45.136.71.235:/home/testuser/pruebas/p2/face_enc /home/testuser/pruebas/p2/
 scp eladmin@45.136.71.235:/home/testuser/pruebas/p4/* /home/testuser/pruebas/p4/
 scp eladmin@45.136.71.235:/home/testuser/pruebas/p5/1/* /home/testuser/pruebas/p5/1/
-
+scp eladmin@45.136.71.235:/home/testuser/pruebas/p5/2/5w7AF4sNu7X6OJYtVU38I3fun/* /home/testuser/pruebas/p5/2/5w7AF4sNu7X6OJYtVU38I3fun
 
 
 

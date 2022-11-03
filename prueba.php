@@ -5,8 +5,76 @@
  * 07-jul-2021, 13:03:01.
  */
 
+
+
+//rango 5-55
+//rango 5-1500
+
+$sensibilidad=50;
+
+$rangos=[];
+$rangos[]=[];
+$rangos[]=[];
+
+$rangos[0][0]=5;
+$rangos[0][1]=55;
+$rangos[1][0]=5;
+$rangos[1][1]=1500;
+
+for($i=0;$i<count($rangos);$i++){
+    echo "rango de ".$i."\n";
+    echo "[".$rangos[$i][0].",".$rangos[$i][1]."]\n";
+    $margen=$rangos[$i][0];
+    $tope=$rangos[$i][1]-$margen;
+    echo "margen:".$margen."\n";
+    echo "tope:".$tope."\n";
+    echo "rango final 1 [0,".$tope."]\n";
+    echo "rango tope [0,".$margen."]\n";
+    $x_margen=$sensibilidad*$margen/100;
+    $x=$sensibilidad*$tope/100;
+    echo "x_margen:".$x_margen."\n";
+    echo "x:".$x."\n";
+    $final=$x+$x_margen;
+    echo "final:".$final."\n";
+        
+    echo "\n\n\n\n";
+}
+
+
+
+$sensibilidad1=27.5;
+$sensibilidad2=750;
+
+
+for($i=0;$i<count($rangos);$i++){
+    echo "rango de ".$i."\n";
+    echo "[".$rangos[$i][0].",".$rangos[$i][1]."]\n";
+    $margen=$rangos[$i][0];
+    $tope=$rangos[$i][1]-$margen;
+    echo "margen:".$margen."\n";
+    echo "tope:".$tope."\n";
+    echo "rango final 1 [0,".$tope."]\n";
+    echo "rango tope [0,".$margen."]\n";
+    
+    $x_margen=$sensibilidad*$margen/100;
+    $x=$sensibilidad*$tope/100;
+    echo "x_margen:".$x_margen."\n";
+    echo "x(final):".$x."\n";
+    //$final=$x+$x_margen;
+    //echo "final:".$final."\n";
+        
+    echo "\n\n\n\n";
+}
+
+
+
+
+
+
 ?>
 
+
+<!--
 <script>
 if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
   alert("Let's get this party started");
@@ -15,3 +83,4 @@ if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
 </script>
 
 test;
+-->
