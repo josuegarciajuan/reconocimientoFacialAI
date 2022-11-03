@@ -356,28 +356,33 @@ anyadir que en el procesamiento del video inicial solo se guarde ciertas de cada
 
 
 rm -R motor/caras/1/C0/*
+rm -R motor/caras/1/1/*
+rm motor/caras/sinclasificar/1/1/*
+rm -R motor/caras/1/1/*
+rm motor/bbdd_reconocimiento/1/face_enc
+rm motor/videos/1/*
+rm motor/fotos_lineas/1/*
+
+
+rm -R motor/logs/*
 rm motor/removidas/nopasafiltros/*
+rm motor/caras/sinclasificar_videos/*
+rm motor/*.out
+rm motor/removidas/tmp/*
+rm motor/removidas/nopasafiltros/*
+rm motor/removidas/notienecaras/*
+
+rm /home/testuser/motor/videos/1/1/*
+
 rm admin/files/videos_registro/*
 rm admin/files/videos_registro_posiciones/*
 rm admin/files/videos_registro_pruebas/*
 rm admin/files/videos_registro_resultados/*
 rm admin/files/videos_registro_videos/*
 rm admin/files/videos_registro_videos_partidos/*
-rm motor/bbdd_reconocimiento/1/face_enc
-rm -R motor/logs/*
 rm admin/caras_procesadas/*
-rm motor/caras/sinclasificar_videos/*
+
 rm libs/threads_files_aux/*_vr_*
-rm -R motor/caras/1/1/*
-rm motor/videos/1/*
-rm /home/testuser/motor/videos/1/1/*
-rm motor/*.out
-rm motor/fotos_lineas/1/*
-rm motor/caras/sinclasificar/1/1/*
-rm -R motor/caras/1/1/*
-rm motor/removidas/tmp/*
-rm motor/removidas/nopasafiltros/*
-rm motor/removidas/notienecaras/*
 rm aux/*
 cd motor
 python3.7 crear_diccionario_inicial_parametrizado.py 1

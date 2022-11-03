@@ -67,7 +67,7 @@ define("CONFIG_VAR2","21"); //# Converting gray scale image to GaussianBlur
 //define("CONFIG_VAR3","5"); //# current frame is greater than 30 it will show white color(255)   (cuanto mas bajo menos mov detecta)
 define("CONFIG_VAR4","255"); //# current frame is greater than 30 it will show white color(255)
 //define("CONFIG_contourArea","1300"); //si el contorno es menor que esto no lo considera movimiento
-//define("CONFIG_contourArea","5"); //si el contorno es menor que esto no lo considera movimiento     (cuanto mas alto mas sensiblre)
+//define("CONFIG_contourArea","5"); //si el contorno es menor que esto no lo considera movimiento     (cuanto mas bajo menos mov detecta)
 //rango 5-1500
 define("CONFIG_maximo_videos","60"); //en segundos longitud maxima de captura de videos
 define("CONFIG_frames_a_analizar","30"); //CUANTOS FRAMES PARA QUE HAYA MOVIMIENTO, tamaño del buffer
