@@ -32,7 +32,7 @@ RUTA_PROYECTO=sys.argv[4]
 fecha_aux=sys.argv[5]
 CADACUANTOSFRAMESSECOGEUNOPARAVERSIHAYCARA=sys.argv[6]
 SENSIBILIDAD_ES_CARA=float(sys.argv[7])
-
+PORCENTAJECARASCOJO=float(sys.argv[8])
 
 time_ini = time.time()
 
@@ -70,7 +70,7 @@ num_frame=0
 
 
 
-
+caras_cogidas=0
 while(cap.isOpened()):
     printLog('voy(' + HILO + ') leyendo el video..')
     ret, img = cap.read()
@@ -101,63 +101,70 @@ while(cap.isOpened()):
                 confidence = faces3[0, 0, i, 2]
                 if confidence > SENSIBILIDAD_ES_CARA:
 
-                    printLog('cara encontrada en: '+name_file)
+                    caras_cogidas=caras_cogidas+1
+                    coger=False
+                    if caras_cogidas==PORCENTAJECARASCOJO:
+                        caras_cogidas=0
+                        coger=True
 
-                    box = faces3[0, 0, i, 3:7] * np.array([width1, height1, width1, height1])
-                    (x, y, x1, y1) = box.astype("int")
-                    #cv2.rectangle(img2, (x, y), (x1, y1), (0, 0, 255), 2)
+                    if coger:
+                        printLog('cara encontrada en: '+name_file)
 
-
-                    ydef=y-100
-                    if ydef<0:
-                        ydef=0
-                    y1def=y1+100
-                    if y1def>height1:
-                        y1def=height1-1
-
-                    xdef=x-100
-                    if xdef<0:
-                        xdef=0
-                    x1def=x1+100
-                    if x1def>width1:
-                        x1def=width1-1    
+                        box = faces3[0, 0, i, 3:7] * np.array([width1, height1, width1, height1])
+                        (x, y, x1, y1) = box.astype("int")
+                        #cv2.rectangle(img2, (x, y), (x1, y1), (0, 0, 255), 2)
 
 
-                    #asdrostro = img_original[ydef:y1def, xdef:x1def]
-                    rostro = img_original
+                        ydef=y-100
+                        if ydef<0:
+                            ydef=0
+                        y1def=y1+100
+                        if y1def>height1:
+                            y1def=height1-1
+
+                        xdef=x-100
+                        if xdef<0:
+                            xdef=0
+                        x1def=x1+100
+                        if x1def>width1:
+                            x1def=width1-1    
 
 
-
-                    sigue=True
-                    #asdif(type(rostro) == type(None)):
-                    #asd    sigue=False
-                    #asdelse:
-                        
-                        #asd try:
-                            # rostro = cv2.resize(rostro, (150, 150), interpolation=cv2.INTER_CUBIC)
-                        #asd     rostro = cv2.resize(rostro, (250, 250), interpolation=cv2.INTER_CUBIC)
-                        #asd except Exception as e:
-                        #asd     printLog(str(e))
-                        #asd     sigue=False
+                        #asdrostro = img_original[ydef:y1def, xdef:x1def]
+                        rostro = img_original
 
 
 
-                    if sigue:
-                        segs_elapsed = time.time() - segundos_ini
-                        # nombrefinal=FICHERO+"_"+HILO+'_'+str(segs_elapsed)
-
-                        aux = str(datetime.now())
-                        lastsix_fecha=aux[-6:]
-                        now=fecha_aux+"."+lastsix_fecha
-
-
-                        nombrefinal='0_'+now+'.avi_'+str(segs_elapsed)
-
-
-                        cv2.imwrite(RUTA_PROYECTO + 'motor/caras/sinclasificar_videos/'+nombrefinal+'.jpg', rostro)
+                        sigue=True
+                        #asdif(type(rostro) == type(None)):
+                        #asd    sigue=False
+                        #asdelse:
                             
+                            #asd try:
+                                # rostro = cv2.resize(rostro, (150, 150), interpolation=cv2.INTER_CUBIC)
+                            #asd     rostro = cv2.resize(rostro, (250, 250), interpolation=cv2.INTER_CUBIC)
+                            #asd except Exception as e:
+                            #asd     printLog(str(e))
+                            #asd     sigue=False
 
-                        printLog("cara guardada en /"+nombrefinal+".jpg con esta confidence:"+str(confidence))
+
+
+                        if sigue:
+                            segs_elapsed = time.time() - segundos_ini
+                            # nombrefinal=FICHERO+"_"+HILO+'_'+str(segs_elapsed)
+
+                            aux = str(datetime.now())
+                            lastsix_fecha=aux[-6:]
+                            now=fecha_aux+"."+lastsix_fecha
+
+
+                            nombrefinal='0_'+now+'.avi_'+str(segs_elapsed)
+
+
+                            cv2.imwrite(RUTA_PROYECTO + 'motor/caras/sinclasificar_videos/'+nombrefinal+'.jpg', rostro)
+                                
+
+                            printLog("cara guardada en /"+nombrefinal+".jpg con esta confidence:"+str(confidence))
 
             
         # cv2.imshow("dnn", img)
