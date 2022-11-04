@@ -61,6 +61,7 @@ define("CONFIG_UMBRAL_ESTANCIA",10); //margen en segundos para considerar que 2 
  */
 define("CONFIG_TIEMPO_MAXIMO_CAMARAS_ENCENDIDAS",60*10); //en segundos
 
+/*
 define("CONFIG_VAR1","21"); //# Converting gray scale image to GaussianBlur
 define("CONFIG_VAR2","21"); //# Converting gray scale image to GaussianBlur
 //define("CONFIG_VAR3","42"); //# current frame is greater than 30 it will show white color(255)
@@ -77,9 +78,13 @@ define("CONFIG_frames_guardados","120"); //CUANTOS FRAMES ANTES DEQUE HAYA MOVIM
 define("CONFIG_REDIMENSIONFRAME","0.60"); //frame = cv2.resize(frame, None, fx=0.60, fy=0.60)  l.160
 define("CONFIG_FPS","10.0"); //out = cv2.VideoWriter('motor/videos/'+LOCAL_ID+'/'+video_actual, fourcc, 10.0, size)  fps l.248
 
-define("CONFIG_VAR3_MAXIMO","55");
-define("CONFIG_contourArea_MAXIMO","1500");
+//
+define("CONFIG_VAR3_MAXIMO","200");
+define("CONFIG_VAR3_MINIMO","20");
 
+define("CONFIG_contourArea_MAXIMO","150");
+define("CONFIG_contourArea_MINIMO","1");
+*/
 
 /*
  *  detector.php  ->  procesa_videosV6.py  y  procesa_fotos_def_borrosaparteV2.py

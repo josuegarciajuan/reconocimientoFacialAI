@@ -33,11 +33,17 @@ CREATE TABLE IF NOT EXISTS camaras(
   encendida int(11) default 0,
   ipcamlive_alias varchar(255),
   created timestamp DEFAULT CURRENT_TIMESTAMP,
+
+  segundos_analizar int(11) default 3,
+  porcentaje_mov int(11) default 80,
+  dontCare int(11) default 500,
+  fps int(11) default 15,
+  maximo_videos int(11) default 60,
+  redimesionframe int(11) default 60,
+
   PRIMARY KEY (id)
 );
-alter table camaras add column sensibilidad_movimiento int(11) default 50;
-
-
+/*alter table camaras add column sensibilidad_movimiento int(11) default 50;*/
 
 drop table if exists nodos;
 CREATE TABLE IF NOT EXISTS nodos(

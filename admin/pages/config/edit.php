@@ -85,15 +85,68 @@
                     <br />
                     &nbsp;Cámara IP:<input type="radio" name="tipo_camara_ed" id="tipo_camara_ip_ed" value="ip">
                     &nbsp;Grabador:<input type="radio" name="tipo_camara_ed" id="tipo_camara_grabador_ed" value="grabador">
+                    
                     <br />
-                    &nbsp;Sensibilidad:
-                    <select name="sensibilidad_movimiento" id="sensibilidad_movimiento">
+                    &nbsp;Segundos analizar:
+                    <select name="segundos_analizar" id="segundos_analizar">
+                        <?php
+                        for($i=1;$i<=10;$i++){
+                            echo "<option value='".$i."'>".$i."</option>";
+                        }
+                        ?>
+                    </select>
+            
+                    <br />
+                    &nbsp;Porcentaje mov:
+                    <select name="porcentaje_mov" id="porcentaje_mov">
                         <?php
                         for($i=1;$i<=100;$i++){
                             echo "<option value='".$i."'>".$i."</option>";
                         }
                         ?>
                     </select>
+                    
+                    <br />
+                    &nbsp;DontCare:
+                    <select name="dontCare" id="dontCare">
+                        <?php
+                        for($i=10;$i<=2000;$i++){
+                            echo "<option value='".$i."'>".$i."</option>";
+                        }
+                        ?>
+                    </select>
+            
+                    <br />
+                    &nbsp;fps:
+                    <select name="fps" id="fps">
+                        <?php
+                        for($i=1;$i<=30;$i++){
+                            echo "<option value='".$i."'>".$i."</option>";
+                        }
+                        ?>
+                    </select>
+            
+                    <br />
+                    &nbsp;Maximo videos:
+                    <select name="maximo_videos" id="maximo_videos">
+                        <?php
+                        for($i=20;$i<=120;$i++){
+                            echo "<option value='".$i."'>".$i."</option>";
+                        }
+                        ?>
+                    </select>
+                    
+                   
+                    <br />
+                    &nbsp;Redimesionframe:
+                    <select name="redimesionframe" id="redimesionframe">
+                        <?php
+                        for($i=1;$i<=100;$i++){
+                            echo "<option value='".$i."'>".$i."</option>";
+                        }
+                        ?>
+                    </select>
+ 
                     
                     <br /><br />
                     <input type="text" style="width:40px" name="x_camara" id="x_camara" disabled="disabled">&nbsp;

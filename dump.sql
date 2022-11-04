@@ -57,7 +57,7 @@ rtsp://admin:bakcAse4@nouesmalt.duckdns.org:779/cam/realmonitor?channel=1&subtyp
 
 
 Camara Lorenzo
-172.16.51.223:554 desde local
+rtsp://admin:bakcAse4@172.16.51.223:554/cam/realmonitor?channel=1&subtype=0
 nouesmalt.duckdns.org:777 desde fuera
 rtsp://admin:bakcAse4@nouesmalt.duckdns.org:777/cam/realmonitor?channel=1&subtype=0
 
@@ -80,6 +80,8 @@ Camara Puerta
 172.16.51.233:554 desde local
 nouesmalt.duckdns.org:782 desde fuera
 rtsp://admin:bakcAse4@nouesmalt.duckdns.org:782/cam/realmonitor?channel=1&subtype=0
+
+
 
 
 

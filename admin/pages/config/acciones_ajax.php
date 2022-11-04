@@ -19,7 +19,15 @@ switch ($_GET["a"]) {
         $sql->Consultar("camaras","*","id=".$camara);
         
         
-        echo $sql->row["descripcion"].";;;".$sql->row["directorio"].";;;".$sql->row["x"].";;;".$sql->row["y"].";;;".$sql->row["puerta"].";;;".$sql->row["salida"].";;;".$sql->row["encendida"].";;;".$sql->row["url_conexion"].";;;".$sql->row["sistema"].";;;".$sql->row["ipcamlive_alias"].";;;".$sql->row["url_desdeserver"].";;;".$sql->row["sensibilidad_movimiento"];
+        echo $sql->row["descripcion"].";;;".$sql->row["directorio"].";;;".$sql->row["x"].";;;".$sql->row["y"].";;;".$sql->row["puerta"].";;;".$sql->row["salida"].";;;".$sql->row["encendida"].";;;".$sql->row["url_conexion"].";;;".$sql->row["sistema"].";;;".$sql->row["ipcamlive_alias"].";;;".$sql->row["url_desdeserver"];//.";;;".$sql->row["sensibilidad_movimiento"];
+        
+        echo ";;;".$sql->row["segundos_analizar"];
+        echo ";;;".$sql->row["porcentaje_mov"];
+        echo ";;;".$sql->row["dontCare"];
+        echo ";;;".$sql->row["fps"];
+        echo ";;;".$sql->row["maximo_videos"];
+        echo ";;;".$sql->row["redimesionframe"];
+        
         break;
         
     case "2":

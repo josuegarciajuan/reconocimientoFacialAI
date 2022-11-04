@@ -183,6 +183,11 @@ while True:
     if static_back is None:
         static_back = gray
         continue
+    #ojo aki comprara siempre el 1º frame con cada unop de los demas, deberia comparar este y el anterior.. ejemplo:
+    #https://stackoverflow.com/questions/38158621/how-can-i-make-my-motion-detector-in-opencv-less-sensitive-for-light-conditions
+
+
+
 
     # Difference between static background
     # and current frame(which is GaussianBlur)
@@ -316,7 +321,7 @@ while True:
     #cv2.imshow("Threshold Frame", thresh_frame)
 
     # Displaying color frame with contour of motion of object
-    #cv2.imshow("Color Frame", frame)
+    cv2.imshow("Color Frame", frame)
 
     #->key = cv2.waitKey(10)
 

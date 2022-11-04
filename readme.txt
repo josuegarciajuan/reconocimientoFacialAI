@@ -380,13 +380,16 @@ rm admin/files/videos_registro_resultados/*
 rm admin/files/videos_registro_videos/*
 rm admin/files/videos_registro_videos_partidos/*
 rm admin/caras_procesadas/*
-
 rm libs/threads_files_aux/*_vr_*
 rm aux/*
 cd motor
 python3.7 crear_diccionario_inicial_parametrizado.py 1
 cd ..
 
+
+https://tempmail.ninja/
+haciendopruebas@xuge.life
+268198
 
 mysql -u root -pcamaras reconocimientofacial3
 mysql -u newuser -p reconocimientofacial2
@@ -398,6 +401,8 @@ delete from fotos;
 delete from personas;
 exit;
 
+
+https://correotemporal.org/enviar-correo-anonimo/
 
 
 clasificadorV2

@@ -60,12 +60,45 @@ while(true){
                 $cadena_conexion=$data["valores"][$i]["url_desdeserver"];
             }
             
-            
+            /*
             $sensibilidad_movimiento=$data["valores"][$i]["sensibilidad_movimiento"];
-            $sensibilidad1=round($sensibilidad_movimiento*CONFIG_VAR3_MAXIMO/100);
-            $sensibilidad2=round($sensibilidad_movimiento*CONFIG_contourArea_MAXIMO/100);
+            //$sensibilidad1=round($sensibilidad_movimiento*CONFIG_VAR3_MAXIMO/100);
+            //$sensibilidad2=round($sensibilidad_movimiento*CONFIG_contourArea_MAXIMO/100);
+            //$sensibilidad2=$sensibilidad_movimiento;
             
             
+            $rango1=CONFIG_VAR3_MAXIMO-CONFIG_VAR3_MINIMO;
+            //echo "rango1:".$rango1."\n";
+            $calculo1=$rango1*$sensibilidad_movimiento/100;
+            //echo "calculo1:".$calculo1."\n";
+            //$calculo1_masminimo=$calculo1+CONFIG_VAR3_MINIMO;
+            //echo "calculo1_masminimo:".$calculo1_masminimo."\n";
+            //$invertido1=CONFIG_VAR3_MAXIMO-$calculo1_masminimo;
+            //echo "invertido1:".$invertido1."\n";
+            $invertido2_sinminimo=CONFIG_VAR3_MAXIMO-$calculo1;
+            //echo "invertido2_sinminimo:".$invertido2_sinminimo."\n";
+            $sensibilidad1=round($invertido2_sinminimo);
+            
+            
+            $rango2=CONFIG_contourArea_MAXIMO-CONFIG_contourArea_MINIMO;
+            //echo "rango2:".$rango2."\n";
+            $calculo2=$rango2*$sensibilidad_movimiento/100;
+            //echo "calculo2:".$calculo2."\n";
+            $calculo2_masminimo=$calculo2+CONFIG_contourArea_MINIMO;
+            //echo "calculo2_masminimo:".$calculo2_masminimo."\n";
+            $sensibilidad2=round($calculo2_masminimo);
+            //echo "sensibilidaddefinitiva:".$sensibilidad2."\n";
+            */
+            
+            
+            $segundos_analizar=$data["valores"][$i]["segundos_analizar"];
+            $porcentaje_mov=$data["valores"][$i]["porcentaje_mov"];
+            $dontCare=$data["valores"][$i]["dontCare"];
+            $fps=$data["valores"][$i]["fps"];
+            $maximo_videos=$data["valores"][$i]["maximo_videos"];
+            $redimesionframe=$data["valores"][$i]["redimesionframe"]/100;
+            
+            /*
             $cmd="python3.7 motor/guarda_movimientos.py ".FTP_SERVER." ".FTP_USER." ".FTP_PASS." '".$cadena_conexion;
             $cmd.="' ".$data["valores"][$i]["local_id"]." ".$data["valores"][$i]["id"]." ";
             $cmd.=CONFIG_VAR1." ";
@@ -82,30 +115,48 @@ while(true){
             $cmd.=CONFIG_frames_guardados." ";
             $cmd.=CONFIG_REDIMENSIONFRAME." ";
             $cmd.=CONFIG_FPS;
-
-
-
-            $cmd.="";
-//python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.52:554/cam/realmonitor?channel=1&subtype=0' 1 1 21 21 42 255 1200 60 30 24 100 120 0.60 10.0
-        
+            */
             
-        /*    
-python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@nouesmalt.duckdns.org:779/cam/realmonitor?channel=1&subtype=0' 1 1 21 21 42 255 1300 60 30 24 100 120 0.60 10.0
+            
+        
+            $cmd="python3.7 motor/guarda_movimientosV2.py ".FTP_SERVER." ".FTP_USER." ".FTP_PASS." '".$cadena_conexion;
+            $cmd.="' ".$data["valores"][$i]["local_id"]." ".$data["valores"][$i]["id"]." ";
+            $cmd.=$segundos_analizar." ";
+            $cmd.=$porcentaje_mov." ";
+            $cmd.=$dontCare." ";
+            $cmd.=$fps." ";
+            $cmd.=$maximo_videos." ";
+            $cmd.=$redimesionframe." ";
+            
+            
+/*
+python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.52:554/cam/realmonitor?channel=1&subtype=0' 1 1 21 21 X 255 X 60 30 24 100 120 0.60 10.0
+        
+python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.52:554/cam/realmonitor?channel=1&subtype=0' 1 1 21 21 20 255 1500 60 30 24 100 120 0.60 10.0
+127
 
-python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@nouesmalt.duckdns.org:777/cam/realmonitor?channel=1&subtype=0' 1 2 21 21 42 255 1300 60 30 24 100 120 0.60 10.0
 
-python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@nouesmalt.duckdns.org:778/cam/realmonitor?channel=1&subtype=0' 1 3 21 21 42 255 1300 60 30 24 100 120 0.60 10.0
+(el 1º cuanto mas bajo mas sensible es)
+20-110
+ * 
+(el 2º cuanto mas alto mas sensible es)
+1-1500
 
-python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@nouesmalt.duckdns.org:780/cam/realmonitor?channel=1&subtype=0' 1 4 21 21 42 255 1300 60 30 24 100 120 0.60 10.0
+(el mas influyente de los es el 1º)
 
-python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@nouesmalt.duckdns.org:781/cam/realmonitor?channel=1&subtype=0' 1 5 21 21 42 255 1300 60 30 24 100 120 0.60 10.0
+50sens
+ * 
+ * 
+python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.223:554/cam/realmonitor?channel=1&subtype=0' 1 1 21 21 110 255 2 60 30 24 100 120 0.60 10.0
+ * 
+python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.223:554/cam/realmonitor?channel=1&subtype=0' 1 1 21 21 200 255 2 60 30 24 100 120 0.60 10.0
+ */
+            $cmd.="";
 
-python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@nouesmalt.duckdns.org:782/cam/realmonitor?channel=1&subtype=0' 1 6 21 21 42 255 1300 60 30 24 100 120 0.60 10.0
-*/
             
 
             echo $cmd."\n\n";
-            //exit;
+            exit;
 
             
             if(!isset($threads[$data["valores"][$i]["id"]]) or $threads[$data["valores"][$i]["id"]]==NULL){

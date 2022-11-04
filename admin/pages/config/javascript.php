@@ -265,8 +265,16 @@ function guardar(){
     url_conexion=document.getElementById("url_conexion").value;
     url_desdeserver=document.getElementById("url_desdeserver").value;
     x_camara=document.getElementById("x_camara").value;
-    y_camara=document.getElementById("y_camara").value;sensibilidad_movimiento
-    sensibilidad_movimiento=document.getElementById("sensibilidad_movimiento").value;
+    y_camara=document.getElementById("y_camara").value;
+    //sensibilidad_movimiento=document.getElementById("sensibilidad_movimiento").value;
+    
+    segundos_analizar=document.getElementById("segundos_analizar").value;
+    porcentaje_mov=document.getElementById("porcentaje_mov").value;
+    dontCare=document.getElementById("dontCare").value;
+    fps=document.getElementById("fps").value;
+    maximo_videos=document.getElementById("maximo_videos").value;
+    redimesionframe=document.getElementById("redimesionframe").value;
+
     
     /*
     eos=document.getElementById("eos2");
@@ -314,7 +322,17 @@ function guardar(){
     url_conexion=url_conexion.replace('&', '--jos--');
     url_desdeserver=url_desdeserver.replace('&', '--jos--');
     
-    uri="?page=config&accion=guardar&camara="+camara+"&nombre="+nombre+"&encendida="+encendida+"&x="+x_camara+"&y="+y_camara+"&puerta="+puerta+"&salida="+salida+"&url_conexion="+url_conexion+"&url_desdeserver="+url_desdeserver+"&sistema="+tipo_camara+"&ipcamlive_alias="+ipcamlive_alias+"&sensibilidad_movimiento="+sensibilidad_movimiento;
+    uri="?page=config&accion=guardar&camara="+camara+"&nombre="+nombre+"&encendida="+encendida+"&x="+x_camara+"&y="+y_camara+"&puerta="+puerta+"&salida="+salida+"&url_conexion="+url_conexion+"&url_desdeserver="+url_desdeserver+"&sistema="+tipo_camara+"&ipcamlive_alias="+ipcamlive_alias/*+"&sensibilidad_movimiento="+sensibilidad_movimiento*/;
+    
+    uri+="&segundos_analizar="+segundos_analizar;
+    uri+="&porcentaje_mov="+porcentaje_mov;
+    uri+="&dontCare="+dontCare;
+    uri+="&fps="+fps;
+    uri+="&maximo_videos="+maximo_videos;
+    uri+="&redimesionframe="+redimesionframe;
+      
+      
+    
     var res = encodeURI(uri);
     location.href=res;
 }
@@ -391,10 +409,30 @@ function seleccionar_camara(){
             }
             
             
+            /*
             sensibilidad=res[11];
             document.getElementById("sensibilidad_movimiento").value=sensibilidad;
-             
+             */
             
+            
+            segundos_analizar=res[11];
+            document.getElementById("segundos_analizar").value=segundos_analizar;
+
+            porcentaje_mov=res[12];
+            document.getElementById("porcentaje_mov").value=porcentaje_mov;
+
+            dontCare=res[13];
+            document.getElementById("dontCare").value=dontCare;
+
+            fps=res[14];
+            document.getElementById("fps").value=fps;
+
+            maximo_videos=res[15];
+            document.getElementById("maximo_videos").value=maximo_videos;
+
+            redimesionframe=res[16];
+            document.getElementById("redimesionframe").value=redimesionframe;
+  
 
         }
     }
