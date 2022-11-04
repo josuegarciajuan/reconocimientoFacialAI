@@ -1212,7 +1212,7 @@ while sigue:
                                         printLog("puntuacion:"+str(face_distance))
                                     #else:
                                         printLog("No supera los umbrales de que es la misma")    
-                                    printLog("veces superado:"+str(veces_supera[data["names"][fa]]))
+                                    #printLog("veces superado:"+str(veces_supera[data["names"][fa]]))
 
                                     printLog()
 
