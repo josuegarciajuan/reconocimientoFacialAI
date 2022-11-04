@@ -62,27 +62,48 @@ nouesmalt.duckdns.org:777 desde fuera
 rtsp://admin:bakcAse4@nouesmalt.duckdns.org:777/cam/realmonitor?channel=1&subtype=0
 
 Camara Recepcion
-172.16.51.225:554 desde local
+rtsp://admin:bakcAse4@172.16.51.225:554/cam/realmonitor?channel=1&subtype=0
 nouesmalt.duckdns.org:778 desde fuera
 rtsp://admin:bakcAse4@nouesmalt.duckdns.org:778/cam/realmonitor?channel=1&subtype=0
 
 Camara Escalera
-172.16.51.228:554 desde local
+rtsp://admin:bakcAse4@172.16.51.228:554/cam/realmonitor?channel=1&subtype=0
 nouesmalt.duckdns.org:780 desde fuera
 rtsp://admin:bakcAse4@nouesmalt.duckdns.org:780/cam/realmonitor?channel=1&subtype=0
 
 Camara Pasillo
-172.16.51.232:554 desde local
+rtsp://admin:bakcAse4@172.16.51.232:554/cam/realmonitor?channel=1&subtype=0
 nouesmalt.duckdns.org:781 desde fuera
 rtsp://admin:bakcAse4@nouesmalt.duckdns.org:781/cam/realmonitor?channel=1&subtype=0
 
 Camara Puerta
-172.16.51.233:554 desde local
+rtsp://admin:bakcAse4@172.16.51.233:554/cam/realmonitor?channel=1&subtype=0
 nouesmalt.duckdns.org:782 desde fuera
 rtsp://admin:bakcAse4@nouesmalt.duckdns.org:782/cam/realmonitor?channel=1&subtype=0
 
 
 
+
+
+
+$cmd.=$segundos_analizar." ";   
+$cmd.=$porcentaje_mov." ";
+$cmd.=$dontCare." ";
+$cmd.=$fps." ";
+$cmd.=$maximo_videos." ";
+$cmd.=$redimesionframe." ";
+
+python3.7 motor/guarda_movimientosV2.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.52:554/cam/realmonitor?channel=1&subtype=0' 1 1 3 90 500 15 60 0.6 
+
+python3.7 motor/guarda_movimientosV2.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.223:554/cam/realmonitor?channel=1&subtype=0' 1 2 3 90 500 15 60 0.6 
+
+python3.7 motor/guarda_movimientosV2.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.225:554/cam/realmonitor?channel=1&subtype=0' 1 3 2 80 500 15 60 0.6 
+
+python3.7 motor/guarda_movimientosV2.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.228:554/cam/realmonitor?channel=1&subtype=0' 1 4 1 75 200 15 60 0.6 
+
+python3.7 motor/guarda_movimientosV2.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.232:554/cam/realmonitor?channel=1&subtype=0' 1 5 3 80 200 15 60 0.6 
+
+python3.7 motor/guarda_movimientosV2.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.233:554/cam/realmonitor?channel=1&subtype=0' 1 7 2 80 200 15 60 0.6 
 
 
 --

@@ -47,7 +47,7 @@ HOLGURA_ABAJO_OREJASNARIZ=sys.argv[18]
 
 def printLog(*args, **kwargs):
     if DEBUG=="1":
-        print(*args, **kwargs)
+        #print(*args, **kwargs)
     
         with open('devuelve_posicion_cara.out','a') as file:
             print(*args, **kwargs, file=file)

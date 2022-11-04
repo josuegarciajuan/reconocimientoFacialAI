@@ -9,9 +9,8 @@ sys.path.append(".")
 from fifo import fifo
 
 
-import os
-os.system('Xvfb :1 -screen 0 1600x1200x16  &')    # create virtual display with size 1600x1200 and 16 bit color. Color can be changed to 24 or 8
-os.environ['DISPLAY']=':1.0'    # tell X clients to use our virtual DISPLAY :1.0
+#os.system('Xvfb :1 -screen 0 1600x1200x16  &')    # create virtual display with size 1600x1200 and 16 bit color. Color can be changed to 24 or 8
+#os.environ['DISPLAY']=':1.0'    # tell X clients to use our virtual DISPLAY :1.0
 
 
 
@@ -39,7 +38,7 @@ REDIMENSIONFRAME=float(sys.argv[12])
 
 
 def printLog(*args, **kwargs):
-    print(*args, **kwargs)
+    # print(*args, **kwargs)
     
     with open('motor/logs/guarda_movimientosV2_'+CAMARA_ID+'.out','a') as file:
         print(*args, **kwargs, file=file)
@@ -229,10 +228,7 @@ while(True):
         
 
 
-
-
-
-    cv2.imshow('Webcam ',frame)
+    # cv2.imshow('Webcam ',frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
