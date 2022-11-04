@@ -143,7 +143,7 @@ def anyade_datos_def(maximo,count,knownEncoding,knownName,knownPoint,ganador_nam
             knownPoints_def.append(data["points"][ff])
             knownIdentificadorunico_def.append(data["identificadoresunicos"][ff])
             knownEnfoque_def.append(data["enfoque"][ff])
-            printLog("anyado encoding q ya abia de este name"+data["names"][ff]+", y el enfoque:"+data["enfoque"][ff])
+            #printLog("anyado encoding q ya abia de este name"+data["names"][ff]+", y el enfoque:"+data["enfoque"][ff])
 
     else:
         if knownPoint >= maximo:      
