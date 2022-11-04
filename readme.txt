@@ -224,7 +224,7 @@ librerias python
   python3.7 -m pip install colorama
   python3.7 -m pip install requests
   python3.7 -m pip install pyOpenSSL --upgrade
-
+  apt-get install -y xvfb
 
 extras
   apt-get install htop
