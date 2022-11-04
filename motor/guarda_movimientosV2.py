@@ -217,7 +217,7 @@ while(True):
         grabando=False
         out.release()
         #subir_video(video_actual)
-        #_thread.start_new_thread(subir_video, (video_actual,))
+        _thread.start_new_thread(subir_video, (video_actual,))
         num_video=num_video+1
         #if motion_list[-1] == 1 and motion_list[-2] == 1 and motion_list[-3] == 1 and motion_list[-4] == 1 and motion_list[-5] == 1 and motion_list[-6] == 0:
         
