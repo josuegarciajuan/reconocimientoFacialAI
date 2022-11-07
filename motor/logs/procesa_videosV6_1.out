@@ -1,0 +1,102 @@
+procesando...
+procesando...
+php /var/www/html/reconocimientoFacial/proyecto_definitivo/ws.php listado_lineas 1
+php /var/www/html/reconocimientoFacial/proyecto_definitivo/ws.php listado_lineas 1
+procesando...
+php /var/www/html/reconocimientoFacial/proyecto_definitivo/ws.php listado_lineas 1
+procesando...
+php /var/www/html/reconocimientoFacial/proyecto_definitivo/ws.php listado_lineas 1
+procesando...
+php /var/www/html/reconocimientoFacial/proyecto_definitivo/ws.php listado_lineas 1
+procesando...
+php /var/www/html/reconocimientoFacial/proyecto_definitivo/ws.php listado_lineas 1
+procesando...
+procesando...
+php /var/www/html/reconocimientoFacial/proyecto_definitivo/ws.php listado_lineas 1
+procesando...
+php /var/www/html/reconocimientoFacial/proyecto_definitivo/ws.php listado_lineas 1
+procesando...
+php /var/www/html/reconocimientoFacial/proyecto_definitivo/ws.php listado_lineas 1
+php /var/www/html/reconocimientoFacial/proyecto_definitivo/ws.php listado_lineas 1
+longitud lineas: 1
+longitud lineas: 1
+longitud lineas: 1
+longitud lineas: 1
+Sin lineas en la camara no hago nada
+Sin lineas en la camara no hago nada
+Sin lineas en la camara no hago nada
+tenemos este video:/home/testuser/motor/videos/1/1/1_2022-11-07_14:36:10.516257.avi
+tenemos este video:/home/testuser/motor/videos/1/1/1_2022-11-07_12:59:23.089620.avi
+Sin lineas en la camara no hago nada
+tenemos este video:/home/testuser/motor/videos/1/1/1_2022-11-07_14:54:36.115640.avi
+tenemos este video:/home/testuser/motor/videos/1/1/1_2022-11-07_13:06:01.408622.avi
+longitud lineas: 1
+longitud lineas: 1
+longitud lineas: 1
+longitud lineas: 1
+Sin lineas en la camara no hago nada
+Sin lineas en la camara no hago nada
+Sin lineas en la camara no hago nada
+tenemos este video:/home/testuser/motor/videos/1/1/1_2022-11-07_14:54:40.593454.avi
+Sin lineas en la camara no hago nada
+tenemos este video:/home/testuser/motor/videos/1/1/1_2022-11-07_12:59:57.989773.avi
+tenemos este video:/home/testuser/motor/videos/1/1/1_2022-11-07_13:11:04.738975.avi
+tenemos este video:/home/testuser/motor/videos/1/1/1_2022-11-07_14:58:32.042770.avi
+longitud lineas: 1
+longitud lineas: 1
+Sin lineas en la camara no hago nada
+Sin lineas en la camara no hago nada
+tenemos este video:/home/testuser/motor/videos/1/1/1_2022-11-07_13:00:07.170615.avi
+tenemos este video:/home/testuser/motor/videos/1/1/1_2022-11-07_13:11:30.853627.avi
+Llego al final!
+cara encontrada en: /home/testuser/motor/videos/1/1/1_2022-11-07_12:59:23.089620.avi
+No se puede alinear
+Llego al final!
+cara guardada en /1/1/1_2022-11-07_12:59:23.089620.avi_13.653221130371094.jpg con esta confidence:0.76570153
+Llego al final!
+cara encontrada en: /home/testuser/motor/videos/1/1/1_2022-11-07_14:54:36.115640.avi
+No se puede alinear
+cara guardada en /1/1/1_2022-11-07_14:54:36.115640.avi_18.78398299217224.jpg con esta confidence:0.85596067
+cara encontrada en: /home/testuser/motor/videos/1/1/1_2022-11-07_14:54:36.115640.avi
+No se puede alinear
+cara guardada en /1/1/1_2022-11-07_14:54:36.115640.avi_19.916250705718994.jpg con esta confidence:0.7325312
+cara encontrada en: /home/testuser/motor/videos/1/1/1_2022-11-07_14:54:36.115640.avi
+No se puede alinear
+cara guardada en /1/1/1_2022-11-07_14:54:36.115640.avi_20.464904308319092.jpg con esta confidence:0.9147064
+Llego al final!
+cara encontrada en: /home/testuser/motor/videos/1/1/1_2022-11-07_14:54:36.115640.avi
+No se puede alinear
+cara guardada en /1/1/1_2022-11-07_14:54:36.115640.avi_21.103735208511353.jpg con esta confidence:0.9395173
+cara encontrada en: /home/testuser/motor/videos/1/1/1_2022-11-07_14:54:36.115640.avi
+No se puede alinear
+cara guardada en /1/1/1_2022-11-07_14:54:36.115640.avi_21.741724252700806.jpg con esta confidence:0.8615099
+cara encontrada en: /home/testuser/motor/videos/1/1/1_2022-11-07_14:54:36.115640.avi
+No se puede alinear
+cara guardada en /1/1/1_2022-11-07_14:54:36.115640.avi_22.335097551345825.jpg con esta confidence:0.9203531
+cara encontrada en: /home/testuser/motor/videos/1/1/1_2022-11-07_14:54:36.115640.avi
+No se puede alinear
+cara guardada en /1/1/1_2022-11-07_14:54:36.115640.avi_22.977421522140503.jpg con esta confidence:0.915088
+Llego al final!
+cara encontrada en: /home/testuser/motor/videos/1/1/1_2022-11-07_14:54:36.115640.avi
+No se puede alinear
+cara guardada en /1/1/1_2022-11-07_14:54:36.115640.avi_23.60372495651245.jpg con esta confidence:0.8875483
+cara encontrada en: /home/testuser/motor/videos/1/1/1_2022-11-07_14:54:36.115640.avi
+No se puede alinear
+cara guardada en /1/1/1_2022-11-07_14:54:36.115640.avi_24.108723878860474.jpg con esta confidence:0.94554484
+cara encontrada en: /home/testuser/motor/videos/1/1/1_2022-11-07_14:54:36.115640.avi
+No se puede alinear
+cara guardada en /1/1/1_2022-11-07_14:54:36.115640.avi_24.56845474243164.jpg con esta confidence:0.96491766
+cara encontrada en: /home/testuser/motor/videos/1/1/1_2022-11-07_14:54:36.115640.avi
+No se puede alinear
+cara guardada en /1/1/1_2022-11-07_14:54:36.115640.avi_25.011205196380615.jpg con esta confidence:0.8940074
+cara encontrada en: /home/testuser/motor/videos/1/1/1_2022-11-07_14:54:36.115640.avi
+No se puede alinear
+cara guardada en /1/1/1_2022-11-07_14:54:36.115640.avi_25.466733694076538.jpg con esta confidence:0.9725189
+cara encontrada en: /home/testuser/motor/videos/1/1/1_2022-11-07_14:54:36.115640.avi
+No se puede alinear
+cara guardada en /1/1/1_2022-11-07_14:54:36.115640.avi_25.93401598930359.jpg con esta confidence:0.9497516
+Llego al final!
+Llego al final!
+Llego al final!
+Llego al final!
+Llego al final!

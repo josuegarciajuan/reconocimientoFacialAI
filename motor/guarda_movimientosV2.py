@@ -73,7 +73,7 @@ prevFrame = None  #Initialize the first frame in the video stream
 
 cap = cv2.VideoCapture(URL_CONEXION)
 
-cap.set(cv2.CAP_PROP_FPS, FPS)
+#cap.set(cv2.CAP_PROP_FPS, FPS)
 #counter for the detection
 i = 0
 
@@ -258,7 +258,7 @@ while(True):
         
 
 
-    #cv2.imshow('Webcam ',frame)
+    cv2.imshow('Webcam ',frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
