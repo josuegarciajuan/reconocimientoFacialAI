@@ -103,11 +103,17 @@ count_sensibilidad=0
 
 
 while(True):
-    # Capture frame-by-frame
-    ret, frame = cap.read()
-    frame_original=frame
+    try:
+        ret, frame = cap.read()
+        frame_original=frame
+        frame = cv2.resize(frame, None, fx=REDIMENSIONFRAME, fy=REDIMENSIONFRAME)
+    except Exception as e:
+        print(str(e))
 
-    frame = cv2.resize(frame, None, fx=REDIMENSIONFRAME, fy=REDIMENSIONFRAME)
+
+
+
+    
 
 
     last_frames.apilar(frame_original)
@@ -252,7 +258,7 @@ while(True):
         
 
 
-    cv2.imshow('Webcam ',frame)
+    #cv2.imshow('Webcam ',frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 

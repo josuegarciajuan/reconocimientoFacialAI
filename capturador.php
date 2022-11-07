@@ -97,7 +97,7 @@ while(true){
             $fps=$data["valores"][$i]["fps"];
             $maximo_videos=$data["valores"][$i]["maximo_videos"];
             $redimesionframe=$data["valores"][$i]["redimesionframe"]/100;
-            $sensibilidad=$data["sensibilidad"][$i]["sensibilidad"];
+            $sensibilidad=$data["valores"][$i]["sensibilidad"];
             
             /*
             $cmd="python3.7 motor/guarda_movimientos.py ".FTP_SERVER." ".FTP_USER." ".FTP_PASS." '".$cadena_conexion;
@@ -160,7 +160,7 @@ python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser pr
             echo $cmd."\n\n";
             //exit;
 
-/*          
+          
             if(!isset($threads[$data["valores"][$i]["id"]]) or $threads[$data["valores"][$i]["id"]]==NULL){
                 echo "No existia el proceso, es una camara nueva encendida\n";
                 echo $cmd."\n\n";
@@ -191,7 +191,7 @@ python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser pr
                 $threads[$data["valores"][$i]["id"]]->start();
                 echo "Camara ".$data["valores"][$i]["id"]." reiniciada\n";
             }
-*/
+
             
             
             
@@ -229,7 +229,7 @@ python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser pr
             
         }
     }
-    exit;
+    //exit;
     
     /*
     foreach($threads as $camara_id=>$th){
