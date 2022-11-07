@@ -163,7 +163,7 @@ while(True):
     
     motion_list.append(motion)
     motion_list = motion_list[-frames_a_analizar:]
-    #printLog("Estado actual del movimiento:"+str(motion))
+    print("Estado actual del movimiento:"+str(motion))
 
 
 
