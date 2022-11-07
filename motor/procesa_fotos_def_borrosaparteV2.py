@@ -1093,6 +1093,8 @@ while sigue:
                             for encoding in encodings:
                                 data = pickle.loads(open('motor/bbdd_reconocimiento/'+LOCAL_ID+'/face_enc', "rb").read())
 
+
+                                """
                                 printLog("numero encodings")
                                 printLog(len(encodings))
                                 printLog()
@@ -1105,6 +1107,8 @@ while sigue:
                                 printLog(encoding)
                                 printLog()
                                 printLog()
+                                """
+
 
                                 face_distances = face_recognition.face_distance(data["encodings"],encoding)
 

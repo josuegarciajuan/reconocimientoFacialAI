@@ -50,7 +50,7 @@ while(true){
     //echo $url."\n\n"; exit;
     $data= json_decode(file_get_contents($url),true);
     //var_dump($data); exit;
-    
+   
     if($data["cod"]==200){
         for($i=0;$i<count($data["valores"]);$i++){
             
@@ -60,36 +60,7 @@ while(true){
                 $cadena_conexion=$data["valores"][$i]["url_desdeserver"];
             }
             
-            /*
-            $sensibilidad_movimiento=$data["valores"][$i]["sensibilidad_movimiento"];
-            //$sensibilidad1=round($sensibilidad_movimiento*CONFIG_VAR3_MAXIMO/100);
-            //$sensibilidad2=round($sensibilidad_movimiento*CONFIG_contourArea_MAXIMO/100);
-            //$sensibilidad2=$sensibilidad_movimiento;
-            
-            
-            $rango1=CONFIG_VAR3_MAXIMO-CONFIG_VAR3_MINIMO;
-            //echo "rango1:".$rango1."\n";
-            $calculo1=$rango1*$sensibilidad_movimiento/100;
-            //echo "calculo1:".$calculo1."\n";
-            //$calculo1_masminimo=$calculo1+CONFIG_VAR3_MINIMO;
-            //echo "calculo1_masminimo:".$calculo1_masminimo."\n";
-            //$invertido1=CONFIG_VAR3_MAXIMO-$calculo1_masminimo;
-            //echo "invertido1:".$invertido1."\n";
-            $invertido2_sinminimo=CONFIG_VAR3_MAXIMO-$calculo1;
-            //echo "invertido2_sinminimo:".$invertido2_sinminimo."\n";
-            $sensibilidad1=round($invertido2_sinminimo);
-            
-            
-            $rango2=CONFIG_contourArea_MAXIMO-CONFIG_contourArea_MINIMO;
-            //echo "rango2:".$rango2."\n";
-            $calculo2=$rango2*$sensibilidad_movimiento/100;
-            //echo "calculo2:".$calculo2."\n";
-            $calculo2_masminimo=$calculo2+CONFIG_contourArea_MINIMO;
-            //echo "calculo2_masminimo:".$calculo2_masminimo."\n";
-            $sensibilidad2=round($calculo2_masminimo);
-            //echo "sensibilidaddefinitiva:".$sensibilidad2."\n";
-            */
-            
+          
             
             $segundos_analizar=$data["valores"][$i]["segundos_analizar"];
             $porcentaje_mov=$data["valores"][$i]["porcentaje_mov"];
@@ -99,25 +70,7 @@ while(true){
             $redimesionframe=$data["valores"][$i]["redimesionframe"]/100;
             $sensibilidad=$data["valores"][$i]["sensibilidad"];
             
-            /*
-            $cmd="python3.7 motor/guarda_movimientos.py ".FTP_SERVER." ".FTP_USER." ".FTP_PASS." '".$cadena_conexion;
-            $cmd.="' ".$data["valores"][$i]["local_id"]." ".$data["valores"][$i]["id"]." ";
-            $cmd.=CONFIG_VAR1." ";
-            $cmd.=CONFIG_VAR2." ";
-            //$cmd.=CONFIG_VAR3." ";
-            $cmd.=$sensibilidad1." ";
-            $cmd.=CONFIG_VAR4." ";
-            //$cmd.=CONFIG_contourArea." ";
-            $cmd.=$sensibilidad2." ";
-            $cmd.=CONFIG_maximo_videos." ";
-            $cmd.=CONFIG_frames_a_analizar." ";
-            $cmd.=CONFIG_frames_con_movimiento." ";
-            $cmd.=CONFIG_FRAMES_DESPUES." ";
-            $cmd.=CONFIG_frames_guardados." ";
-            $cmd.=CONFIG_REDIMENSIONFRAME." ";
-            $cmd.=CONFIG_FPS;
-            */
-            
+        
             
         
             $cmd="python3.7 motor/guarda_movimientosV2.py ".FTP_SERVER." ".FTP_USER." ".FTP_PASS." '".$cadena_conexion;
@@ -131,28 +84,7 @@ while(true){
             $cmd.=$sensibilidad." ";
             
             
-/*
-python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.52:554/cam/realmonitor?channel=1&subtype=0' 1 1 21 21 X 255 X 60 30 24 100 120 0.60 10.0
-        
-python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.52:554/cam/realmonitor?channel=1&subtype=0' 1 1 21 21 20 255 1500 60 30 24 100 120 0.60 10.0
-127
 
-
-(el 1º cuanto mas bajo mas sensible es)
-20-110
- * 
-(el 2º cuanto mas alto mas sensible es)
-1-1500
-
-(el mas influyente de los es el 1º)
-
-50sens
- * 
- * 
-python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.223:554/cam/realmonitor?channel=1&subtype=0' 1 1 21 21 110 255 2 60 30 24 100 120 0.60 10.0
- * 
-python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.223:554/cam/realmonitor?channel=1&subtype=0' 1 1 21 21 200 255 2 60 30 24 100 120 0.60 10.0
- */
             $cmd.="";
 
             
@@ -192,46 +124,11 @@ python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser pr
                 echo "Camara ".$data["valores"][$i]["id"]." reiniciada\n";
             }
 
-            
-            
-            
-            /*
-            if(!isset($threads[$data["valores"][$i]["id"]]) or $threads[$data["valores"][$i]["id"]]==NULL){
-                echo "No existia el proceso, es una camara nueva encendida\n";
-                $threads[$data["valores"][$i]["id"]]=new Jos_Thread($data["valores"][$i]["id"],$cmd,true);
-                $threads[$data["valores"][$i]["id"]]->start();
-            }else{
-                if(!$threads[$data["valores"][$i]["id"]]->isrunning()){
-                    $threads[$data["valores"][$i]["id"]]=new Jos_Thread($data["valores"][$i]["id"],$cmd,true);
-                    $threads[$data["valores"][$i]["id"]]->start();
-                }else{
-                    echo "El proceso sigue en marcha\n";
-                    
-                    $tiempo_final = microtime(true);
-                    $tiempo = $tiempo_final - $threads[$data["valores"][$i]["id"]]->tiempo_inicial; 
-                    echo "tiempo en marcha:".$tiempo."\n";
-                    
-                    if($tiempo>CONFIG_TIEMPO_MAXIMO_CAMARAS_ENCENDIDAS){
-                        echo "\n\nSupero el tiempo maximo\n\n";
-                        //$threads[$data["valores"][$i]["id"]]->tiempo_inicial = microtime(true);
-                        $threads[$data["valores"][$i]["id"]]->stop();
-                        $threads[$data["valores"][$i]["id"]]=NULL;
-                        sleep(3);
-                        $threads[$data["valores"][$i]["id"]]=new Jos_Thread($data["valores"][$i]["id"],$cmd,true);
-                        $threads[$data["valores"][$i]["id"]]->start();
-                        echo "Camara ".$data["valores"][$i]["id"]." reiniciada\n";
-                    }
-                    
-                }
-            }
-             * 
-             */
-            
         }
     }
     //exit;
-    
-    /*
+   
+    /*esto se tiene que modificar pa cuando se paren!*/
     foreach($threads as $camara_id=>$th){
 
         $params= "accion=consultar&tabla=camaras&condicion=".urlencode("id=".$camara_id)."&orden=".urlencode("id asc");
@@ -240,6 +137,17 @@ python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser pr
         $sistema=$data["valores"][0]["sistema"];
         $encendida=$data["valores"][0]["encendida"];
 
+        
+        $segundos_analizar=$data["valores"][0]["segundos_analizar"];
+        $porcentaje_mov=$data["valores"][0]["porcentaje_mov"];
+        $dontCare=$data["valores"][0]["dontCare"];
+        $fps=$data["valores"][0]["fps"];
+        $maximo_videos=$data["valores"][0]["maximo_videos"];
+        $redimesionframe=$data["valores"][0]["redimesionframe"]/100;
+        $sensibilidad=$data["valores"][0]["sensibilidad"];
+            
+            
+        
         echo "camara_id:".$camara_id."\n";
         echo "sistema:".$sistema."\n";
         echo "encendida:".$encendida."\n";
@@ -256,8 +164,16 @@ python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser pr
             
             
                 echo "Se ha parado el proceso\n";
-                $cmd="python3.7 motor/guarda_movimientos.py ".FTP_SERVER." ".FTP_USER." ".FTP_PASS." ".$cadena_conexion;
+                $cmd="python3.7 motor/guarda_movimientosV2.py ".FTP_SERVER." ".FTP_USER." ".FTP_PASS." ".$cadena_conexion;
                 $cmd.=" ".$data["valores"][0]["local_id"]." ".$data["valores"][0]["id"];
+                $cmd.=$segundos_analizar." ";
+                $cmd.=$porcentaje_mov." ";
+                $cmd.=$dontCare." ";
+                $cmd.=$fps." ";
+                $cmd.=$maximo_videos." ";
+                $cmd.=$redimesionframe." ";
+                $cmd.=$sensibilidad." ";
+                
                 $threads[$camara_id]=new Jos_Thread($camara_id,$cmd,true);
                 $threads[$camara_id]->start();
             }else{
@@ -269,8 +185,7 @@ python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser pr
         }
 
     }
-     * 
-     */
+
     //echo "Numero de procesos creados:".count($threads)."\n\n";
     sleep(10);
     

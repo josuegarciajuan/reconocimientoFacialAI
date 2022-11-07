@@ -258,7 +258,7 @@ while(True):
         
 
 
-    cv2.imshow('Webcam ',frame)
+    #cv2.imshow('Webcam ',frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
