@@ -97,6 +97,7 @@ video_actual=""
 last_frames=fifo()
 frames_i=0
 count_para=0
+siguegrabando=False
 
 
 while(True):
@@ -174,11 +175,12 @@ while(True):
     if not hay_movimiento(motion_list) and grabando:
         parando=True
         printLog ("Ya no hay moviemiento, paro de grabar...")
+    """    
     else:
         parando=False
         count_para=0
-        printLog ("Si que hay movimiento si...")
-
+        printLog ("Estoy grabando...")
+    """
 
 
     if grabando_primera:
@@ -192,14 +194,15 @@ while(True):
         printLog ("Grabando primera...")
 
 
-        aux=last_frames.obtenerPila()
-        for f in aux:
-            out.write(f)
-        tamano=last_frames.tamano()
-        while tamano>0:
+        if not siguegrabando: 
+            aux=last_frames.obtenerPila()
+            for f in aux:
+                out.write(f)
             tamano=last_frames.tamano()
-            if tamano>0:
-                last_frames.desapilar()
+            while tamano>0:
+                tamano=last_frames.tamano()
+                if tamano>0:
+                    last_frames.desapilar()
 
 
 
@@ -225,11 +228,13 @@ while(True):
         _thread.start_new_thread(subir_video, (video_actual,))
         num_video=num_video+1
         #if motion_list[-1] == 1 and motion_list[-2] == 1 and motion_list[-3] == 1 and motion_list[-4] == 1 and motion_list[-5] == 1 and motion_list[-6] == 0:
-        
+        siguegrabando=False
+
         if hay_movimiento(motion_list):
             grabando=True
             grabando_primera=True
             printLog ("Sigue habiendo movimiento despues de subir el video..")
+            siguegrabando=True
         
 
 
