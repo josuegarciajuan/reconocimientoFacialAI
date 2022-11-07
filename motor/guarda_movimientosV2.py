@@ -38,7 +38,7 @@ REDIMENSIONFRAME=float(sys.argv[12])
 
 
 def printLog(*args, **kwargs):
-    # print(*args, **kwargs)
+    print(*args, **kwargs)
     
     with open('motor/logs/guarda_movimientosV2_'+CAMARA_ID+'.out','a') as file:
         print(*args, **kwargs, file=file)
