@@ -14,7 +14,8 @@
     }
     
     
-   function buscar(){
+   function buscar1(){
+       
        camara=document.getElementById("camara").value;
        desde=document.getElementById("desde").value;
        hasta=document.getElementById("hasta").value;
@@ -24,8 +25,10 @@
        if(document.getElementById("trabajador").checked){
         aux=1;
        }
+       cmd='?page=visitantes&buscar=1&camara='+camara+'&desde='+desde+'&hasta='+hasta+'&trabajador='+aux;
+       //alert(cmd);
        
-       location.href='?page=visitantes&buscar=1&camara='+camara+'&desde='+desde+'&hasta='+hasta+'&trabajador='+aux;
+       location.href=cmd;
        
    } 
    

@@ -84,7 +84,7 @@
     ?>
     Desde:&nbsp;<input data-timepicker="true" class="datepicker input w-56 border mx-auto" id="desde" value="<?= $desde; ?>">
     Hasta:&nbsp;<input data-timepicker="true" class="datepicker input w-56 border mx-auto" id="hasta" value="<?= $hasta; ?>">
-    <button class="button text-white bg-theme-1 shadow-md mr-2" onclick="buscar()">Buscar</button>
+    <button class="button text-white bg-theme-1 shadow-md mr-2" onclick="buscar1()">Buscar</button>
     
     <button class="button text-white bg-theme-1 shadow-md mr-2" onclick="location.href='?page=visitantes&mode=registrar'">Registrar</button>
         
