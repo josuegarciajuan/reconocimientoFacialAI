@@ -176,12 +176,8 @@ while(True):
     if not hay_movimiento(motion_list) and grabando:
         parando=True
         printLog ("Ya no hay moviemiento, paro de grabar...")
-      
-    else:
-        parando=False
-        count_para=0
-        printLog ("Estoy grabando...")
-    
+
+
 
 
     if grabando_primera:
@@ -208,6 +204,8 @@ while(True):
 
 
     if grabando:
+        printLog ("Grabando...")
+
         out.write(frame_original)
         time_elapsed = time.time() - time_inicio
         # key = cv2.waitKey(500)
