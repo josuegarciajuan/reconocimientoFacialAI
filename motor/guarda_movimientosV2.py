@@ -127,6 +127,7 @@ while(True):
     #Compute the absolute difference between the current frame and prev frame
     frameDelta = cv2.absdiff(prevFrame, output) 
 
+    prevFrame = output
 
     #Convert to gray to detect contours
     frameDelta = cv2.cvtColor(frameDelta, cv2.COLOR_BGR2GRAY)
@@ -156,10 +157,10 @@ while(True):
         #print ('Detected something' + str(i))
         #print ('Area: ' + str(cv2.contourArea(c)))
         # printLog ('-->' + str(cv2.contourArea(c)))
-        prevFrame = output
 
         motion = 1
 
+    
     motion_list.append(motion)
     motion_list = motion_list[-frames_a_analizar:]
     #printLog("Estado actual del movimiento:"+str(motion))
