@@ -155,7 +155,7 @@ while(True):
         i+=1
         #print ('Detected something' + str(i))
         #print ('Area: ' + str(cv2.contourArea(c)))
-        printLog ('-->' + str(cv2.contourArea(c)))
+        # printLog ('-->' + str(cv2.contourArea(c)))
         prevFrame = output
 
         motion = 1
