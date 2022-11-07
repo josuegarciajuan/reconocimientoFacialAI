@@ -227,7 +227,7 @@ python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser pr
             
         }
     }
-    exit;
+    
     
     /*
     foreach($threads as $camara_id=>$th){
