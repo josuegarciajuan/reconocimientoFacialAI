@@ -82,14 +82,10 @@ while(true){
             $cmd.=$maximo_videos." ";
             $cmd.=$redimesionframe." ";
             $cmd.=$sensibilidad." ";
-            
-            
 
             $cmd.="";
 
-            
-
-            echo $cmd."\n\n";
+            echo "cmd1->".$cmd."\n\n";
             //exit;
 
           
@@ -134,6 +130,12 @@ while(true){
         $params= "accion=consultar&tabla=camaras&condicion=".urlencode("id=".$camara_id)."&orden=".urlencode("id asc");
         $url=URL_BASE_SERVER."ws.php?".$params;
         $data= json_decode(file_get_contents($url),true);
+        
+        echo "\n\n-retorno-----------";
+        var_dump($data);
+        echo "\n\n------------";
+        
+        
         $sistema=$data["valores"][0]["sistema"];
         $encendida=$data["valores"][0]["encendida"];
 
@@ -173,6 +175,8 @@ while(true){
                 $cmd.=$maximo_videos." ";
                 $cmd.=$redimesionframe." ";
                 $cmd.=$sensibilidad." ";
+                
+                echo "cmd2->".$cmd."\n";
                 
                 $threads[$camara_id]=new Jos_Thread($camara_id,$cmd,true);
                 $threads[$camara_id]->start();
