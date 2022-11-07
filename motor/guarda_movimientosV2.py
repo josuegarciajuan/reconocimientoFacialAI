@@ -58,6 +58,7 @@ def hay_movimiento(the_motion_list):
 def subir_video(nombre):
     cmd='ftp-upload -h '+FTP_SERVER+' -u '+FTP_USER+' --password '+FTP_PASS+' -d motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+' motor/videos/'+LOCAL_ID+'/'+nombre
     printLog(cmd)
+    printLog("\n\n")
     os.system(cmd)
     os.remove('motor/videos/'+LOCAL_ID+'/'+nombre)
 
@@ -173,6 +174,11 @@ while(True):
     if not hay_movimiento(motion_list) and grabando:
         parando=True
         printLog ("Ya no hay moviemiento, paro de grabar...")
+    else 
+        parando=False
+        count_para=0
+        printLog ("Si que hay movimiento si...")
+
 
 
     if grabando_primera:
