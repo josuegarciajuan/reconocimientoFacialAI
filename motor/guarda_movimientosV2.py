@@ -177,6 +177,12 @@ while(True):
         parando=True
         printLog ("Ya no hay moviemiento, paro de grabar...")
 
+    if parando:
+        if hay_movimiento(motion_list):
+            printLog ("Estaba parando pero, sigue habiendo movimiento, así que sigo grabando..!")
+            count_para=0
+            parando=False
+
 
 
 

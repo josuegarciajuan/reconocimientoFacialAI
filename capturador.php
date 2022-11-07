@@ -158,7 +158,7 @@ python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser pr
             echo $cmd."\n\n";
             //exit;
 
-          
+/*          
             if(!isset($threads[$data["valores"][$i]["id"]]) or $threads[$data["valores"][$i]["id"]]==NULL){
                 echo "No existia el proceso, es una camara nueva encendida\n";
                 echo $cmd."\n\n";
@@ -189,7 +189,7 @@ python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser pr
                 $threads[$data["valores"][$i]["id"]]->start();
                 echo "Camara ".$data["valores"][$i]["id"]." reiniciada\n";
             }
-
+*/
             
             
             
@@ -227,7 +227,7 @@ python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser pr
             
         }
     }
-    
+    exit;
     
     /*
     foreach($threads as $camara_id=>$th){

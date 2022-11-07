@@ -19,6 +19,10 @@ MYSQL: Prueba123!
 
 
 
+scp eladmin@45.136.71.235:/home/testuser/motor/videos/1/2/* /home/testuser/motor/videos/1/2/
+
+
+
 45.136.71.235
 sshpass -p 'Prueba123!' ssh root@217.61.112.100
 
