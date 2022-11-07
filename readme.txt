@@ -139,10 +139,6 @@ sudo systemctl restart vsftpd.service
 
 
 
-
-
-
-
 instalacion python
   sudo apt-get install software-properties-common
   sudo add-apt-repository ppa:deadsnakes/ppa
@@ -324,6 +320,9 @@ graba videos cuando detecta movimiento
 cp /home/testuser/pruebas/p2/face_enc motor/bbdd_reconocimiento/1/
 cp /home/testuser/pruebas/p4/* /home/testuser/motor/videos/1/1 
 )
+
+quiero ver la sensibilidad de las camaras por que parece que captura muy poco
+
 
 p5-detector.php
 llama y mantiene comprobando que no se desborde la ram de estos procesos

@@ -37,7 +37,7 @@ $primera=[];
 while(true){
     //echo "paso1\n";
 
-    
+
     if($local_id!=""){
         $params= "accion=consultar&tabla=camaras&condicion=".urlencode("sistema=0 and encendida=1 and local_id=".$local_id)."&orden=".urlencode("id asc");
     }else{
@@ -158,16 +158,14 @@ python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser pr
             echo $cmd."\n\n";
             //exit;
 
-            
-            
-            
+          
             if(!isset($threads[$data["valores"][$i]["id"]]) or $threads[$data["valores"][$i]["id"]]==NULL){
                 echo "No existia el proceso, es una camara nueva encendida\n";
                 echo $cmd."\n\n";
                 $threads[$data["valores"][$i]["id"]]=new Jos_Thread($data["valores"][$i]["id"],$cmd,true);
                 $threads[$data["valores"][$i]["id"]]->start();
             }
-            
+        
             
             $tiempo_final = microtime(true);
             
@@ -177,6 +175,7 @@ python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser pr
             
             $tiempo = $tiempo_final - $threads[$data["valores"][$i]["id"]]->tiempo_inicial; 
             //echo "tiempo en marcha:".$tiempo."\n";
+
 
             if($tiempo>CONFIG_TIEMPO_MAXIMO_CAMARAS_ENCENDIDAS){
                 echo "\n\nSupero el tiempo maximo\n\n";
@@ -190,7 +189,7 @@ python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser pr
                 $threads[$data["valores"][$i]["id"]]->start();
                 echo "Camara ".$data["valores"][$i]["id"]." reiniciada\n";
             }
-            
+
             
             
             
@@ -228,7 +227,7 @@ python3.7 motor/guarda_movimientos.py reconocimien.vps.webdock.cloud testuser pr
             
         }
     }
-    //exit;
+    exit;
     
     /*
     foreach($threads as $camara_id=>$th){

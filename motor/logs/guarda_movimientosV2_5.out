@@ -1,0 +1,196 @@
+-->223.0
+-->217.0
+-->255.5
+-->408.0
+-->224.5
+-->390.0
+-->278.5
+-->470.5
+-->462.0
+-->624.0
+-->708.0
+-->708.5
+-->646.0
+-->964.0
+-->515.0
+-->727.0
+-->247.0
+-->433.5
+-->465.0
+-->470.0
+-->439.0
+-->530.5
+-->476.5
+-->875.0
+-->655.0
+-->543.5
+-->238.5
+-->389.5
+-->540.0
+-->313.0
+-->368.0
+-->542.5
+-->538.5
+-->459.5
+-->471.0
+-->260.5
+-->492.5
+-->721.5
+-->4772.0
+-->3470.0
+-->1149.0
+-->1245.0
+-->1429.0
+-->1675.5
+-->1761.0
+-->2145.5
+-->2145.5
+-->2289.5
+-->1795.0
+-->2404.5
+-->2636.5
+Detecto movimiento, empiezo a grabar...
+Grabando primera...
+-->2296.0
+-->2255.5
+-->2354.0
+-->2281.0
+-->1541.0
+-->1736.5
+-->1691.0
+-->1262.5
+-->800.0
+-->1083.0
+-->1762.0
+-->2102.0
+-->2391.0
+-->2357.0
+-->2230.5
+-->2266.5
+-->1911.5
+-->1622.5
+-->1210.0
+-->605.5
+-->314.5
+-->383.0
+-->459.0
+-->378.5
+-->526.5
+Ya no hay moviemiento, paro de grabar...
+Proceso de frenado:1
+-->1309.0
+Proceso de frenado:2
+-->383.5
+Proceso de frenado:3
+-->242.5
+Proceso de frenado:4
+-->271.5
+Proceso de frenado:5
+Ya no hay moviemiento, paro de grabar...
+Proceso de frenado:6
+-->1376.0
+Proceso de frenado:7
+-->480.0
+Proceso de frenado:8
+-->636.5
+Proceso de frenado:9
+-->716.0
+Proceso de frenado:10
+parado de grabar 10 frames despues y subiendo video:5_2022-11-07_11:14:15.317410.avi ...
+Sigue habiendo movimiento despues de subir el video..
+ftp-upload -h reconocimien.vps.webdock.cloud -u testuser --password prueba123 -d motor/videos/1/5 motor/videos/1/5_2022-11-07_11:14:15.317410.avi
+-->908.5
+Grabando primera...
+-->624.5
+-->631.0
+-->589.5
+-->480.0
+-->424.5
+-->417.0
+-->475.0
+-->448.0
+-->622.5
+-->548.0
+-->692.0
+-->615.0
+-->638.0
+-->725.5
+-->685.0
+-->621.5
+-->567.5
+-->526.0
+-->472.5
+-->224.0
+-->220.5
+-->212.0
+-->240.0
+-->234.5
+Ya no hay moviemiento, paro de grabar...
+Proceso de frenado:1
+-->1585.5
+Proceso de frenado:2
+Ya no hay moviemiento, paro de grabar...
+Proceso de frenado:3
+-->1615.0
+Proceso de frenado:4
+-->359.0
+Proceso de frenado:5
+-->340.0
+Proceso de frenado:6
+-->278.0
+Proceso de frenado:7
+-->510.0
+Proceso de frenado:8
+-->602.0
+Proceso de frenado:9
+-->687.5
+Proceso de frenado:10
+parado de grabar 10 frames despues y subiendo video:5_2022-11-07_11:14:17.210230.avi ...
+Sigue habiendo movimiento despues de subir el video..
+ftp-upload -h reconocimien.vps.webdock.cloud -u testuser --password prueba123 -d motor/videos/1/5 motor/videos/1/5_2022-11-07_11:14:17.210230.avi
+-->772.5
+Grabando primera...
+-->528.5
+-->500.0
+-->429.0
+-->246.0
+-->362.0
+-->375.5
+-->408.5
+-->437.5
+-->469.0
+-->394.0
+-->507.0
+-->566.0
+-->608.0
+-->507.5
+-->466.0
+Ya no hay moviemiento, paro de grabar...
+Proceso de frenado:1
+-->476.0
+Proceso de frenado:2
+Ya no hay moviemiento, paro de grabar...
+Proceso de frenado:3
+-->334.5
+Proceso de frenado:4
+Ya no hay moviemiento, paro de grabar...
+Proceso de frenado:5
+Ya no hay moviemiento, paro de grabar...
+Proceso de frenado:6
+Ya no hay moviemiento, paro de grabar...
+Proceso de frenado:7
+Ya no hay moviemiento, paro de grabar...
+Proceso de frenado:8
+Ya no hay moviemiento, paro de grabar...
+Proceso de frenado:9
+Ya no hay moviemiento, paro de grabar...
+Proceso de frenado:10
+parado de grabar 10 frames despues y subiendo video:5_2022-11-07_11:14:18.381319.avi ...
+ftp-upload -h reconocimien.vps.webdock.cloud -u testuser --password prueba123 -d motor/videos/1/5 motor/videos/1/5_2022-11-07_11:14:18.381319.avi
+-->216.5
+-->251.5
+-->248.5
+-->289.0
+-->326.0
+-->363.5
+-->382.5

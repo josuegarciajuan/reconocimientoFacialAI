@@ -104,7 +104,6 @@ while(True):
     frame_original=frame
 
     frame = cv2.resize(frame, None, fx=REDIMENSIONFRAME, fy=REDIMENSIONFRAME)
-    
 
 
     last_frames.apilar(frame_original)
@@ -154,14 +153,14 @@ while(True):
         i+=1
         #print ('Detected something' + str(i))
         #print ('Area: ' + str(cv2.contourArea(c)))
-        print ('-->' + str(cv2.contourArea(c)))
+        printLog ('-->' + str(cv2.contourArea(c)))
         prevFrame = output
 
         motion = 1
 
     motion_list.append(motion)
     motion_list = motion_list[-frames_a_analizar:]
-    print("Estado actual del movimiento:"+str(motion))
+    #printLog("Estado actual del movimiento:"+str(motion))
 
 
 
