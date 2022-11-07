@@ -165,7 +165,7 @@ while(true){
             
                 echo "Se ha parado el proceso\n";
                 $cmd="python3.7 motor/guarda_movimientosV2.py ".FTP_SERVER." ".FTP_USER." ".FTP_PASS." ".$cadena_conexion;
-                $cmd.=" ".$data["valores"][0]["local_id"]." ".$data["valores"][0]["id"];
+                $cmd.=" ".$data["valores"][0]["local_id"]." ".$data["valores"][0]["id"]." ";
                 $cmd.=$segundos_analizar." ";
                 $cmd.=$porcentaje_mov." ";
                 $cmd.=$dontCare." ";
