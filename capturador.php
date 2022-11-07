@@ -97,6 +97,7 @@ while(true){
             $fps=$data["valores"][$i]["fps"];
             $maximo_videos=$data["valores"][$i]["maximo_videos"];
             $redimesionframe=$data["valores"][$i]["redimesionframe"]/100;
+            $sensibilidad=$data["sensibilidad"][$i]["sensibilidad"];
             
             /*
             $cmd="python3.7 motor/guarda_movimientos.py ".FTP_SERVER." ".FTP_USER." ".FTP_PASS." '".$cadena_conexion;
@@ -127,6 +128,7 @@ while(true){
             $cmd.=$fps." ";
             $cmd.=$maximo_videos." ";
             $cmd.=$redimesionframe." ";
+            $cmd.=$sensibilidad." ";
             
             
 /*

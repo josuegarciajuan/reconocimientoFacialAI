@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS camaras(
 
   PRIMARY KEY (id)
 );
-/*alter table camaras add column sensibilidad_movimiento int(11) default 50;*/
+alter table camaras add column sensibilidad int(11) default 1;
 
 drop table if exists nodos;
 CREATE TABLE IF NOT EXISTS nodos(

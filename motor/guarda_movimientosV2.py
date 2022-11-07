@@ -34,6 +34,7 @@ maximo_videos=int(sys.argv[11]) #tiempo en segundos maximo de grabado
 #REDIMENSIONFRAME=0.60  #reduce un poco el fram original para no guardar videos tan grandes
 REDIMENSIONFRAME=float(sys.argv[12])
 
+SENSIBILIDAD=int(sys.argv[13]) #CUANTO MAS BAJO menos sensible
 
 
 
@@ -98,6 +99,7 @@ last_frames=fifo()
 frames_i=0
 count_para=0
 siguegrabando=False
+count_sensibilidad=0
 
 
 while(True):
@@ -127,7 +129,14 @@ while(True):
     #Compute the absolute difference between the current frame and prev frame
     frameDelta = cv2.absdiff(prevFrame, output) 
 
-    prevFrame = output
+
+    count_sensibilidad=count_sensibilidad+1
+    if count_sensibilidad==SENSIBILIDAD:
+        prevFrame = output
+        count_sensibilidad=0
+    # esto puede que afecte por que este y el anterior si el mov es lento son casi =
+    #para que detectara todos los movs, habria que pillar 1 de cada X 
+
 
     #Convert to gray to detect contours
     frameDelta = cv2.cvtColor(frameDelta, cv2.COLOR_BGR2GRAY)
@@ -243,7 +252,7 @@ while(True):
         
 
 
-    # cv2.imshow('Webcam ',frame)
+    cv2.imshow('Webcam ',frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 

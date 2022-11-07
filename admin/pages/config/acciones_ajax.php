@@ -27,6 +27,7 @@ switch ($_GET["a"]) {
         echo ";;;".$sql->row["fps"];
         echo ";;;".$sql->row["maximo_videos"];
         echo ";;;".$sql->row["redimesionframe"];
+        echo ";;;".$sql->row["sensibilidad"];
         
         break;
         

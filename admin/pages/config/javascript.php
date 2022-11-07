@@ -274,6 +274,7 @@ function guardar(){
     fps=document.getElementById("fps").value;
     maximo_videos=document.getElementById("maximo_videos").value;
     redimesionframe=document.getElementById("redimesionframe").value;
+    sensibilidad=document.getElementById("sensibilidad").value;
 
     
     /*
@@ -330,6 +331,9 @@ function guardar(){
     uri+="&fps="+fps;
     uri+="&maximo_videos="+maximo_videos;
     uri+="&redimesionframe="+redimesionframe;
+    uri+="&sensibilidad="+sensibilidad;
+    
+    
       
       
     
@@ -432,6 +436,9 @@ function seleccionar_camara(){
 
             redimesionframe=res[16];
             document.getElementById("redimesionframe").value=redimesionframe;
+            
+            sensibilidad=res[17];
+            document.getElementById("sensibilidad").value=sensibilidad;
   
 
         }

@@ -146,6 +146,17 @@
                         }
                         ?>
                     </select>
+                    
+                    
+                    <br />
+                    &nbsp;Sensibilidad:
+                    <select name="sensibilidad" id="sensibilidad">
+                        <?php
+                        for($i=1;$i<=15;$i++){
+                            echo "<option value='".$i."'>".$i."</option>";
+                        }
+                        ?>
+                    </select>
  
                     
                     <br /><br />
