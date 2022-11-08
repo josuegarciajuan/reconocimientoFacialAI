@@ -19,7 +19,7 @@ MYSQL: Prueba123!
 
 
 
-scp eladmin@45.136.71.235:/home/testuser/motor/videos/1/2/* /home/testuser/motor/videos/1/2/
+scp eladmin@45.136.71.235:/home/testuser/motor/videos/1/6/* /home/testuser/motor/videos/1/6/
 
 
 
@@ -624,3 +624,9 @@ Video
 
 
 
+
+[hevc @ 0x3073980] The cu_qp_delta 30 is outside the valid range [-26, 25].
+Traceback (most recent call last):
+  File "motor/guarda_movimientosV2.py", line 127, in <module>
+    output = cv2.GaussianBlur(frame, (21, 21), 0)
+cv2.error: OpenCV(4.6.0) /io/opencv/modules/imgproc/src/smooth.dispatch.cpp:617: error: (-215:Assertion failed) !_src.empty() in function 'GaussianBlur'

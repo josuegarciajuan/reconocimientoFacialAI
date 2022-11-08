@@ -61,6 +61,8 @@ while(true){
                     }
                      */
 
+                    
+ /*                   
                     $params="";
                     $params.=CONFIG_umbral_parecidosentresi." ";
                     $params.=CONFIG_umbral." ";
@@ -143,7 +145,7 @@ while(true){
                         }
                          
                     }
-
+*/
                     //exit;
                     //python3.7 /var/www/html/reconocimientofacialV2/motor/procesa_videosV6.py 1 1 '1_2022-10-31_15:35:20.022061.avi' '/var/www/html/reconocimientofacialV2/' 0.68 '/home/testuser/' 150 5 10 750 562 750 562 3 5 1500 3 0.15 300 300 1.0 353 353 104.0 117.0 123.0 100 150
 
