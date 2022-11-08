@@ -19,8 +19,10 @@ MYSQL: Prueba123!
 
 
 
-scp eladmin@45.136.71.235:/home/testuser/motor/videos/1/6/* /home/testuser/motor/videos/1/6/
+scp /home/testuser/motor/videos/1/6/* eladmin@45.136.71.235:/home/testuser/motor/videos/1/6/
 
+
+scp eladmin@45.136.71.235:/var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/1/1/* motor/caras/sinclasificar/1/1/
 
 
 45.136.71.235
