@@ -91,7 +91,7 @@ define("CONFIG_contourArea_MINIMO","1");
  */
 define("CONFIG_LIMITE_RAM",85); //limite de ram ocupada para seguir procesando videos
 //define("CONFIG_LIMITE_VIDEOS",25); //numero de videos maximo que se pueden procesar a la vez
-define("CONFIG_LIMITE_VIDEOS",40); //numero de videos maximo que se pueden procesar a la vez
+define("CONFIG_LIMITE_VIDEOS",70); //numero de videos maximo que se pueden procesar a la vez
 define("CONFIG_TIEMPOPROCESODECLISIFICARCARAS",60*10);  //en segs tiempo max q puede estar el proceso de procesar caras, luego se reinicia
 //procesa_videosV6.py
 //define("CONFIG_SENSIBILIDAD_ES_CARA","0.68");
