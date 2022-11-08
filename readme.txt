@@ -22,7 +22,7 @@ MYSQL: Prueba123!
 scp /home/testuser/motor/videos/1/6/* eladmin@45.136.71.235:/home/testuser/motor/videos/1/6/
 
 
-scp eladmin@45.136.71.235:/var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/1/1/* motor/caras/sinclasificar/1/1/
+
 
 
 45.136.71.235
@@ -342,6 +342,8 @@ el 2º: busca a quien pertence la cara de las fotos sacadas del 1º
 si me quiero saltar la 1º parte:
 cp /home/testuser/pruebas/p5/1/* /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/1/1/
 cp /home/testuser/pruebas/p2/face_enc motor/bbdd_reconocimiento/1/
+scp motor/caras/sinclasificar/1/1/* eladmin@45.136.71.235:/var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/1/1/
+
 
 si me quiero saltar la 2º parte:
 cp -R /home/testuser/pruebas/p5/2/5w7AF4sNu7X6OJYtVU38I3fun motor/caras/1/1/

@@ -125,22 +125,8 @@ while(true){
                             echo "Ya existia\n";
                             if(!$threads[$tmp->row["id"]."_".$i]->isrunning()){
                                 echo "Y se ha parado, lo voy a reanudar\n";
-                                $threads[$tmp->row["id"]."_".$i]=new Jos_Thread($tmp->row["id"]."_".$i,$cmd[$i],true);
-                                $threads[$tmp->row["id"]."_".$i]->start();
-                            }else{
-                                echo "-El proceso sigue en marcha\n";
-                                
-                                $tiempo_final = microtime(true);
-                                $tiempo = $tiempo_final - $tiempo_inicial; 
-
-                                if($tiempo>CONFIG_TIEMPOPROCESODECLISIFICARCARAS){
-                                    echo "Supero el tiempo maximo\n";
-                                    $tiempo_inicial = microtime(true);
-                                    $threads[$tmp->row["id"]."_".$i]->stop();
-                                    sleep(2);
-                                    $threads[$tmp->row["id"]."_".$i]->start();
-                                    echo "Camaras reiniciadas\n";
-                                }
+                                $threads[$tmp->row["id"]."_".$i]->stop();
+                                $threads[$tmp->row["id"]."_".$i]=NULL;
                             }
                         }
                          
