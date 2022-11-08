@@ -45,7 +45,6 @@ while(true){
     }
     
     
-    
     $url=URL_BASE_SERVER."ws.php?".$params;
     //echo $url."\n\n"; exit;
     $data= json_decode(file_get_contents($url),true);
@@ -91,9 +90,22 @@ while(true){
           
             if(!isset($threads[$data["valores"][$i]["id"]]) or $threads[$data["valores"][$i]["id"]]==NULL){
                 echo "No existia el proceso, es una camara nueva encendida\n";
-                echo $cmd."\n\n";
                 $threads[$data["valores"][$i]["id"]]=new Jos_Thread($data["valores"][$i]["id"],$cmd,true);
                 $threads[$data["valores"][$i]["id"]]->start();
+            }else{
+                
+                echo "El proceso ya estaba en marcha\n";
+                if(!$threads[$data["valores"][$i]["id"]]->isrunning()){
+                    echo "Pero se habia parado\n";
+                    
+                    $threads[$data["valores"][$i]["id"]]->stop();
+                    $threads[$data["valores"][$i]["id"]]=NULL;
+                    sleep(3);
+                    $threads[$data["valores"][$i]["id"]]=new Jos_Thread($data["valores"][$i]["id"],$cmd,true);
+                    $threads[$data["valores"][$i]["id"]]->start();
+                    echo "Camara ".$data["valores"][$i]["id"]." reiniciada2\n";
+                    
+                }
             }
         
             
@@ -104,7 +116,7 @@ while(true){
             
             
             $tiempo = $tiempo_final - $threads[$data["valores"][$i]["id"]]->tiempo_inicial; 
-            //echo "tiempo en marcha:".$tiempo."\n";
+            echo "tiempo en marcha:".$tiempo."\n";
 
 
             if($tiempo>CONFIG_TIEMPO_MAXIMO_CAMARAS_ENCENDIDAS){
@@ -124,106 +136,11 @@ while(true){
     }
     //exit;
    
-    /*esto se tiene que modificar pa cuando se paren!*/
-    foreach($threads as $camara_id=>$th){
-
-        $params= "accion=consultar&tabla=camaras&condicion=".urlencode("id=".$camara_id)."&orden=".urlencode("id asc");
-        $url=URL_BASE_SERVER."ws.php?".$params;
-        $data= json_decode(file_get_contents($url),true);
-        
-        echo "\n\n-retorno-----------";
-        var_dump($data);
-        echo "\n\n------------";
-        
-        
-        $sistema=$data["valores"][0]["sistema"];
-        $encendida=$data["valores"][0]["encendida"];
-
-        
-        $segundos_analizar=$data["valores"][0]["segundos_analizar"];
-        $porcentaje_mov=$data["valores"][0]["porcentaje_mov"];
-        $dontCare=$data["valores"][0]["dontCare"];
-        $fps=$data["valores"][0]["fps"];
-        $maximo_videos=$data["valores"][0]["maximo_videos"];
-        $redimesionframe=$data["valores"][0]["redimesionframe"]/100;
-        $sensibilidad=$data["valores"][0]["sensibilidad"];
-            
-            
-        
-        echo "camara_id:".$camara_id."\n";
-        echo "sistema:".$sistema."\n";
-        echo "encendida:".$encendida."\n";
-
-        if($sistema==0 and $encendida==1){
-            echo "sigue encendida!\n";
-            if(!$th->isrunning()){
-                
-                if($desde=="local"){
-                    $cadena_conexion=$data["valores"][$i]["url_conexion"];
-                }else{ //$desde=="server"
-                    $cadena_conexion=$data["valores"][$i]["url_desdeserver"];
-                }
-            
-            
-                echo "Se ha parado el proceso\n";
-                $cmd="python3.7 motor/guarda_movimientosV2.py ".FTP_SERVER." ".FTP_USER." ".FTP_PASS." ".$cadena_conexion;
-                $cmd.=" ".$data["valores"][0]["local_id"]." ".$data["valores"][0]["id"]." ";
-                $cmd.=$segundos_analizar." ";
-                $cmd.=$porcentaje_mov." ";
-                $cmd.=$dontCare." ";
-                $cmd.=$fps." ";
-                $cmd.=$maximo_videos." ";
-                $cmd.=$redimesionframe." ";
-                $cmd.=$sensibilidad." ";
-                
-                echo "cmd2->".$cmd."\n";
-                
-                $threads[$camara_id]=new Jos_Thread($camara_id,$cmd,true);
-                $threads[$camara_id]->start();
-            }else{
-                echo "El proceso sigue en marcha\n";
-            }
-        }else{
-            echo "Como ya no esta encendida o ha cambiado de sistema, paramos el proceso\n";
-            $th->stop();
-        }
-
-    }
 
     //echo "Numero de procesos creados:".count($threads)."\n\n";
     sleep(10);
     
-    
-    /*
-    $tiempo_final = microtime(true);
-    $tiempo = $tiempo_final - $tiempo_inicial; 
-    echo "tiempo en marcha:".$tiempo."\n";
 
-    if($tiempo>CONFIG_TIEMPO_MAXIMO_CAMARAS_ENCENDIDAS){
-        echo "\n\nSupero el tiempo maximo\n\n";
-        $tiempo_inicial = microtime(true);
-        foreach($threads as $camara_id=>$th){
-            $th->stop();
-            sleep(1);
-            $threads[$camara_id]=NULL;
-            sleep(1);
-            
-        }
-        unset($threads);
-        $threads=[];
-        echo "Camaras reiniciadas\n";
-        sleep(10);
-    }
-    
-    
-    if (microtime(true) >= $nextTime) {
-        foreach($threads as $camara_id=>$th){
-            $th->stop();
-            $threads[$camara_id]=NULL;
-        }    
-        $nextTime = microtime(true) + INTERVAL;
-        $threads=[];
-    }*/
 }
     
 

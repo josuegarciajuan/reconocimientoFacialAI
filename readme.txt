@@ -325,7 +325,7 @@ cp /home/testuser/pruebas/p2/face_enc motor/bbdd_reconocimiento/1/
 cp /home/testuser/pruebas/p4/* /home/testuser/motor/videos/1/1 
 )
 
-quiero ver la sensibilidad de las camaras por que parece que captura muy poco
+
 
 
 p5-detector.php
