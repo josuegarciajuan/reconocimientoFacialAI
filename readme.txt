@@ -60,6 +60,51 @@ instalacion FTP
   sudo systemctl restart vsftpd.service
   
 
+Para que cada usuario tenga su propio directorio:
+nano /etc/vsftpd/vsftpd.conf
+# Disable anonymous login
+anonymous_enable=NO
+# Enable the userlist 
+userlist_enable=YES
+# Configure the userlist to act as a whitelist (only allow users who are listed there)
+userlist_deny=NO
+# Allow the local users to login to the FTP (if they're in the userlist)
+local_enable=YES
+# Allow virtual users to use the same privileges as local users
+virtual_use_local_privs=YES
+# Setup the virtual users config folder
+user_config_dir=/etc/vsftpd/user_config_dir/
+
+Si no existe esta ruta: user_config_dir=/etc/vsftpd/user_config_dir/ se crea
+creamos fichero llamado: user_list en la siguente ruta: /etc/vsftpd/    (puede ser que se encuentre en esta ruta: /etc/vsftpd.user_list)
+Ponemos por cada linea el nombre de un usuario
+
+Dentro de ese mismo directorio, crear un fichero por cada usuario, cada fichero con el nombre del uisuario. El contenido de cada fich es:
+local_root=/home/user
+write_enable=YES
+
+sudo systemctl restart vsftpd.service
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 NO
