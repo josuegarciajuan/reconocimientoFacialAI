@@ -1,3 +1,24 @@
+buevo server 26/1/2024
+webdock.io
+josue@nouesmalt.com
+prueba123
+
+IPv4
+45.148.29.34
+
+
+tracatrack
+argAWGwgdsag3rfef
+
+sshpass -p 'argAWGwgdsag3rfef' ssh tracatrack@45.148.29.34
+
+MYSQL: Prueba123!
+
+------------------------------------------------------------------
+
+
+
+
 NUEVO SERVER:
 
 
@@ -33,6 +54,13 @@ sshpass -p 'Prueba123!' ssh root@217.61.112.100
 http://45.136.71.235/reconocimientofacialV2/admin/
 
 https://scrapscrap.xyz/admin
+
+
+
+
+
+
+
 
 
 instalacion php
@@ -181,6 +209,10 @@ instalacion python
   sudo add-apt-repository ppa:deadsnakes/ppa
   sudo apt-get update
   sudo apt-get install python3.7
+sudo apt install python3.7-distutils
+sudo apt-get install python3-apt
+sudo dpkg -i --force-overwrite /var/cache/apt/archives/python3.7-distutils_3.7.9-1+focal1_all.deb
+sudo apt-get -f install 
 
 
 librerias python
@@ -237,7 +269,7 @@ librerias python
   sudo apt-get install build-essential cmake
   sudo apt-get install python3.7-dev
   python3.7 setup.py install
-  python3.7 -m pip install face_recognition
+  python3.7 -m pip install face_recognition      [ultimo ejecutado]
   python3.7 -m pip install filelock
   python3.7 -m pip install wheel
   python3.7 -m pip install pandas
