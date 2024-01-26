@@ -4,6 +4,72 @@
  * 12/03/2020
  */
 
+rtsp://admin:bakcAse4@172.16.51.223/cam/realmonitor?channel=1&subtype=0
+rtsp://admin:bakcAse4@93.176.162.71:901/cam/realmonitor?channel=1&subtype=0
+ 
+
+	
+cam_lorenzo
+172.16.51.223
+	901 	554 	
+	
+cam_adrian
+172.16.51.221
+	902 	554 	
+	
+cam_fran
+172.16.51.222
+	903 	554 	
+	
+cam_laura
+172.16.51.224
+	904 	554 	
+	
+cam_recepcion
+172.16.51.225
+	905 	554 	
+	
+cam_archivo
+172.16.51.226
+	906 	554 	
+	
+cam_oscar
+172.16.51.227
+	907 	554 	
+	
+cam_escalera
+172.16.51.228
+	908 	554 	
+	
+cam_pepe
+172.16.51.229
+	909 	554 	
+	
+cam_juntas
+172.16.51.231
+	910 	554 	
+	
+cam_pasillo
+172.16.51.232
+	911 	554 	
+	
+cam_puerta
+172.16.51.233
+	912 	554
+
+172.16.51.221 adrian
+172.16.51.222 fran
+172.16.51.223 lorenzo
+172.16.51.224 laura
+172.16.51.225 recepcion
+172.16.51.226 archivo
+172.16.51.227 oscar
+172.16.51.228 escalera
+172.16.51.229 pepe
+172.16.51.231 sala juntas
+172.16.51.232 pasillo
+172.16.51.233 puerta acceso
+
 insert into locales (id,nombre,url_logo,aforo_max,aforo_actual,usuario,passw,directorio) 
 values (1,'Oficina','https://ichef.bbci.co.uk/news/976/cpsprodpb/3066/production/_111609321_1-1.jpg',100,0,'ofi','admin','oficina');
 

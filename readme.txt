@@ -87,26 +87,6 @@ sudo systemctl restart vsftpd.service
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 NO
 /*
   sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/vsftpd.pem -out /etc/ssl/private/vsftpd.pem
@@ -162,12 +142,18 @@ virtual_use_local_privs=YES
 user_config_dir=/etc/vsftpd/user_config_dir/
 
 
-useradd ftp1
+adduser ftp1
 passwd ftp1
+
 
 nano  /etc/vsftpd.user_list
 josue
 
+
+nano /etc/vsftpd/user_config_dir/user_list
+anyadir el user
+
+ 
 > nano /etc/vsftpd/user_config_dir/josue
 
 local_root=/var/www/ftp1
@@ -679,3 +665,9 @@ Traceback (most recent call last):
   File "motor/guarda_movimientosV2.py", line 127, in <module>
     output = cv2.GaussianBlur(frame, (21, 21), 0)
 cv2.error: OpenCV(4.6.0) /io/opencv/modules/imgproc/src/smooth.dispatch.cpp:617: error: (-215:Assertion failed) !_src.empty() in function 'GaussianBlur'
+
+
+
+
+adduser esunaprueba --force-badname
+sdfgbsfg#25adfaf
