@@ -1,4 +1,4 @@
-buevo server 26/1/2024
+nuevo server 26/1/2024
 webdock.io
 josue@nouesmalt.com
 prueba123
@@ -13,6 +13,9 @@ argAWGwgdsag3rfef
 sshpass -p 'argAWGwgdsag3rfef' ssh tracatrack@45.148.29.34
 
 MYSQL: Prueba123!
+
+
+45.148.29.34/reconocimientofacialV2/admin
 
 ------------------------------------------------------------------
 
@@ -58,18 +61,27 @@ https://scrapscrap.xyz/admin
 
 
 
+------------------------------------------------------------------
 
 
 
 
-
-instalacion php
+instalacion LAMP
   sudo apt update
   sudo apt install apache2
   sudo apt install mysql-server
   sudo mysql_secure_installation
-  sudo apt install php libapache2-mod-php php-mysql
-  apt-get install php-gd
+
+  sudo apt install software-properties-common ca-certificates lsb-release apt-transport-https
+  LC_ALL=C.UTF-8 sudo add-apt-repository ppa:ondrej/php
+  sudo apt update
+  sudo apt -y install php7.4
+  sudo apt-get install -y php7.4-cli php7.4-json php7.4-common php7.4-mysql php7.4-zip php7.4-gd php7.4-mbstring php7.4-curl php7.4-xml php7.4-bcmath
+  sudo apt install libapache2-mod-php7.4 php7.4-mysql
+  apt-get install php7.4-gd
+  sudo apt install php7.4-fpm
+  systemctl restart php7.4-fpm
+  systemctl status php7.4-fpm
   service apache2 restart
 
 
@@ -80,16 +92,16 @@ instalacion FTP
   sudo cp /etc/vsftpd.conf  /etc/vsftpd.conf_default
   sudo useradd -m testuser
   sudo passwd testuser
+  prueba123
   sudo nano /etc/vsftpd.conf
   añadir esto para que le de permisos de lectura desde una web por ejemplo:   anon_umask=022    y   local_umask=022
-  edit /etc/vsftpd.chroot_list, and add one user per line
   Find the entry labeled write_enable=NO, and change the value to “YES.”   and chroot_local_user=YES    and  chroot_list_file=/etc/vsftpd.chroot_list
   añador esto allow_writeable_chroot=YES
   sudo systemctl restart vsftpd.service
-  
+  edit /etc/vsftpd.chroot_list, and add one user per line
 
 Para que cada usuario tenga su propio directorio:
-nano /etc/vsftpd/vsftpd.conf
+nano /etc/vsftpd.conf
 # Disable anonymous login
 anonymous_enable=NO
 # Enable the userlist 
@@ -104,10 +116,10 @@ virtual_use_local_privs=YES
 user_config_dir=/etc/vsftpd/user_config_dir/
 
 Si no existe esta ruta: user_config_dir=/etc/vsftpd/user_config_dir/ se crea
-creamos fichero llamado: user_list en la siguente ruta: /etc/vsftpd/    (puede ser que se encuentre en esta ruta: /etc/vsftpd.user_list)
+creamos fichero llamado: user_list en la siguente ruta: /etc/vsftpd/    [NO](puede ser que se encuentre en esta ruta: /etc/vsftpd.user_list)
 Ponemos por cada linea el nombre de un usuario
 
-Dentro de ese mismo directorio, crear un fichero por cada usuario, cada fichero con el nombre del uisuario. El contenido de cada fich es:
+En el directorio directorio: user_config_dir, crear un fichero por cada usuario, cada fichero con el nombre del uisuario.El contenido de cada fich:
 local_root=/home/user
 write_enable=YES
 
@@ -138,7 +150,7 @@ NO
   sudo systemctl restart vsftpd.service  
 */
 
-añador esto allow_writeable_chroot=YES y reiniciar
+
 
 
 apt-get install ftp-upload
@@ -211,7 +223,8 @@ instalacion python
   sudo apt-get install python3.7
 sudo apt install python3.7-distutils
 sudo apt-get install python3-apt
-sudo dpkg -i --force-overwrite /var/cache/apt/archives/python3.7-distutils_3.7.9-1+focal1_all.deb
+buscar en la carpeta: /var/cache/apt/archives/ algun archivo parecido a: python3.7-distutils_3.7.9-1+focal1_all.deb ó python3.7_3.7.17-1+jammy1_amd64.deb   y ejecutrar:
+sudo dpkg -i --force-overwrite /var/cache/apt/archives/NOMBREDELARCHIVO
 sudo apt-get -f install 
 
 
@@ -269,7 +282,7 @@ librerias python
   sudo apt-get install build-essential cmake
   sudo apt-get install python3.7-dev
   python3.7 setup.py install
-  python3.7 -m pip install face_recognition      [ultimo ejecutado]
+  python3.7 -m pip install face_recognition
   python3.7 -m pip install filelock
   python3.7 -m pip install wheel
   python3.7 -m pip install pandas
@@ -296,44 +309,101 @@ extras
   apt-get install htop
   apt-get install screen
   apt-get install ffmpeg
-
   apt install composer
 
 
 
-subir proyecto a /var/www/html/
+------------------------------------------------
+DESCARGAR EL PROYECTO:
+cd /var/www/html
+git clone https://github.com/josuegarciajuan/reconocimientofacialV2.git
+chmod -R 777 reconocimientofacialV2
+
+------------------------------------------------
+
+CREACION DIRECTORIOS NECESARIOS PARA EL FUNCIONAMIENTO
+
 mkdir /home/testuser/motor
 chmod -R 777 /home/testuser/motor
 mkdir /home/testuser/motor/videos
 chmod -R 777 /home/testuser/motor/videos
 mkdir /home/testuser/motor/videos_lineas
 chmod -R 777 /home/testuser/motor/videos_lineas
-rm -R /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/*
-mkdir /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/sinclasificar/
-chmod -R 777 /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/sinclasificar/
-rm -R /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/bbdd_reconocimiento/*
-rm -R /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/fotos_lineas/*
-rm -R /var/www/html/reconocimientoFacial/proyecto_definitivo/admin/caras_procesadas/*
+mkdir /var/www/html/reconocimientofacialV2/motor/caras/
+mkdir /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/
+mkdir /var/www/html/reconocimientofacialV2/motor/caras/inicial/
+chmod -R 777 /var/www/html/reconocimientofacialV2/motor/caras/
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/inicial/*
+mkdir /var/www/html/reconocimientofacialV2/motor/bbdd_reconocimiento/
+mkdir /var/www/html/reconocimientofacialV2/motor/fotos_lineas/
+mkdir /var/www/html/reconocimientofacialV2/admin/caras_procesadas/
+rm -R /var/www/html/reconocimientofacialV2/motor/bbdd_reconocimiento/*
+rm -R /var/www/html/reconocimientofacialV2/motor/fotos_lineas/*
+rm -R /var/www/html/reconocimientofacialV2/admin/caras_procesadas/*
+chmod -R 777 /var/www/html/reconocimientofacialV2
+
 
 conectar a mysql
 CREATE USER 'newuser'@'localhost' IDENTIFIED BY 'prueba123@4522gwrQWWERw';
 GRANT ALL PRIVILEGES ON *.* TO 'newuser'@'localhost';
-luego desconectar, conectar con este usuario y 
+exit
+mysql -u newuser -p
+prueba123@4522gwrQWWERw
 create database reconocimientofacial2;
 use reconocimientofacial2
+exit
+mysql -u newuser -pprueba123@4522gwrQWWERw reconocimientofacial2 < /var/www/html/reconocimientofacialV2/bbdd.sql
 
-
-cd /var/www/html/reconocimientoFacial/
-chmod -R 777 *
-
-
-
-http://camaras.vps.webdock.io/reconocimientoFacial/proyecto_definitivo/admin/index.php?page=visitantes&buscar=1&camara=-&desde=9/01%2012:01%20AM&hasta=10/22%2012:59%20PM&trabajador=0
 
 
 
 
 ------------------------------------------------
+
+-resetear y empezar de 0:
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/*
+rm -R /var/www/html/reconocimientofacialV2/admin/caras_procesadas/*
+rm -R /var/www/html/reconocimientofacialV2/motor/bbdd_reconocimiento/*
+mkdir /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/
+chmod -R 777 /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/
+rm -R /var/www/html/reconocimientofacialV2/motor/fotos_lineas/*
+rm -R /home/testuser/motor/videos/*
+rm -R /home/testuser/motor/videos_lineas/*
+mkdir /var/www/html/reconocimientofacialV2/motor/caras/inicial/
+chmod -R 777 /var/www/html/reconocimientofacialV2/motor/caras/inicial/
+cp /var/www/html/reconocimientofacialV2/admin/fotos_camara/1.png /var/www/html/reconocimientofacialV2/motor/caras/inicial/
+mysql -u newuser -pprueba123@4522gwrQWWERw reconocimientofacial2 < /var/www/html/reconocimientofacialV2/bbdd.sql
+chmod -R 777 /var/www/html/reconocimientofacialV2/
+chmod -R 777 /home/testuser/
+
+reboot
+
+------------------------------------------------
+crear el local y las camras en el panel de control y luego verificar:
+
+-comprobar todo creado bien:
+    -crear local:
+        -creado /home/testuser/motor/videos/1
+        -creado /home/testuser/motor/videos_lineas/1
+        -creado /var/www/html/reconocimientofacialV2/motor/caras/1
+        -creado /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/1
+        -creado /var/www/html/reconocimientofacialV2/motor/bbdd_reconocimiento/1
+        -creado /var/www/html/reconocimientofacialV2/motor/bbdd_reconocimiento/1/face_enc   [NO]
+
+
+    -cargar plano
+        -fichero nuevo en: /var/www/html/reconocimientofacialV2/admin/pages/config/planos/plano_1.extension
+
+    -crear camara
+        -creado /home/testuser/motor/videos/1/1  
+        -creado /home/testuser/motor/videos_lineas/1/1   
+        -creado /var/www/html/reconocimientofacialV2/motor/caras/1/1
+        -creado /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/1/1
+
+
+------------------------------------------------
+
 
 FUNCIONAMIENTO MOTOR:
 screen -XS <session-id> quit
@@ -499,36 +569,6 @@ scp eladmin@45.136.71.235:/home/testuser/pruebas/p5/2/5w7AF4sNu7X6OJYtVU38I3fun/
 
 
 ------------------------------------------------
--resetear y empezar de 0:
-rm -R /var/www/html/reconocimientoFacial/proyecto_definitivo/admin/caras_procesadas/*
-rm -R /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/bbdd_reconocimiento/*
-rm -R /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/*
-mkdir /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/sinclasificar/
-chmod -R 777 /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/sinclasificar/
-rm -R /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/fotos_lineas/*
-rm -R /home/testuser/motor/videos/*
-rm -R /home/testuser/motor/videos_lineas/*
-ejecutar el reset de la bbdd (select primero para ver las lineas anteriores donde estan)
-
-
--comprobar todo creado bien:
-    -crear local:
-        -creado /home/testuser/motor/videos/1
-        -creado /home/testuser/motor/videos_lineas/1
-        -creado /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/1
-        -creado /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/sinclasificar/1
-        -creado /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/bbdd_reconocimiento/1
-        -creado /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/bbdd_reconocimiento/1/face_enc
-
-
-    -cargar plano
-        -fichero nuevo en: /var/www/html/reconocimientoFacial/proyecto_definitivo/admin/pages/config/planos/plano_1.extension
-
-    -crear camara
-        -creado /home/testuser/motor/videos/1/1  
-        -creado /home/testuser/motor/videos_lineas/1/1   
-        -creado /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/1/1
-        -creado /var/www/html/reconocimientoFacial/proyecto_definitivo/motor/caras/sinclasificar/1/1
 
 
 

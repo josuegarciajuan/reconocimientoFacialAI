@@ -50,7 +50,8 @@ switch($server){
         
         //define("URL_PROGRAMA_SERVER","http://camaras.eroticamaxx.com/");  
         //define("URL_PROGRAMA_SERVER","http://reconocimien.vps.webdock.cloud/reconocimientofacialV2/");  
-        define("URL_PROGRAMA_SERVER","http://scrapscrap.xyz/");
+        //define("URL_PROGRAMA_SERVER","http://scrapscrap.xyz/");
+        define("URL_PROGRAMA_SERVER","http://45.148.29.34/reconocimientofacialV2/");
         
         
         define('BD_BBDD', 'reconocimientofacial2'); 
