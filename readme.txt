@@ -354,7 +354,7 @@ create database reconocimientofacial2;
 use reconocimientofacial2
 exit
 mysql -u newuser -pprueba123@4522gwrQWWERw reconocimientofacial2 < /var/www/html/reconocimientofacialV2/bbdd.sql
-
+crear el face_enc para la carpeta inicial del motor con el archivo python de crear dicionaro inical y luego moverlo a motor/inicial
 
 
 
@@ -389,11 +389,12 @@ crear el local y las camras en el panel de control y luego verificar:
         -creado /var/www/html/reconocimientofacialV2/motor/caras/1
         -creado /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/1
         -creado /var/www/html/reconocimientofacialV2/motor/bbdd_reconocimiento/1
-        -creado /var/www/html/reconocimientofacialV2/motor/bbdd_reconocimiento/1/face_enc   [NO]
+        -creado /var/www/html/reconocimientofacialV2/motor/bbdd_reconocimiento/1/face_enc
 
 
     -cargar plano
         -fichero nuevo en: /var/www/html/reconocimientofacialV2/admin/pages/config/planos/plano_1.extension
+        [NO SE CARGA EL PLANO]
 
     -crear camara
         -creado /home/testuser/motor/videos/1/1  
