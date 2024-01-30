@@ -48,7 +48,7 @@ while(true){
     $url=URL_BASE_SERVER."ws.php?".$params;
     //echo $url."\n\n"; exit;
     $data= json_decode(file_get_contents($url),true);
-    //var_dump($data); exit;
+    var_dump($data); exit;
    
     if($data["cod"]==200){
         for($i=0;$i<count($data["valores"]);$i++){
