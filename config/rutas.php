@@ -16,8 +16,10 @@ $whitelist = [
 ];
 
 if(isset($_SERVER['REMOTE_ADDR']) and $_SERVER['REMOTE_ADDR']!=NULL){
+    echo "paso0\n";
     $ip=$_SERVER['REMOTE_ADDR'];
 }else{
+    echo "paso1\n";
     $host= gethostname();
     $ip = gethostbyname($host);
 }
