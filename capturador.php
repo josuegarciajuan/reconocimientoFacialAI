@@ -46,7 +46,7 @@ while(true){
     
     
     $url=URL_BASE_SERVER."ws.php?".$params;
-    //echo $url."\n\n"; exit;
+    echo $url."\n\n"; exit;
     $data= json_decode(file_get_contents($url),true);
     var_dump($data); exit;
    
