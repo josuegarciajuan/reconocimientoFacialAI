@@ -53,12 +53,14 @@ while(true){
     if($data["cod"]==200){
         for($i=0;$i<count($data["valores"]);$i++){
             
+            /*
             if($desde=="local"){
                 $cadena_conexion=$data["valores"][$i]["url_conexion"];
             }else{ //$desde=="server"
                 $cadena_conexion=$data["valores"][$i]["url_desdeserver"];
             }
-            
+            */
+            $cadena_conexion=$data["valores"][$i]["url_conexion"];
           
             
             $segundos_analizar=$data["valores"][$i]["segundos_analizar"];
@@ -87,6 +89,7 @@ while(true){
             echo "cmd1->".$cmd."\n\n";
             //exit;
 
+            //cmd1->python3.7 motor/guarda_movimientosV2.py 45.148.29.34 testuser prueba123 '' 1 5 3 80 500 15 60 0.6 1
             /*
             if(!isset($threads[$data["valores"][$i]["id"]]) or $threads[$data["valores"][$i]["id"]]==NULL){
                 echo "No existia el proceso, es una camara nueva encendida\n";
