@@ -22,13 +22,16 @@ if(isset($_SERVER['REMOTE_ADDR']) and $_SERVER['REMOTE_ADDR']!=NULL){
     $ip = gethostbyname($host);
 }
 
+echo "->".$ip."<-\n";
+
 if(in_array($ip, $whitelist)){
     $server="localhost";    
 }else{
     $server="server";    
 }
 
-
+echo "-2>".$server."<-\n";
+exit;
 //define("FTP_SERVER","46.249.32.179");  
 //define("FTP_SERVER","45.92.108.137");  
 define("FTP_SERVER","reconocimien.vps.webdock.cloud");  
