@@ -21,6 +21,7 @@ if(isset($_SERVER['REMOTE_ADDR']) and $_SERVER['REMOTE_ADDR']!=NULL){
 }else{
     echo "paso1\n";
     $host= gethostname();
+    echo "-host>".$host."<-\n";
     $ip = gethostbyname($host);
 }
 
