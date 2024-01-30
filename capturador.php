@@ -89,9 +89,7 @@ while(true){
             echo "cmd1->".$cmd."\n\n";
             //exit;
 
-            //python3.7 motor/guarda_movimientosV2.py 45.148.29.34 testuser prueba123 'rtsp://admin:bakcAse4@93.176.162.71:905/cam/realmonitor?channel=1&subtype=0' 1 5 3 80 500 15 60 0.6 1
             
-            /*
             if(!isset($threads[$data["valores"][$i]["id"]]) or $threads[$data["valores"][$i]["id"]]==NULL){
                 echo "No existia el proceso, es una camara nueva encendida\n";
                 $threads[$data["valores"][$i]["id"]]=new Jos_Thread($data["valores"][$i]["id"],$cmd,true);
@@ -135,10 +133,10 @@ while(true){
                 $threads[$data["valores"][$i]["id"]]->start();
                 echo "Camara ".$data["valores"][$i]["id"]." reiniciada\n";
             }
-            */
+            
         }
     }
-    exit;
+    
    
 
     //echo "Numero de procesos creados:".count($threads)."\n\n";
