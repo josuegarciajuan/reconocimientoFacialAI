@@ -63,9 +63,6 @@ def subir_video(nombre):
     os.remove('motor/videos/'+LOCAL_ID+'/'+nombre)
     printLog('Removido: motor/videos/'+LOCAL_ID+'/'+nombre)
 
-ftp-upload -h 45.148.29.34 -u testuser --password prueba123 -d motor/videos/1/1 motor/videos/1/2_2022-11-07_13:32:01.515387.avi
-/home/testuser/motor/videos/1/1
-
 
 
 frames_a_analizar=int(segundos_analizar*FPS)  #cada X frames es 1 segundo
