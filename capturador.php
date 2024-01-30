@@ -87,7 +87,7 @@ while(true){
             echo "cmd1->".$cmd."\n\n";
             //exit;
 
-          
+            /*
             if(!isset($threads[$data["valores"][$i]["id"]]) or $threads[$data["valores"][$i]["id"]]==NULL){
                 echo "No existia el proceso, es una camara nueva encendida\n";
                 $threads[$data["valores"][$i]["id"]]=new Jos_Thread($data["valores"][$i]["id"],$cmd,true);
@@ -131,10 +131,10 @@ while(true){
                 $threads[$data["valores"][$i]["id"]]->start();
                 echo "Camara ".$data["valores"][$i]["id"]." reiniciada\n";
             }
-
+            */
         }
     }
-    //exit;
+    exit;
    
 
     //echo "Numero de procesos creados:".count($threads)."\n\n";

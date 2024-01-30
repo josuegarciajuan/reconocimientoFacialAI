@@ -5,7 +5,7 @@
  */
 
 rtsp://admin:bakcAse4@172.16.51.223/cam/realmonitor?channel=1&subtype=0
-rtsp://admin:bakcAse4@93.176.162.71:901/cam/realmonitor?channel=1&subtype=0
+rtsp://admin:bakcAse4@93.176.162.71:906/cam/realmonitor?channel=1&subtype=0
  
 
 	
