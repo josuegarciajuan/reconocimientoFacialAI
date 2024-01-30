@@ -46,9 +46,7 @@ foreach($entornos as $nombre=>$entorno){
         }
     }
 }
-echo "-3>".$server."<-\n";
-
-
+//echo "-3>".$server."<-\n";
 
 //define("FTP_SERVER","46.249.32.179");  
 //define("FTP_SERVER","45.92.108.137");  
