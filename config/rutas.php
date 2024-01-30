@@ -52,7 +52,8 @@ echo "-3>".$server."<-\n";
 
 //define("FTP_SERVER","46.249.32.179");  
 //define("FTP_SERVER","45.92.108.137");  
-define("FTP_SERVER","reconocimien.vps.webdock.cloud");  
+//define("FTP_SERVER","reconocimien.vps.webdock.cloud");  
+define("FTP_SERVER","45.148.29.34");  
 define("FTP_USER","testuser");
 define("FTP_PASS","prueba123");
 
@@ -90,7 +91,7 @@ switch($server){
         define("RUTA_PHP","php");
         define("RUTA_PYTHON","python3.7");
         
-        define("URL_BASE_SERVER","http://reconocimien.vps.webdock.cloud/reconocimientofacialV2/");  
+        define("URL_BASE_SERVER","http://45.148.29.34/reconocimientofacialV2/");  
         
         break;
     case "localhost":
