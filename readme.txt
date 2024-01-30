@@ -97,6 +97,7 @@ instalacion FTP
   añadir esto para que le de permisos de lectura desde una web por ejemplo:   anon_umask=022    y   local_umask=022
   Find the entry labeled write_enable=NO, and change the value to “YES.”   and chroot_local_user=YES    and  chroot_list_file=/etc/vsftpd.chroot_list
   añador esto allow_writeable_chroot=YES
+  chroot_list_enable=YES 
   sudo systemctl restart vsftpd.service
   edit /etc/vsftpd.chroot_list, and add one user per line
 
@@ -365,6 +366,8 @@ crear el face_enc para la carpeta inicial del motor con el archivo python de cre
 
 -resetear y empezar de 0:
 rm -R /var/www/html/reconocimientofacialV2/motor/caras/*
+rm -R /var/www/html/reconocimientofacialV2/motor/videos/*
+rm -R /var/www/html/reconocimientofacialV2/motor/videos_lineas/*
 rm -R /var/www/html/reconocimientofacialV2/admin/caras_procesadas/*
 rm -R /var/www/html/reconocimientofacialV2/motor/bbdd_reconocimiento/*
 mkdir /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/
@@ -376,9 +379,9 @@ mkdir /var/www/html/reconocimientofacialV2/motor/caras/inicial/
 chmod -R 777 /var/www/html/reconocimientofacialV2/motor/caras/inicial/
 cp /var/www/html/reconocimientofacialV2/admin/fotos_camara/1.png /var/www/html/reconocimientofacialV2/motor/caras/inicial/
 rm -R /var/www/html/reconocimientofacialV2/motor/logs/*
-mysql -u newuser -pprueba123@4522gwrQWWERw reconocimientofacial2 < /var/www/html/reconocimientofacialV2/bbdd.sql
 chmod -R 777 /var/www/html/reconocimientofacialV2/
 chmod -R 777 /home/testuser/
+mysql -u newuser -pprueba123@4522gwrQWWERw reconocimientofacial2 < /var/www/html/reconocimientofacialV2/bbdd.sql
 
 reboot
 
@@ -412,9 +415,9 @@ crear el local y las camras en el panel de control y luego verificar:
 FUNCIONAMIENTO MOTOR:
 
 EXPLICACION:
--capturador se pone uno por cada local, crea hilos, uno por cada camara encendida, llamando a motor/guarda_movimientosV2.py
+-capturador: se pone uno por cada local, crea hilos, uno por cada camara encendida, llamando a motor/guarda_movimientosV2.py
   Crea minivideos cuando detecta movimiento. Se le pueden pasar varios parametros para ajustar la sensibilidad de grabacion de estos videos
-
+  se puede poner en un ordenador a aparte, para agilizar memoria del server usada, por que luego los videos los sube por ftp a otro server
 
 
 
