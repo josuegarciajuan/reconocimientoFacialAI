@@ -7,7 +7,7 @@
  */
 
 
-
+/*
 $whitelist = [
     '127.0.0.1',
     '127.0.1.1',
@@ -16,15 +16,11 @@ $whitelist = [
 ];
 
 if(isset($_SERVER['REMOTE_ADDR']) and $_SERVER['REMOTE_ADDR']!=NULL){
-    echo "paso0\n";
     $ip=$_SERVER['REMOTE_ADDR'];
 }else{
-    echo "paso1\n";
     $host= gethostname();
-    echo "-host>".$host."<-\n";
     $ip = gethostbyname($host);
 }
-
 echo "->".$ip."<-\n";
 
 if(in_array($ip, $whitelist)){
@@ -35,6 +31,25 @@ if(in_array($ip, $whitelist)){
 
 echo "-2>".$server."<-\n";
 exit;
+*/
+
+$entornos=[
+    "camjump" => "server",
+];
+$host= gethostname();
+
+$selected=false;
+foreach($entornos as $nombre=>$entorno){
+    if(!$selected){
+        if($host==$nombre){
+            $server=$entorno;
+        }
+    }
+}
+echo "-3>".$server."<-\n";
+
+
+
 //define("FTP_SERVER","46.249.32.179");  
 //define("FTP_SERVER","45.92.108.137");  
 define("FTP_SERVER","reconocimien.vps.webdock.cloud");  
