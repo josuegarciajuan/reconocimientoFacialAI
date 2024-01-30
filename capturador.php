@@ -76,20 +76,21 @@ while(true){
         
             $cmd="python3.7 motor/guarda_movimientosV2.py ".FTP_SERVER." ".FTP_USER." ".FTP_PASS." '".$cadena_conexion;
             $cmd.="' ".$data["valores"][$i]["local_id"]." ".$data["valores"][$i]["id"]." ";
-            $cmd.=$segundos_analizar." ";
-            $cmd.=$porcentaje_mov." ";
-            $cmd.=$dontCare." ";
-            $cmd.=$fps." ";
-            $cmd.=$maximo_videos." ";
-            $cmd.=$redimesionframe." ";
-            $cmd.=$sensibilidad." ";
+            $cmd.=$segundos_analizar." "; //segundos a analizar para detectar un movimiento, ahora esta puesto a 3
+            $cmd.=$porcentaje_mov." "; //% de frames con movimiento para que se considere movimiento, esta al 80%
+            $cmd.=$dontCare." ";  //el % area del frame que tiene que variar para considerar movimiento, esta a 500
+            $cmd.=$fps." "; //frames_a_analizar=int(segundos_analizar*FPS)
+            $cmd.=$maximo_videos." "; //#tiempo en segundos maximo de grabado
+            $cmd.=$redimesionframe." "; //es para que el video ocupe menos
+            $cmd.=$sensibilidad." "; //de cada cuantos frames se coge uno, conj un 1 se cogen todos con un 2 la mitad etc
 
             $cmd.="";
 
             echo "cmd1->".$cmd."\n\n";
             //exit;
 
-            //cmd1->python3.7 motor/guarda_movimientosV2.py 45.148.29.34 testuser prueba123 '' 1 5 3 80 500 15 60 0.6 1
+            //python3.7 motor/guarda_movimientosV2.py 45.148.29.34 testuser prueba123 'rtsp://admin:bakcAse4@93.176.162.71:905/cam/realmonitor?channel=1&subtype=0' 1 5 3 80 500 15 60 0.6 1
+            
             /*
             if(!isset($threads[$data["valores"][$i]["id"]]) or $threads[$data["valores"][$i]["id"]]==NULL){
                 echo "No existia el proceso, es una camara nueva encendida\n";

@@ -341,6 +341,8 @@ mkdir /var/www/html/reconocimientofacialV2/admin/caras_procesadas/
 rm -R /var/www/html/reconocimientofacialV2/motor/bbdd_reconocimiento/*
 rm -R /var/www/html/reconocimientofacialV2/motor/fotos_lineas/*
 rm -R /var/www/html/reconocimientofacialV2/admin/caras_procesadas/*
+mkdir /var/www/html/reconocimientofacialV2/motor/logs/
+rm -R /var/www/html/reconocimientofacialV2/motor/logs/*
 chmod -R 777 /var/www/html/reconocimientofacialV2
 
 
@@ -373,6 +375,7 @@ rm -R /home/testuser/motor/videos_lineas/*
 mkdir /var/www/html/reconocimientofacialV2/motor/caras/inicial/
 chmod -R 777 /var/www/html/reconocimientofacialV2/motor/caras/inicial/
 cp /var/www/html/reconocimientofacialV2/admin/fotos_camara/1.png /var/www/html/reconocimientofacialV2/motor/caras/inicial/
+rm -R /var/www/html/reconocimientofacialV2/motor/logs/*
 mysql -u newuser -pprueba123@4522gwrQWWERw reconocimientofacial2 < /var/www/html/reconocimientofacialV2/bbdd.sql
 chmod -R 777 /var/www/html/reconocimientofacialV2/
 chmod -R 777 /home/testuser/
@@ -407,6 +410,18 @@ crear el local y las camras en el panel de control y luego verificar:
 
 
 FUNCIONAMIENTO MOTOR:
+
+EXPLICACION:
+-capturador se pone uno por cada local, crea hilos, uno por cada camara encendida, llamando a motor/guarda_movimientosV2.py
+  Crea minivideos cuando detecta movimiento. Se le pueden pasar varios parametros para ajustar la sensibilidad de grabacion de estos videos
+
+
+
+
+
+
+FUNCIONAMIENTO CON FICHEROS
+
 screen -XS <session-id> quit
 screen -S <session_name>
 cd /var/www/html/reconocimientoFacial/proyecto_definitivo/
