@@ -56,8 +56,10 @@ def hay_movimiento(the_motion_list):
             num=num+1
     retorno=False        
     printLog("dentro de hay_movimiento, numero de frames q ha habido mov:"+str(num)+"<- y para considerarse este es el limite(frames_con_movimiento):("+str(frames_con_movimiento)+")")
-    if num>=frames_con_movimiento and motion_list[-1]==1:
+    # if num>=frames_con_movimiento and motion_list[-1]==1:
+    if num>=frames_con_movimiento:
         retorno=True
+        printLog("Si hay movimiento si")
     return retorno  
 
 
@@ -73,7 +75,7 @@ def subir_video(nombre):
 
 frames_a_analizar=int(segundos_analizar*FPS)  #cada X frames es 1 segundo
 frames_con_movimiento=round(frames_a_analizar*porcentaje_mov/100)
-frames_despues=10 #esto es fijo, graba 1 segundo mas del movimiento recabado
+frames_despues=FPS*2 #graba 2 segundo mas del movimiento recabado
 prevFrame = None  #Initialize the first frame in the video stream
 
 
@@ -118,6 +120,7 @@ while(True):
         frame_original=frame
         frame = cv2.resize(frame, None, fx=REDIMENSIONFRAME, fy=REDIMENSIONFRAME)
     except Exception as e:
+        printLog("excepcion conyo al redimnensionar frame")
         print(str(e))
 
 
@@ -198,6 +201,7 @@ while(True):
         printLog ("Ya no hay moviemiento, paro de grabar...")
 
     if parando:
+        printLog ("estoy parando!")
         if hay_movimiento(motion_list):
             printLog ("Estaba parando pero, sigue habiendo movimiento, así que sigo grabando..!")
             count_para=0
@@ -218,6 +222,7 @@ while(True):
 
 
         if not siguegrabando: 
+            printLog ("esto es por que viene de un inicio limpio de grabar, por lo que los frames que habia en la pila los meto ya en el video, osea graba a pasado")
             aux=last_frames.obtenerPila()
             for f in aux:
                 out.write(f)
@@ -227,6 +232,8 @@ while(True):
                 tamano=last_frames.tamano()
                 if tamano>0:
                     last_frames.desapilar()
+        else:
+            printLog("viene de que se acaba de para un video, y acaba de reanudarse otro por que detectó mas movimiento")
 
 
 
@@ -258,9 +265,9 @@ while(True):
         siguegrabando=False
 
         if hay_movimiento(motion_list):
+            printLog ("Sigue habiendo movimiento despues de subir el video, lo maraco para que cree otro video y siga grabando..")
             grabando=True
             grabando_primera=True
-            printLog ("Sigue habiendo movimiento despues de subir el video..")
             siguegrabando=True
         
 

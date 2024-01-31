@@ -78,11 +78,11 @@ while(true){
             $cmd.=$segundos_analizar." "; //segundos a analizar para detectar un movimiento, ahora esta puesto a 3
             $cmd.=$porcentaje_mov." "; //% de frames con movimiento para que se considere movimiento, esta al 80%
             $cmd.=$dontCare." ";  //el % area del frame que tiene que variar para considerar movimiento, esta a 500
-            $cmd.=$fps." "; //frames_a_analizar=int(segundos_analizar*FPS)
+            $cmd.=$fps." "; //el numero de fps que captura
             $cmd.=$maximo_videos." "; //#tiempo en segundos maximo de grabado
             $cmd.=$redimesionframe." "; //es para que el video ocupe menos
             $cmd.=$sensibilidad." "; //de cada cuantos frames se coge uno, conj un 1 se cogen todos con un 2 la mitad etc
-
+ 
             $cmd.="";
 
             echo "cmd1->".$cmd."\n\n";
