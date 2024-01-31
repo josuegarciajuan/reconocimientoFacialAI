@@ -11,6 +11,8 @@ from fifo import fifo
 
 #os.system('Xvfb :1 -screen 0 1600x1200x16  &')    # create virtual display with size 1600x1200 and 16 bit color. Color can be changed to 24 or 8
 #os.environ['DISPLAY']=':1.0'    # tell X clients to use our virtual DISPLAY :1.0
+#4_2024-01-30_15:50:57.284152.avi
+
 
 
 FTP_SERVER=sys.argv[1]
@@ -34,6 +36,9 @@ maximo_videos=int(sys.argv[11]) #tiempo en segundos maximo de grabado
 REDIMENSIONFRAME=float(sys.argv[12])
 
 SENSIBILIDAD=int(sys.argv[13]) #CUANTO MAS BAJO menos sensible
+
+tiempo_espera_fps=1000/FPS   # en 1000 ms / numero Fotogramas por segundo  =>  tiempo espera entre fotogramas
+
 
 
 
@@ -74,6 +79,7 @@ cap = cv2.VideoCapture(URL_CONEXION)
 
 #cap.set(cv2.CAP_PROP_FPS, FPS)
 #counter for the detection
+
 i = 0
 
 
@@ -108,11 +114,6 @@ while(True):
         frame = cv2.resize(frame, None, fx=REDIMENSIONFRAME, fy=REDIMENSIONFRAME)
     except Exception as e:
         print(str(e))
-
-
-
-
-    
 
 
     last_frames.apilar(frame_original)
@@ -215,6 +216,7 @@ while(True):
             aux=last_frames.obtenerPila()
             for f in aux:
                 out.write(f)
+                cv2.waitKey(tiempo_espera_fps)
             tamano=last_frames.tamano()
             while tamano>0:
                 tamano=last_frames.tamano()
@@ -227,6 +229,7 @@ while(True):
         printLog ("Grabando...")
 
         out.write(frame_original)
+        cv2.waitKey(tiempo_espera_fps)
         time_elapsed = time.time() - time_inicio
         # key = cv2.waitKey(500)
         if time_elapsed>maximo_videos:

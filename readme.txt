@@ -344,6 +344,8 @@ rm -R /var/www/html/reconocimientofacialV2/motor/fotos_lineas/*
 rm -R /var/www/html/reconocimientofacialV2/admin/caras_procesadas/*
 mkdir /var/www/html/reconocimientofacialV2/motor/logs/
 rm -R /var/www/html/reconocimientofacialV2/motor/logs/*
+mkdir /var/www/html/reconocimientofacialV2/aux
+chmod -R 777 /var/www/html/reconocimientofacialV2/aux
 chmod -R 777 /var/www/html/reconocimientofacialV2
 
 
@@ -383,6 +385,7 @@ chmod -R 777 /var/www/html/reconocimientofacialV2/
 chmod -R 777 /home/testuser/
 mysql -u newuser -pprueba123@4522gwrQWWERw reconocimientofacial2 < /var/www/html/reconocimientofacialV2/bbdd.sql
 
+
 reboot
 
 ------------------------------------------------
@@ -415,15 +418,33 @@ crear el local y las camras en el panel de control y luego verificar:
 FUNCIONAMIENTO MOTOR:
 
 EXPLICACION:
--capturador: se pone uno por cada local, crea hilos, uno por cada camara encendida, llamando a motor/guarda_movimientosV2.py
+-capturador.php: se pone uno por cada local, crea hilos, uno por cada camara encendida, llamando a motor/guarda_movimientosV2.py
   Crea minivideos cuando detecta movimiento. Se le pueden pasar varios parametros para ajustar la sensibilidad de grabacion de estos videos
   se puede poner en un ordenador a aparte, para agilizar memoria del server usada, por que luego los videos los sube por ftp a otro server
 
+-detector.php:
+    proceso que mantiene en marcha varios hilos, dijeramos es el "core" del motor, los hilos que mantiene, por cada cámara encendida:
+    -procesa_fotos_def_borrosaparteV2.py
+        siempre trata de tenerlos encendidos, 1 por camara
+        es el que procesa ya las fotos buscando parecidos entre si. Ver en que fichero estoy clasificando las borrosas. 
+        tiene muchas variables que se pasan como parametro, ir jugando con ellas para afinar el algoritmo
+
+    -procesa_videosV6.py
+       lanza 1 proceso por video que se encuentra de cada camara
+       CONFIG_LIMITE_VIDEOS en esta variable tenemos cuantos videos se pueden procesar a la vez. Depende de la capacidad del servidor se puede jugar
+       aunke si me paso no pasa nada, siempre controla que no se desborde de ram antes de lanzar a analizar 1 video
+       se le pasan varias variables estudiar también para que son 
+
+
+    -cruza_lineas.py     //no se si estoy usando el cruza_lineas_V2 verificar...
+        mantiene en marcha 1 proceso por cada linea de cada camara
+        
+(cuando se borra el video ya procesado?? en procesa videos y luego el procesa fotos trata fotos pero el cruza lineas, trata tambien con fotos?)
 
 
 
 
-FUNCIONAMIENTO CON FICHEROS
+FUNCIONAMIENTO INTERNO DE LOS FICHEROS
 
 screen -XS <session-id> quit
 screen -S <session_name>

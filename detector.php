@@ -33,10 +33,11 @@ exit;
 
 while(true){
     
-
+    /*
     if(!$ram->queda_espacio()){
-        $ram->libera_espacio();
+        $ram->libera_espacio();  //borro los videos a pelo, entonces me estoy perdiendo movimientos...
     }
+    */
     
     //recorro los locales con camaras encendidas
     $sql->Consultar("locales", "*", "id>0", "id asc", false);
@@ -48,21 +49,8 @@ while(true){
                 echo "el local ".$tmp->row["id"]." tiene camaras encendidas\n";
                 
                 do{
+                    /*--INI--procesa_fotos_def_borrosaparteV2*/
                     
-                    $cmd=[];
-                    /*
-                    switch($tmp->row["sistema"]){
-                        case 0: //0 son las ip
-                            $cmd[]="python3.7 motor/procesa_videosV5.py ".$sql->row["id"]." ".$tmp->row["id"];
-                            break;
-                        case 1: //1 de grabador
-                            $cmd[]="python3.7 motor/procesa_videosV4.py ".$sql->row["id"]." ".$tmp->row["id"]." ".$tmp->row["url_conexion"];
-                            break;
-                    }
-                     */
-
-                    
-                   
                     $params="";
                     $params.=CONFIG_umbral_parecidosentresi." ";
                     $params.=CONFIG_umbral." ";
@@ -108,79 +96,72 @@ while(true){
                     $params.=CONFIG_UMBRAL_ENFOQUE_GLOBALES;
 
                     
-                    $cmd[]="python3.7 motor/procesa_fotos_def_borrosaparteV2.py ".$sql->row["id"]." ".$tmp->row["id"]." ".$params;
+                    $cmd="python3.7 motor/procesa_fotos_def_borrosaparteV2.py ".$sql->row["id"]." ".$tmp->row["id"]." ".$params;
                     //$cmd[]="python3.7 motor/cruza_lineas_V2.py ".$sql->row["id"]." ".$tmp->row["id"];
                     //var_dump($cmd); exit;
-                    //python3.7 motor/procesa_fotos_def_borrosaparteV2.py 1 1 0.38 0 0 0 0 0 0 0 0 0.551 0.535 0.551 0.37 12 0.61 0.63 2 0.511 0.491 0.511 0.35 20 0.58 0.61 4 0.531 0.515 0.521 0.36 15 0.58 0.611 4 0.04 500 9 300 1000 120 90 450 1200
                     
-                    for($i=0;$i<count($cmd);$i++){
-                        echo $cmd[$i]."\n";
-                        
-                        
-                        if(!isset($threads[$tmp->row["id"]."_".$i]) or $threads[$tmp->row["id"]."_".$i]==NULL){
-                            echo "No existia el proceso:".$tmp->row["id"]."_".$i."\n";
-                            $threads[$tmp->row["id"]."_".$i]=new Jos_Thread($tmp->row["id"]."_".$i,$cmd[$i],true);
-                            $threads[$tmp->row["id"]."_".$i]->start();
-                        }else{
-                            echo "Ya existia\n";
-                            if(!$threads[$tmp->row["id"]."_".$i]->isrunning()){
-                                echo "Y se ha parado, lo voy a reanudar\n";
-                                $threads[$tmp->row["id"]."_".$i]->stop();
-                                $threads[$tmp->row["id"]."_".$i]=NULL;
+                    if(!isset($threads["pf_".$sql->row["id"]."_".$tmp->row["id"]]) or $threads["pf_".$sql->row["id"]."_".$tmp->row["id"]]==NULL){
+                        echo "No existia el proceso:"."pf_".$sql->row["id"]."_".$tmp->row["id"]."\n";
+                        $threads["pf_".$sql->row["id"]."_".$tmp->row["id"]]=new Jos_Thread("pf_".$sql->row["id"]."_".$tmp->row["id"],$cmd,true);
+                        $threads["pf_".$sql->row["id"]."_".$tmp->row["id"]]->start();
+                    }else{
+                        echo "Ya existia:"."pf_".$sql->row["id"]."_".$tmp->row["id"]."\n";
+                        if(!$threads["pf_".$sql->row["id"]."_".$tmp->row["id"]]->isrunning()){
+                            echo "Y se ha parado, lo voy a parar del todo y reencender\n";
+                            $threads["pf_".$sql->row["id"]."_".$tmp->row["id"]]->stop();
+                            $threads["pf_".$sql->row["id"]."_".$tmp->row["id"]]=NULL;
+                            
+                            $threads["pf_".$sql->row["id"]."_".$tmp->row["id"]]=new Jos_Thread("pf_".$sql->row["id"]."_".$tmp->row["id"],$cmd,true);
+                            $threads["pf_".$sql->row["id"]."_".$tmp->row["id"]]->start();
+                        }
+                    }
+                    /*--FIN--procesa_fotos_def_borrosaparteV2*/
+                    
+                    
+                    
+                    /*--INI--procesa_videosV6*/    
+                    $directorio_videos=URL_FTP_BASE.'motor/videos/'.$sql->row["id"].'/'.$tmp->row["id"].'/';
+                    $pesos=[];
+                    $dir = opendir($directorio_videos);
+                    while ($elemento = readdir($dir)){
+                        if( $elemento != "." && $elemento != ".."){
+                            $pesos[$elemento]=filesize($directorio_videos.$elemento);
+                        }
+                    }
+                    sleep(6);
+                    $subidos=[];
+                    $dir = opendir($directorio_videos);
+                    while ($elemento = readdir($dir)){
+                        if( $elemento != "." && $elemento != ".."){
+                            if($pesos[$elemento]==filesize($directorio_videos.$elemento)){
+                                echo "Video completamente subido:".$elemento."\n";
+                                $subidos[]=$elemento;
                             }
                         }
-                         
                     }
 
-                    //exit;
-                    //python3.7 /var/www/html/reconocimientofacialV2/motor/procesa_videosV6.py 1 1 '1_2022-10-31_15:35:20.022061.avi' '/var/www/html/reconocimientofacialV2/' 0.68 '/home/testuser/' 150 5 10 750 562 750 562 3 5 1500 3 0.15 300 300 1.0 353 353 104.0 117.0 123.0 100 150
-/*
-                    if($ram->queda_ram(CONFIG_LIMITE_RAM)){
+                    for($s=0;$s<count($subidos);$s++){
+                        //cuando un video empieza a procesarse, creara este fichero, luego se borra al final del propio procesa_videosV6.py
                         
-                        $directorio_videos=URL_FTP_BASE.'motor/videos/'.$sql->row["id"].'/'.$tmp->row["id"].'/';
-                        $pesos=[];
-                        $dir = opendir($directorio_videos);
-                        while ($elemento = readdir($dir)){
-                            if( $elemento != "." && $elemento != ".."){
-                                $pesos[$elemento]=filesize($directorio_videos.$elemento);
-                            }
-                        }
-                        sleep(6);
-                        $subidos=[];
-                        $dir = opendir($directorio_videos);
-                        while ($elemento = readdir($dir)){
-                            if( $elemento != "." && $elemento != ".."){
-                                if($pesos[$elemento]==filesize($directorio_videos.$elemento)){
-                                    echo "Video completamente subido:".$elemento."\n";
-                                    $subidos[]=$elemento;
-                                }
-                            }
-                        }
-                        
-                        for($s=0;$s<count($subidos);$s++){
-                            if(file_exists("./aux/".$subidos[$s].".txt")){
-                                echo "Aun se esta procesando el video:".$subidos[$s]."\n";
-                            }else{
-                                
-                                
+                        if(file_exists("./aux/".$subidos[$s].".txt")){ 
+                            echo "Aun se esta procesando el video:".$subidos[$s]."\n";
+                        }else{
 
-                                $numero_videos=0;
-                                $dir = opendir("./aux");
-                                while ($elemento = readdir($dir)){
-                                    if( $elemento != "." && $elemento != ".."){
-                                        $pos= strpos($elemento, "procesar");
-                                        if($pos===false){
-                                            $numero_videos++;
-                                        }
+
+                            $numero_videos=0;
+                            $dir = opendir("./aux");
+                            while ($elemento = readdir($dir)){
+                                if( $elemento != "." && $elemento != ".."){
+                                    $pos= strpos($elemento, "procesar");
+                                    if($pos===false){
+                                        $numero_videos++;
                                     }
                                 }
-                                if($numero_videos<CONFIG_LIMITE_VIDEOS){
+                            }
+                            if($numero_videos<CONFIG_LIMITE_VIDEOS){
 
-                                    while(!$ram->queda_ram(CONFIG_LIMITE_RAM)){
-                                        echo "Esperando.. no queda ram...\n";
-                                        sleep(5);
-                                    }
-
+                                if($ram->queda_ram(CONFIG_LIMITE_RAM)){ //antes de lanzar 1 video a analizar, veo si queda ram
+                                    
                                     $cmd1="echo '".date("Y-m-d H:i:s")."' > ./aux/".$subidos[$s].".txt";
                                     echo $cmd1."\n";
                                     exec($cmd1);
@@ -216,57 +197,69 @@ while(true){
                                     $params.=CONFIG_mean3." ";
                                     $params.=CONFIG_recuadro_tamanyo_rostro." ";
                                     $params.=CONFIG_redimension_rostro;
-                                    
+
                                     $cmd1=RUTA_PYTHON." ".RUTA_PROYECTO."motor/procesa_videosV6.py ".$sql->row["id"]." ".$tmp->row["id"]." '".$subidos[$s]."'"." '".RUTA_PROYECTO."' ".CONFIG_SENSIBILIDAD_ES_CARA." '".URL_FTP_BASE."' ".$params." > /dev/null 2>/dev/null &";
                                     echo $cmd1."\n";
                                     //exit;
                                     exec($cmd1);
-                                    
-                                    
                                 }else{
-                                    echo "Muchos videos en cola (".$numero_videos."), espero y sigo...\n";
-                                    //sleep(10);
+                                    echo "No queda RAM para entrar a analizar otro video, esperare unos 20 segundos antes de seguir\n";
+                                    
+                                    $intentos=0;
+                                    while(!$ram->queda_ram(CONFIG_LIMITE_RAM) and $intentos<4){
+                                        sleep(5);
+                                        $intentos++;
+                                        echo "Esperando(".($intentos*5)." segs).. no queda ram...\n";
+                                    }
                                 }
 
+                            }else{
+                                echo "Muchos videos en cola (".$numero_videos."), espero y sigo...\n";
+                                sleep(1);
                             }
-                            
+
                         }
-                        
-        
-                    }else{
-                        echo "NO queda ram\n";
+
                     }
+                    /*--FIN--procesa_videosV6*/
+
+                
                     
-*/
+
 
                     
-                    /*
+                    /*--INI--cruza_lineas*/    
                     $tmp2->Consultar("lineas", "*", "camara_id=".$tmp->row["id"]." and eliminada=0", "id asc", false);
                     if($tmp2->num>0){
                         echo "la camara ".$tmp->row["id"]." tiene lineas\n";
                         do{
                             $cmd="python3.7 motor/cruza_lineas.py ".$sql->row["id"]." ".$tmp->row["id"]." ".$tmp2->row["id"]." ".$tmp2->row["x1"]." ".$tmp2->row["y1"]." ".$tmp2->row["x2"]." ".$tmp2->row["y2"];
                             
+                            $nombre_proceso="cl_".$sql->row["id"]."_".$tmp->row["id"]."_".$tmp2->row["id"];
                             
-                            if(!isset($threads[$tmp->row["id"]."_".$tmp2->row["id"]."_".$i]) or $threads[$tmp->row["id"]."_".$tmp2->row["id"]."_".$i]==NULL){
-                                echo "No existia el proceso de linea:".$tmp->row["id"]."_".$tmp2->row["id"]."_".$i."\n";
-                                $threads[$tmp->row["id"]."_".$tmp2->row["id"]."_".$i]=new Jos_Thread($tmp->row["id"]."_".$tmp2->row["id"]."_".$i,$cmd,true);
-                                $threads[$tmp->row["id"]."_".$tmp2->row["id"]."_".$i]->start();
+                            if(!isset($threads[$nombre_proceso]) or $threads[$nombre_proceso]==NULL){
+                                echo "No existia el proceso de linea:".$nombre_proceso."\n";
+                                $threads[$nombre_proceso]=new Jos_Thread($nombre_proceso,$cmd,true);
+                                $threads[$nombre_proceso]->start();
                             }else{
-                                echo "Ya existia el proceso de linea\n";
-                                if(!$threads[$tmp->row["id"]."_".$tmp2->row["id"]."_".$i]->isrunning()){
+                                echo "Ya existia el proceso de linea:".$nombre_proceso."\n";
+                                if(!$threads[$nombre_proceso]->isrunning()){
                                     echo "Y se ha parado, lo voy a reanudar\n";
-                                    $threads[$tmp->row["id"]."_".$tmp2->row["id"]."_".$i]=new Jos_Thread($tmp->row["id"]."_".$tmp2->row["id"]."_".$i,$cmd,true);
-                                    $threads[$tmp->row["id"]."_".$tmp2->row["id"]."_".$i]->start();
+                                    
+                                    $threads[$nombre_proceso]->stop();
+                                    $threads[$nombre_proceso]=NULL;
+                                    
+                                    $threads[$nombre_proceso]=new Jos_Thread($nombre_proceso,$cmd,true);
+                                    $threads[$nombre_proceso]->start();
                                 }else{
-                                    echo "El proceso sigue en marcha\n";
+                                    echo "El proceso de linea ".$nombre_proceso." sigue en marcha\n";
                                 }
                             }
                             
 
                         }while($tmp2->Siguiente());
                     }
-                    */
+                    /*--FIN--cruza_lineas*/
 
                 
                 }while($tmp->Siguiente());
@@ -275,23 +268,43 @@ while(true){
         }while($sql->Siguiente());
     }    
     
-    //recorro los threads por si hay alguno qe apagar qe ya no esta encendido
+    
+    
+    //recorro los threads por si hay alguno qe apagar qe ya no esta encendida la camara, o que no exista la linea o la camara
+    echo "\n\nrecorro los threads por si hay alguno qe apagar qe ya no esta encendida la camara, o que no exista la linea o la camara\n";
+    $sql->Consultar("camaras", "*", "encendida=0", "id asc", false);
+    if($sql->num>0){
+        do{
+            $camara_id=$sql->row["id"];
+            echo "esta camara esta apagada:".$camara_id."\n";
+            $aux= explode("_", $identificador);
+            $camara_id_proceso=$aux[2];
+
+            if($camara_id==$camara_id_proceso){
+                echo "Teniamos un procesos de esa camara, su identificador es:->".$identificador."<- vamos a pararlo\n";
+                $th->stop();
+                $threads[$identificador]=NULL;
+                echo "OK, parado!\n";
+            }
+        }while($sql->Siguiente());
+    }
+    
+    /*
+    //NO, esta version es viejo
     foreach($threads as $identificador=>$th){
         $aux= explode("_", $identificador);
         
+        $camara_id=$aux[2];
+        
         if(count($aux)==2){
-            $camara_id=$aux[0];
-            $i=$aux[1];
 
             $sql->Consultar("camaras", "*", "id=".$camara_id." and encendida=1", "id asc", false);
             if($sql->num==0){
                 $th->stop();
                 $threads[$camara_id."_".$i]=NULL;
             }
-        }elseif(count($aux)==3){
-            $camara_id=$aux[0];
-            $linea_id=$aux[1];
-            $i=$aux[2];
+        }elseif(count($aux)==4){
+            $linea_id=$aux[3];
             
             $sql->Consultar("camaras", "*", "id=".$camara_id." and encendida=1", "id asc", false);
             if($sql->num==0){
@@ -304,7 +317,12 @@ while(true){
             }
         }
     }
-    sleep(10);
+    */
+    
+    
+    
+    echo "TODO EL RECORRIDO TERMINADO, ESPERO 1 SEGUNDITO Y VUELVO A LANZAR!!\n";
+    sleep(1);
     //exit;
 }
 
