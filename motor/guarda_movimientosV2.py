@@ -55,7 +55,7 @@ def hay_movimiento(the_motion_list):
         if m==1:
             num=num+1
     retorno=False        
-    printLog("dentro de hay_movimiento, numero de frames q ha habido:"+num+"<- y para considerarse este es el limite(frames_con_movimiento):("+frames_con_movimiento+")")
+    printLog("dentro de hay_movimiento, numero de frames q ha habido mov:"+str(num)+"<- y para considerarse este es el limite(frames_con_movimiento):("+str(frames_con_movimiento)+")")
     if num>=frames_con_movimiento and motion_list[-1]==1:
         retorno=True
     return retorno  
