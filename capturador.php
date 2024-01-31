@@ -73,7 +73,6 @@ while(true){
             
         
             
-        
             $cmd="python3.7 motor/guarda_movimientosV2.py ".FTP_SERVER." ".FTP_USER." ".FTP_PASS." '".$cadena_conexion;
             $cmd.="' ".$data["valores"][$i]["local_id"]." ".$data["valores"][$i]["id"]." ";
             $cmd.=$segundos_analizar." "; //segundos a analizar para detectar un movimiento, ahora esta puesto a 3
