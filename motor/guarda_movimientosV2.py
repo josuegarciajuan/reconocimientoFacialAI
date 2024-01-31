@@ -77,8 +77,8 @@ frames_despues=10 #esto es fijo, graba 1 segundo mas del movimiento recabado
 prevFrame = None  #Initialize the first frame in the video stream
 
 
-printLog("frames_a_analizar:"+frames_a_analizar)
-printLog("frames_con_movimiento:"+frames_con_movimiento)
+printLog("frames_a_analizar:"+str(frames_a_analizar))
+printLog("frames_con_movimiento:"+str(frames_con_movimiento))
 
 cap = cv2.VideoCapture(URL_CONEXION)
 
