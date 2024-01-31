@@ -21,7 +21,6 @@ MYSQL: Prueba123!
 
 
 
-
 NUEVO SERVER:
 
 
@@ -783,3 +782,4 @@ cv2.error: OpenCV(4.6.0) /io/opencv/modules/imgproc/src/smooth.dispatch.cpp:617:
 
 adduser esunaprueba --force-badname
 sdfgbsfg#25adfaf
+
