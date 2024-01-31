@@ -37,7 +37,7 @@ REDIMENSIONFRAME=float(sys.argv[12])
 
 SENSIBILIDAD=int(sys.argv[13]) #CUANTO MAS BAJO menos sensible
 
-tiempo_espera_fps=1000/FPS   # en 1000 ms / numero Fotogramas por segundo  =>  tiempo espera entre fotogramas
+tiempo_espera_fps=int(1000/FPS)   # en 1000 ms / numero Fotogramas por segundo  =>  tiempo espera entre fotogramas
 
 
 

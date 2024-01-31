@@ -5,57 +5,69 @@
  */
 
 rtsp://admin:bakcAse4@172.16.51.223/cam/realmonitor?channel=1&subtype=0
-rtsp://admin:bakcAse4@93.176.162.71:906/cam/realmonitor?channel=1&subtype=0
+rtsp://admin:bakcAse4@93.176.162.71:912/cam/realmonitor?channel=1&subtype=0
  
 
 	
 cam_lorenzo
 172.16.51.223
 	901 	554 	
+rtsp://admin:bakcAse4@93.176.162.71:901/cam/realmonitor?channel=1&subtype=0
 	
 cam_adrian
 172.16.51.221
 	902 	554 	
+rtsp://admin:bakcAse4@93.176.162.71:902/cam/realmonitor?channel=1&subtype=0
 	
 cam_fran
 172.16.51.222
 	903 	554 	
+rtsp://admin:bakcAse4@93.176.162.71:903/cam/realmonitor?channel=1&subtype=0
 	
 cam_laura
 172.16.51.224
 	904 	554 	
+rtsp://admin:bakcAse4@93.176.162.71:904/cam/realmonitor?channel=1&subtype=0
 	
 cam_recepcion
 172.16.51.225
 	905 	554 	
+rtsp://admin:bakcAse4@93.176.162.71:905/cam/realmonitor?channel=1&subtype=0
 	
 cam_archivo
 172.16.51.226
 	906 	554 	
+rtsp://admin:bakcAse4@93.176.162.71:906/cam/realmonitor?channel=1&subtype=0
 	
 cam_oscar
 172.16.51.227
 	907 	554 	
+rtsp://admin:bakcAse4@93.176.162.71:907/cam/realmonitor?channel=1&subtype=0
 	
 cam_escalera
 172.16.51.228
 	908 	554 	
+rtsp://admin:bakcAse4@93.176.162.71:908/cam/realmonitor?channel=1&subtype=0
 	
 cam_pepe
 172.16.51.229
 	909 	554 	
+rtsp://admin:bakcAse4@93.176.162.71:909/cam/realmonitor?channel=1&subtype=0
 	
 cam_juntas
 172.16.51.231
 	910 	554 	
+rtsp://admin:bakcAse4@93.176.162.71:910/cam/realmonitor?channel=1&subtype=0
 	
 cam_pasillo
 172.16.51.232
 	911 	554 	
+rtsp://admin:bakcAse4@93.176.162.71:911/cam/realmonitor?channel=1&subtype=0
 	
 cam_puerta
 172.16.51.233
 	912 	554
+rtsp://admin:bakcAse4@93.176.162.71:912/cam/realmonitor?channel=1&subtype=0
 
 172.16.51.221 adrian
 172.16.51.222 fran
