@@ -50,7 +50,7 @@ while(true){
                 
                 do{
                     /*--INI--procesa_fotos_def_borrosaparteV2*/
-                    
+/*
                     $params="";
                     $params.=CONFIG_umbral_parecidosentresi." ";
                     $params.=CONFIG_umbral." ";
@@ -97,8 +97,6 @@ while(true){
 
                     
                     $cmd="python3.7 motor/procesa_fotos_def_borrosaparteV2.py ".$sql->row["id"]." ".$tmp->row["id"]." ".$params;
-                    //$cmd[]="python3.7 motor/cruza_lineas_V2.py ".$sql->row["id"]." ".$tmp->row["id"];
-                    //var_dump($cmd); exit;
                     
                     if(!isset($threads["pf_".$sql->row["id"]."_".$tmp->row["id"]]) or $threads["pf_".$sql->row["id"]."_".$tmp->row["id"]]==NULL){
                         echo "No existia el proceso:"."pf_".$sql->row["id"]."_".$tmp->row["id"]."\n";
@@ -115,6 +113,7 @@ while(true){
                             $threads["pf_".$sql->row["id"]."_".$tmp->row["id"]]->start();
                         }
                     }
+*/
                     /*--FIN--procesa_fotos_def_borrosaparteV2*/
                     
                     
@@ -201,7 +200,7 @@ while(true){
                                     $cmd1=RUTA_PYTHON." ".RUTA_PROYECTO."motor/procesa_videosV6.py ".$sql->row["id"]." ".$tmp->row["id"]." '".$subidos[$s]."'"." '".RUTA_PROYECTO."' ".CONFIG_SENSIBILIDAD_ES_CARA." '".URL_FTP_BASE."' ".$params." > /dev/null 2>/dev/null &";
                                     echo $cmd1."\n";
                                     //exit;
-                                    exec($cmd1);
+                                    //exec($cmd1);
                                 }else{
                                     echo "No queda RAM para entrar a analizar otro video, esperare unos 20 segundos antes de seguir\n";
                                     
@@ -221,6 +220,8 @@ while(true){
                         }
 
                     }
+                    echo "fin de procesa_videosV6\n";
+                    exit;
                     /*--FIN--procesa_videosV6*/
 
                 
@@ -229,6 +230,7 @@ while(true){
 
                     
                     /*--INI--cruza_lineas*/    
+/*
                     $tmp2->Consultar("lineas", "*", "camara_id=".$tmp->row["id"]." and eliminada=0", "id asc", false);
                     if($tmp2->num>0){
                         echo "la camara ".$tmp->row["id"]." tiene lineas\n";
@@ -259,6 +261,7 @@ while(true){
 
                         }while($tmp2->Siguiente());
                     }
+*/
                     /*--FIN--cruza_lineas*/
 
                 

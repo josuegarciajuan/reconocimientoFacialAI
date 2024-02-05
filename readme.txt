@@ -428,7 +428,7 @@ EXPLICACION:
         es el que procesa ya las fotos buscando parecidos entre si. Ver en que fichero estoy clasificando las borrosas. 
         tiene muchas variables que se pasan como parametro, ir jugando con ellas para afinar el algoritmo
 
-    -procesa_videosV6.py
+    -procesa_videosV6.py  (es el 1º sitio que analiza los videos creado)
        lanza 1 proceso por video que se encuentra de cada camara
        CONFIG_LIMITE_VIDEOS en esta variable tenemos cuantos videos se pueden procesar a la vez. Depende de la capacidad del servidor se puede jugar
        aunke si me paso no pasa nada, siempre controla que no se desborde de ram antes de lanzar a analizar 1 video
