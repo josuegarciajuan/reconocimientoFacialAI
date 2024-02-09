@@ -32,6 +32,9 @@ def rect_to_bb(rect):
     return (x, y, w, h)
 
 
+# python3.7 /var/www/html/reconocimientofacialV2/motor/procesa_videosV6.py 1 1 '1_2024-01-31_17:27:07.980001.avi' '/var/www/html/reconocimientofacialV2/' 0.3 '/home/testuser/' 150 5 10 750 562 750 562 3 5 1500 3 0.15 300 300 1.0 353 353 104.0 117.0 123.0 100 150
+
+
 
 
 LOCAL_ID=sys.argv[1]
@@ -196,7 +199,6 @@ FIN procesaro lineas
 
 
 #frame_rate = 10 #cuanto mas alto menos fluido va, osea mas delay, y detecta mas rapido
-# frame_rate = 10 #cuanto mas alto menos fluido va, osea mas delay, y detecta mas rapido
 frame_rate = CONFIG_frame_rate #cuanto mas alto menos fluido va, osea mas delay, y detecta mas rapido
 
 
@@ -220,7 +222,7 @@ lineas = lineas.replace("'", "")
 lineas = lineas.replace("b", "")
 v_lineas=lineas.split(",");
 longitud = len(v_lineas)
-printLog("longitud lineas: "+str(longitud))
+printLog("numero de lineas: "+str(longitud))
 
 
 lineas_ids=[]

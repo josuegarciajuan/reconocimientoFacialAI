@@ -118,7 +118,7 @@ while(true){
                     
                     
                     
-                    /*--INI--procesa_videosV6*/    
+                    /*--INI--procesa_videosV6*/
                     $directorio_videos=URL_FTP_BASE.'motor/videos/'.$sql->row["id"].'/'.$tmp->row["id"].'/';
                     $pesos=[];
                     $dir = opendir($directorio_videos);
@@ -328,4 +328,3 @@ while(true){
     sleep(1);
     //exit;
 }
-

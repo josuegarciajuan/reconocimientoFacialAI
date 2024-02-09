@@ -17,7 +17,8 @@ MYSQL: Prueba123!
 
 45.148.29.34/reconocimientofacialV2/admin
 
-------------------------------------------------------------------
+-----------------------------------------------------------------
+
 
 
 
@@ -433,6 +434,8 @@ EXPLICACION:
        CONFIG_LIMITE_VIDEOS en esta variable tenemos cuantos videos se pueden procesar a la vez. Depende de la capacidad del servidor se puede jugar
        aunke si me paso no pasa nada, siempre controla que no se desborde de ram antes de lanzar a analizar 1 video
        se le pasan varias variables estudiar también para que son 
+
+       -el procesa videos, en principio analiza los cruces de linea, 
 
 
     -cruza_lineas.py     //no se si estoy usando el cruza_lineas_V2 verificar...
