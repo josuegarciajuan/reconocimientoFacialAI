@@ -322,8 +322,6 @@ while(true){
     }
     */
     
-    
-    
     echo "TODO EL RECORRIDO TERMINADO, ESPERO 1 SEGUNDITO Y VUELVO A LANZAR!!\n";
     sleep(1);
     //exit;

@@ -35,8 +35,10 @@ exit;
 
 $entornos=[
     "camjump" => "server",
+    "oficina" => "oficina",
 ];
 $host= gethostname();
+
 
 $selected=false;
 foreach($entornos as $nombre=>$entorno){
@@ -92,6 +94,33 @@ switch($server){
         define("URL_BASE_SERVER","http://45.148.29.34/reconocimientofacialV2/");  
         
         break;
+    
+    
+    case "oficina":
+        
+        define("URL_PROGRAMA_SERVER","http://localhost/reconocimientofacialV2/");
+        
+        
+        define('BD_BBDD', 'reconocimientofacial'); 
+        /*
+        CREATE USER 'newuser'@'localhost' IDENTIFIED BY 'prueba123@4522gwrQWWERw';
+        GRANT ALL PRIVILEGES ON *.* TO 'newuser'@'localhost';
+        */
+        define('BD_USUARIO', 'newuser');
+        define('BD_PASS', 'prueba123@4522gwrQWWERw');
+        define('BD_HOST', 'localhost');
+        define('PREFIJO_TABLAS', '');
+        
+        
+        define('RUTA_PROYECTO', "/var/www/html/reconocimientofacialV2/");
+        define("RUTA_PHP","php");
+        define("RUTA_PYTHON","python3.7");
+        
+        define("URL_BASE_SERVER","http://45.148.29.34/reconocimientofacialV2/");  
+        
+        break;
+    
+    
     case "localhost":
         define("URL_PROGRAMA_SERVER","http://localhost/reconocimientoFacial/proyecto_definitivo/");  
         
