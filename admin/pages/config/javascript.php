@@ -39,13 +39,14 @@ window.onload=function(){
         //esperara X segundos a qe se genere y se guarde la foto
         $sql->Consultar('camaras','*',"id=".$_GET["mostrar_foto"]);        
         $camara_id=$sql->row["id"];
-        $url_conexion=$sql->row["url_desdeserver"];
+        //$url_conexion=$sql->row["url_desdeserver"];
+        $url_conexion=$sql->row["url_conexion"];
         
         
         $cmd="python3.7 ".RUTA_PROYECTO."motor/dofoto.py ".$camara_id." '".$url_conexion."'";
         echo "->".$cmd."<-";
         exec($cmd);
-        exit;
+        
         sleep(2);
         exec("chmod -R 777 ".RUTA_PROYECTO."admin/fotos_camara/".$camara_id.".png");
         
