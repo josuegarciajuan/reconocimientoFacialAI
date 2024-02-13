@@ -50,7 +50,7 @@ window.onload=function(){
         ?>
         console.log("---><?= $cmd; ?>");
         <?php
-        echo "->".$cmd."<-";
+        //echo "->".$cmd."<-";
         exec($cmd);
         sleep(5);
         exec("chmod -R 777 ".RUTA_PROYECTO."admin/fotos_camara/".$camara_id.".png");
