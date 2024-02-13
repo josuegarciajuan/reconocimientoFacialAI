@@ -43,11 +43,13 @@ window.onload=function(){
         $url_conexion=$sql->row["url_conexion"];
         
         
-        $cmd="python3.7 ".RUTA_PROYECTO."motor/dofoto.py ".$camara_id." '".$url_conexion."'";
+        $cmd="python3.7 ".RUTA_PROYECTO."motor/dofoto.py ".$camara_id." '".$url_conexion."' '".RUTA_PROYECTO."'";
+        ?>
+                alert("<?= $cmd; ?>");
+        <?php
         echo "->".$cmd."<-";
         exec($cmd);
-        
-        sleep(2);
+        sleep(5);
         exec("chmod -R 777 ".RUTA_PROYECTO."admin/fotos_camara/".$camara_id.".png");
         
         ?>
