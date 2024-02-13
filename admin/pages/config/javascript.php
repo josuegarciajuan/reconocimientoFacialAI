@@ -43,7 +43,9 @@ window.onload=function(){
         
         
         $cmd="python3.7 ".RUTA_PROYECTO."motor/dofoto.py ".$camara_id." '".$url_conexion."'";
+        echo "->".$cmd."<-";
         exec($cmd);
+        exit;
         sleep(2);
         exec("chmod -R 777 ".RUTA_PROYECTO."admin/fotos_camara/".$camara_id.".png");
         

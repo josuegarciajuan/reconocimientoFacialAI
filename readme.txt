@@ -345,6 +345,10 @@ rm -R /var/www/html/reconocimientofacialV2/admin/caras_procesadas/*
 mkdir /var/www/html/reconocimientofacialV2/motor/logs/
 rm -R /var/www/html/reconocimientofacialV2/motor/logs/*
 mkdir /var/www/html/reconocimientofacialV2/aux
+mkdir /var/www/html/reconocimientofacialV2/motor/removidas/
+mkdir /var/www/html/reconocimientofacialV2/motor/removidas/tmp/
+mkdir /var/www/html/reconocimientofacialV2/motor/removidas/notienecaras/
+mkdir /var/www/html/reconocimientofacialV2/motor/fotos_lineas/
 chmod -R 777 /var/www/html/reconocimientofacialV2/aux
 chmod -R 777 /var/www/html/reconocimientofacialV2
 
@@ -440,7 +444,9 @@ EXPLICACION:
 
     -cruza_lineas.py     //no se si estoy usando el cruza_lineas_V2 verificar...
         mantiene en marcha 1 proceso por cada linea de cada camara
-        
+    NAAADA, LAS LINEAS SE PROCESAN DESDE EL PROCESA_VIDEOS_V6 POR LO QUE EL FICHERO DE CRUCES DE LINEAS YA NO SE USA, COMENTARLO EN EL DETECTOR
+
+
 (cuando se borra el video ya procesado?? en procesa videos y luego el procesa fotos trata fotos pero el cruza lineas, trata tambien con fotos?)
 
 

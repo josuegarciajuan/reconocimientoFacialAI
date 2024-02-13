@@ -31,7 +31,9 @@ import matplotlib.pyplot as plt
 
 
 import face_alignment
-fa = face_alignment.FaceAlignment(face_alignment.LandmarksType._2D, flip_input=False, device='cpu')
+# fa = face_alignment.FaceAlignment(face_alignment.LandmarksType._2D, flip_input=False, device='cpu')
+fa = face_alignment.FaceAlignment(face_alignment.LandmarksType.TWO_D, flip_input=False, device='cpu')
+
 
 
 sys.path.append(".")
@@ -104,7 +106,7 @@ CAMARA_ID=sys.argv[2]
 
 
 def printLog(*args, **kwargs):
-    #print(*args, **kwargs)
+    print(*args, **kwargs)
     
     with open('motor/logs/procesa_fotos_def_borrosaparte'+CAMARA_ID+'.out','a') as file:
     # with open('motor/procesa_fotos_def_XX.out','a') as file:
@@ -424,6 +426,7 @@ def variance_of_laplacian(image):
 
 detector = dlib.get_frontal_face_detector()
 def comprueba_enfocada(imagePath,name_file):
+    printLog("comprueba_enfocada")
 
     image = cv2.imread(imagePath)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -1729,7 +1732,8 @@ while sigue:
     # print()
 
     
-    # sigue=False
+    #probando
+    sigue=False
     
 
 

@@ -97,7 +97,10 @@ while(true){
 
                     
                     $cmd="python3.7 motor/procesa_fotos_def_borrosaparteV2.py ".$sql->row["id"]." ".$tmp->row["id"]." ".$params;
+                    echo "\n\n".$cmd."\n\n";
+                    exit;
                     
+
                     if(!isset($threads["pf_".$sql->row["id"]."_".$tmp->row["id"]]) or $threads["pf_".$sql->row["id"]."_".$tmp->row["id"]]==NULL){
                         echo "No existia el proceso:"."pf_".$sql->row["id"]."_".$tmp->row["id"]."\n";
                         $threads["pf_".$sql->row["id"]."_".$tmp->row["id"]]=new Jos_Thread("pf_".$sql->row["id"]."_".$tmp->row["id"],$cmd,true);
@@ -119,6 +122,7 @@ while(true){
                     
                     
                     /*--INI--procesa_videosV6*/
+/*
                     $directorio_videos=URL_FTP_BASE.'motor/videos/'.$sql->row["id"].'/'.$tmp->row["id"].'/';
                     $pesos=[];
                     $dir = opendir($directorio_videos);
@@ -199,7 +203,7 @@ while(true){
 
                                     $cmd1=RUTA_PYTHON." ".RUTA_PROYECTO."motor/procesa_videosV6.py ".$sql->row["id"]." ".$tmp->row["id"]." '".$subidos[$s]."'"." '".RUTA_PROYECTO."' ".CONFIG_SENSIBILIDAD_ES_CARA." '".URL_FTP_BASE."' ".$params." > /dev/null 2>/dev/null &";
                                     echo $cmd1."\n";
-                                    //exit;
+                                    exit;
                                     //exec($cmd1);
                                 }else{
                                     echo "No queda RAM para entrar a analizar otro video, esperare unos 20 segundos antes de seguir\n";
@@ -222,20 +226,22 @@ while(true){
                     }
                     echo "fin de procesa_videosV6\n";
                     exit;
+ */
                     /*--FIN--procesa_videosV6*/
 
                 
-                    
-
 
                     
-                    /*--INI--cruza_lineas*/    
+                    /*--INI--cruza_lineas*/    //NO SE USA, LOS CRUCES SE GESTIONAN AHORA DESDE EL PROCESA_VIDEOS_V6
 /*
                     $tmp2->Consultar("lineas", "*", "camara_id=".$tmp->row["id"]." and eliminada=0", "id asc", false);
                     if($tmp2->num>0){
                         echo "la camara ".$tmp->row["id"]." tiene lineas\n";
                         do{
                             $cmd="python3.7 motor/cruza_lineas.py ".$sql->row["id"]." ".$tmp->row["id"]." ".$tmp2->row["id"]." ".$tmp2->row["x1"]." ".$tmp2->row["y1"]." ".$tmp2->row["x2"]." ".$tmp2->row["y2"];
+                            
+                            echo "\n\n".$cmd."\n\n";
+                            exit;
                             
                             $nombre_proceso="cl_".$sql->row["id"]."_".$tmp->row["id"]."_".$tmp2->row["id"];
                             

@@ -95,8 +95,8 @@ define("CONFIG_LIMITE_VIDEOS",70); //numero de videos maximo que se pueden proce
 define("CONFIG_TIEMPOPROCESODECLISIFICARCARAS",60*10);  //en segs tiempo max q puede estar el proceso de procesar caras, luego se reinicia
 //procesa_videosV6.py
 //define("CONFIG_SENSIBILIDAD_ES_CARA","0.68");
-define("CONFIG_SENSIBILIDAD_ES_CARA","0.3");  //con 0.3 salen menos que 0.5 estudiar esto
-
+//define("CONFIG_SENSIBILIDAD_ES_CARA","0.3");  //con 0.3 salen menos que 0.5 estudiar esto
+define("CONFIG_SENSIBILIDAD_ES_CARA","0.115");
 
 define("CONFIG_desiredFaceWidth","150"); //alinear cara desiredFaceWidth  l.72
 define("CONFIG_margen_cruce_linea","5"); //margen cruce linea l.139

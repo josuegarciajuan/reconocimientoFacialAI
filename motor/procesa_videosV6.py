@@ -76,7 +76,7 @@ fa = FaceAligner(predictor, desiredFaceWidth=int(CONFIG_desiredFaceWidth))
 
 
 def printLog(*args, **kwargs):
-    # print(*args, **kwargs)
+    print(*args, **kwargs)
     
     with open(RUTA_PROYECTO+'motor/logs/procesa_videosV6_'+CAMARA_ID+'.out','a') as file:
        print(*args, **kwargs, file=file)
@@ -563,7 +563,7 @@ while(cap.isOpened()):
         #-FIN-procesamiento de lineas
 
 
-
+        printLog('Ya se han procesado las lineas, ahora a por las caras')
 
 
         # if time_elapsed > 1./frame_rate:
@@ -578,14 +578,19 @@ while(cap.isOpened()):
         faces3 = net.forward()
         
         for i in range(faces3.shape[2]):
+            # printLog('buclillo de caras que no se que es')
             confidence = faces3[0, 0, i, 2]
+            printLog('con este confidence'+str(confidence))
+
             if confidence > SENSIBILIDAD_ES_CARA:
 
                 printLog('cara encontrada en: '+name_file)
 
                 box = faces3[0, 0, i, 3:7] * np.array([width1, height1, width1, height1])
                 (x, y, x1, y1) = box.astype("int")
-                #cv2.rectangle(img2, (x, y), (x1, y1), (0, 0, 255), 2)
+
+                #probando
+                cv2.rectangle(img, (x, y), (x1, y1), (0, 0, 255), 2)
 
 
                 """
@@ -672,8 +677,8 @@ while(cap.isOpened()):
 
                     printLog("cara guardada en /"+str(LOCAL_ID)+"/"+str(CAMARA_ID)+"/"+nombrefinal+".jpg con esta confidence:"+str(confidence))
 
-        
-        # cv2.imshow("dnn", img)
+        #probando         
+        cv2.imshow("dnn", img)
         #printLog('----------------------------------------------------------');
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -683,8 +688,8 @@ cap.release()
 
 
 
-os.remove(name_file)
-os.remove(RUTA_PROYECTO+"aux/"+FICHERO+".txt")
+#probando os.remove(name_file)
+#probando os.remove(RUTA_PROYECTO+"aux/"+FICHERO+".txt")
 
 
 

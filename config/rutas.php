@@ -116,7 +116,7 @@ switch($server){
         define("RUTA_PHP","php");
         define("RUTA_PYTHON","python3.7");
         
-        define("URL_BASE_SERVER","http://45.148.29.34/reconocimientofacialV2/");  
+        define("URL_BASE_SERVER","http://localhost/reconocimientofacialV2/");  
         
         break;
     
