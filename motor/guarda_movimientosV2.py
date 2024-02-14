@@ -43,7 +43,7 @@ tiempo_espera_fps=int(1000/FPS)   # en 1000 ms / numero Fotogramas por segundo  
 
 
 def printLog(*args, **kwargs):
-    #print(*args, **kwargs)
+    print(*args, **kwargs)
     
     #with open('motor/logs/guarda_movimientosV2_'+CAMARA_ID+'.out','a') as file:
     #    print(*args, **kwargs, file=file)

@@ -72,7 +72,7 @@ fa = FaceAligner(predictor, desiredFaceWidth=int(CONFIG_desiredFaceWidth))
 
 
 def printLog(*args, **kwargs):
-    #print(*args, **kwargs)
+    print(*args, **kwargs)
     
     #with open(RUTA_PROYECTO+'motor/logs/procesa_videosV6_'+CAMARA_ID+'.out','a') as file:
        #print(*args, **kwargs, file=file)

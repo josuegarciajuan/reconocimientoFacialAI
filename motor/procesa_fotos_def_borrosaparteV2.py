@@ -106,7 +106,7 @@ CAMARA_ID=sys.argv[2]
 
 
 def printLog(*args, **kwargs):
-    #print(*args, **kwargs)
+    print(*args, **kwargs)
     
     #with open('motor/logs/procesa_fotos_def_borrosaparte'+CAMARA_ID+'.out','a') as file:
       #print(*args, **kwargs, file=file)

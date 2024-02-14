@@ -447,8 +447,9 @@ EXPLICACION:
     NAAADA, LAS LINEAS SE PROCESAN DESDE EL PROCESA_VIDEOS_V6 POR LO QUE EL FICHERO DE CRUCES DE LINEAS YA NO SE USA, COMENTARLO EN EL DETECTOR
 
 
-(cuando se borra el video ya procesado?? en procesa videos y luego el procesa fotos trata fotos pero el cruza lineas, trata tambien con fotos?)
-
+-clasificadorV2.php
+    con las fotos que ya han guardado los encodings, recorre su lugar de donde se han giuardado, y ya crea las estancias y mueve las fotos a su lugar difinitivo y crea tambien si es persona nueva
+    ##las clasifica dependiendo de la carpeta donde estan alojadas y las mete en:admin/caras_procesadas/".$sql->id.".jpg
 
 
 
