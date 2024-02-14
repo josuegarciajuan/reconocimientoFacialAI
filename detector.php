@@ -210,7 +210,6 @@ while(true){
 
                     }
                     echo "fin de procesa_videosV6\n";
-                    exit;
 
                     /*--FIN--procesa_videosV6*/
 
