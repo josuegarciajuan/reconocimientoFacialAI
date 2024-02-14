@@ -43,10 +43,10 @@ tiempo_espera_fps=int(1000/FPS)   # en 1000 ms / numero Fotogramas por segundo  
 
 
 def printLog(*args, **kwargs):
-    print(*args, **kwargs)
+    #print(*args, **kwargs)
     
-    with open('motor/logs/guarda_movimientosV2_'+CAMARA_ID+'.out','a') as file:
-        print(*args, **kwargs, file=file)
+    #with open('motor/logs/guarda_movimientosV2_'+CAMARA_ID+'.out','a') as file:
+    #    print(*args, **kwargs, file=file)
 
 
 def hay_movimiento(the_motion_list):
@@ -121,7 +121,7 @@ while(True):
         frame = cv2.resize(frame, None, fx=REDIMENSIONFRAME, fy=REDIMENSIONFRAME)
     except Exception as e:
         printLog("excepcion conyo al redimnensionar frame")
-        print(str(e))
+        printLog(str(e))
 
 
     last_frames.apilar(frame_original)
@@ -186,7 +186,7 @@ while(True):
     
     motion_list.append(motion)
     motion_list = motion_list[-frames_a_analizar:]
-    print("Estado actual del movimiento:"+str(motion))
+    printLog("Estado actual del movimiento:"+str(motion))
 
 
 

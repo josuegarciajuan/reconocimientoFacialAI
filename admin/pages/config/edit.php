@@ -333,8 +333,11 @@
                     
                     </td><td>
                     
-                      <canvas id="canvasID" width="<?= CANVAS_WIDTH; ?>" height="<?= CANVAS_HEIGHT; ?>" style="position:relative;left:0px;border-style:solid;border-width:1px;border-color:black;z-index:999999"></canvas>
-                      
+                      <canvas id="canvasID" width="<?= CANVAS_WIDTH; ?>" height="<?= CANVAS_HEIGHT; ?>" 
+                              style="width:<?= CANVAS_WIDTH; ?>;height:<?= CANVAS_HEIGHT; ?>;position:relative;left:0px;border-style:solid;border-width:1px;border-color:black;z-index:999999"></canvas> 
+                       
+ 
+
                       <input type="hidden" name="x_hidden" id="x_hidden" value=""> 
                       <input type="hidden" name="y_hidden" id="y_hidden" value=""> 
                       

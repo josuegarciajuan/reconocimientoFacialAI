@@ -21,23 +21,10 @@ $threads=[];
 
 $ram=new Jos_Thread(0,"",true);
 
-/*
-if($ram->queda_ram()){
-    echo "\nqueda ram\n";
-}else{
-    echo "\nNO queda ram\n";
-}
-exit;
-*/
+
 
 
 while(true){
-    
-    /*
-    if(!$ram->queda_espacio()){
-        $ram->libera_espacio();  //borro los videos a pelo, entonces me estoy perdiendo movimientos...
-    }
-    */
     
     //recorro los locales con camaras encendidas
     $sql->Consultar("locales", "*", "id>0", "id asc", false);
@@ -50,7 +37,7 @@ while(true){
                 
                 do{
                     /*--INI--procesa_fotos_def_borrosaparteV2*/
-/*
+
                     $params="";
                     $params.=CONFIG_umbral_parecidosentresi." ";
                     $params.=CONFIG_umbral." ";
@@ -98,7 +85,6 @@ while(true){
                     
                     $cmd="python3.7 motor/procesa_fotos_def_borrosaparteV2.py ".$sql->row["id"]." ".$tmp->row["id"]." ".$params;
                     echo "\n\n".$cmd."\n\n";
-                    exit;
                     
 
                     if(!isset($threads["pf_".$sql->row["id"]."_".$tmp->row["id"]]) or $threads["pf_".$sql->row["id"]."_".$tmp->row["id"]]==NULL){
@@ -116,13 +102,13 @@ while(true){
                             $threads["pf_".$sql->row["id"]."_".$tmp->row["id"]]->start();
                         }
                     }
-*/
+
                     /*--FIN--procesa_fotos_def_borrosaparteV2*/
                     
                     
                     
                     /*--INI--procesa_videosV6*/
-/*
+
                     $directorio_videos=URL_FTP_BASE.'motor/videos/'.$sql->row["id"].'/'.$tmp->row["id"].'/';
                     $pesos=[];
                     $dir = opendir($directorio_videos);
@@ -203,8 +189,7 @@ while(true){
 
                                     $cmd1=RUTA_PYTHON." ".RUTA_PROYECTO."motor/procesa_videosV6.py ".$sql->row["id"]." ".$tmp->row["id"]." '".$subidos[$s]."'"." '".RUTA_PROYECTO."' ".CONFIG_SENSIBILIDAD_ES_CARA." '".URL_FTP_BASE."' ".$params." > /dev/null 2>/dev/null &";
                                     echo $cmd1."\n";
-                                    exit;
-                                    //exec($cmd1);
+                                    exec($cmd1);
                                 }else{
                                     echo "No queda RAM para entrar a analizar otro video, esperare unos 20 segundos antes de seguir\n";
                                     
@@ -226,7 +211,7 @@ while(true){
                     }
                     echo "fin de procesa_videosV6\n";
                     exit;
- */
+
                     /*--FIN--procesa_videosV6*/
 
                 
@@ -298,36 +283,7 @@ while(true){
         }while($sql->Siguiente());
     }
     
-    /*
-    //NO, esta version es viejo
-    foreach($threads as $identificador=>$th){
-        $aux= explode("_", $identificador);
-        
-        $camara_id=$aux[2];
-        
-        if(count($aux)==2){
-
-            $sql->Consultar("camaras", "*", "id=".$camara_id." and encendida=1", "id asc", false);
-            if($sql->num==0){
-                $th->stop();
-                $threads[$camara_id."_".$i]=NULL;
-            }
-        }elseif(count($aux)==4){
-            $linea_id=$aux[3];
-            
-            $sql->Consultar("camaras", "*", "id=".$camara_id." and encendida=1", "id asc", false);
-            if($sql->num==0){
-                
-                $tmp->Consultar("lineas", "*", "id=".$linea_id, "id asc", false);
-                if($tmp->num>0){
-                    $th->stop();
-                    $threads[$camara_id."_".$linea_id."_".$i]=NULL;
-                }
-            }
-        }
-    }
-    */
-    
+   
     echo "TODO EL RECORRIDO TERMINADO, ESPERO 1 SEGUNDITO Y VUELVO A LANZAR!!\n";
     sleep(1);
     //exit;

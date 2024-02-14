@@ -32,10 +32,6 @@ def rect_to_bb(rect):
     return (x, y, w, h)
 
 
-# python3.7 /var/www/html/reconocimientofacialV2/motor/procesa_videosV6.py 1 1 '1_2024-01-31_17:27:07.980001.avi' '/var/www/html/reconocimientofacialV2/' 0.3 '/home/testuser/' 150 5 10 750 562 750 562 3 5 1500 3 0.15 300 300 1.0 353 353 104.0 117.0 123.0 100 150
-
-
-
 
 LOCAL_ID=sys.argv[1]
 CAMARA_ID=sys.argv[2]
@@ -76,10 +72,10 @@ fa = FaceAligner(predictor, desiredFaceWidth=int(CONFIG_desiredFaceWidth))
 
 
 def printLog(*args, **kwargs):
-    print(*args, **kwargs)
+    #print(*args, **kwargs)
     
-    with open(RUTA_PROYECTO+'motor/logs/procesa_videosV6_'+CAMARA_ID+'.out','a') as file:
-       print(*args, **kwargs, file=file)
+    #with open(RUTA_PROYECTO+'motor/logs/procesa_videosV6_'+CAMARA_ID+'.out','a') as file:
+       #print(*args, **kwargs, file=file)
 
 
 
@@ -148,6 +144,7 @@ def hay_cruce(x1_lin,y1_lin,x2_lin,y2_lin,x,y,w,h):
             #printLog("c1:"+str(c))
             if c==i:
                 cruce_h=True     
+                printLog("hay cruce horiznta")
             c=c+1
         i=i+1
 
@@ -163,11 +160,12 @@ def hay_cruce(x1_lin,y1_lin,x2_lin,y2_lin,x,y,w,h):
             #printLog("c2:"+str(c))
             if c==i:
                 cruce_v=True     
+                printLog("hay cruce vertical")
             c=c+1
         i=i+1
 
 
-    if cruce_h and cruce_v:
+    if cruce_h or cruce_v:
         cruce=True
         printLog("Tenemos cruce")
 
@@ -214,6 +212,8 @@ printLog("procesando...")
 
 
 #-INI-procesamiento de lineas
+
+printLog("VOY A INICIALIZAR LAS LINEAS")
 
 printLog("php "+RUTA_PROYECTO+"ws.php listado_lineas "+CAMARA_ID)
 proc = subprocess.Popen("php "+RUTA_PROYECTO+"ws.php listado_lineas "+CAMARA_ID, shell=True, stdout=subprocess.PIPE)
@@ -301,9 +301,7 @@ for iii in range(longitud):
 
     else:
         tiene_lineas=False
-        printLog("Sin lineas en la camara no hago nada")    
-
-
+        printLog("Sin lineas en la camara no hago nada")
 
 
 
@@ -318,9 +316,12 @@ segundos_ini=time.time()
 
 
 #cap.set(cv2.CAP_PROP_FRAME_WIDTH, 750)
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, int(CONFIG_redimensionVideoWidth))
 #cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 420)
 #cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 562)
+
+
+# probando
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, int(CONFIG_redimensionVideoWidth))
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, int(CONFIG_redimensionVideoHeight))
 
 
@@ -349,11 +350,8 @@ while(cap.isOpened()):
 
             frame_ini=img
             
-            #img = imutils.resize(img, width=750)
-            img = imutils.resize(img, width=int(CONFIG_analisisLineasImagenWidth))
-            #img = imutils.resize(img, height=420)
-            #img = imutils.resize(img, height=562)
-            img = imutils.resize(img, height=int(CONFIG_analisisLineasImagenHeight))
+            img = cv2.resize(img, (int(CONFIG_analisisLineasImagenWidth),int(CONFIG_analisisLineasImagenHeight)))
+
 
             """
             height, width, channels = img.shape
@@ -426,7 +424,7 @@ while(cap.isOpened()):
 
                 cnts = cv2.findContours(fgmask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0]
                 for cnt in cnts:
-                    #printLog("paso1:"+str(cv2.contourArea(cnt)))
+                    printLog("contourArea:"+str(cv2.contourArea(cnt)))
                     #if cv2.contourArea(cnt) > 1500:
                     if cv2.contourArea(cnt) > int(CONFIG_MinimoContornoConsiderarloCruce):
                         x, y, w, h = cv2.boundingRect(cnt)
@@ -589,8 +587,8 @@ while(cap.isOpened()):
                 box = faces3[0, 0, i, 3:7] * np.array([width1, height1, width1, height1])
                 (x, y, x1, y1) = box.astype("int")
 
-                #probando
-                cv2.rectangle(img, (x, y), (x1, y1), (0, 0, 255), 2)
+
+                #cv2.rectangle(img, (x, y), (x1, y1), (0, 0, 255), 2)
 
 
                 """
@@ -677,8 +675,8 @@ while(cap.isOpened()):
 
                     printLog("cara guardada en /"+str(LOCAL_ID)+"/"+str(CAMARA_ID)+"/"+nombrefinal+".jpg con esta confidence:"+str(confidence))
 
-        #probando         
-        cv2.imshow("dnn", img)
+
+        # cv2.imshow("dnn", img)
         #printLog('----------------------------------------------------------');
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -688,8 +686,8 @@ cap.release()
 
 
 
-#probando os.remove(name_file)
-#probando os.remove(RUTA_PROYECTO+"aux/"+FICHERO+".txt")
+os.remove(name_file)
+os.remove(RUTA_PROYECTO+"aux/"+FICHERO+".txt")
 
 
 

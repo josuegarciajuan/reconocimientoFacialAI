@@ -1,3 +1,3 @@
               total       usado       libre  compartido búfer/caché  disponible
-Memoria:    24501680    11357052     2335460     3062924    10809168     9682920
-Swap:        999420       17920      981500
+Memoria:    24501680    15053576     1278500     3206256     8169604     5843064
+Swap:        999420       70400      929020

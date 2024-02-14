@@ -61,9 +61,7 @@ define("FTP_PASS","prueba123");
 
 define('URL_FTP_BASE', '/home/testuser/');
 
-define('CANVAS_WIDTH', '750');
-//define('CANVAS_HEIGHT', '420');
-define('CANVAS_HEIGHT', '562');
+
 
 
 

@@ -10,6 +10,10 @@
  * procesos_panel_control.php -> devuelve_posicion_cara.py
  * para las pruebas que ha de superar un cara en cada posicion para asegurar que está en esa posicion
 */
+define('CANVAS_WIDTH', '750');
+define('CANVAS_HEIGHT', '562');
+
+
 define("CONFIG_HOLGURA_DEFRENTE_ALINEADOS_VERTICAL","15");
 define("CONFIG_HOLGURA_DEFRENTE_ALINEADOS_HORIZONTAL","20");
 define("CONFIG_HOLGURA_DEFRENTE_PUNTOENMEDIO_HORIZONTAL","18");
@@ -101,10 +105,10 @@ define("CONFIG_SENSIBILIDAD_ES_CARA","0.115");
 define("CONFIG_desiredFaceWidth","150"); //alinear cara desiredFaceWidth  l.72
 define("CONFIG_margen_cruce_linea","5"); //margen cruce linea l.139
 define("CONFIG_frame_rate","10"); //frame_rate = 10 #cuanto mas alto menos fluido va, osea mas delay, y detecta mas rapido   l.200
-define("CONFIG_redimensionVideoWidth","750"); //redimension de video width  l.321
-define("CONFIG_redimensionVideoHeight","562"); //redimension de video height l.324
-define("CONFIG_analisisLineasImagenWidth","750");  //tamaño imagen analisis de lineas width l.353
-define("CONFIG_analisisLineasImagenHeight","562");  //tamaño imagen analisis de lineas height l.356
+define("CONFIG_redimensionVideoWidth",CANVAS_WIDTH); //redimension de video width  l.321
+define("CONFIG_redimensionVideoHeight",CANVAS_HEIGHT); //redimension de video height l.324
+define("CONFIG_analisisLineasImagenWidth",CANVAS_WIDTH);  //tamaño imagen analisis de lineas width l.353
+define("CONFIG_analisisLineasImagenHeight",CANVAS_HEIGHT);  //tamaño imagen analisis de lineas height l.356
 define("CONFIG_margenGrosorLinea","3"); //margen grosor linea l.385
 define("CONFIG_contornoAreaCruceLinea","5"); //contorno area de cruce linea l.410
 define("CONFIG_MinimoContornoConsiderarloCruce","1500"); //minimo contorno area para considerarlo cruce  l.431

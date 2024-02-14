@@ -71,7 +71,9 @@ while(true){
             $redimesionframe=$data["valores"][$i]["redimesionframe"]/100;
             $sensibilidad=$data["valores"][$i]["sensibilidad"];
             
-        
+            
+
+
             $cmd="python3.7 motor/guarda_movimientosV2.py ".FTP_SERVER." ".FTP_USER." ".FTP_PASS." '".$cadena_conexion;
             $cmd.="' ".$data["valores"][$i]["local_id"]." ".$data["valores"][$i]["id"]." ";
             $cmd.=$segundos_analizar." "; //segundos a analizar para detectar un movimiento, ahora esta puesto a 3
@@ -87,6 +89,8 @@ while(true){
             echo "cmd1->".$cmd."\n\n";
             //exit;
 
+        
+ 
             
             if(!isset($threads[$data["valores"][$i]["id"]]) or $threads[$data["valores"][$i]["id"]]==NULL){
                 echo "No existia el proceso, es una camara nueva encendida\n";
