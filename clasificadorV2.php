@@ -58,7 +58,7 @@ function recorre_dir($path,$nivel){
                     case 1:
                         $local_id=$elemento;
                         echo "<p><strong>local_id: ". $local_id ."</strong></p>\n";
-                        if($local_id!="aux" and $local_id!="sinclasificar" and $local_id!="inicial" and $local_id!="sinclasificar_videos"){
+                        if($local_id!="aux" and $local_id!="sinclasificar" and $local_id!="inicial" and $local_id!="sinclasificar_videos" and $local_id!="sinclasificar_bck_haycarasde2022"){
                             echo "hago llamada para la camara\n";
                             recorre_dir($path.$local_id."/",2);
                         }
