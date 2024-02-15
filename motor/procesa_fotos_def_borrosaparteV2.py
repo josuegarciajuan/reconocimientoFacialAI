@@ -98,8 +98,9 @@ UMBRAL_ENFOQUE_GLOBALES=float(sys.argv[44]) #para considrar una foto desenfocada
 
 
 
-
-cinco_segundos = timedelta(0, 10)
+#probando
+#cinco_segundos = timedelta(0, 10)
+cinco_segundos = timedelta(0, 6)
 
 LOCAL_ID=sys.argv[1]
 CAMARA_ID=sys.argv[2]
@@ -547,11 +548,6 @@ count_global=0
 sigue=True
 while sigue:
     printLog("INI procesando......")
-
-
-    #vale esto es para 
-
-    printLog("recojo ficheros disponibles..")
 
     imagePaths = list(paths.list_images(path_imgs))
 

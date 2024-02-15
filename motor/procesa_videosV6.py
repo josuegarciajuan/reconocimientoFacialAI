@@ -19,7 +19,6 @@ import dlib
 sys.path.append(".")
 from facealigner import FaceAligner
 
-#python3.7 motor/procesa_videosV6.py 2 7 7_2021-12-07_17:35:06.922148.avi
 
 def rect_to_bb(rect):
 

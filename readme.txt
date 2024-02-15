@@ -211,12 +211,6 @@ sudo systemctl restart vsftpd.service
 
 
 
-
-
-
-
-
-
 instalacion python
   sudo apt-get install software-properties-common
   sudo add-apt-repository ppa:deadsnakes/ppa
@@ -348,6 +342,7 @@ mkdir /var/www/html/reconocimientofacialV2/aux
 mkdir /var/www/html/reconocimientofacialV2/motor/removidas/
 mkdir /var/www/html/reconocimientofacialV2/motor/removidas/tmp/
 mkdir /var/www/html/reconocimientofacialV2/motor/removidas/notienecaras/
+mkdir /var/www/html/reconocimientofacialV2/motor/removidas/nopasafiltros/
 mkdir /var/www/html/reconocimientofacialV2/motor/fotos_lineas/
 chmod -R 777 /var/www/html/reconocimientofacialV2/aux
 chmod -R 777 /var/www/html/reconocimientofacialV2
@@ -371,26 +366,56 @@ crear el face_enc para la carpeta inicial del motor con el archivo python de cre
 ------------------------------------------------
 
 -resetear y empezar de 0:
-rm -R /var/www/html/reconocimientofacialV2/motor/caras/*
-rm -R /var/www/html/reconocimientofacialV2/motor/videos/*
-rm -R /var/www/html/reconocimientofacialV2/motor/videos_lineas/*
-rm -R /var/www/html/reconocimientofacialV2/admin/caras_procesadas/*
-rm -R /var/www/html/reconocimientofacialV2/motor/bbdd_reconocimiento/*
-mkdir /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/
-chmod -R 777 /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/
-rm -R /var/www/html/reconocimientofacialV2/motor/fotos_lineas/*
-rm -R /home/testuser/motor/videos/*
-rm -R /home/testuser/motor/videos_lineas/*
-mkdir /var/www/html/reconocimientofacialV2/motor/caras/inicial/
-chmod -R 777 /var/www/html/reconocimientofacialV2/motor/caras/inicial/
-cp /var/www/html/reconocimientofacialV2/admin/fotos_camara/1.png /var/www/html/reconocimientofacialV2/motor/caras/inicial/
+
+rm -R /var/www/html/reconocimientofacialV2/libs/threads_files_aux/*
 rm -R /var/www/html/reconocimientofacialV2/motor/logs/*
-chmod -R 777 /var/www/html/reconocimientofacialV2/
-chmod -R 777 /home/testuser/
-mysql -u newuser -pprueba123@4522gwrQWWERw reconocimientofacial2 < /var/www/html/reconocimientofacialV2/bbdd.sql
+rm -R /var/www/html/reconocimientofacialV2/motor/videos/*
+rm -R /home/testuser/motor/videos/1/*
+rm -R /home/testuser/motor/videos/1/1/*
+rm -R /home/testuser/motor/videos/1/2/*
+rm -R /home/testuser/motor/videos/1/3/*
+rm -R /home/testuser/motor/videos/1/4/*
+rm -R /home/testuser/motor/videos/1/5/*
+rm -R /home/testuser/motor/videos/1/6/*
+rm -R /home/testuser/motor/videos/1/7/*
+rm -R /home/testuser/motor/videos/1/8/*
+rm -R /home/testuser/motor/videos/1/9/*
+rm -R /home/testuser/motor/videos/1/10/*
+rm -R /home/testuser/motor/videos/1/11/*
+rm -R /home/testuser/motor/videos/1/12/*
+rm -R /var/www/html/reconocimientofacialV2/aux/*
+rm -R /var/www/html/reconocimientofacialV2/motor/motor/fotos_lineas/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/1/1/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/1/2/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/1/3/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/1/4/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/1/5/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/1/6/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/1/7/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/1/8/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/1/9/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/1/10/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/1/11/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/1/12/*
+rm -R /var/www/html/reconocimientofacialV2/motor/bbdd_reconocimiento/1/*
+cp /var/www/html/reconocimientofacialV2/motor/inicial/face_enc /var/www/html/reconocimientofacialV2/motor/bbdd_reconocimiento/1/face_enc
+rm -R /var/www/html/reconocimientofacialV2/motor/removidas/nopasafiltros/*
+rm -R /var/www/html/reconocimientofacialV2/motor/removidas/notienecaras/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/1/1/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/1/2/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/1/3/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/1/4/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/1/5/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/1/6/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/1/7/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/1/8/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/1/9/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/1/10/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/1/11/*
+rm -R /var/www/html/reconocimientofacialV2/motor/caras/1/12/*
+mysql -u newuser -pprueba123@4522gwrQWWERw reconocimientofacial2 < /var/www/html/reconocimientofacialV2/pruebas/dump_202402121633.sql
 
 
-reboot
 
 ------------------------------------------------
 crear el local y las camras en el panel de control y luego verificar:

@@ -28,15 +28,12 @@ require_once("libs/Jos_thread.class.php");
 
 $threads=[];
 
-
 //$nextTime   = microtime(true) + INTERVAL;
-
 
 $primera=[];
 
 while(true){
     //echo "paso1\n";
-
 
     if($local_id!=""){
         $params= "accion=consultar&tabla=camaras&condicion=".urlencode("sistema=0 and encendida=1 and local_id=".$local_id)."&orden=".urlencode("id asc");
@@ -141,7 +138,7 @@ while(true){
     
    
 
-    //echo "Numero de procesos creados:".count($threads)."\n\n";
+    echo "Numero de procesos creados:".count($threads)."\n\n";
     sleep(10);
     
 

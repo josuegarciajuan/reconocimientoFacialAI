@@ -6,9 +6,6 @@
  * 08-jul-2021, 12:35:07.
  */
 
-//para cada video le paso el reconocedor, y creo las imagenes sumando los segundos pasados del video con su tiempo y borro el video luego
-//para cada imagen generada tendremos que pertenece a una persona, compruebo qe para esa persona y esa camara haga mas de X segundos qe no se haya guardado y la guardo
-
 require_once("config/rutas.php");
 require_once("libs/Jos_thread.class.php");
 require_once("libs/mysql.class.php");
@@ -20,8 +17,6 @@ $tmp2=new Conectar();
 $threads=[];
 
 $ram=new Jos_Thread(0,"",true);
-
-
 
 
 while(true){
@@ -136,7 +131,6 @@ while(true){
                             echo "Aun se esta procesando el video:".$subidos[$s]."\n";
                         }else{
 
-
                             $numero_videos=0;
                             $dir = opendir("./aux");
                             while ($elemento = readdir($dir)){
@@ -202,7 +196,7 @@ while(true){
                                 }
 
                             }else{
-                                echo "Muchos videos en cola (".$numero_videos."), espero y sigo...\n";
+                                echo "Muchos videos procesandose (".$numero_videos."), espero y sigo...\n";
                                 sleep(1);
                             }
 
@@ -283,7 +277,7 @@ while(true){
     }
     
    
-    echo "TODO EL RECORRIDO TERMINADO, ESPERO 1 SEGUNDITO Y VUELVO A LANZAR!!\n";
+    echo "TODO EL RECORRIDO TERMINADO, ESPERO SEGUNDITOS Y VUELVO A LANZAR!!\n";
     sleep(1);
     //exit;
 }
