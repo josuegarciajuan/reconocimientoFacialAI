@@ -411,6 +411,7 @@ rm -R /var/www/html/reconocimientofacialV2/motor/bbdd_reconocimiento/1/*
 cp /var/www/html/reconocimientofacialV2/motor/inicial/face_enc /var/www/html/reconocimientofacialV2/motor/bbdd_reconocimiento/1/face_enc
 rm -R /var/www/html/reconocimientofacialV2/motor/removidas/nopasafiltros/*
 rm -R /var/www/html/reconocimientofacialV2/motor/removidas/notienecaras/*
+rm -R /var/www/html/reconocimientofacialV2/motor/removidas/tmp/*
 rm -R /var/www/html/reconocimientofacialV2/motor/caras/1/1/*
 rm -R /var/www/html/reconocimientofacialV2/motor/caras/1/2/*
 rm -R /var/www/html/reconocimientofacialV2/motor/caras/1/3/*
@@ -827,4 +828,31 @@ cv2.error: OpenCV(4.6.0) /io/opencv/modules/imgproc/src/smooth.dispatch.cpp:617:
 
 adduser esunaprueba --force-badname
 sdfgbsfg#25adfaf
+
+
+
+
+
+
+
+COSAS A VERIFICAR AJUSTAR:
+-ajustar los parametros de capturador que salen de la tabla camaras que se le pasan a guarda_movimientosV2.py para que detecte el maximo movimiento en la maxima calidad sin qe pese muxho y no detecte falsos movimientos demasiados
+
+-todos los otros parametros los de detector:
+procesa_videosV6
+para que genere la mayor cantidad de fotos de caras sin falsos positivos para no saturar al siguiente
+
+procesa_fotos_def_borrosaparteV2
+que clasifique bien las fotos
+y ademas ver que coño guarda en encodings si hay 2 caras si los pone pal mismo y ver luego como compara etc, osea ejecutar el archivo foto a foto a ver que coño ace con los encodings y parecidos
+
+-el clasificador parece algo lento metiendose en todas las carpetas, ver si se puede acelerar
+
+-los encodings, en el face_enc, eso va bien? probar a pasar una cara a pelo y a ver que esta clasificnado sobretodo al juntar con otra persona o separar desde el panel, parece que no hace caso de la nueva sigue metiendo fotos de oscar al mio
+
+-probar lo del panel de control lo entrenar la cara con webcam
+
+
+
+
 
