@@ -369,8 +369,18 @@ crear el face_enc para la carpeta inicial del motor con el archivo python de cre
 
 rm -R /var/www/html/reconocimientofacialV2/libs/threads_files_aux/*
 rm -R /var/www/html/reconocimientofacialV2/motor/logs/*
-rm -R /var/www/html/reconocimientofacialV2/motor/videos/*
-rm -R /home/testuser/motor/videos/1/*
+rm -R /var/www/html/reconocimientofacialV2/motor/videos/1/*
+rm -R /var/www/html/reconocimientofacialV2/motor/videos/2/*
+rm -R /var/www/html/reconocimientofacialV2/motor/videos/3/*
+rm -R /var/www/html/reconocimientofacialV2/motor/videos/4/*
+rm -R /var/www/html/reconocimientofacialV2/motor/videos/5/*
+rm -R /var/www/html/reconocimientofacialV2/motor/videos/6/*
+rm -R /var/www/html/reconocimientofacialV2/motor/videos/7/*
+rm -R /var/www/html/reconocimientofacialV2/motor/videos/8/*
+rm -R /var/www/html/reconocimientofacialV2/motor/videos/9/*
+rm -R /var/www/html/reconocimientofacialV2/motor/videos/10/*
+rm -R /var/www/html/reconocimientofacialV2/motor/videos/11/*
+rm -R /var/www/html/reconocimientofacialV2/motor/videos/12/*
 rm -R /home/testuser/motor/videos/1/1/*
 rm -R /home/testuser/motor/videos/1/2/*
 rm -R /home/testuser/motor/videos/1/3/*
