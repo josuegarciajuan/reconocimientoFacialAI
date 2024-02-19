@@ -853,6 +853,9 @@ y ademas ver que coño guarda en encodings si hay 2 caras si los pone pal mismo 
 -probar lo del panel de control lo entrenar la cara con webcam
 
 
+he probado a resubior el plano y no me deja
 
 
+lineas muxos falsos positivos y ademas deberia unir las que sean pasadas cercanas, como q a sido 1
+los falsos positivos parece que guarda la foto de unos segundos despues y ya no aparece la persona
 

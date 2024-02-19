@@ -58,8 +58,6 @@ while(true){
             }
             */
             $cadena_conexion=$data["valores"][$i]["url_conexion"];
-          
-            
             $segundos_analizar=$data["valores"][$i]["segundos_analizar"];
             $porcentaje_mov=$data["valores"][$i]["porcentaje_mov"];
             $dontCare=$data["valores"][$i]["dontCare"];
@@ -67,7 +65,6 @@ while(true){
             $maximo_videos=$data["valores"][$i]["maximo_videos"];
             $redimesionframe=$data["valores"][$i]["redimesionframe"]/100;
             $sensibilidad=$data["valores"][$i]["sensibilidad"];
-            
             
 
 
@@ -84,11 +81,42 @@ while(true){
             $cmd.="";
 
             echo "cmd1->".$cmd."\n\n";
-            //exit;
-
-        
- 
+            if($data["valores"][$i]["id"]==3){
+                exit;    
+            }
             
+
+            
+            
+            //$segundos_analizar." "; //segundos a analizar para detectar un movimiento, ahora esta puesto a 3
+            //#cuanto mas segundos movs mas largos detecta los peqños los descarta por lo qe influira la sensibiliafda
+            //por lo que para que detecte mas movimientos cuantos menos segundos analiza, mas detecta.. 
+            //
+            //$porcentaje_mov." "; //% de frames con movimiento para que se considere movimiento, esta al 80%
+            //de los frames que tiene que analizar cada vez para ver si hay movimiento, que son: segundos_analizar*FPS
+            //que % de ellos tienen que haber tenido movimiento. un frame tien mov si es diferente al anterior su thresold que se calcula auto
+            //por lo que % menor detecta mas movs
+            //
+            //$dontCare." ";  //el % area del frame que tiene que variar para considerar movimiento, esta a 500
+            //por lo que cuando menor sea el numero mas movs pillara
+            //
+            //$fps." "; //el numero de fps que captura
+            //fps cuanto mas alto el fps mas frames captura en el mismo tiempo y tiene mas a comparar en esos segundos
+            //por lo que cuanto mas alto, mejor sera la deteccion se supone
+            //
+            //$maximo_videos." "; //#tiempo en segundos maximo de grabado
+            //para no crear videos muy largos y luego sea mas facil analizarlos. No influye en nada en la sensibildiad de deteccion
+            //
+            //$redimesionframe." "; //es para que el video ocupe menos
+            //No influye en nada en la sensibildiad de deteccion
+            //
+            //$sensibilidad." "; //de cada cuantos frames se coge uno, conj un 1 se cogen todos con un 2 la mitad etc
+            //por lo que con un 1 se analizarian todos
+            //por lo que este numero mas alto ace q entre frame y se frame que se analiza ayan abido mas cambios
+            //por lo que se supone que cuanto mas alto mas sensibilidad
+            //jugar ponerle una tasa alta de FPS que detexte muchos pero que luego no los analice todos por ejemplo
+
+            /*
             if(!isset($threads[$data["valores"][$i]["id"]]) or $threads[$data["valores"][$i]["id"]]==NULL){
                 echo "No existia el proceso, es una camara nueva encendida\n";
                 $threads[$data["valores"][$i]["id"]]=new Jos_Thread($data["valores"][$i]["id"],$cmd,true);
@@ -98,14 +126,13 @@ while(true){
                 echo "El proceso ya estaba en marcha\n";
                 if(!$threads[$data["valores"][$i]["id"]]->isrunning()){
                     echo "Pero se habia parado\n";
-                    
+
                     $threads[$data["valores"][$i]["id"]]->stop();
                     $threads[$data["valores"][$i]["id"]]=NULL;
                     sleep(3);
                     $threads[$data["valores"][$i]["id"]]=new Jos_Thread($data["valores"][$i]["id"],$cmd,true);
                     $threads[$data["valores"][$i]["id"]]->start();
                     echo "Camara ".$data["valores"][$i]["id"]." reiniciada2\n";
-                    
                 }
             }
         
@@ -132,6 +159,7 @@ while(true){
                 $threads[$data["valores"][$i]["id"]]->start();
                 echo "Camara ".$data["valores"][$i]["id"]." reiniciada\n";
             }
+            */
             
         }
     }
