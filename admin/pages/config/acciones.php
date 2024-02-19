@@ -24,14 +24,14 @@ switch($_GET["accion"]){
         $url_conexion= str_replace("--jos--", "&", $_GET["url_conexion"]);
         
         
-        $campos=["local_id","descripcion","url_conexion","sistema","puerta","salida","encendida","ipcamlive_alias"];
+        $campos=["local_id","descripcion","url_conexion","sistema","puerta","salida","encendida","ipcamlive_alias", "segundos_analizar", "porcentaje_mov", "dontCare", "fps", "maximo_videos", "redimesionframe", "sensibilidad"];
         
-        $valores=[$_SESSION["local_id"],$_GET["nombre_nueva"],$url_conexion,$_GET["sistema"],$_GET["puerta"],$_GET["salida"],$_GET["encendida_nueva"],$_GET["ipcamlive_alias"]];
+        $valores=[$_SESSION["local_id"],$_GET["nombre_nueva"],$url_conexion,$_GET["sistema"],$_GET["puerta"],$_GET["salida"],$_GET["encendida_nueva"],$_GET["ipcamlive_alias"], 2,65,300,20,60,60,2];
         $sql->Insertar("camaras",$campos,$valores,false);
         
         $cmds=[];
         
-        echo "<br />Sistema:".$_GET["sistema"]."<-<br />";
+        //echo "<br />Sistema:".$_GET["sistema"]."<-<br />";
         
         if($_GET["sistema"]==0){
             $cmds[]="mkdir ".URL_FTP_BASE."motor/videos/".$_SESSION["local_id"]."/".$sql->id;

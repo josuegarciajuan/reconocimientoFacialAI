@@ -81,9 +81,9 @@ while(true){
             $cmd.="";
 
             echo "cmd1->".$cmd."\n\n";
-            if($data["valores"][$i]["id"]==3){
-                exit;    
-            }
+            //if($data["valores"][$i]["id"]==3){
+            //    exit;    
+            //}
             
 
             
@@ -117,6 +117,19 @@ while(true){
             //jugar ponerle una tasa alta de FPS que detexte muchos pero que luego no los analice todos por ejemplo
 
             /*
+             * ESTA CONFIG ME GUSTA PARECE QUE VA BASTANTE FINO..
+                segundos_analizar: 2
+                   porcentaje_mov: 65
+                         dontCare: 300
+                              fps: 20
+                    maximo_videos: 60
+                  redimesionframe: 60
+                     sensibilidad: 2
+            */
+            
+            
+            
+            
             if(!isset($threads[$data["valores"][$i]["id"]]) or $threads[$data["valores"][$i]["id"]]==NULL){
                 echo "No existia el proceso, es una camara nueva encendida\n";
                 $threads[$data["valores"][$i]["id"]]=new Jos_Thread($data["valores"][$i]["id"],$cmd,true);
@@ -159,7 +172,7 @@ while(true){
                 $threads[$data["valores"][$i]["id"]]->start();
                 echo "Camara ".$data["valores"][$i]["id"]." reiniciada\n";
             }
-            */
+            
             
         }
     }
