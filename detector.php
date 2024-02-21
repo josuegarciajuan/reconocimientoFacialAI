@@ -157,20 +157,29 @@ while(true){
                                     exec($cmd1);
 
 
+
+                                    
                                     $params="";
-                                    $params.=CONFIG_desiredFaceWidth." ";
-                                    $params.=CONFIG_margen_cruce_linea." ";
-                                    $params.=CONFIG_frame_rate." ";
-                                    $params.=CONFIG_redimensionVideoWidth." ";
+                                    $params.= " ";
+                                    //LINEAS
+                                    $params.=CONFIG_margen_cruce_linea." ";  // VER QUE MARGEN PARA QUE SEA CRUCE, SUPONGO QE MAS MARGEN MAS CRUCES
+
+                                    //$params.=CONFIG_frame_rate." ";  //esto deberia ser fps/sensibilidad de la camara
+                                    $params.=intval($tmp->row["fps"]/$tmp->row["sensibilidad"])." ";
+                                    
+                                    $params.=CONFIG_redimensionVideoWidth." ";  //lo pone al tamaño del canvas
                                     $params.=CONFIG_redimensionVideoHeight." ";
-                                    $params.=CONFIG_analisisLineasImagenWidth." ";
+                                    $params.=CONFIG_analisisLineasImagenWidth." ";//al tamnyo del canvas tambien
                                     $params.=CONFIG_analisisLineasImagenHeight." ";
-                                    $params.=CONFIG_margenGrosorLinea." ";
-                                    $params.=CONFIG_contornoAreaCruceLinea." ";
-                                    $params.=CONFIG_MinimoContornoConsiderarloCruce." ";
-                                    $params.=CONFIG_TiempoTrascurridoUltimoCruce." ";
-                                    $params.=CONFIG_TiempoDeCruce." ";
-                                    $params.=CONFIG_redimension_imagen_captura_caras_w." ";
+                                    $params.=CONFIG_margenGrosorLinea." ";  //para hacer las lineas un pokito mas largas
+                                    $params.=CONFIG_contornoAreaCruceLinea." "; //el contorno del objeto qe tiene qer cruzer
+                                    $params.=CONFIG_MinimoContornoConsiderarloCruce." "; //el contorno total cruzado
+                                    $params.=CONFIG_TiempoTrascurridoUltimoCruce." "; //para considerarlo nuevo cruce
+                                    $params.=CONFIG_TiempoDeCruce." "; //qe haya tardado mas de x para considerarlo cruce y evitar falsos positivos 
+                                    
+                                    //CARAS
+                                    //EL UNICO IMPORTANTE AQUI ES EL CONFIG_SENSIBILIDAD_ES_CARA
+                                    $params.=CONFIG_redimension_imagen_captura_caras_w." "; //el tamanyo de la foto de la cara que se genera
                                     $params.=CONFIG_redimension_imagen_captura_caras_h." ";
                                     $params.=CONFIG_scale_factor." ";
                                     $params.=CONFIG_resize_w." ";
@@ -180,7 +189,7 @@ while(true){
                                     $params.=CONFIG_mean3." ";
                                     $params.=CONFIG_recuadro_tamanyo_rostro." ";
                                     $params.=CONFIG_redimension_rostro;
-
+                                    
                                     $cmd1=RUTA_PYTHON." ".RUTA_PROYECTO."motor/procesa_videosV6.py ".$sql->row["id"]." ".$tmp->row["id"]." '".$subidos[$s]."'"." '".RUTA_PROYECTO."' ".CONFIG_SENSIBILIDAD_ES_CARA." '".URL_FTP_BASE."' ".$params." > /dev/null 2>/dev/null &";
                                     echo $cmd1."\n";
                                     exec($cmd1);

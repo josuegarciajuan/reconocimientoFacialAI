@@ -96,23 +96,32 @@ define("CONFIG_contourArea_MINIMO","1");
 define("CONFIG_LIMITE_RAM",85); //limite de ram ocupada para seguir procesando videos
 define("CONFIG_LIMITE_VIDEOS",70); //numero de videos maximo que se pueden procesar a la vez
 define("CONFIG_TIEMPOPROCESODECLISIFICARCARAS",60*10);  //en segs tiempo max q puede estar el proceso de procesar caras, luego se reinicia
-//procesa_videosV6.py
+
 //define("CONFIG_SENSIBILIDAD_ES_CARA","0.68");
 //define("CONFIG_SENSIBILIDAD_ES_CARA","0.3");  //con 0.3 salen menos que 0.5 estudiar esto
 define("CONFIG_SENSIBILIDAD_ES_CARA","0.25");
 
+//procesa_videosV6.py
 define("CONFIG_desiredFaceWidth","150"); //alinear cara desiredFaceWidth  l.72
 define("CONFIG_margen_cruce_linea","5"); //margen cruce linea l.139
-define("CONFIG_frame_rate","10"); //frame_rate = 10 #cuanto mas alto menos fluido va, osea mas delay, y detecta mas rapido   l.200
+//define("CONFIG_frame_rate","10"); //frame_rate = 10 #cuanto mas alto menos fluido va, osea mas delay, y detecta mas rapido   l.200
 define("CONFIG_redimensionVideoWidth",CANVAS_WIDTH); //redimension de video width  l.321
 define("CONFIG_redimensionVideoHeight",CANVAS_HEIGHT); //redimension de video height l.324
 define("CONFIG_analisisLineasImagenWidth",CANVAS_WIDTH);  //tamaño imagen analisis de lineas width l.353
 define("CONFIG_analisisLineasImagenHeight",CANVAS_HEIGHT);  //tamaño imagen analisis de lineas height l.356
-define("CONFIG_margenGrosorLinea","3"); //margen grosor linea l.385
-define("CONFIG_contornoAreaCruceLinea","5"); //contorno area de cruce linea l.410
+
+//define("CONFIG_margenGrosorLinea","3"); //margen grosor linea l.385
+define("CONFIG_margenGrosorLinea","5"); 
+
+//define("CONFIG_contornoAreaCruceLinea","5"); //contorno area de cruce linea l.410
+define("CONFIG_contornoAreaCruceLinea","10"); //contorno area de cruce linea l.410
+
+
 define("CONFIG_MinimoContornoConsiderarloCruce","1500"); //minimo contorno area para considerarlo cruce  l.431
 define("CONFIG_TiempoTrascurridoUltimoCruce","3"); //tiempo transcurrido desde el ultimo cruce  l.499
 define("CONFIG_TiempoDeCruce","0.15"); //tiempo de cruce  l.499
+//
+//
 //blob = cv2.dnn.blobFromImage(image, scalefactor=1.0, size, mean, swapRB=True)   l.575
 define("CONFIG_redimension_imagen_captura_caras_w","300"); //redimension imagen captura caras w  l.575
 define("CONFIG_redimension_imagen_captura_caras_h","300"); //redimension imagen captura caras h  l.575
@@ -124,6 +133,8 @@ define("CONFIG_mean2","117.0"); //mean2  l.575
 define("CONFIG_mean3","123.0"); //mean3  l.575
 define("CONFIG_recuadro_tamanyo_rostro","100"); //recuadro tamanyo rostro  l.606
 define("CONFIG_redimension_rostro","150"); //redimension rostro l.632
+
+
 
 //procesa_fotos_def_borrosaparteV2.py
 define("CONFIG_umbral_parecidosentresi","0.38");        // cuando va a clasificar las fotos y los que son parecidos entre si para decir qe esla misma persona

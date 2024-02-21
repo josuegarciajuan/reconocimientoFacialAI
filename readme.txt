@@ -836,7 +836,7 @@ sdfgbsfg#25adfaf
 
 
 COSAS A VERIFICAR AJUSTAR:
--ajustar los parametros de capturador que salen de la tabla camaras que se le pasan a guarda_movimientosV2.py para que detecte el maximo movimiento en la maxima calidad sin qe pese muxho y no detecte falsos movimientos demasiados
+-ok-ajustar los parametros de capturador que salen de la tabla camaras que se le pasan a guarda_movimientosV2.py para que detecte el maximo movimiento en la maxima calidad sin qe pese muxho y no detecte falsos movimientos demasiados
 
 -todos los otros parametros los de detector:
 procesa_videosV6
@@ -853,9 +853,9 @@ y ademas ver que coño guarda en encodings si hay 2 caras si los pone pal mismo 
 -probar lo del panel de control lo entrenar la cara con webcam
 
 
-he probado a resubior el plano y no me deja
+-he probado a resubior el plano y no me deja
 
 
-lineas muxos falsos positivos y ademas deberia unir las que sean pasadas cercanas, como q a sido 1
-los falsos positivos parece que guarda la foto de unos segundos despues y ya no aparece la persona
+-lineas muxos falsos positivos y ademas deberia unir las que sean pasadas cercanas, como q a sido 1 (procesa_videosV6)
+-los falsos positivos parece que guarda la foto de unos segundos despues y ya no aparece la persona (procesa_videosV6)
 
