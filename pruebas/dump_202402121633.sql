@@ -58,7 +58,7 @@ INSERT INTO `camaras` VALUES (1,1,'cam_lorenzo',NULL,'rtsp://admin:bakcAse4@93.1
 /*!40000 ALTER TABLE `camaras` ENABLE KEYS */;
 UNLOCK TABLES;
 
-update camaras set segundos_analizar=3,porcentaje_mov=65,dontCare=250,fps=15,maximo_videos=60,redimesionframe=60,sensibilidad=1;
+update camaras set segundos_analizar=2,porcentaje_mov=60,dontCare=220,fps=14,maximo_videos=60,redimesionframe=60,sensibilidad=1;
 
 --
 -- Table structure for table `cruces_lineas`

@@ -118,10 +118,10 @@ while(true){
 
             /*
              * ESTA CONFIG ME GUSTA PARECE QUE VA BASTANTE FINO..
-                segundos_analizar: 3
-                   porcentaje_mov: 65
-                         dontCare: 250
-                              fps: 15
+                segundos_analizar: 2
+                   porcentaje_mov: 60
+                         dontCare: 220
+                              fps: 14
                     maximo_videos: 60
                   redimesionframe: 60
                      sensibilidad: 1
