@@ -32,7 +32,7 @@ while(true){
                 
                 do{
                     /*--INI--procesa_fotos_def_borrosaparteV2*/
-
+/*
                     $params="";
                     $params.=CONFIG_umbral_parecidosentresi." ";
                     $params.=CONFIG_umbral." ";
@@ -97,7 +97,7 @@ while(true){
                             $threads["pf_".$sql->row["id"]."_".$tmp->row["id"]]->start();
                         }
                     }
-
+*/
                     /*--FIN--procesa_fotos_def_borrosaparteV2*/
                     
                     
@@ -215,7 +215,6 @@ while(true){
                     echo "fin de procesa_videosV6\n";
 
                     /*--FIN--procesa_videosV6*/
-
                 
 
                     
