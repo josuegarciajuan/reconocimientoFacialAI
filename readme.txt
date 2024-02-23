@@ -364,7 +364,6 @@ crear el face_enc para la carpeta inicial del motor con el archivo python de cre
 
 
 ------------------------------------------------
-
 -resetear y empezar de 0:
 
 rm -R /var/www/html/reconocimientofacialV2/libs/threads_files_aux/*

@@ -121,7 +121,7 @@ while(true){
                 segundos_analizar: 3
                    porcentaje_mov: 65
                          dontCare: 250
-                              fps: 10
+                              fps: 15
                     maximo_videos: 60
                   redimesionframe: 60
                      sensibilidad: 1
