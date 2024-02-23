@@ -1,7 +1,7 @@
 nuevo server 26/1/2024
 webdock.io
 josue@nouesmalt.com
-prueba123
+prueba12345
 
 IPv4
 45.148.29.34
@@ -10,7 +10,7 @@ IPv4
 tracatrack
 argAWGwgdsag3rfef
 
-sshpass -p 'argAWGwgdsag3rfef' ssh tracatrack@45.148.29.34
+sshpass -p 'argAWGwgdsag3rfef' ssh tracatrack2@45.148.29.34
 
 MYSQL: Prueba123!
 
