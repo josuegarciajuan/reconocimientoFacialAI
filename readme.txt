@@ -12,10 +12,25 @@ argAWGwgdsag3rfef
 
 sshpass -p 'argAWGwgdsag3rfef' ssh tracatrack2@45.148.29.34
 
+sshpass -p 'argAWGwgdsag3rfef' ssh tracatrack@45.148.29.34
+
+tracatrack
+argAWGw3vEY363yh
+
 MYSQL: Prueba123!
 
 
 45.148.29.34/reconocimientofacialV2/admin
+
+
+
+
+Add correct host key in /root/.ssh/known_hosts to get rid of this message.
+Offending ECDSA key in /root/.ssh/known_hosts:3
+  remove with:
+  ssh-keygen -f "/root/.ssh/known_hosts" -R "45.148.29.34"
+
+
 
 -----------------------------------------------------------------
 
@@ -63,7 +78,8 @@ https://scrapscrap.xyz/admin
 
 ------------------------------------------------------------------
 
-
+el server es:
+Ubuntu 22.04.1 LTS (Sin X)
 
 
 instalacion LAMP
@@ -306,6 +322,15 @@ extras
   apt-get install ffmpeg
   apt install composer
 
+
+
+cv2.imshow qt.qpa.xcb: could not connect to display 
+qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "/usr/local/lib/python3.7/dist-packages/cv2/qt/plugins" even though it was found.
+Ubuntu 22.04.1 LTS create x server
+sudo apt install ubuntu-desktop xrdp
+export DISPLAY=:0
+export DISPLAY=localhost:0
+startxfce4
 
 
 ------------------------------------------------
