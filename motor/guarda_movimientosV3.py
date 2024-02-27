@@ -71,7 +71,7 @@ printLog("argv[10]:"+sys.argv[10]+"<-")
 printLog("argv[11]:"+sys.argv[11]+"<-")
 printLog("argv[12]:"+sys.argv[12]+"<-")
 
-break
+exit(1)
 
 
 FTP_SERVER=sys.argv[1]
