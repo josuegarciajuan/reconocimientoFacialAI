@@ -84,7 +84,7 @@ while(true){
             $cmd.="'".$cadena_conexion."' "; 
             
             echo "\n\ncmd1->".$cmd."\n\n";
-            exit;
+            
             
             //if($data["valores"][$i]["id"]==3){
             //    exit;    
