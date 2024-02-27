@@ -13,6 +13,11 @@ from fifo import fifo
 #4_2024-01-30_15:50:57.284152.avi
 
 
+
+#python3.7 motor/guarda_movimientosV3.py 1 1 2 60 220 22 60 0.6 1 45.148.29.34 testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.223/cam/realmonitor?channel=1&subtype=0'
+#python3.7 motor/guarda_movimientosV3.py 1 1 2 60 220 22 60 0.6 1 45.148.29.34 testuser prueba123 'rtsp://admin:bakcAse4@93.176.162.71:902/cam/realmonitor?channel=1&subtype=0'
+
+
 def printLog(*args, **kwargs):
     print(*args, **kwargs)
     
@@ -70,9 +75,6 @@ FTP_SERVER=sys.argv[10]
 FTP_USER=sys.argv[11]
 FTP_PASS=sys.argv[12]
 URL_CONEXION=sys.argv[13]
-
-#python3.7 motor/guarda_movimientosV3.py 1 1 2 60 220 22 60 0.6 1 45.148.29.34 testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.223/cam/realmonitor?channel=1&subtype=0'
-
 
 tiempo_espera_fps=int(1000/FPS)   # en 1000 ms / numero Fotogramas por segundo  =>  tiempo espera entre fotogramas
 frames_a_analizar=int(segundos_analizar*FPS)  #cada X frames es 1 segundo
