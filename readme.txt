@@ -21,7 +21,7 @@ MYSQL: Prueba123!
 
 
 
-
+lo de eneigma es 
 NUEVO SERVER:
 
 
@@ -361,7 +361,7 @@ mysql -u newuser -pprueba123@4522gwrQWWERw reconocimientofacial2 < /var/www/html
 crear el face_enc para la carpeta inicial del motor con el archivo python de crear dicionaro inical y luego moverlo a motor/inicial
 
 
-
+si con los ultimos 4 digitos local jymy QR por 20 euros digitos 5016
 
 ------------------------------------------------
 -resetear y empezar de 0:
