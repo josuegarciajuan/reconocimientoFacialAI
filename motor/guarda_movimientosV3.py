@@ -56,7 +56,7 @@ def video_last_seconds(last_frames_param, tiempo_espera_fps_param, cv2_param, vi
     subir_video(video_actual)    
 
 
-CAMARA_ID=99
+CAMARA_ID="99"
 printLog("REVISION DE argv")
 printLog("argv[1]:"+str(sys.argv[1])+"<-")
 printLog("argv[2]:"+str(sys.argv[2])+"<-")
