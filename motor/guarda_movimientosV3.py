@@ -71,6 +71,9 @@ FTP_USER=sys.argv[11]
 FTP_PASS=sys.argv[12]
 URL_CONEXION=sys.argv[13]
 
+#python3.7 motor/guarda_movimientosV3.py 1 1 2 60 220 22 60 0.6 1 45.148.29.34 testuser prueba123 'rtsp://admin:bakcAse4@172.16.51.223/cam/realmonitor?channel=1&subtype=0'
+
+
 tiempo_espera_fps=int(1000/FPS)   # en 1000 ms / numero Fotogramas por segundo  =>  tiempo espera entre fotogramas
 frames_a_analizar=int(segundos_analizar*FPS)  #cada X frames es 1 segundo
 frames_con_movimiento=round(frames_a_analizar*porcentaje_mov/100)
@@ -272,7 +275,7 @@ while(True):
 
 
 
-    #cv2.imshow('Webcam ',frame)
+    cv2.imshow('Webcam ',frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
