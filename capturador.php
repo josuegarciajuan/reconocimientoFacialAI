@@ -68,8 +68,9 @@ while(true){
             
 
 
-            $cmd="python3.7 motor/guarda_movimientosV3.py ".FTP_SERVER." ".FTP_USER." ".FTP_PASS." '".$cadena_conexion;
-            $cmd.="' ".$data["valores"][$i]["local_id"]." ".$data["valores"][$i]["id"]." ";
+            $cmd="python3.7 motor/guarda_movimientosV3.py ";
+            $cmd.=$data["valores"][$i]["local_id"]." ";
+            $cmd.=$data["valores"][$i]["id"]." ";
             $cmd.=$segundos_analizar." "; //segundos a analizar para detectar un movimiento, ahora esta puesto a 3
             $cmd.=$porcentaje_mov." "; //% de frames con movimiento para que se considere movimiento, esta al 80%
             $cmd.=$dontCare." ";  //el % area del frame que tiene que variar para considerar movimiento, esta a 500
@@ -77,10 +78,14 @@ while(true){
             $cmd.=$maximo_videos." "; //#tiempo en segundos maximo de grabado
             $cmd.=$redimesionframe." "; //es para que el video ocupe menos
             $cmd.=$sensibilidad." "; //de cada cuantos frames se coge uno, conj un 1 se cogen todos con un 2 la mitad etc
- 
-            $cmd.="";
-
-            echo "cmd1->".$cmd."\n\n";
+            $cmd.=FTP_SERVER." ";
+            $cmd.=FTP_USER." ";
+            $cmd.=FTP_PASS." ";
+            $cmd.="'".$cadena_conexion."' "; 
+            
+            echo "\n\ncmd1->".$cmd."\n\n";
+            exit;
+            
             //if($data["valores"][$i]["id"]==3){
             //    exit;    
             //}
