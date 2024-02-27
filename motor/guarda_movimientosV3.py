@@ -188,13 +188,13 @@ while(True):
         motion_list = motion_list[-frames_a_analizar:]
         printLog("Estado actual del movimiento:"+str(motion))
 
-
-        if hay_movimiento(motion_list) and grabando==False:
+        haymovimiento=hay_movimiento(motion_list)
+        if haymovimiento and grabando==False:
             grabando=True
             grabando_primera=True
             printLog ("Detecto movimiento, empiezo a grabar...")
 
-        if not hay_movimiento(motion_list) and grabando:
+        if not haymovimiento and grabando:
             parando=True
             printLog ("Ya no hay moviemiento, paro de grabar...")
 
@@ -204,8 +204,6 @@ while(True):
                 printLog ("Estaba parando pero, sigue habiendo movimiento, así que sigo grabando..!")
                 count_para=0
                 parando=False
-
-
 
 
         if grabando_primera:
@@ -276,10 +274,10 @@ while(True):
                 siguegrabando=True
 
 
-
-    cv2.imshow('Webcam ',frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+        printLog("Y muestro webcam")                
+        cv2.imshow('Webcam ',frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
 cap.release()
 cv2.destroyAllWindows()
