@@ -57,62 +57,21 @@ def video_last_seconds(last_frames_param, tiempo_espera_fps_param, cv2_param, vi
 
 
 
-#python3.7 motor/guarda_movimientosV3.py 45.148.29.34 testuser prueba123 rtsp://admin:bakcAse4@93.176.162.71:901/cam/realmonitor?channel=1&subtype=0 1 1 2 60 220 14 60 0.6 1 WU9LdsxP1kuA
-#python3.7 motor/guarda_movimientosV3.py 1 1 2 60 220 14 60 0.6 1 WU9LdsxP1kuA 45.148.29.34 testuser prueba123 rtsp://admin:bakcAse4@93.176.162.71:901/cam/realmonitor?channel=1&subtype=0
-
-
-CAMARA_ID="99"
-printLog("REVISION DE argv")
-printLog("argv[1]:"+str(sys.argv[1])+"<-")
-printLog("argv[2]:"+str(sys.argv[2])+"<-")
-printLog("argv[3]:"+str(sys.argv[3])+"<-")
-printLog("argv[4]:"+str(sys.argv[4])+"<-")
-printLog("argv[5]:"+str(sys.argv[5])+"<-")
-printLog("argv[6]:"+str(sys.argv[6])+"<-")
-printLog("argv[7]:"+str(sys.argv[7])+"<-")
-printLog("argv[8]:"+str(sys.argv[8])+"<-")
-printLog("argv[9]:"+str(sys.argv[9])+"<-")
-printLog("argv[10]:"+str(sys.argv[10])+"<-")
-printLog("argv[11]:"+str(sys.argv[11])+"<-")
-printLog("argv[12]:"+str(sys.argv[12])+"<-")
-printLog("argv[13]:"+str(sys.argv[13])+"<-")
-printLog("argv[14]:"+str(sys.argv[14])+"<-")
-
-exit(1)
-
-
-FTP_SERVER=sys.argv[1]
-FTP_USER=sys.argv[2]
-FTP_PASS=sys.argv[3]
-URL_CONEXION=sys.argv[4]
-# URL_CONEXION="rtsp://admin:bakcAse4@172.16.51.223:554/cam/realmonitor?channel=1&subtype=0"
-LOCAL_ID=sys.argv[5]
-CAMARA_ID=sys.argv[6]
-
-segundos_analizar=int(sys.argv[7])  #cuanto mas segundos movs mas largos detecta los peqños los descarta por lo qe influira la sensibiliafda
-porcentaje_mov=int(sys.argv[8]) #de este campo puede depender la sensibilidad
-#dontCare = 500
-dontCare = int(sys.argv[9]) #Area of the detected contour, below this value it's not counted as detected   (tambien influye en la sensibilidad)
-#Limit the FPS to 10 (For this task the lower the better)   
-#cap.set(cv2.cv.CV_CAP_PROP_FPS, 15)
-#FPS = 15
-FPS = float(sys.argv[10])
-maximo_videos=int(sys.argv[11]) #tiempo en segundos maximo de grabado
-#REDIMENSIONFRAME=0.60  #reduce un poco el fram original para no guardar videos tan grandes
-REDIMENSIONFRAME=float(sys.argv[12])
-
-SENSIBILIDAD=int(sys.argv[13]) #CUANTO MAS BAJO menos sensible
+LOCAL_ID=sys.argv[1]
+CAMARA_ID=sys.argv[2]
+segundos_analizar=int(sys.argv[3])  #cuanto mas segundos movs mas largos detecta los peqños los descarta por lo qe influira la sensibiliafda
+porcentaje_mov=int(sys.argv[4]) #de este campo puede depender la sensibilidad
+dontCare = int(sys.argv[5]) #Area of the detected contour, below this value it's not counted as detected   (tambien influye en la sensibilidad)
+FPS = float(sys.argv[6])
+maximo_videos=int(sys.argv[7]) #tiempo en segundos maximo de grabado
+REDIMENSIONFRAME=float(sys.argv[8])
+SENSIBILIDAD=int(sys.argv[9]) #CUANTO MAS BAJO menos sensible
+FTP_SERVER=sys.argv[10]
+FTP_USER=sys.argv[11]
+FTP_PASS=sys.argv[12]
+URL_CONEXION=sys.argv[13]
 
 tiempo_espera_fps=int(1000/FPS)   # en 1000 ms / numero Fotogramas por segundo  =>  tiempo espera entre fotogramas
-
-
-
-
-
-
-
-
-
 frames_a_analizar=int(segundos_analizar*FPS)  #cada X frames es 1 segundo
 frames_con_movimiento=round(frames_a_analizar*porcentaje_mov/100)
 frames_despues=FPS*3 #graba 2 segundo mas del movimiento recabado
