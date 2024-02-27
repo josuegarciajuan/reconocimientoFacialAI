@@ -56,6 +56,11 @@ def video_last_seconds(last_frames_param, tiempo_espera_fps_param, cv2_param, vi
     subir_video(video_actual)    
 
 
+
+#python3.7 motor/guarda_movimientosV3.py 45.148.29.34 testuser prueba123 rtsp://admin:bakcAse4@93.176.162.71:901/cam/realmonitor?channel=1&subtype=0 1 1 2 60 220 14 60 0.6 1 WU9LdsxP1kuA
+#python3.7 motor/guarda_movimientosV3.py 1 1 2 60 220 14 60 0.6 1 WU9LdsxP1kuA 45.148.29.34 testuser prueba123 rtsp://admin:bakcAse4@93.176.162.71:901/cam/realmonitor?channel=1&subtype=0
+
+
 CAMARA_ID="99"
 printLog("REVISION DE argv")
 printLog("argv[1]:"+str(sys.argv[1])+"<-")
@@ -70,6 +75,8 @@ printLog("argv[9]:"+str(sys.argv[9])+"<-")
 printLog("argv[10]:"+str(sys.argv[10])+"<-")
 printLog("argv[11]:"+str(sys.argv[11])+"<-")
 printLog("argv[12]:"+str(sys.argv[12])+"<-")
+printLog("argv[13]:"+str(sys.argv[13])+"<-")
+printLog("argv[14]:"+str(sys.argv[14])+"<-")
 
 exit(1)
 
