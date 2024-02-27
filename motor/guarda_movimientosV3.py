@@ -13,31 +13,6 @@ from fifo import fifo
 #4_2024-01-30_15:50:57.284152.avi
 
 
-FTP_SERVER=sys.argv[1]
-FTP_USER=sys.argv[2]
-FTP_PASS=sys.argv[3]
-URL_CONEXION=sys.argv[4]
-# URL_CONEXION="rtsp://admin:bakcAse4@172.16.51.223:554/cam/realmonitor?channel=1&subtype=0"
-LOCAL_ID=sys.argv[5]
-CAMARA_ID=sys.argv[6]
-
-segundos_analizar=int(sys.argv[7])  #cuanto mas segundos movs mas largos detecta los peqños los descarta por lo qe influira la sensibiliafda
-porcentaje_mov=int(sys.argv[8]) #de este campo puede depender la sensibilidad
-#dontCare = 500
-dontCare = int(sys.argv[9]) #Area of the detected contour, below this value it's not counted as detected   (tambien influye en la sensibilidad)
-#Limit the FPS to 10 (For this task the lower the better)   
-#cap.set(cv2.cv.CV_CAP_PROP_FPS, 15)
-#FPS = 15
-FPS = float(sys.argv[10])
-maximo_videos=int(sys.argv[11]) #tiempo en segundos maximo de grabado
-#REDIMENSIONFRAME=0.60  #reduce un poco el fram original para no guardar videos tan grandes
-REDIMENSIONFRAME=float(sys.argv[12])
-
-SENSIBILIDAD=int(sys.argv[13]) #CUANTO MAS BAJO menos sensible
-
-tiempo_espera_fps=int(1000/FPS)   # en 1000 ms / numero Fotogramas por segundo  =>  tiempo espera entre fotogramas
-
-
 def printLog(*args, **kwargs):
     print(*args, **kwargs)
     
@@ -79,6 +54,55 @@ def video_last_seconds(last_frames_param, tiempo_espera_fps_param, cv2_param, vi
         cfi=cfi+1
     printLog("desde aqui dentro llamo a subir el video")    
     subir_video(video_actual)    
+
+
+
+printLog("REVISION DE argv")
+printLog("argv[1]:"+sys.argv[1]+"<-")
+printLog("argv[2]:"+sys.argv[2]+"<-")
+printLog("argv[3]:"+sys.argv[3]+"<-")
+printLog("argv[4]:"+sys.argv[4]+"<-")
+printLog("argv[5]:"+sys.argv[5]+"<-")
+printLog("argv[6]:"+sys.argv[6]+"<-")
+printLog("argv[7]:"+sys.argv[7]+"<-")
+printLog("argv[8]:"+sys.argv[8]+"<-")
+printLog("argv[9]:"+sys.argv[9]+"<-")
+printLog("argv[10]:"+sys.argv[10]+"<-")
+printLog("argv[11]:"+sys.argv[11]+"<-")
+printLog("argv[12]:"+sys.argv[12]+"<-")
+
+break
+
+
+FTP_SERVER=sys.argv[1]
+FTP_USER=sys.argv[2]
+FTP_PASS=sys.argv[3]
+URL_CONEXION=sys.argv[4]
+# URL_CONEXION="rtsp://admin:bakcAse4@172.16.51.223:554/cam/realmonitor?channel=1&subtype=0"
+LOCAL_ID=sys.argv[5]
+CAMARA_ID=sys.argv[6]
+
+segundos_analizar=int(sys.argv[7])  #cuanto mas segundos movs mas largos detecta los peqños los descarta por lo qe influira la sensibiliafda
+porcentaje_mov=int(sys.argv[8]) #de este campo puede depender la sensibilidad
+#dontCare = 500
+dontCare = int(sys.argv[9]) #Area of the detected contour, below this value it's not counted as detected   (tambien influye en la sensibilidad)
+#Limit the FPS to 10 (For this task the lower the better)   
+#cap.set(cv2.cv.CV_CAP_PROP_FPS, 15)
+#FPS = 15
+FPS = float(sys.argv[10])
+maximo_videos=int(sys.argv[11]) #tiempo en segundos maximo de grabado
+#REDIMENSIONFRAME=0.60  #reduce un poco el fram original para no guardar videos tan grandes
+REDIMENSIONFRAME=float(sys.argv[12])
+
+SENSIBILIDAD=int(sys.argv[13]) #CUANTO MAS BAJO menos sensible
+
+tiempo_espera_fps=int(1000/FPS)   # en 1000 ms / numero Fotogramas por segundo  =>  tiempo espera entre fotogramas
+
+
+
+
+
+
 
 
 
@@ -188,7 +212,7 @@ while(True):
 
             motion = 1
 
-    
+
         motion_list.append(motion)
         motion_list = motion_list[-frames_a_analizar:]
         printLog("Estado actual del movimiento:"+str(motion))
@@ -279,10 +303,10 @@ while(True):
                 grabando=True
                 grabando_primera=True
                 siguegrabando=True
-        
 
 
-    #cv2.imshow('Webcam ',frame)
+
+    cv2.imshow('Webcam ',frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
