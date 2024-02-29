@@ -10,12 +10,7 @@ IPv4
 tracatrack
 argAWGwgdsag3rfef
 
-sshpass -p 'argAWGwgdsag3rfef' ssh tracatrack2@45.148.29.34
-
-sshpass -p 'argAWGwgdsag3rfef' ssh tracatrack@45.148.29.34
-
-tracatrack
-argAWGw3vEY363yh
+sshpass -p 'argAWGw3vEY363yh' ssh tracatrack@45.148.29.34
 
 MYSQL: Prueba123!
 
@@ -32,11 +27,10 @@ Offending ECDSA key in /root/.ssh/known_hosts:3
 
 
 
+
+
 -----------------------------------------------------------------
 
-
-
-lo de eneigma es 
 NUEVO SERVER:
 
 
@@ -47,39 +41,30 @@ prueba123
 ssh -i ~/.ssh/id_rsa eladmin@reconocimien.vps.webdock.cloud
 mc . sftp://eladmin:prueba123@reconocimien.vps.webdock.cloud/var/www/
 MYSQL: Prueba123!
-
 scp eladmin@45.136.71.235:/var/www/html/reconocimientofacialV2/motor/caras/sinclasificar/1/1/* .
 /home/testuser/motor/videos/1/1
-
 camaras
 prueba123
 ssh -i ~/.ssh/id_rsa camaras@reconocimien.vps.webdock.cloud
 MYSQL: Prueba123!
-
-
-
 scp /home/testuser/motor/videos/1/6/* eladmin@45.136.71.235:/home/testuser/motor/videos/1/6/
-
-
-
-
-
 45.136.71.235
 sshpass -p 'Prueba123!' ssh root@217.61.112.100
-
-
 46.249.32.179
 http://45.136.71.235/reconocimientofacialV2/admin/
-
 https://scrapscrap.xyz/admin
-
-
-
 
 ------------------------------------------------------------------
 
 el server es:
-Ubuntu 22.04.1 LTS (Sin X)
+Image
+Ubuntu Gnome Desktop
+---
+Distributor ID:	Ubuntu
+Description:	Ubuntu 22.04.2 LTS
+Release:	22.04
+Codename:	jammy
+
 
 
 instalacion LAMP
@@ -89,6 +74,7 @@ instalacion LAMP
   sudo mysql_secure_installation
 
   sudo apt install software-properties-common ca-certificates lsb-release apt-transport-https
+  apt autoremove
   LC_ALL=C.UTF-8 sudo add-apt-repository ppa:ondrej/php
   sudo apt update
   sudo apt -y install php7.4
@@ -167,12 +153,7 @@ NO
   sudo systemctl restart vsftpd.service  
 */
 
-
-
-
 apt-get install ftp-upload
-
-
 
 /******************************************************
 NO se usa pero esto sive para crear mas usuarios
@@ -323,18 +304,34 @@ extras
   apt install composer
 
 
+para conectar por rdp al server:
+https://webdock.io/en/docs/how-guides/desktop-environments/how-to-install-gnome-desktop-on-your-webdock-ubuntu-server
+sudo apt update -y
+sudo apt install tasksel
+sudo tasksel
+(seleccinar gnome)
+sudo apt install xrdp -y
+sudo systemctl enable xrdp.service
+sudo systemctl start xrdp.service
+sudo adduser xrdp ssl-cert
+sudo ufw allow 3389
+Test GNOME desktop environment
+env | grep CURRENT_DESKTOP   Output:->   XDG_CURRENT_DESKTOP=GNOME
 
-cv2.imshow qt.qpa.xcb: could not connect to display 
-qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "/usr/local/lib/python3.7/dist-packages/cv2/qt/plugins" even though it was found.
-Ubuntu 22.04.1 LTS create x server
-sudo apt install ubuntu-desktop xrdp
-export DISPLAY=:0
-export DISPLAY=localhost:0
-startxfce4
+como conectar dese mi ordenador:
+https://gitlab.com/Remmina/Remmina/-/issues/1584
+
+sudo ufw allow 80
+sudo ufw allow 21
+sudo ufw allow 22
+sudo ufw allow 443
 
 
 ------------------------------------------------
 DESCARGAR EL PROYECTO:
+rm -R /var/www/html/reconocimientofacialV2
+rm -R /home/testuser/*
+
 cd /var/www/html
 git clone https://github.com/josuegarciajuan/reconocimientofacialV2.git
 chmod -R 777 reconocimientofacialV2
@@ -343,6 +340,8 @@ chmod -R 777 reconocimientofacialV2
 
 CREACION DIRECTORIOS NECESARIOS PARA EL FUNCIONAMIENTO
 
+chmod -R 777 /var/www/html/reconocimientofacialV2
+chmod -R 777 /home/testuser/
 mkdir /home/testuser/motor
 chmod -R 777 /home/testuser/motor
 mkdir /home/testuser/motor/videos
@@ -369,9 +368,9 @@ mkdir /var/www/html/reconocimientofacialV2/motor/removidas/tmp/
 mkdir /var/www/html/reconocimientofacialV2/motor/removidas/notienecaras/
 mkdir /var/www/html/reconocimientofacialV2/motor/removidas/nopasafiltros/
 mkdir /var/www/html/reconocimientofacialV2/motor/fotos_lineas/
-chmod -R 777 /var/www/html/reconocimientofacialV2/aux
+mkdir /var/www/html/reconocimientofacialV2/motor/videos/
 chmod -R 777 /var/www/html/reconocimientofacialV2
-
+chmod -R 777 /home/testuser/
 
 conectar a mysql
 CREATE USER 'newuser'@'localhost' IDENTIFIED BY 'prueba123@4522gwrQWWERw';
@@ -383,10 +382,13 @@ create database reconocimientofacial2;
 use reconocimientofacial2
 exit
 mysql -u newuser -pprueba123@4522gwrQWWERw reconocimientofacial2 < /var/www/html/reconocimientofacialV2/bbdd.sql
-crear el face_enc para la carpeta inicial del motor con el archivo python de crear dicionaro inical y luego moverlo a motor/inicial
 
 
-si con los ultimos 4 digitos local jymy QR por 20 euros digitos 5016
+comprobar que el archivo face_enc en carpeta:
+/var/www/html/reconocimientofacialV2/motor/inicial/face_enc
+está creado
+
+
 
 ------------------------------------------------
 -resetear y empezar de 0:
