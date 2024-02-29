@@ -180,4 +180,12 @@ define("CONFIG_UMBRAL_ENFOQUE_MAXIMO_CARA_procesafoto","90"); //menos de este en
 define("CONFIG_UMBRAL_DIFERENCIA_ENFOQUE","450");  //al comparar una a una si alguna de las 2 esta desenfocada, la de muestra y la del diccionario, comprar si hay muxa diferencia, para aplicar los umbrales restrictivos    (solo afecta a umbral y umbral segurisimo)
 define("CONFIG_UMBRAL_ENFOQUE_GLOBALES","1200"); //para considrar una foto desenfocada despues de haber comparado con todas, ya pra el calculo de las medias
         
-
+//configuracion por defecto al crear una camara
+define("CONFIG_segundos_analizar","2");
+define("CONFIG_porcentaje_mov","60");
+define("CONFIG_dontCare","220");
+define("CONFIG_fps","14");
+define("CONFIG_maximo_videos","60");
+define("CONFIG_redimesionframe","60");
+define("CONFIG_sensibilidad","1");
+    

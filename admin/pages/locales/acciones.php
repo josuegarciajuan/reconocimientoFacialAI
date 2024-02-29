@@ -50,9 +50,9 @@ if(isset($_GET["submit"]) and $_GET["submit"]!=""){
             //$return=shell_exec($cmds[$i]);
             exec($cmds[$i]." 2>&1", $output, $return_var);
             echo "output:<br />";
-            var_dump($output);
+            var_dump($output);  //en la pos 0 habitualmente, la respuesta que devolvereia el comando
             echo "--<br />";
-            echo "return_var:".$return_var."<br />";
+            echo "return_var:".$return_var."<br />";  //0 ok, 1 nook
             echo "-------------<br />";
             sleep(1);
         }

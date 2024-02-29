@@ -26,7 +26,9 @@ switch($_GET["accion"]){
         
         $campos=["local_id","descripcion","url_conexion","sistema","puerta","salida","encendida","ipcamlive_alias", "segundos_analizar", "porcentaje_mov", "dontCare", "fps", "maximo_videos", "redimesionframe", "sensibilidad"];
         
-        $valores=[$_SESSION["local_id"],$_GET["nombre_nueva"],$url_conexion,$_GET["sistema"],$_GET["puerta"],$_GET["salida"],$_GET["encendida_nueva"],$_GET["ipcamlive_alias"], 2,65,300,20,60,60,2];
+        $valores=[$_SESSION["local_id"],$_GET["nombre_nueva"],$url_conexion,$_GET["sistema"],$_GET["puerta"],$_GET["salida"],$_GET["encendida_nueva"],$_GET["ipcamlive_alias"], CONFIG_segundos_analizar,CONFIG_porcentaje_mov,CONFIG_dontCare,CONFIG_fps,CONFIG_maximo_videos,CONFIG_redimesionframe,CONFIG_sensibilidad];
+        
+        
         $sql->Insertar("camaras",$campos,$valores,false);
         
         $cmds=[];
