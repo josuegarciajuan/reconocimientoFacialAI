@@ -17,6 +17,7 @@ requests==2.31.0
 tqdm==4.66.1
 prettytable==3.9.0
 easydict==1.10
+paramiko==3.4.0
 
 # Desarrollo / testing
 pytest==7.4.4

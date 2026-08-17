@@ -1,6 +1,6 @@
 import cv2, time, pandas
 from datetime import datetime
-import pysftp
+import paramiko
 import os
 import _thread
 import sys
@@ -40,12 +40,30 @@ def hay_movimiento(the_motion_list):
 
 
 def subir_video(nombre):
-    cmd='ftp-upload -h '+FTP_SERVER+' -u '+FTP_USER+' --password '+FTP_PASS+' -d motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+' motor/videos/'+LOCAL_ID+'/'+nombre
-    printLog(cmd)
-    printLog("\n\n")
-    os.system(cmd)
-    os.remove('motor/videos/'+LOCAL_ID+'/'+nombre)
-    printLog('Removido: motor/videos/'+LOCAL_ID+'/'+nombre)
+    local_path='motor/videos/'+LOCAL_ID+'/'+nombre
+    # M12: FTP local/nulo -> el video se queda local (sin dependencia de ftp-upload)
+    if not FTP_SERVER or FTP_SERVER in ('localhost', '127.0.0.1'):
+        printLog('FTP local/nulo: el video se queda en '+local_path)
+        return
+    remote_path='motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/'+nombre
+    try:
+        transport=paramiko.Transport((FTP_SERVER, 22))
+        transport.connect(username=FTP_USER, password=FTP_PASS)
+        sftp=paramiko.SFTPClient.from_transport(transport)
+        try:
+            sftp.stat('motor/videos/'+LOCAL_ID+'/'+CAMARA_ID)
+        except IOError:
+            try:
+                sftp.mkdir('motor/videos/'+LOCAL_ID+'/'+CAMARA_ID)
+            except IOError:
+                pass
+        sftp.put(local_path, remote_path)
+        sftp.close()
+        transport.close()
+        os.remove(local_path)
+        printLog('Subido y removido: '+local_path)
+    except Exception as e:
+        printLog('Error subiendo '+nombre+': '+str(e))
 
 
 def video_last_seconds(last_frames_param, tiempo_espera_fps_param, cv2_param, video_actual_param):
