@@ -28,10 +28,11 @@
 - ⏳ Integración con `procesa_videosV6.py` (el orquestador aún usa el cruce legacy) — se cablea en Fase 4.
 - Verificación: 6 tests unitarios; 1 cruce/paso en vídeo sintético; sin FP por flash de luz.
 
-### Fase 3 — Rutas
-- T3.1 Cadena de estancias en PHP + JSON limpio (R1, R2).
-- T3.2 Nodos + dibujado (R3, R4); fix B15.
-- Verificación: ruta continua + sin error SQL.
+### Fase 3 — Rutas ✅
+- ✅ T3.1 Cadena de estancias en PHP (`libs/rutas.php`) + JSON limpio (R1, R2).
+- ✅ T3.2 Nodos precalculados + dibujado (R3, R4); fix B15.
+- ✅ `libs/fechas.php` (B13 en rutas); B22 (constructor PHP4 en `mysql.class.php`).
+- Verificación: test funcional 12/12 (cadena 1→2→4, nodos, sin error sin puerta).
 
 ### Fase 4 — Seguridad + refactor panel
 - T4.1 PDO centralizado (`libs/db.php`) → B9.

@@ -23,15 +23,16 @@
 | B10 | Login no-admin fatal (`$sql` sin instanciar); password claro + `md5` roto | `admin/login.php`, `locales/acciones.php` | Crítica | 4 |
 | B11 | Marcar-notificaciones usa `local_id` en vez de `id` | `admin/accionesAjax.php` | Alta | 4 |
 | B12 | Dashboard división por cero + `lafecha` indefinido | `dashboard/list.php` | Media | 4 |
-| B13 | Fecha 12h→24h rota (`$rango = $v_fecha[0]`) en todos los listados | lineas/rutas/visitantes/fichajes/accesos | Alta | 4 |
-| B14 | Filtro cámara usa alias `c.id` inexistente | `visitantes/list.php` | Alta | 4 |
-| B15 | `camara_id in()` vacío sin cámaras puerta/salida | `rutas/list.php` | Alta | 3 |
+| B13 | Fecha 12h→24h rota (`$rango = $v_fecha[0]`) en todos los listados | lineas/rutas/visitantes/fichajes/accesos | Alta | 4 | ✅ en rutas (`libs/fechas.php`); resto en Fase 4 |
+| B14 | Filtro cámara usa alias `c.id` inexistente | `visitantes/list.php` | Alta | 4 | ⏳ pendiente |
+| B15 | `camara_id in()` vacío sin cámaras puerta/salida | `rutas/list.php` | Alta | 3 | ✅ SQL defensivo |
 | B16 | Índices de líneas desalineados al guardar | `config/javascript.php` | Media | 4 |
 | B17 | Asignaciones a `$aux` en vez de `$data[$i]`; "Descargar" sin handler | `fichajes/*` | Media | 4 |
 | B18 | `subir_video2` no dispara el procesamiento | `visitantes/acciones.php` | Media | 4 |
 | B19 | `?descargar=` roto (`$tmp` sin instanciar) | `admin/index.php` | Baja | 4 |
 | B20 | `exit;` hardcodeado (depuración) | `capturador.php` | Alta | 4 |
-| B21 | Hostname no mapeado → constantes sin definir | `config/rutas.php` | Alta | 0 |
+| B21 | Hostname no mapeado → constantes sin definir | `config/rutas.php` | Alta | 0 | ✅ Fase 0 |
+| B22 | PHP 8.4 eliminó constructores estilo PHP4 → `new Conectar()` no conectaba | `libs/mysql.class.php` | Crítica | 3 | ✅ `__construct` delegando |
 
 ## 3. Mejoras (backlog priorizado)
 
