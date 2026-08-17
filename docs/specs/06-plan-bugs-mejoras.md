@@ -19,9 +19,9 @@
 
 | # | Bug | Archivo | Sev | Fase |
 |---|---|---|---|---|
-| B9 | SQL injection global (sin escape ni prepared statements) | `libs/mysql.class.php` + todos | Crítica | 4 |
-| B10 | Login no-admin fatal (`$sql` sin instanciar); password claro + `md5` roto | `admin/login.php`, `locales/acciones.php` | Crítica | 4 |
-| B11 | Marcar-notificaciones usa `local_id` en vez de `id` | `admin/accionesAjax.php` | Alta | 4 |
+| B9 | SQL injection global (sin escape ni prepared statements) | `libs/mysql.class.php` + todos | Crítica | 4 | 🔶 base `libs/db.php` (PDO) + ws.php/login/accionesAjax migrados; resto de páginas en 4b |
+| B10 | Login no-admin fatal (`$sql` sin instanciar); password claro + `md5` roto | `admin/login.php`, `locales/acciones.php` | Crítica | 4 | ✅ password_hash/verify + rate-limit (queda re-hashear passwords existentes) |
+| B11 | Marcar-notificaciones usa `local_id` en vez de `id` | `admin/accionesAjax.php` | Alta | 4 | ✅ + esquema actual (estancias/personas) |
 | B12 | Dashboard división por cero + `lafecha` indefinido | `dashboard/list.php` | Media | 4 |
 | B13 | Fecha 12h→24h rota (`$rango = $v_fecha[0]`) en todos los listados | lineas/rutas/visitantes/fichajes/accesos | Alta | 4 | ✅ en rutas (`libs/fechas.php`); resto en Fase 4 |
 | B14 | Filtro cámara usa alias `c.id` inexistente | `visitantes/list.php` | Alta | 4 | ⏳ pendiente |
