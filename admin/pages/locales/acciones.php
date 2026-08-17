@@ -32,8 +32,7 @@ if (isset($_GET["submit"]) and $_GET["submit"] !== "") {
         foreach ($cmds as $cmd) {
             exec($cmd);
         }
-        // diccionario inicial vacío (face_enc_v2)
-        @copy(RUTA_PROYECTO . "motor/inicial/face_enc_v2", RUTA_PROYECTO . "motor/bbdd_reconocimiento/" . $id . "/face_enc_v2");
+        // face_enc_v2 se crea solo en el primer uso (FaceStore) — no hace falta sembrarlo
     }
 
     if (!empty($_POST["passw"])) {
