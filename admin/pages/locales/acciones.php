@@ -60,8 +60,9 @@ if(isset($_GET["submit"]) and $_GET["submit"]!=""){
         
         
     }
-    if($_POST["passw"]!=""){
-        $sql->Actualizar("locales",["passw"],$_POST["passw"],"id=".$id);
+    if(!empty($_POST["passw"])){
+        // B10: hash + array (antes guardaba el primer carácter en claro)
+        $sql->Actualizar("locales", ["passw"], [password_hash($_POST["passw"], PASSWORD_DEFAULT)], "id=" . intval($id));
     }
     
 }

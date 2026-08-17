@@ -6,26 +6,44 @@
  */
 @session_start();
 require_once '../config/rutas.php';
-require_once '../libs/mysql.class.php';
+require_once '../libs/db.php';
+require_once '../libs/auth.php';
 
-//echo "Prueba!\n"; exit;
+$login_error = "";
 
-if(isset($_GET["login"]) and $_GET["login"]==1){
-    if($_POST["usuario"]=="admin" and $_POST["contrasenya"]=="admin"){
-        $_SESSION["user"]=rand(100,999);
-        $_SESSION["local_id"]=3;
-        $_SESSION["admin"]=1;
-        header('Location: ./index.php');
-        exit;
-    }else{
-        $sql->Consultar ( "locales", "id", "usuario='".$_POST["usuario"]."' and passw=md5('".$_POST["contrasenya"]."')", "id asc", false);
-        if($sql->num>0){
-            $_SESSION["user"]=rand(100,999);
-            $_SESSION["local_id"]=$sql->row["id"];
-            $_SESSION["admin"]=0;
-            header('Location: ./index.php');
+if(isset($_GET["login"]) and $_GET["login"]==1 and $_SERVER["REQUEST_METHOD"]==="POST"){
+    $ip = $_SERVER["REMOTE_ADDR"] ?? "cli";
+    if (!csrf_validate($_POST["csrf"] ?? null)) {
+        $login_error = "Sesión caducada, recarga la página.";
+    } elseif (rate_limit_check("login_" . $ip)) {
+        $login_error = "Demasiados intentos fallidos. Espera unos minutos.";
+    } else {
+        $usuario = trim($_POST["usuario"] ?? "");
+        $pass = $_POST["contrasenya"] ?? "";
+        $autenticado = false;
+
+        if ($usuario === ADMIN_USER && password_verify($pass, ADMIN_PASS_HASH)) {
+            $_SESSION["user"] = session_user_id();
+            $_SESSION["local_id"] = 1;
+            $_SESSION["admin"] = 1;
+            $autenticado = true;
+        } else {
+            $loc = DB::selectOne("SELECT id, passw FROM locales WHERE usuario = ? LIMIT 1", [$usuario]);
+            if ($loc && password_verify($pass, $loc["passw"])) {
+                $_SESSION["user"] = session_user_id();
+                $_SESSION["local_id"] = (int)$loc["id"];
+                $_SESSION["admin"] = 0;
+                $autenticado = true;
+            }
+        }
+
+        if ($autenticado) {
+            session_regenerate_id(true);
+            header("Location: ./index.php");
             exit;
         }
+        rate_limit_record("login_" . $ip);
+        $login_error = "Usuario o contraseña incorrectos.";
     }
 }
 ?>
@@ -1572,10 +1590,14 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
                         </h2>
                         <div class="intro-x mt-2 text-gray-500 xl:hidden text-center">Unos pocos clicks más para entrar a tu cuenta. Gestiona todos los locales desde una misma cuenta</div>
                         <form action="?login=1" method="POST">
+                            <?= csrf_field(); ?>
                             <div class="intro-x mt-8">
                                 <input type="text" class="intro-x login__input input input--lg border border-gray-300 block" placeholder="Usuario" name="usuario">
                                 <input type="password" class="intro-x login__input input input--lg border border-gray-300 block mt-4" placeholder="Contraseña" name="contrasenya">
                             </div>
+                            <?php if ($login_error !== ""): ?>
+                                <div class="intro-x mt-2 text-red-600"><?= htmlspecialchars($login_error); ?></div>
+                            <?php endif; ?>
                             <div class="intro-x mt-5 xl:mt-8 text-center xl:text-left">
                                 <button class="button button--lg w-full xl:w-32 text-white bg-theme-1 xl:mr-3">Acceder</button>
 
