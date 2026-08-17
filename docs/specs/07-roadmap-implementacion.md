@@ -21,11 +21,12 @@
 - T1.5 `fifo.py` fix (B3).
 - Verificación: pytest + eval TAR/FAR + smoke de flujo de carpetas.
 
-### Fase 2 — Cruces de línea
-- T2.1 `motor/cruces.py` extraído y corregido (P1–P4).
-- T2.2 Calibración con vídeos grabados (`motor/eval_cruces.py`).
-- T2.3 Reemplazo de `ftp-upload` por pysftp/paramiko (M12).
-- Verificación: 1 cruce/paso, sin FP por luz, dirección correcta.
+### Fase 2 — Cruces de línea ✅ (parcial)
+- ✅ T2.1 `motor/cruces.py` extraído y corregido (P1–P4): MOG2 + tracking IoU + histéresis + dedup.
+- ✅ T2.2 Calibración con vídeos grabados (`motor/eval_cruces.py`).
+- ✅ T2.3 Reemplazo de `ftp-upload` por paramiko SFTP (M12).
+- ⏳ Integración con `procesa_videosV6.py` (el orquestador aún usa el cruce legacy) — se cablea en Fase 4.
+- Verificación: 6 tests unitarios; 1 cruce/paso en vídeo sintético; sin FP por flash de luz.
 
 ### Fase 3 — Rutas
 - T3.1 Cadena de estancias en PHP + JSON limpio (R1, R2).

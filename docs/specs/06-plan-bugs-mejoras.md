@@ -48,7 +48,7 @@
 | M9 | Harness de evaluación TAR/FAR (motor/eval) | 0–1 | ✅ harness; pendiente datos |
 | M10 | Secretos a `.env` (fuera de git) + rotar credenciales expuestas | 0–5 | ⏳ pendiente |
 | M11 | Aislamiento Python: venv dedicado, RUTA_PYTHON al venv | 0 | ✅ Fase 0 |
-| M12 | `ftp-upload` no está instalado en este servidor → reemplazar por pysftp/paramiko | 2 | ⏳ pendiente |
+| M12 | `ftp-upload` no está instalado en este servidor → reemplazar por pysftp/paramiko | 2 | ✅ `guarda_movimientosV3.py` usa paramiko SFTP |
 
 ## 4. Seguimiento
 
