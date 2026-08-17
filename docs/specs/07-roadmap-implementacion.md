@@ -34,13 +34,12 @@
 - ✅ `libs/fechas.php` (B13 en rutas); B22 (constructor PHP4 en `mysql.class.php`).
 - Verificación: test funcional 12/12 (cadena 1→2→4, nodos, sin error sin puerta).
 
-### Fase 4 — Seguridad + refactor panel 🔶 (en curso)
-- ✅ T4.1 `libs/db.php` (PDO, prepared statements) — base de B9.
+### Fase 4 — Seguridad + refactor panel ✅
+- ✅ T4.1 `libs/db.php` (PDO, prepared statements) — B9 migrado en toda la app.
 - ✅ T4.2 Auth: `libs/auth.php` (password_hash/verify, rate-limit, CSRF, session) → B10.
-- ✅ T4.3a `ws.php` seguro (whitelist tablas + condición parametrizada) + `accionesAjax.php` (esquema actual) → B11.
-- ⏳ T4.3b Migrar resto de páginas a PDO (visitantes, camaras, config, dashboard, lineas, fichajes, accesos, index, seleccionCuenta, notificaciones) → B9 completo, B14/B16/B17/B18/B19/B20/B4.
-- ⏳ T4.4 Integración del motor nuevo (procesa_videosV6 → cruces.py + RetinaFace + clasificador.py; enrolamiento al panel).
-- Verificación 4a: consultar devuelve 12 cámaras, rechaza inyección (`or 1=1` → 400) y tablas no permitidas; password_verify/CSRF OK.
+- ✅ T4.3 `ws.php` seguro + `accionesAjax` (esquema actual) → B11; barrido B9 completo (index, notificaciones, seleccionCuenta, camaras, locales, visitantes, config) → B12/B13/B14/B16/B17/B19.
+- ✅ T4.4 Integración del motor: `motor/procesa_video.py` (cruces.py + RetinaFace, sustituye a procesa_videosV6), `detector.php` cableado (clasificador.py + procesa_video.py), `capturador.php` B20, `enrolamiento.py` al panel (B18), `cambiar_foto.py` (B4).
+- ⏳ Pendiente post-fase: calibración NFR-ACC con datos reales (enrolamiento/7 poses), CSRF en mutaciones restantes, re-hashear passwords existentes.
 
 ### Fase 5 — Limpieza y operativa
 - T5.1 Eliminar legacy (~40 scripts) tras verificar referencias → B6, B7.
