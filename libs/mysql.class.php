@@ -40,6 +40,12 @@ class Conectar {
         /* Constructor que conecta a la base de datos                                                               */
         /************************************************************************************************************/
 
+        /* B22 (Fase 3): PHP 8.4 eliminó los constructores estilo PHP4 (método = nombre de clase).
+         * Se añade __construct que delega en el método original para que `new Conectar()` conecte. */
+        function __construct ( $bd = BD_BBDD, $host = BD_HOST, $user = BD_USUARIO, $password = BD_PASS ) {
+                $this->Conectar( $bd, $host, $user, $password );
+        }
+
         function Conectar ( $bd = BD_BBDD, $host = BD_HOST, $user = BD_USUARIO, $password = BD_PASS ) {
 
                 $this -> database = $bd;
