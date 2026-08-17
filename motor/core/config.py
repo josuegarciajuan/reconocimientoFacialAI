@@ -28,6 +28,9 @@ class Config:
     # --- agrupación temporal ---
     batch_seconds: float = 6.0       # ventana para agrupar fotos de un mismo evento
 
+    # --- procesa_video.py ---
+    dedup_cosine: float = 0.97       # salta caras casi idénticas a las ya guardadas
+
     # --- store (face_enc_v2) ---
     max_encodings_per_person: int = 500
 
