@@ -4,6 +4,7 @@
  * Lógica en libs/rutas.php; aquí solo filtros + render.
  */
 
+require_once __DIR__ . "/../../../libs/db.php";
 require_once __DIR__ . "/../../../libs/fechas.php";
 require_once __DIR__ . "/../../../libs/rutas.php";
 
@@ -19,7 +20,7 @@ if (isset($_GET["persona_id"]) && $_GET["persona_id"] !== "" && $_GET["persona_i
 }
 
 $local_id = intval($_SESSION["local_id"]);
-list($rutas_data, $num_puerta) = obtener_rutas($sql, $tmp, $tmp2, $local_id, $desde_sql, $hasta_sql, $persona_filtro);
+list($rutas_data, $num_puerta) = obtener_rutas($local_id, $desde_sql, $hasta_sql, $persona_filtro);
 $rutas_json = json_encode($rutas_data, JSON_UNESCAPED_UNICODE);
 
 // --- plano de fondo ---
@@ -33,21 +34,16 @@ foreach (["jpg", "jpeg", "png", "bmp"] as $ext) {
 }
 
 // --- cámaras para pintar ---
-$camaras_data = [];
-$sql->Consultar("camaras", "id,descripcion,x,y", "local_id=" . $local_id, "id asc");
-if ($sql->num > 0) {
-    do { $camaras_data[] = $sql->row; } while ($sql->Siguiente());
-}
+$camaras_data = DB::select("SELECT id, descripcion, x, y FROM camaras WHERE local_id = ? ORDER BY id ASC", [$local_id]);
 $camaras_json = json_encode($camaras_data, JSON_UNESCAPED_UNICODE);
 
 // --- personas para el filtro ---
-$sql->Consultar('personas', 'id,cod_interno,nombre',
-    "id in (select persona_id from estancias where camara_id in (select id from camaras where local_id=" . $local_id . "))",
-    "nombre asc, cod_interno asc");
-$personas_opciones = [];
-if ($sql->num > 0) {
-    do { $personas_opciones[] = $sql->row; } while ($sql->Siguiente());
-}
+$personas_opciones = DB::select(
+    "SELECT p.id, p.cod_interno, p.nombre FROM personas p
+     WHERE p.id IN (SELECT persona_id FROM estancias WHERE camara_id IN (SELECT id FROM camaras WHERE local_id = ?))
+     ORDER BY p.nombre ASC, p.cod_interno ASC",
+    [$local_id]
+);
 ?>
 
 <div class="intro-y flex flex-col sm:flex-row items-center mt-8">
