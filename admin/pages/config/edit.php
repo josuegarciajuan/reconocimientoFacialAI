@@ -6,6 +6,12 @@
  * 07/08/2020
  */
 
+require_once __DIR__ . "/../../../libs/db.php";
+$camaras = DB::select("SELECT * FROM camaras WHERE local_id = ?", [(int)($_SESSION["local_id"] ?? 0)]);
+$lineas_edit = DB::select(
+    "SELECT l.*, c.descripcion FROM lineas l JOIN camaras c ON c.id = l.camara_id WHERE c.local_id = ?",
+    [(int)($_SESSION["local_id"] ?? 0)]
+);
 ?>
 
 <div class="tab-content mt-5">
@@ -61,16 +67,9 @@
                     <b>Editar Cámara:</b>&nbsp;
                     <select class="input border mr-2" id="camara" name="camara" onchange="seleccionar_camara()">
                         <option value="-" <?php if(!isset($_GET["camara"]) or $_GET["camara"]=="-"){ echo "selected='selected'"; } ?>>Selecciona Cámara</option>
-                        <?php
-                        $sql->Consultar('camaras','*',"local_id=".$_SESSION["local_id"]);
-                        if($sql->num>0){
-                            do {
-                                echo '<option ';
-                                if(isset($_GET["camara"]) and $_GET["camara"]==$sql->row["id"]){ echo "selected='selected'"; } 
-                                echo ' value="'.$sql->row["id"].'">'.$sql->row["descripcion"].'</option>';
-                            }while($sql->Siguiente());
-                        }
-                        ?>
+                        <?php foreach ($camaras as $c): ?>
+                            <option <?php if (isset($_GET["camara"]) && $_GET["camara"] == $c["id"]) { echo "selected='selected'"; } ?> value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
+                        <?php endforeach; ?>
                     </select> 
                     <br /><br />
                     <input type="text" name="nombre" id="nombre" style="background-color:#F0F4F7" placeholder="Descripcion"><br /><br />
@@ -175,29 +174,17 @@
                     Cámara (1):&nbsp;
                     <select class="input border mr-2" id="camara1" name="camara1" onchange="meter_nodos()">
                         <option value="-">Selecciona Cámara</option>
-                        <?php
-                        $sql->Consultar('camaras','*',"local_id=".$_SESSION["local_id"]);
-                        if($sql->num>0){
-                            do {
-                                echo '<option ';
-                                echo ' value="'.$sql->row["id"].'">'.$sql->row["descripcion"].'</option>';
-                            }while($sql->Siguiente());
-                        }
-                        ?>
+                        <?php foreach ($camaras as $c): ?>
+                            <option value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
+                        <?php endforeach; ?>
                     </select> 
                     <br />
                     Cámara (2):&nbsp;
                     <select class="input border mr-2" id="camara2" name="camara2" onchange="meter_nodos()">
                         <option value="-">Selecciona Cámara</option>
-                        <?php
-                        $sql->Consultar('camaras','*',"local_id=".$_SESSION["local_id"]);
-                        if($sql->num>0){
-                            do {
-                                echo '<option ';
-                                echo ' value="'.$sql->row["id"].'">'.$sql->row["descripcion"].'</option>';
-                            }while($sql->Siguiente());
-                        }
-                        ?>
+                        <?php foreach ($camaras as $c): ?>
+                            <option value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
+                        <?php endforeach; ?>
                     </select> 
                     <br />
                     <button class="button text-white bg-theme-1 shadow-md mr-2" onclick="guardar_nodos()">Guardar</button>
@@ -219,29 +206,17 @@
                     Cámara (1):&nbsp;
                     <select class="input border mr-2" id="camara1_el" name="camara1_el" >
                         <option value="-" >Selecciona Cámara</option>
-                        <?php
-                        $sql->Consultar('camaras','*',"local_id=".$_SESSION["local_id"]);
-                        if($sql->num>0){
-                            do {
-                                echo '<option ';
-                                echo ' value="'.$sql->row["id"].'">'.$sql->row["descripcion"].'</option>';
-                            }while($sql->Siguiente());
-                        }
-                        ?>
+                        <?php foreach ($camaras as $c): ?>
+                            <option value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
+                        <?php endforeach; ?>
                     </select> 
                     <br />
                     Cámara (2):&nbsp;
                     <select class="input border mr-2" id="camara2_el" name="camara2_el" >
                         <option value="-" >Selecciona Cámara</option>
-                        <?php
-                        $sql->Consultar('camaras','*',"local_id=".$_SESSION["local_id"]);
-                        if($sql->num>0){
-                            do {
-                                echo '<option ';
-                                echo ' value="'.$sql->row["id"].'">'.$sql->row["descripcion"].'</option>';
-                            }while($sql->Siguiente());
-                        }
-                        ?>
+                        <?php foreach ($camaras as $c): ?>
+                            <option value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
+                        <?php endforeach; ?>
                     </select> 
                     <br />
                     <button class="button text-white bg-theme-1 shadow-md mr-2" onclick="eliminar_nodos()">Guardar</button>
@@ -260,30 +235,14 @@
                     Cámara:&nbsp;
                     <select class="input border mr-2" id="camara1_linea" name="camara1_linea" onchange="carga_foto_camara()">
                         <option value="-" >Selecciona Cámara</option>
-                        <?php
-                        $sql->Consultar('camaras','*',"local_id=".$_SESSION["local_id"]);
-                        if($sql->num>0){
-                            do {
-                                echo '<option ';
-                                if(isset($_GET["mostrar_foto"]) and $_GET["mostrar_foto"]!=""){
-                                    if($_GET["mostrar_foto"]==$sql->row["id"]){
-                                        echo "selected='selected'";
-                                    }
-                                }
-                                echo ' value="'.$sql->row["id"].'">'.$sql->row["descripcion"].'</option>';
-                            }while($sql->Siguiente());
-                        }
-                        ?>
+                        <?php foreach ($camaras as $c): ?>
+                            <option <?php if (isset($_GET["mostrar_foto"]) && $_GET["mostrar_foto"] == $c["id"]) { echo "selected='selected'"; } ?> value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
+                        <?php endforeach; ?>
                     </select> 
-                    <?php
-                    $sql->Consultar('lineas','*',"camara_id=".$_GET["mostrar_foto"]);
-                    ?>
-                    
                     <br />
                     
                     
                     <div id="nombres_lineas_capa">
-                        <!--<input type="text" name="nombre_linea" id="nombre_linea" value="<?= $sql->row["nombre"]; ?>">-->
                     </div>
                     
                     
@@ -306,25 +265,9 @@
                     <b>Editar Lineas:</b><br />
                     <select class="input border mr-2" id="editar_linea" name="editar_linea" onchange="carga_foto_linea()">
                         <option value="-" >Selecciona Linea</option>
-                        <?php
-                        $sql->Consultar('lineas','*',"camara_id in (select id from camaras where local_id=".$_SESSION["local_id"].")");
-                        if($sql->num>0){
-                            do {
-                                
-                                $tmp->Consultar('camaras','*',"id=".$sql->row["camara_id"]);
-                                
-                                echo '<option ';
-                                if(isset($_GET["editar_linea"]) and $_GET["editar_linea"]!=""){
-                                    if($_GET["editar_linea"]==$sql->row["id"].'-'.$tmp->row["id"]){
-                                        echo "selected='selected'";
-                                    }
-                                }
-                                
-                                
-                                echo ' value="'.$sql->row["id"].'-'.$tmp->row["id"].'">'.$sql->row["nombre"].' - '.$tmp->row["descripcion"].'</option>';
-                            }while($sql->Siguiente());
-                        }
-                        ?>
+                        <?php foreach ($lineas_edit as $l): ?>
+                            <option <?php if (isset($_GET["editar_linea"]) && $_GET["editar_linea"] == $l["id"] . "-" . $l["camara_id"]) { echo "selected='selected'"; } ?> value="<?= (int)$l["id"]; ?>-<?= (int)$l["camara_id"]; ?>"><?= htmlspecialchars($l["nombre"] . " - " . $l["descripcion"]); ?></option>
+                        <?php endforeach; ?>
                     </select> 
                     <br />
                     <button class="button text-white bg-theme-1 shadow-md mr-2" onclick="editar_linea1()">Guardar</button>

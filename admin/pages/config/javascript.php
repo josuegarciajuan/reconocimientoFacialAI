@@ -6,6 +6,8 @@
  * 11/08/2020
  */
 
+require_once __DIR__ . "/../../../libs/db.php";
+$cams = DB::select("SELECT * FROM camaras WHERE local_id = ?", [(int)($_SESSION["local_id"] ?? 0)]);
 ?>
 
 <script>
@@ -39,14 +41,11 @@ window.onload=function(){
 
     <?php
     if(isset($_GET["mostrar_foto"]) and $_GET["mostrar_foto"]!=""){
-        //esperara X segundos a qe se genere y se guarde la foto
-        $sql->Consultar('camaras','*',"id=".$_GET["mostrar_foto"]);        
-        $camara_id=$sql->row["id"];
-        //$url_conexion=$sql->row["url_desdeserver"];
-        $url_conexion=$sql->row["url_conexion"];
-        
-        
-        $cmd=RUTA_PYTHON." ".RUTA_PROYECTO."motor/dofoto.py ".$camara_id." '".$url_conexion."' '".RUTA_PROYECTO."'";
+        $cam = DB::selectOne('SELECT * FROM camaras WHERE id = ?', [(int)$_GET["mostrar_foto"]]);
+        if ($cam) {
+            $camara_id = (int)$cam["id"];
+            $url_conexion = $cam["url_conexion"];
+            $cmd=RUTA_PYTHON." ".RUTA_PROYECTO."motor/dofoto.py ".$camara_id." '".$url_conexion."' '".RUTA_PROYECTO."'";
         ?>
         console.log("---><?= $cmd; ?>");
         <?php
@@ -66,40 +65,34 @@ window.onload=function(){
                 //pinta si ya tenia alguna linea para que puedan ser modificadas
                 nombres_lineas_capa=document.getElementById("nombres_lineas_capa");
                 <?php
-                $sql->Consultar('lineas','*',"camara_id=".$_GET["mostrar_foto"]." and eliminada=0");
-                if($sql->num>0){
-                    do {
-                        ?>
-                        ctx.fillStyle = listado_colores[voypocolores];
+                $lineas_cam = DB::select("SELECT * FROM lineas WHERE camara_id = ? AND eliminada = 0", [(int)$_GET["mostrar_foto"]]);
+                foreach ($lineas_cam as $l): ?>
+                    ctx.fillStyle = listado_colores[voypocolores];
 
-                        ctx.fillRect(<?= $sql->row["x1"]; ?>,<?= $sql->row["y1"]; ?>,10,10); 
-                        ctx.fillRect(<?= $sql->row["x2"]; ?>,<?= $sql->row["y2"]; ?>,10,10); 
-                        ctx.fillText("<?= $sql->row["nombre"]; ?>", <?= $sql->row["x1"]; ?>  ,<?= $sql->row["y1"]; ?> );
-                        
-                        ctx.beginPath();
-                        ctx.moveTo(<?= $sql->row["x1"]; ?>, <?= $sql->row["y1"]; ?>);
-                        ctx.lineTo(<?= $sql->row["x2"]; ?>, <?= $sql->row["y2"]; ?>);
-                        ctx.stroke();
-                        
-                        
-                        x_lineas.push(<?= $sql->row["x1"]; ?>);
-                        x_lineas.push(<?= $sql->row["x2"]; ?>);
-                        y_lineas.push(<?= $sql->row["y1"]; ?>);
-                        y_lineas.push(<?= $sql->row["y2"]; ?>);
+                    ctx.fillRect(<?= (int)$l["x1"]; ?>,<?= (int)$l["y1"]; ?>,10,10);
+                    ctx.fillRect(<?= (int)$l["x2"]; ?>,<?= (int)$l["y2"]; ?>,10,10);
+                    ctx.fillText("<?= htmlspecialchars($l["nombre"]); ?>", <?= (int)$l["x1"]; ?>  ,<?= (int)$l["y1"]; ?> );
 
-                        nombres_lineas.push('<?= $sql->row["nombre"]; ?>');
-                        id_lineas.push('<?= $sql->row["id"]; ?>');
-                        
-                        
-                        txt='<input type="text" name="nombre_linea_<?= $sql->row["id"]; ?>" id="nombre_linea_<?= $sql->row["id"]; ?>" value="<?= $sql->row["nombre"]; ?>" style="border-width:1px;border-style:solid;border-color:'+listado_colores[voypocolores]+'">&nbsp;<a href="?page=config&accion=eliminar_linea&id_linea=<?= $sql->row["id"]; ?>&mostrar_foto=2">(X)</a><br />';
-                        nombres_lineas_capa.innerHTML=nombres_lineas_capa.innerHTML+txt;
-                        
-                        voypocolores++;
-                        
-                        
-                        <?php
-                    }while($sql->Siguiente());
-                }
+                    ctx.beginPath();
+                    ctx.moveTo(<?= (int)$l["x1"]; ?>, <?= (int)$l["y1"]; ?>);
+                    ctx.lineTo(<?= (int)$l["x2"]; ?>, <?= (int)$l["y2"]; ?>);
+                    ctx.stroke();
+
+
+                    x_lineas.push(<?= (int)$l["x1"]; ?>);
+                    x_lineas.push(<?= (int)$l["x2"]; ?>);
+                    y_lineas.push(<?= (int)$l["y1"]; ?>);
+                    y_lineas.push(<?= (int)$l["y2"]; ?>);
+
+                    nombres_lineas.push('<?= htmlspecialchars($l["nombre"]); ?>');
+                    id_lineas.push('<?= (int)$l["id"]; ?>');
+
+
+                    txt='<input type="text" name="nombre_linea_<?= (int)$l["id"]; ?>" id="nombre_linea_<?= (int)$l["id"]; ?>" value="<?= htmlspecialchars($l["nombre"]); ?>" style="border-width:1px;border-style:solid;border-color:'+listado_colores[voypocolores]+'">&nbsp;<a href="?page=config&accion=eliminar_linea&id_linea=<?= (int)$l["id"]; ?>&mostrar_foto=2">(X)</a><br />';
+                    nombres_lineas_capa.innerHTML=nombres_lineas_capa.innerHTML+txt;
+
+                    voypocolores++;
+                <?php endforeach; ?>
 
 
                 ?>
@@ -111,6 +104,7 @@ window.onload=function(){
         
    
         <?php
+        }
     }else{
    
         
@@ -126,33 +120,22 @@ window.onload=function(){
                         ctx.fillStyle = "#D22829";
                         ctx.font = "10px Arial";
                         <?php
-                        $camaras="";
-                        $sql->Consultar('camaras','*',"local_id=".$_SESSION["local_id"]);
-                        if($sql->num>0){
-                            do {
-                                $camaras.=$sql->row["id"].",";
-                                ?>
-
-                                ctx.fillRect(<?= $sql->row["x"]; ?>,<?= $sql->row["y"]; ?>,10,10); 
-                                ctx.fillText("<?= $sql->row["descripcion"]; ?>", <?= $sql->row["x"]; ?>  ,<?= $sql->row["y"]; ?> );
-                                <?php
-                            }while($sql->Siguiente());
-                            $camaras= substr($camaras, 0, strlen($camaras)-1);
-                        }
-
-                        ?>
+                        $ids_camaras = array_column($cams, "id");
+                        foreach ($cams as $cam): ?>
+                            ctx.fillRect(<?= (int)$cam["x"]; ?>,<?= (int)$cam["y"]; ?>,10,10);
+                            ctx.fillText("<?= htmlspecialchars($cam["descripcion"]); ?>", <?= (int)$cam["x"]; ?>  ,<?= (int)$cam["y"]; ?> );
+                        <?php endforeach; ?>
 
                         ctx.fillStyle = "#2596be";
                         <?php
-                        $sql->Consultar('nodos','*',"camara_id1 in (".$camaras.") or camara_id2 in (".$camaras.")");
-                        if($sql->num>0){
-                            do {
-                                ?>
-                                ctx.fillRect(<?= $sql->row["x"]; ?>,<?= $sql->row["y"]; ?>,10,10); 
-                                <?php
-                            }while($sql->Siguiente());
+                        if ($ids_camaras) {
+                            $in = implode(",", array_fill(0, count($ids_camaras), "?"));
+                            $params = array_merge($ids_camaras, $ids_camaras);
+                            $nodos = DB::select("SELECT x, y FROM nodos WHERE camara_id1 IN ($in) OR camara_id2 IN ($in)", $params);
+                            foreach ($nodos as $n): ?>
+                                ctx.fillRect(<?= (int)$n["x"]; ?>,<?= (int)$n["y"]; ?>,10,10);
+                            <?php endforeach;
                         }
-
                         ?>
 
 
@@ -684,18 +667,20 @@ function editar_linea1(){
     camara_id=porciones[1];
     linea_id=porciones[0];
     
-    //alert(id_lineas.length);
-    
-    i=id_lineas.length;
+    // B16: localizar la línea seleccionada (antes leía x_lineas[id_lineas.length*2] -> fuera de rango)
+    var idx = id_lineas.indexOf(linea_id);
+    if(idx == -1){
+        alert("Línea no encontrada en el canvas. Recarga la página con la foto de la cámara.");
+        return;
+    }
        
-
-    lasx+=x_lineas[i*2];
+    lasx+=x_lineas[idx*2];
     lasx+=",,,";
-    lasx+=x_lineas[(i*2)+1];
+    lasx+=x_lineas[(idx*2)+1];
 
-    lasy+=y_lineas[i*2];
+    lasy+=y_lineas[idx*2];
     lasy+=",,,";
-    lasy+=y_lineas[(i*2)+1];
+    lasy+=y_lineas[(idx*2)+1];
 
     losids+="0";
     losnombres+="0";
@@ -703,7 +688,7 @@ function editar_linea1(){
 
    
    
-   url="?page=config&accion=editar_lineas&linea_id="+linea_id+"&lasx="+lasx+"&lasy="+lasy+"&losnombres="+losnombres+"&losids="+losids+"&camara_id="+document.getElementById("camara1_linea").value+"&mostrar_foto="+document.getElementById("camara1_linea").value+"&editar_linea="+editar_linea;
+   url="?page=config&accion=editar_lineas&linea_id="+linea_id+"&lasx="+encodeURIComponent(lasx)+"&lasy="+encodeURIComponent(lasy)+"&losnombres="+losnombres+"&losids="+losids+"&camara_id="+document.getElementById("camara1_linea").value+"&mostrar_foto="+document.getElementById("camara1_linea").value+"&editar_linea="+editar_linea;
    
    location.href=url; 
     
