@@ -41,12 +41,13 @@
 - ✅ T4.4 Integración del motor: `motor/procesa_video.py` (cruces.py + RetinaFace, sustituye a procesa_videosV6), `detector.php` cableado (clasificador.py + procesa_video.py), `capturador.php` B20, `enrolamiento.py` al panel (B18), `cambiar_foto.py` (B4).
 - ⏳ Pendiente post-fase: calibración NFR-ACC con datos reales (enrolamiento/7 poses), CSRF en mutaciones restantes, re-hashear passwords existentes.
 
-### Fase 5 — Limpieza y operativa
-- T5.1 Eliminar legacy (~40 scripts) tras verificar referencias → B6, B7.
-- T5.2 `systemd` services (5 procesos) → M7.
-- T5.3 Secretos a `.env` + rotación → M10.
-- T5.4 README final + docs al día.
-- Verificación: arranque limpio sin legacy; `systemctl` gestiona procesos.
+### Fase 5 — Limpieza y operativa ✅
+- ✅ T5.1 Legacy eliminado: 101 ficheros (procesa_videos/fotos*, cruza_lineas*, guarda_movimientos legacy, devuelve_posicion_cara, procesa_video_registro*, face_detection*, decara_o_perfil*, R&D dirs, motor/models, mysql.class.php, reconocimientoFacial.class.php, clasificador.php, readme.txt con credenciales) → B6, B7.
+- ✅ T5.2 `deploy/systemd/` (4 unidades) + `deploy/install_services.sh` → M7.
+- ✅ T5.3 Secretos a `.env` (+ `.env.example`); `readme.txt` purgado → M10.
+- ✅ T5.4 README final + docs al día.
+- ✅ p1/p3 migrados: `procesos_panel_control.php` → `pose.py`; `clasificadorV2.php` → PDO.
+- Verificación: 29 tests pytest verdes; `php -l` OK; cero referencias funcionales a legacy.
 
 ## Dependencias
 - Fase 1 depende de 0 (venv, eval).

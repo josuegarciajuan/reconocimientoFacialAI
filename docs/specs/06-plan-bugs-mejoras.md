@@ -11,8 +11,8 @@
 | B3 | `desapilar()` captura `AttributeError` en vez de `IndexError`; `vaciar()` rompe deque | `motor/fifo.py` | Media | 1 | ✅ reescrito + tests |
 | B4 | Falta `import FileLock` + escribe `knownNames` en campo `points` (corrompe diccionario) | `motor/cambiar_foto_de_persona.py` | Alta | 4 | ✅ `motor/cambiar_foto.py` (re-encodea + face_enc_v2) |
 | B5 | Guarda frame completo (crop deshabilitado) + `blobFromImage` sin resize/mean | `motor/procesa_video_registro_1.py` | Media | 1 | ✅ `motor/enrolamiento.py` |
-| B6 | Indentación mixta → `TabError` (legacy) | `motor/cruza_lineas.py` | Baja | 5 (eliminar) | ⏳ pendiente |
-| B7 | Lógica enfocado/desenfocado invertida (legacy) | `motor/desenfocadas.py` | Baja | 5 (eliminar) | ⏳ pendiente |
+| B6 | Indentación mixta → `TabError` (legacy) | `motor/cruza_lineas.py` | Baja | 5 (eliminar) | ✅ eliminado |
+| B7 | Lógica enfocado/desenfocado invertida (legacy) | `motor/desenfocadas.py` | Baja | 5 (eliminar) | ✅ eliminado |
 | B8 | `fotos_identificadorunico` → `NameError` si no hay matches | `motor/procesa_video_registro_2.py` | Media | 1 | ✅ `motor/enrolamiento.py` |
 
 ## 2. Bugs — Panel / PHP
@@ -43,11 +43,11 @@
 | M3 | Enrolamiento multi-pose (default 3, completo 7) | 1 | ✅ enrolamiento.py + pose.py |
 | M4 | Seguridad PHP (PDO, CSRF, password_hash, rate-limit) | 4 | ✅ PDO global + login (CSRF/rate-limit); CSRF en el resto de mutaciones pendiente |
 | M5 | Refactor completo panel (routing, templates, bugs UI) | 4 | ✅ módulos a PDO + bugs B9-B20 cerrados |
-| M6 | Limpiar ~40 scripts legacy + `__pycache__`, `*.out`, backups | 5 | ⏳ pendiente |
-| M7 | Migrar `screen` → `systemd` (Restart=always) | 5 | ⏳ pendiente |
-| M8 | Logs rotativos (RotatingFileHandler) | 1 | ⏳ pendiente (se aplica al integrar en detector.php) |
+| M6 | Limpiar ~40 scripts legacy + `__pycache__`, `*.out`, backups | 5 | ✅ 101 ficheros eliminados (scripts legacy, modelos, R&D, mysql.class.php, readme.txt) |
+| M7 | Migrar `screen` → `systemd` (Restart=always) | 5 | ✅ `deploy/systemd/` + `deploy/install_services.sh` |
+| M8 | Logs rotativos (RotatingFileHandler) | 1 | ✅ vía journald (systemd) — los .py imprimen a stdout |
 | M9 | Harness de evaluación TAR/FAR (motor/eval) | 0–1 | ✅ harness; pendiente datos |
-| M10 | Secretos a `.env` (fuera de git) + rotar credenciales expuestas | 0–5 | ⏳ pendiente |
+| M10 | Secretos a `.env` (fuera de git) + rotar credenciales expuestas | 0–5 | ✅ `.env` + `.env.example`; `readme.txt` (credenciales) eliminado |
 | M11 | Aislamiento Python: venv dedicado, RUTA_PYTHON al venv | 0 | ✅ Fase 0 |
 | M12 | `ftp-upload` no está instalado en este servidor → reemplazar por pysftp/paramiko | 2 | ✅ `guarda_movimientosV3.py` usa paramiko SFTP |
 
