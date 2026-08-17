@@ -1,0 +1,15 @@
+[Unit]
+Description=RF Clasificador V2 (p3) — ingesta a BD de las fotos clasificadas
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+WorkingDirectory=/root/reconocimientoFacial
+ExecStart=/usr/bin/php /root/reconocimientoFacial/clasificadorV2.php
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target

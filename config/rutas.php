@@ -25,27 +25,48 @@ foreach($entornos as $nombre=>$entorno){
     }
 }
 
+/* M10: credenciales desde .env (fuera de git). Si no existe .env, se usan los valores por defecto. */
+$env_file = __DIR__ . "/../.env";
+if (is_file($env_file)) {
+    foreach (file($env_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $linea) {
+        $linea = trim($linea);
+        if ($linea === "" || $linea[0] === "#" || strpos($linea, "=") === false) {
+            continue;
+        }
+        list($k, $v) = explode("=", $linea, 2);
+        if (getenv($k) === false) {
+            putenv($k . "=" . trim($v));
+        }
+    }
+}
+if (!function_exists("env_or")) {
+    function env_or($k, $d) {
+        $v = getenv($k);
+        return ($v === false || $v === "") ? $d : $v;
+    }
+}
+
 switch($server){
     case "server":
         /* Entorno actual: /root/reconocimientoFacial (Ubuntu 22.04, PHP 8.4, MariaDB, venv Python 3.10) */
-        define("URL_PROGRAMA_SERVER","http://localhost/reconocimientoFacial/");
+        define("URL_PROGRAMA_SERVER", env_or("RF_URL", "http://localhost/reconocimientoFacial/"));
 
-        define('BD_BBDD', 'reconocimientofacial');
-        define('BD_USUARIO', 'root');
-        define('BD_PASS', '');          // root local sin password (MariaDB); mover a .env (M10)
-        define('BD_HOST', 'localhost');
+        define('BD_BBDD', env_or('RF_DB_NAME', 'reconocimientofacial'));
+        define('BD_USUARIO', env_or('RF_DB_USER', 'root'));
+        define('BD_PASS', env_or('RF_DB_PASS', ''));
+        define('BD_HOST', env_or('RF_DB_HOST', 'localhost'));
         define('PREFIJO_TABLAS', '');
 
-        define('RUTA_PROYECTO', "/root/reconocimientoFacial/");
+        define('RUTA_PROYECTO', env_or('RF_RUTA', "/root/reconocimientoFacial/"));
         define("RUTA_PHP","php");
-        define("RUTA_PYTHON","/root/reconocimientoFacial/motor/venv/bin/python");  // venv aislado (R6)
+        define("RUTA_PYTHON", env_or('RF_PYTHON', "/root/reconocimientoFacial/motor/venv/bin/python"));  // venv aislado (R6)
 
-        define("URL_BASE_SERVER","http://localhost/reconocimientoFacial/");
+        define("URL_BASE_SERVER", env_or('RF_URL', "http://localhost/reconocimientoFacial/"));
 
         // FTP legacy (M12): pendiente de sustituir por transferencia local/pysftp en Fase 2
-        define("FTP_SERVER","localhost");
-        define("FTP_USER","");
-        define("FTP_PASS","");
+        define("FTP_SERVER", env_or('RF_FTP_HOST', "localhost"));
+        define("FTP_USER", env_or('RF_FTP_USER', ""));
+        define("FTP_PASS", env_or('RF_FTP_PASS', ""));
         break;
 
 

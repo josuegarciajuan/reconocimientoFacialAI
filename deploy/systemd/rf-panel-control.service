@@ -1,0 +1,14 @@
+[Unit]
+Description=RF Panel de control (p1) — validador de pose (pose.py) para registro webcam
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/reconocimientoFacial
+ExecStart=/usr/bin/php /root/reconocimientoFacial/procesos_panel_control.php 0
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target

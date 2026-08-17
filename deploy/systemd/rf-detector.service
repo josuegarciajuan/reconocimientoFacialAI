@@ -1,0 +1,15 @@
+[Unit]
+Description=RF Detector (p5) — orquesta procesa_video.py + clasificador.py
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+WorkingDirectory=/root/reconocimientoFacial
+ExecStart=/usr/bin/php /root/reconocimientoFacial/detector.php
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target

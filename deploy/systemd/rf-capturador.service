@@ -1,0 +1,16 @@
+[Unit]
+Description=RF Capturador (p4) — captura de vídeo por movimiento (guarda_movimientosV3)
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+WorkingDirectory=/root/reconocimientoFacial
+ExecStart=/usr/bin/php /root/reconocimientoFacial/capturador.php
+Restart=always
+RestartSec=5
+User=root
+# Logs a journald (rotación gestionada por el sistema)
+
+[Install]
+WantedBy=multi-user.target
