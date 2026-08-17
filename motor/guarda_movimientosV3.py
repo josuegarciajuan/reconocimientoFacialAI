@@ -40,7 +40,7 @@ def hay_movimiento(the_motion_list):
 
 
 def subir_video(nombre):
-    local_path='motor/videos/'+LOCAL_ID+'/'+nombre
+    local_path='motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/'+nombre
     # M12: FTP local/nulo -> el video se queda local (sin dependencia de ftp-upload)
     if not FTP_SERVER or FTP_SERVER in ('localhost', '127.0.0.1'):
         printLog('FTP local/nulo: el video se queda en '+local_path)
@@ -232,7 +232,9 @@ while(True):
             now = str(datetime.now())
             now=now.replace(" ","_");
             video_actual=CAMARA_ID+'_'+now+'.avi'
-            out = cv2.VideoWriter('motor/videos/'+LOCAL_ID+'/'+video_actual, fourcc, FPS, size)
+            # Fase 4c: layout con subdirectorio de cámara (motor/videos/<local>/<cam>/)
+            os.makedirs('motor/videos/'+LOCAL_ID+'/'+CAMARA_ID, exist_ok=True)
+            out = cv2.VideoWriter('motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/'+video_actual, fourcc, FPS, size)
             time_inicio = time.time()
             printLog ("Se empieza a generar el siguiente video:"+video_actual)
             

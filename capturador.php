@@ -68,7 +68,7 @@ while(true){
             
 
 
-            $cmd="python3.7 motor/guarda_movimientosV3.py ";
+            $cmd=RUTA_PYTHON." motor/guarda_movimientosV3.py ";
             $cmd.=$data["valores"][$i]["local_id"]." ";
             $cmd.=$data["valores"][$i]["id"]." ";
             $cmd.=$segundos_analizar." "; //segundos a analizar para detectar un movimiento, ahora esta puesto a 3
@@ -84,15 +84,13 @@ while(true){
             $cmd.="'".$cadena_conexion."' "; 
             
             echo "\n\ncmd1->".$cmd."\n\n";
-            exit;
-            
+            // B20: eliminado el exit; de depuración que mataba el proceso tras la 1ª cámara
+           
             //if($data["valores"][$i]["id"]==3){
             //    exit;    
-            //}
-            
 
-            
-            
+
+
             //$segundos_analizar." "; //segundos a analizar para detectar un movimiento, ahora esta puesto a 3
             //#cuanto mas segundos movs mas largos detecta los peqños los descarta por lo qe influira la sensibiliafda
             //por lo que para que detecte mas movimientos cuantos menos segundos analiza, mas detecta.. 
