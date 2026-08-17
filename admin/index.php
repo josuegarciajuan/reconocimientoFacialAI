@@ -22,32 +22,32 @@ if(!isset($_SESSION["user"])){
     exit;
 }
 if(isset($_GET["descargar"]) and $_GET["descargar"]!=""){
-    
-    $filename = $_GET["descargar"]."_".rand(0, 1).".jpg";
-     // Ahora guardamos otra variable con la ruta del archivo
-    $file = "../images/tmps/".$filename;
-    
-    $file="./caras_procesadas/".$tmp->row["id"].".jpg";
-    
-     // Aquí, establecemos la cabecera del documento
-     header("Content-Description: Descargar imagen");
-     header("Content-Disposition: attachment; filename=$filename");
-     header("Content-Type: application/force-download");
-     header("Content-Length: " . filesize($file));
-     header("Content-Transfer-Encoding: binary");
-     readfile($file);
-
+    // B19: descarga segura de la foto de una estancia (antes: $tmp sin instanciar -> fatal)
+    require_once '../libs/db.php';
+    $foto = DB::selectOne("SELECT MIN(id) AS mid FROM fotos WHERE estancia_id = ?", [(int)$_GET["descargar"]]);
+    if ($foto && $foto["mid"]) {
+        $file = "./caras_procesadas/" . (int)$foto["mid"] . ".jpg";
+        if (file_exists($file)) {
+            $filename = basename($file);
+            header("Content-Description: Descargar imagen");
+            header("Content-Disposition: attachment; filename=$filename");
+            header("Content-Type: application/force-download");
+            header("Content-Length: " . filesize($file));
+            header("Content-Transfer-Encoding: binary");
+            readfile($file);
+            exit;
+        }
+    }
 }
 
 require_once '../config/rutas.php';
-require_once '../libs/mysql.class.php';
+require_once '../libs/db.php';
 
-$sql=new Conectar();
-$tmp=new Conectar();
-$tmp2=new Conectar();
-
-$sql->Consultar('locales','*',"id=".$_SESSION["local_id"]);
-$local=$sql->row;
+// B9: consulta del local actual con PDO
+$local = DB::selectOne("SELECT * FROM locales WHERE id = ?", [(int)($_SESSION["local_id"] ?? 0)]);
+if (!$local) {
+    $local = [];
+}
 
 ?>
 <!DOCTYPE html>
