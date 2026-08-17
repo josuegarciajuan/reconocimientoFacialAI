@@ -1,1 +1,55 @@
-/nbproject/private/
+# --- Entorno ---
+motor/venv/
+.env
+*.env
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+motor/.pytest_cache/
+
+# --- Datos runtime (git = código, no datos) ---
+motor/logs/
+motor/caras/
+motor/removidas/
+motor/bbdd_reconocimiento/
+motor/fotos_lineas/
+motor/videos/
+motor/alinear_caras/
+motor/laterales_test/
+motor/cosas_en_la_cara/
+motor/eval/data/
+aux/
+admin/caras_procesadas/
+admin/fotos_camara/
+admin/files/videos_registro/
+admin/files/videos_registro_posiciones/
+admin/files/videos_registro_pruebas/
+admin/files/videos_registro_resultados/
+admin/files/videos_registro_videos/
+admin/files/videos_registro_videos_partidos/
+libs/threads_files_aux/
+
+# --- Outputs y logs ---
+*.out
+*.log
+*.bak
+*.pickle
+
+# --- NPM legacy (live-view) ---
+admin/pages/camaras/node_modules/
+
+# --- Dumps de BD grandes (el esquema vive en reconocimientofacial-*.sql y bbdd.sql) ---
+dump.sql
+reconocimientofacial2.sql
+test.sql
+pruebas/dump_*.sql
+
+# --- Artefactos de test del entorno viejo ---
+capturador.txt
+test.txt
+readme_def.txt
+*.pkl
+*.npy

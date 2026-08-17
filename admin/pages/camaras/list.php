@@ -39,7 +39,7 @@
             $url_conexion=$sql->row["url_conexion"];
 
             if(!isset($_GET["id"]) or $_GET["id"]==""){
-                $cmd="python3.7 ".RUTA_PROYECTO."motor/dofoto.py ".$camara_id." '".$url_conexion."' '".RUTA_PROYECTO."'";
+                $cmd=RUTA_PYTHON." ".RUTA_PROYECTO."motor/dofoto.py ".$camara_id." '".$url_conexion."' '".RUTA_PROYECTO."'";
                 //echo "<br /><br />->".$cmd."<-<br /><br />";
                 exec($cmd);
                 sleep(2);

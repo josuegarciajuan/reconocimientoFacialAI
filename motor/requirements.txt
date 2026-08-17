@@ -1,0 +1,23 @@
+# Motor de visión — dependencias (venv dedicado, Python 3.10)
+# Regla R6: instalar SOLO en motor/venv, nunca en el python del sistema.
+
+# Detección + embeddings
+insightface==0.7.3
+onnxruntime==1.16.3
+
+# Imagen / visión
+opencv-python-headless==4.9.0.80
+numpy==1.26.4
+scipy==1.11.4
+scikit-image==0.21.0
+
+# Utilidades
+filelock==3.13.1
+requests==2.31.0
+tqdm==4.66.1
+prettytable==3.9.0
+easydict==1.10
+
+# Desarrollo / testing
+pytest==7.4.4
+matplotlib==3.8.4

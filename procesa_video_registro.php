@@ -74,7 +74,7 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta,
         echo $ruta.$nombre_fichero."_".$i.".avi \n";
         $id="vr_".$i."_".$local_id."_".$randaux;
 
-        $cmd="python3.7 motor/procesa_video_registro_1.py ".$local_id." ".$nombre_fichero."_".$i.".avi ".$i." '".RUTA_PROYECTO."' ".$fecha." ".CONFIG_CADACUANTOSFRAMESSECOGEUNOPARAVERSIHAYCARA." ".CONFIG_SENSIBILIDAD_ES_CARA_VIDEOREGISTRO." ".CONFIG_PORCENTAJECARASCOJO;
+        $cmd=RUTA_PYTHON." motor/procesa_video_registro_1.py ".$local_id." ".$nombre_fichero."_".$i.".avi ".$i." '".RUTA_PROYECTO."' ".$fecha." ".CONFIG_CADACUANTOSFRAMESSECOGEUNOPARAVERSIHAYCARA." ".CONFIG_SENSIBILIDAD_ES_CARA_VIDEOREGISTRO." ".CONFIG_PORCENTAJECARASCOJO;
         echo "Alta hilo->".$cmd."\n";
         $threads[$id]=new Jos_Thread($id,$cmd,true);
 
@@ -107,7 +107,7 @@ function procesa_video_registro($local_id,$nombre_persona,$nombre_fichero,$ruta,
 
     for($i=1;$i<=32;$i++){
         $id="vr_".$i."_".$local_id."_".$randaux;
-        $cmd="python3.7 motor/procesa_video_registro_2.py ".$local_id." ".$i." ".$nombreunico." '".RUTA_PROYECTO."' ".CONFIG_UMBRAL_ENFOQUE_MAXIMO_CARA;
+        $cmd=RUTA_PYTHON." motor/procesa_video_registro_2.py ".$local_id." ".$i." ".$nombreunico." '".RUTA_PROYECTO."' ".CONFIG_UMBRAL_ENFOQUE_MAXIMO_CARA;
         echo "Alta hilo->".$cmd."\n";
         $threads[$id]=new Jos_Thread($id,$cmd,true);
 

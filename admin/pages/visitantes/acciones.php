@@ -18,7 +18,7 @@ if(isset($_GET["este"]) and $_GET["este"]!=""){
     $cod_interno_copia=$sql->row["cod_interno"];
     
     
-    $cmd="python3.7 ../motor/juntar_personas.py ".$_SESSION["local_id"]." ".$cod_interno_original." ".$cod_interno_copia;
+    $cmd=RUTA_PYTHON." ../motor/juntar_personas.py ".$_SESSION["local_id"]." ".$cod_interno_original." ".$cod_interno_copia;
     //echo $cmd;
     exec($cmd);
     
@@ -67,7 +67,7 @@ if(isset($_GET["mover"]) and $_GET["mover"]!=""){
     $sql->Consultar('personas','*',"id=".$persona_id_destino);
     $persona_cod_interno=$sql->row["cod_interno"];
 
-    $cmd="python3.7 ../motor/cambiar_foto_de_persona.py ".$_SESSION["local_id"]." ".$foto_identificador_unico." ".$persona_cod_interno;
+    $cmd=RUTA_PYTHON." ../motor/cambiar_foto_de_persona.py ".$_SESSION["local_id"]." ".$foto_identificador_unico." ".$persona_cod_interno;
     //echo $cmd;
     exec($cmd);
      

@@ -46,7 +46,7 @@ window.onload=function(){
         $url_conexion=$sql->row["url_conexion"];
         
         
-        $cmd="python3.7 ".RUTA_PROYECTO."motor/dofoto.py ".$camara_id." '".$url_conexion."' '".RUTA_PROYECTO."'";
+        $cmd=RUTA_PYTHON." ".RUTA_PROYECTO."motor/dofoto.py ".$camara_id." '".$url_conexion."' '".RUTA_PROYECTO."'";
         ?>
         console.log("---><?= $cmd; ?>");
         <?php
