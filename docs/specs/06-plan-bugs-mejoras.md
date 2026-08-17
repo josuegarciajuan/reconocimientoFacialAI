@@ -4,16 +4,16 @@
 
 ## 1. Bugs — Motor Python
 
-| # | Bug | Archivo | Sev | Fase |
-|---|---|---|---|---|
-| B1 | `distancias_similares`/`distacia_superior` usan `abs(y3-y3)=0` → pruebas de pose no-op | `motor/devuelve_posicion_cara.py` | Alta | 1 |
-| B2 | `LandmarksType._2D` deprecado (crash con libs nuevas) | `motor/devuelve_posicion_cara.py` | Alta | 1 |
-| B3 | `desapilar()` captura `AttributeError` en vez de `IndexError`; `vaciar()` rompe deque | `motor/fifo.py` | Media | 1 |
-| B4 | Falta `import FileLock` + escribe `knownNames` en campo `points` (corrompe diccionario) | `motor/cambiar_foto_de_persona.py` | Alta | 4 |
-| B5 | Guarda frame completo (crop deshabilitado) + `blobFromImage` sin resize/mean | `motor/procesa_video_registro_1.py` | Media | 1 (reescrito) |
-| B6 | Indentación mixta → `TabError` (legacy) | `motor/cruza_lineas.py` | Baja | 5 (eliminar) |
-| B7 | Lógica enfocado/desenfocado invertida (legacy) | `motor/desenfocadas.py` | Baja | 5 (eliminar) |
-| B8 | `fotos_identificadorunico` → `NameError` si no hay matches | `motor/procesa_video_registro_2.py` | Media | 1 (reescrito) |
+| # | Bug | Archivo | Sev | Fase | Estado |
+|---|---|---|---|---|---|
+| B1 | `distancias_similares`/`distacia_superior` usan `abs(y3-y3)=0` → pruebas de pose no-op | `motor/devuelve_posicion_cara.py` | Alta | 1 | ✅ `motor/pose.py` (usa face.pose) |
+| B2 | `LandmarksType._2D` deprecado (crash con libs nuevas) | `motor/devuelve_posicion_cara.py` | Alta | 1 | ✅ `motor/pose.py` |
+| B3 | `desapilar()` captura `AttributeError` en vez de `IndexError`; `vaciar()` rompe deque | `motor/fifo.py` | Media | 1 | ✅ reescrito + tests |
+| B4 | Falta `import FileLock` + escribe `knownNames` en campo `points` (corrompe diccionario) | `motor/cambiar_foto_de_persona.py` | Alta | 4 | ⏳ pendiente |
+| B5 | Guarda frame completo (crop deshabilitado) + `blobFromImage` sin resize/mean | `motor/procesa_video_registro_1.py` | Media | 1 | ✅ `motor/enrolamiento.py` |
+| B6 | Indentación mixta → `TabError` (legacy) | `motor/cruza_lineas.py` | Baja | 5 (eliminar) | ⏳ pendiente |
+| B7 | Lógica enfocado/desenfocado invertida (legacy) | `motor/desenfocadas.py` | Baja | 5 (eliminar) | ⏳ pendiente |
+| B8 | `fotos_identificadorunico` → `NameError` si no hay matches | `motor/procesa_video_registro_2.py` | Media | 1 | ✅ `motor/enrolamiento.py` |
 
 ## 2. Bugs — Panel / PHP
 
@@ -35,20 +35,20 @@
 
 ## 3. Mejoras (backlog priorizado)
 
-| # | Mejora | Fase |
-|---|---|---|
-| M1 | Embedding ArcFace + re-enrolado (face_enc_v2) | 1 |
-| M2 | Similitud coseno + normalización L2 + plantilla multi-pose | 1 |
-| M3 | Enrolamiento multi-pose (default 3, completo 7) | 1 |
-| M4 | Seguridad PHP (PDO, CSRF, password_hash, rate-limit) | 4 |
-| M5 | Refactor completo panel (routing, templates, bugs UI) | 4 |
-| M6 | Limpiar ~40 scripts legacy + `__pycache__`, `*.out`, backups | 5 |
-| M7 | Migrar `screen` → `systemd` (Restart=always) | 5 |
-| M8 | Logs rotativos (RotatingFileHandler) | 1 |
-| M9 | Harness de evaluación TAR/FAR (motor/eval) | 0–1 |
-| M10 | Secretos a `.env` (fuera de git) + rotar credenciales expuestas | 0–5 |
-| M11 | Aislamiento Python: venv dedicado, RUTA_PYTHON al venv | 0 |
-| M12 | `ftp-upload` no está instalado en este servidor → reemplazar por pysftp/paramiko | 2 |
+| # | Mejora | Fase | Estado |
+|---|---|---|---|
+| M1 | Embedding ArcFace + re-enrolado (face_enc_v2) | 1 | ✅ core + clasificador.py |
+| M2 | Similitud coseno + normalización L2 + plantilla multi-pose | 1 | ✅ core/matching.py |
+| M3 | Enrolamiento multi-pose (default 3, completo 7) | 1 | ✅ enrolamiento.py + pose.py |
+| M4 | Seguridad PHP (PDO, CSRF, password_hash, rate-limit) | 4 | ⏳ pendiente |
+| M5 | Refactor completo panel (routing, templates, bugs UI) | 4 | ⏳ pendiente |
+| M6 | Limpiar ~40 scripts legacy + `__pycache__`, `*.out`, backups | 5 | ⏳ pendiente |
+| M7 | Migrar `screen` → `systemd` (Restart=always) | 5 | ⏳ pendiente |
+| M8 | Logs rotativos (RotatingFileHandler) | 1 | ⏳ pendiente (se aplica al integrar en detector.php) |
+| M9 | Harness de evaluación TAR/FAR (motor/eval) | 0–1 | ✅ harness; pendiente datos |
+| M10 | Secretos a `.env` (fuera de git) + rotar credenciales expuestas | 0–5 | ⏳ pendiente |
+| M11 | Aislamiento Python: venv dedicado, RUTA_PYTHON al venv | 0 | ✅ Fase 0 |
+| M12 | `ftp-upload` no está instalado en este servidor → reemplazar por pysftp/paramiko | 2 | ⏳ pendiente |
 
 ## 4. Seguimiento
 
