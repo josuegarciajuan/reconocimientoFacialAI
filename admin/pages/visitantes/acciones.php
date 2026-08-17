@@ -41,15 +41,24 @@ if (isset($_GET["mover"]) and $_GET["mover"] !== "") {
     $foto_id = (int)$_GET["mover"];
     $persona_destino = (int)$_GET["aeste"];
 
-    $foto = DB::selectOne("SELECT estancia_id, identificador_unico FROM fotos WHERE id = ?", [$foto_id]);
+    $foto = DB::selectOne("SELECT estancia_id FROM fotos WHERE id = ?", [$foto_id]);
     if ($foto) {
-        $estancia = DB::selectOne("SELECT camara_id, fecha_ini, fecha_fin, notificacion_vista FROM estancias WHERE id = ?", [$foto["estancia_id"]]);
+        $estancia = DB::selectOne("SELECT persona_id, camara_id, fecha_ini, fecha_fin, notificacion_vista FROM estancias WHERE id = ?", [$foto["estancia_id"]]);
         if ($estancia) {
+            $cod_origen = "";
+            $pers_origen = DB::selectOne("SELECT cod_interno FROM personas WHERE id = ?", [(int)$estancia["persona_id"]]);
+            if ($pers_origen) {
+                $cod_origen = $pers_origen["cod_interno"];
+            }
+
             if ($persona_destino === 0) {
                 $cam = DB::selectOne("SELECT local_id FROM camaras WHERE id = ?", [$estancia["camara_id"]]);
                 $local = $cam ? (int)$cam["local_id"] : (int)$_SESSION["local_id"];
                 $persona_destino = DB::insert("INSERT INTO personas (local_id, cod_interno) VALUES (?, ?)", [$local, generar_codigo_persona()]);
             }
+
+            $pers_destino = DB::selectOne("SELECT cod_interno FROM personas WHERE id = ?", [$persona_destino]);
+            $cod_destino = $pers_destino ? $pers_destino["cod_interno"] : "";
 
             $nueva_estancia = DB::insert(
                 "INSERT INTO estancias (persona_id, camara_id, fecha_ini, fecha_fin, notificacion_vista) VALUES (?, ?, ?, ?, ?)",
@@ -62,8 +71,12 @@ if (isset($_GET["mover"]) and $_GET["mover"] !== "") {
                 DB::execute("DELETE FROM estancias WHERE id = ?", [$foto["estancia_id"]]);
             }
 
-            // B4 (4c): actualizar el diccionario face_enc_v2 re-encodeando la foto movida.
-            // El script legacy cambiar_foto_de_persona.py está roto y no se usa.
+            // B4: re-encodear la foto movida y actualizar face_enc_v2 (motor/cambiar_foto.py)
+            if ($cod_origen !== "" && $cod_destino !== "") {
+                $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/cambiar_foto.py " . intval($_SESSION["local_id"]) . " " . $foto_id
+                     . " " . escapeshellarg($cod_origen) . " " . escapeshellarg($cod_destino) . " --ruta " . RUTA_PROYECTO . " > /dev/null 2>/dev/null &";
+                exec($cmd);
+            }
         }
     }
 }
@@ -87,11 +100,20 @@ if (isset($_GET["info"]) and $_GET["info"] === "subir_video2") {
     $uploads_dir = "files/videos_registro_videos";
     $name_persona = str_replace("_", "-", $_GET["nombre"]);
     $name_video = $_SESSION["local_id"] . "_" . $name_persona;
+    $video_rel = $uploads_dir . "/" . $name_video . ".avi";
 
     $test = file_get_contents('php://input');
-    file_put_contents($uploads_dir . "/" . $name_video . ".avi", $test);
-    echo "Subido a:" . $uploads_dir . "/" . $name_video . ".avi<br />";
-    // 4c: aquí se disparará el enrolamiento multi-pose (motor/enrolamiento.py)
+    file_put_contents($video_rel, $test);
+    echo "Subido a:" . $video_rel . "<br />";
+
+    // B18: enrolamiento multi-pose con el motor nuevo
+    $cod_interno = generar_codigo_persona();
+    DB::insert("INSERT INTO personas (local_id, cod_interno, nombre) VALUES (?, ?, ?)",
+        [(int)$_SESSION["local_id"], $cod_interno, $name_persona]);
+    $video_abs = RUTA_PROYECTO . "admin/" . $video_rel;
+    $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/enrolamiento.py " . intval($_SESSION["local_id"])
+         . " " . escapeshellarg($video_abs) . " " . escapeshellarg($cod_interno) . " --ruta " . RUTA_PROYECTO . " > /dev/null 2>/dev/null &";
+    exec($cmd);
     exit;
 }
 

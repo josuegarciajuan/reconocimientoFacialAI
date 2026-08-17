@@ -80,6 +80,30 @@ def test_remove(tmp_path):
     assert s.persons() == []
 
 
+def test_remove_closest(tmp_path):
+    p = str(tmp_path / "f")
+    s = FaceStore(p)
+    a = rnd_emb(1)
+    b = rnd_emb(2)
+    s.add("ORIGEN", [a, b], [80.0, 70.0], ["f", "f"])
+    # quitar la más parecida a `a` (ella misma, coseno 1.0)
+    removed = s.remove_closest("ORIGEN", a, min_cosine=0.5)
+    assert removed == 1
+    assert s.count("ORIGEN") == 1
+    restantes = s.person_encodings("ORIGEN")
+    assert abs(float(restantes[0] @ b)) > 0.9  # queda la otra
+
+
+def test_remove_closest_por_debajo_umbral(tmp_path):
+    p = str(tmp_path / "f")
+    s = FaceStore(p)
+    a = rnd_emb(1)
+    s.add("ORIGEN", [a], [80.0], ["f"])
+    removed = s.remove_closest("ORIGEN", rnd_emb(99), min_cosine=0.9)
+    assert removed == 0
+    assert s.count("ORIGEN") == 1
+
+
 def test_concurrent_adds_no_loss(tmp_path):
     p = str(tmp_path / "f")
     s = FaceStore(p)
