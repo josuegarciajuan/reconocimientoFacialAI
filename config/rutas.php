@@ -98,4 +98,10 @@ switch($server){
 define("ADMIN_USER", env_or("RF_ADMIN_USER", "admin"));
 define("ADMIN_PASS_HASH", password_hash(env_or("RF_ADMIN_PASS", "cambiar-ahora"), PASSWORD_DEFAULT));
 
+// Auto-login por dispositivo (matrícula única): habilitado, IP de matrícula y cookie.
+// Ver libs/autologin.php y la migración sql/2026-08-18-dispositivos-autologin.sql.
+define("AUTOLOGIN_ENABLED", env_or("RF_AUTOLOGIN_ENABLED", "0") === "1");
+define("AUTOLOGIN_IP", env_or("RF_AUTOLOGIN_IP", ""));
+define("AUTOLOGIN_COOKIE", env_or("RF_AUTOLOGIN_COOKIE", "rf_autologin"));
+
 require_once(__DIR__ . "/config.php");
