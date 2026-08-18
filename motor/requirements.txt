@@ -22,3 +22,10 @@ paramiko==3.4.0
 # Desarrollo / testing
 pytest==7.4.4
 matplotlib==3.8.4
+
+# Super-resolución de caras (motor/core/superres.py) — OPCIONAL:
+# si falta, enhance() degrada a LANCZOS4+unsharp sin romper nada.
+# Instalar SOLO CPU (sin CUDA), en este orden:
+#   motor/venv/bin/pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+# Los pesos (realesr-general-x4v3.pth / RealESRGAN_x4plus.pth) se descargan
+# solos a motor/models/ (gitignored) en el primer uso.

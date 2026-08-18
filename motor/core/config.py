@@ -34,6 +34,13 @@ class Config:
     # --- store (face_enc_v2) ---
     max_encodings_per_person: int = 500
 
+    # --- super-resolución (nitidez de caras pequeñas, motor/core/superres.py) ---
+    sr_enabled: bool = True
+    sr_model: str = "compact"      # "compact" (realesr-general-x4v3, ~2-5 s/cara, recomendado prod)
+                                   # "x4plus" (RealESRGAN_x4plus, mejor calidad, ~30 s/cara en CPU)
+    sr_target_side: int = 512      # lado mínimo de salida en fallback LANCZOS4+unsharp
+    sr_min_side: int = 320         # solo SR si el lado mayor del crop es < esto (caras pequeñas)
+
     # --- enrolamiento ---
     enrollment_min_sharpness: float = 80.0
     min_poses: list[str] = field(default_factory=lambda: ["f", "pi", "pd"])

@@ -36,6 +36,7 @@ from motor.core.matching import cosine, match_group  # noqa: E402
 from motor.core.model import analyze           # noqa: E402
 from motor.core.quality import face_sharpness, pose_label  # noqa: E402
 from motor.core.store import FaceStore         # noqa: E402
+from motor.core.superres import enhance        # noqa: E402
 
 ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 IMG_EXTS = (".jpg", ".jpeg", ".png")
@@ -136,7 +137,12 @@ def process_battery(battery, ruta: str, local_id: str, camara_id: str, cfg: Conf
         os.makedirs(out_dir, exist_ok=True)
         out_name = f"{nombre}_{foto_id}.jpg"
         rep_item = battery[best[0]]
-        shutil.move(rep_item["path"], os.path.join(out_dir, out_name))
+        # Super-resolución de la foto representativa (solo visual; embeddings intactos):
+        # el crop original es de ~130-180 px, SR x4 lo deja nítido para el panel.
+        final_img = enhance(rep_item["img"], cfg)
+        cv2.imwrite(os.path.join(out_dir, out_name), final_img, [cv2.IMWRITE_JPEG_QUALITY, 95])
+        if os.path.exists(rep_item["path"]):
+            os.remove(rep_item["path"])
 
         # refinar el diccionario (solo si es match seguro; no contaminar en "uncertain")
         if result.verdict == "match":
