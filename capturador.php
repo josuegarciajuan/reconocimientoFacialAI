@@ -79,8 +79,8 @@ while(true){
             $cmd.=$redimesionframe." "; //es para que el video ocupe menos
             $cmd.=$sensibilidad." "; //de cada cuantos frames se coge uno, conj un 1 se cogen todos con un 2 la mitad etc
             $cmd.=FTP_SERVER." ";
-            $cmd.=FTP_USER." ";
-            $cmd.=FTP_PASS." ";
+            $cmd.=(FTP_USER !== "" ? FTP_USER : "-")." ";   // placeholder para no descolocar argv
+            $cmd.=(FTP_PASS !== "" ? FTP_PASS : "-")." ";
             $cmd.="'".$cadena_conexion."' "; 
             
             echo "\n\ncmd1->".$cmd."\n\n";

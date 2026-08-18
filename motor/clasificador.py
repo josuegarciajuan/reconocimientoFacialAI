@@ -221,13 +221,14 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("local_id")
     ap.add_argument("camara_id")
+    ap.add_argument("token", nargs="?", default=None, help="token identificador de Jos_Thread (se ignora)")
     ap.add_argument("--ruta", default=os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
     ap.add_argument("--once", action="store_true", help="una sola pasada (sin bucle)")
     ap.add_argument("--secure", type=float, default=None)
     ap.add_argument("--match", type=float, default=None)
     ap.add_argument("--margin", type=float, default=None)
     ap.add_argument("--min-sharpness", type=float, default=None)
-    args = ap.parse_args()
+    args, _desconocidos = ap.parse_known_args()  # tolera el token final de Jos_Thread
 
     cfg = Config()
     if args.secure is not None:

@@ -1,4 +1,4 @@
-import cv2, time, pandas
+import cv2, time
 from datetime import datetime
 import paramiko
 import os
@@ -131,7 +131,8 @@ count_sensibilidad=0
 
 
 while(True):
-    cv2.waitKey(tiempo_espera_fps)
+    # headless (opencv-python-headless): cv2.waitKey no está disponible -> time.sleep
+    time.sleep(tiempo_espera_fps/1000.0)
 
     try:
         ret, frame = cap.read()
@@ -294,10 +295,9 @@ while(True):
                 siguegrabando=True
 
 
-        printLog("Y muestro webcam")                
-        cv2.imshow('Webcam ',frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        printLog("Y muestro webcam")
+        # headless: sin imshow
+        # if cv2.waitKey(1) & 0xFF == ord('q'):
+        #     break
 
 cap.release()
-cv2.destroyAllWindows()

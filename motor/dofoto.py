@@ -17,7 +17,7 @@ cap= cv2.VideoCapture(URL_CONEXION)
 ret, frame = cap.read()
 cv2.imwrite(filename,frame)
 cap.release()
-cv2.destroyAllWindows()
+# headless: sin destroyAllWindows
 
 
 
