@@ -150,7 +150,6 @@ while(True):
     #de cada cuantos frames cojo uno
     count_sensibilidad=count_sensibilidad+1
     if count_sensibilidad==SENSIBILIDAD:
-        prevFrame = output
         count_sensibilidad=0
 
 
@@ -299,5 +298,11 @@ while(True):
         # headless: sin imshow
         # if cv2.waitKey(1) & 0xFF == ord('q'):
         #     break
+
+        # BUG FIX (motion-prevframe): prevFrame debe actualizarse AL FINAL de cada
+        # iteración analizada, para que el absdiff compare contra el frame ANTERIOR
+        # y no contra sí mismo (antes se hacía al inicio → diff siempre 0 → nunca
+        # detectaba movimiento → nunca grababa vídeos).
+        prevFrame = output
 
 cap.release()
