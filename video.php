@@ -6,6 +6,7 @@
  * Sirve el MP4 H.264 archivado (motor/videos_archivo/) con soporte HTTP Range
  * (206 Partial Content): el <video> del navegador puede hacer seek sin descargar
  * todo el fichero. Uso: video.php?id=<id de la tabla `videos`>.
+ * Con `&poster=1` sirve la miniatura JPG (columna `poster`) del mismo vídeo.
  *
  * Seguridad:
  *  - Requiere sesión del panel (mismo criterio que admin/index.php).
@@ -29,13 +30,35 @@ if ($id <= 0) {
 }
 
 $local_id = (int)($_SESSION["local_id"] ?? 0);
-$v = DB::selectOne("SELECT id, local_id, ruta, peso FROM videos WHERE id = ?", [$id]);
+$v = DB::selectOne("SELECT id, local_id, ruta, peso, poster FROM videos WHERE id = ?", [$id]);
 if (!$v || (int)$v["local_id"] !== $local_id) {
     http_response_code(403);
     exit("sin permiso");
 }
 
 $root = rtrim(RUTA_PROYECTO, "/") . "/";
+
+// Miniatura (poster): 1 frame del vídeo, mismo control de sesión y ruta.
+if ((int)($_GET["poster"] ?? 0) === 1) {
+    $p = (string)($v["poster"] ?? "");
+    if ($p === "") {
+        http_response_code(404);
+        exit("miniatura no disponible");
+    }
+    $abs = $root . $p;
+    $real = realpath($abs);
+    $archivo_root = realpath($root . "motor/videos_archivo");
+    if (!is_file($abs) || $real === false || $archivo_root === false || strpos($real, $archivo_root) !== 0) {
+        http_response_code(404);
+        exit("miniatura no encontrada");
+    }
+    header("Content-Type: image/jpeg");
+    header("Cache-Control: private, max-age=86400");
+    header("Content-Length: " . filesize($abs));
+    readfile($abs);
+    exit;
+}
+
 $file = $root . $v["ruta"];
 if (!is_file($file)) {
     http_response_code(404);

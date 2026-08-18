@@ -91,13 +91,13 @@ switch ($accion) {
         break;
 
     case "guardar_video":
-        // argv: local_id, camara_id, nombre, ruta, fecha_ini, fecha_fin, duracion, peso, fps, ancho, alto
+        // argv: local_id, camara_id, nombre, ruta, fecha_ini, fecha_fin, duracion, peso, fps, ancho, alto [, poster]
         $video_id = DB::insert(
-            "INSERT INTO videos (local_id, camara_id, nombre, ruta, fecha_ini, fecha_fin, duracion, peso, fps, ancho, alto)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO videos (local_id, camara_id, nombre, ruta, fecha_ini, fecha_fin, duracion, peso, fps, ancho, alto, poster)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [(int) arg(2), (int) arg(3), (string) arg(4), (string) arg(5),
              (string) arg(6), (string) arg(7), (float) arg(8), (int) arg(9),
-             (float) arg(10), (int) arg(11), (int) arg(12)]
+             (float) arg(10), (int) arg(11), (int) arg(12), (string) (arg(13) ?? "")]
         );
         echo $video_id;
         exit;
@@ -127,10 +127,10 @@ switch ($accion) {
         exit;
 
     case "listado_videos_antiguos":
-        // argv: dias  -> filas (id, ruta) más antiguas que N días (para purgar)
+        // argv: dias  -> filas (id, ruta, poster) más antiguas que N días (para purgar)
         $dias = max(1, (int) arg(2));
         $rows = DB::select(
-            "SELECT id, ruta FROM videos WHERE fecha_ini < (NOW() - INTERVAL ? DAY) ORDER BY fecha_ini ASC LIMIT 500",
+            "SELECT id, ruta, poster FROM videos WHERE fecha_ini < (NOW() - INTERVAL ? DAY) ORDER BY fecha_ini ASC LIMIT 500",
             [$dias]
         );
         echo json_encode($rows);

@@ -78,6 +78,8 @@ while(true){
             $cmd.=$maximo_videos." "; //#tiempo en segundos maximo de grabado
             $cmd.=$redimesionframe." "; //es para que el video ocupe menos
             $cmd.=$sensibilidad." "; //de cada cuantos frames se coge uno, conj un 1 se cogen todos con un 2 la mitad etc
+            $cmd.=CONFIG_VIDEO_SEG_ANTES." ";   // segundos previos al movimiento (pre-roll)
+            $cmd.=CONFIG_VIDEO_SEG_DESPUES." "; // segundos posteriores al movimiento (post-roll)
             $cmd.=FTP_SERVER." ";
             $cmd.=(FTP_USER !== "" ? FTP_USER : "-")." ";   // placeholder para no descolocar argv
             $cmd.=(FTP_PASS !== "" ? FTP_PASS : "-")." ";

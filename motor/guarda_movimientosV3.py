@@ -1,12 +1,16 @@
 import cv2, time
 from datetime import datetime
-import paramiko
 import os
-import _thread
 import sys
 
 sys.path.append(".")
 from fifo import fifo
+
+# Nuevo algoritmo de captura/almacenaje (core/video.py): MP4 H.264 por streaming,
+# sin AVI intermedio. El orquestador archiva_video.py lo mueve a videos_archivo/
+# y genera la miniatura. FTP legacy ya no se usa (el vídeo se queda local).
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from motor.core.video import H264VideoWriter, VideoConfig  # noqa: E402
 
 #os.system('Xvfb :1 -screen 0 1600x1200x16  &')    # create virtual display with size 1600x1200 and 16 bit color. Color can be changed to 24 or 8
 #os.environ['DISPLAY']=':1.0'    # tell X clients to use our virtual DISPLAY :1.0
@@ -39,46 +43,6 @@ def hay_movimiento(the_motion_list):
     return retorno  
 
 
-def subir_video(nombre):
-    local_path='motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/'+nombre
-    # M12: FTP local/nulo -> el video se queda local (sin dependencia de ftp-upload)
-    if not FTP_SERVER or FTP_SERVER in ('localhost', '127.0.0.1'):
-        printLog('FTP local/nulo: el video se queda en '+local_path)
-        return
-    remote_path='motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/'+nombre
-    try:
-        transport=paramiko.Transport((FTP_SERVER, 22))
-        transport.connect(username=FTP_USER, password=FTP_PASS)
-        sftp=paramiko.SFTPClient.from_transport(transport)
-        try:
-            sftp.stat('motor/videos/'+LOCAL_ID+'/'+CAMARA_ID)
-        except IOError:
-            try:
-                sftp.mkdir('motor/videos/'+LOCAL_ID+'/'+CAMARA_ID)
-            except IOError:
-                pass
-        sftp.put(local_path, remote_path)
-        sftp.close()
-        transport.close()
-        os.remove(local_path)
-        printLog('Subido y removido: '+local_path)
-    except Exception as e:
-        printLog('Error subiendo '+nombre+': '+str(e))
-
-
-def video_last_seconds(last_frames_param, tiempo_espera_fps_param, cv2_param, video_actual_param):
-    printLog("dentro del hilo video_last_seconds voy a volcarl os ultimos frames")
-    cfi=0
-    aux=last_frames_param.obtenerPila()
-    for f in aux:
-        out.write(f)
-        cv2_param.waitKey(tiempo_espera_fps_param)
-        printLog("volcado de frame numero:"+str(cfi))
-        cfi=cfi+1
-    printLog("desde aqui dentro llamo a subir el video")    
-    subir_video(video_actual)    
-
-
 
 LOCAL_ID=sys.argv[1]
 CAMARA_ID=sys.argv[2]
@@ -89,15 +53,20 @@ FPS = float(sys.argv[6])
 maximo_videos=int(sys.argv[7]) #tiempo en segundos maximo de grabado
 REDIMENSIONFRAME=float(sys.argv[8])
 SENSIBILIDAD=int(sys.argv[9]) #CUANTO MAS BAJO menos sensible
-FTP_SERVER=sys.argv[10]
+FTP_SERVER=sys.argv[10]   # legacy, sin uso (almacenaje local vía archiva_video.py)
 FTP_USER=sys.argv[11]
 FTP_PASS=sys.argv[12]
 URL_CONEXION=sys.argv[13]
 
+# segundos antes/después del movimiento que se incluyen en el vídeo (1-2 s por defecto)
+SEG_ANTES = float(sys.argv[14]) if len(sys.argv) > 14 else 2.0
+SEG_DESPUES = float(sys.argv[15]) if len(sys.argv) > 15 else 2.0
+
 tiempo_espera_fps=int(1000/FPS)   # en 1000 ms / numero Fotogramas por segundo  =>  tiempo espera entre fotogramas
 frames_a_analizar=int(segundos_analizar*FPS)  #cada X frames es 1 segundo
 frames_con_movimiento=round(frames_a_analizar*porcentaje_mov/100)
-frames_despues=FPS*3 #graba 2 segundo mas del movimiento recabado
+frames_antes=int(SEG_ANTES*FPS)    # pre-roll: frames previos al movimiento que se vuelcan al inicio
+frames_despues=int(SEG_DESPUES*FPS) # post-roll: frames posteriores al movimiento
 prevFrame = None  #Initialize the first frame in the video stream
 
 
@@ -110,11 +79,10 @@ cap = cv2.VideoCapture(URL_CONEXION)
 
 i = 0
 
-# Define the codec and create VideoWriter object
+# Tamaño de captura (resolución original, sin el resize de análisis)
 width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 size = (width, height)
-fourcc = cv2.VideoWriter_fourcc(*'XVID')
 
 motion_list = [ None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None   ]
 
@@ -128,6 +96,7 @@ frames_i=0
 count_para=0
 siguegrabando=False
 count_sensibilidad=0
+writer=None   # H264VideoWriter activo (MP4 H.264 directo)
 
 
 while(True):
@@ -153,10 +122,10 @@ while(True):
         count_sensibilidad=0
 
 
-        #tratamiento del buffer de los últimos frames_a_analizar 
+        #tratamiento del buffer de los últimos frames_antes (pre-roll)
         last_frames.apilar(frame_original)
         frames_i=frames_i+1
-        if frames_i==frames_a_analizar:
+        if frames_i==frames_antes:
              last_frames.desapilar()
              frames_i=frames_i-1
 
@@ -227,40 +196,37 @@ while(True):
         if grabando_primera:
             printLog ("Grabando primera...")
 
-            #creo el video que se va a ir generando
+            #creo el video MP4 H.264 que se va a ir generando
             grabando_primera=False
             now = str(datetime.now())
             now=now.replace(" ","_");
-            video_actual=CAMARA_ID+'_'+now+'.avi'
+            video_actual=CAMARA_ID+'_'+now+'.mp4'
             # Fase 4c: layout con subdirectorio de cámara (motor/videos/<local>/<cam>/)
             os.makedirs('motor/videos/'+LOCAL_ID+'/'+CAMARA_ID, exist_ok=True)
-            out = cv2.VideoWriter('motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/'+video_actual, fourcc, FPS, size)
+            writer = H264VideoWriter('motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/'+video_actual,
+                                     size, int(FPS), VideoConfig())
             time_inicio = time.time()
             printLog ("Se empieza a generar el siguiente video:"+video_actual)
-            
 
-
-
-            if not siguegrabando: 
-                printLog ("finalmente, no sigo grabando, los frames que tenía en la pila, los anyado al final del video en un nuevo hilo")
-                _thread.start_new_thread(video_last_seconds, (last_frames, tiempo_espera_fps, cv2, video_actual))
-
-
-                printLog ("mientas se completa el video en otro hilo, vacio la pila")
-                tamano=last_frames.tamano()
-                while tamano>0:
-                    tamano=last_frames.tamano()
-                    if tamano>0:
-                        last_frames.desapilar()
+            if not siguegrabando:
+                printLog ("pre-roll: vuelco del buffer de los ultimos frames al inicio del video")
+                # pre-roll: los frames previos al movimiento se escriben al INICIO del vídeo,
+                # en orden y en este mismo hilo (antes se hacía en un hilo concurrente sobre
+                # el mismo VideoWriter -> condición de carrera / frames corruptos).
+                for f in last_frames.obtenerPila():
+                    writer.write(f)
+                last_frames.vaciar()
+                frames_i=0
             else:
-                printLog("viene de que se acaba de para un video, y acaba de reanudarse otro por que detectó mas movimiento")
+                printLog("viene de que se acaba de parar un video, y acaba de reanudarse otro por que detectó mas movimiento")
 
 
 
         if grabando:
             printLog ("Grabando...")
 
-            out.write(frame_original)
+            if writer is not None:
+                writer.write(frame_original)
             time_elapsed = time.time() - time_inicio
             # key = cv2.waitKey(500)
             if time_elapsed>maximo_videos:
@@ -275,16 +241,16 @@ while(True):
 
 
         if count_para==frames_despues:
-            printLog ("se quiere parar de grabar "+str(count_para)+" frames despues y subiendo video:"+video_actual+" ...")
+            printLog ("se quiere parar de grabar "+str(count_para)+" frames despues y cerrando video:"+video_actual+" ...")
             count_para=0   
             parando=False    
             grabando=False
-            out.release()
-            #subir_video(video_actual)
-            #_thread.start_new_thread(subir_video, (video_actual,))
+            if writer is not None:
+                peso = writer.close()
+                writer = None
+                printLog("Video cerrado: "+video_actual+" peso="+str(peso)+" bytes")
             num_video=num_video+1
-            #if motion_list[-1] == 1 and motion_list[-2] == 1 and motion_list[-3] == 1 and motion_list[-4] == 1 and motion_list[-5] == 1 and motion_list[-6] == 0:
-            printLog("Se marca siguegrabando como false para que pase a volcar los ultimos frames del video")
+            printLog("Se marca siguegrabando como false")
             siguegrabando=False
 
             if hay_movimiento(motion_list):
