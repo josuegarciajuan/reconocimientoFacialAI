@@ -94,7 +94,9 @@ define("CONFIG_contourArea_MINIMO","1");
  *  detector.php  ->  procesa_videosV6.py  y  procesa_fotos_def_borrosaparteV2.py
  */
 define("CONFIG_LIMITE_RAM",85); //limite de ram ocupada para seguir procesando videos
-define("CONFIG_LIMITE_VIDEOS",70); //numero de videos maximo que se pueden procesar a la vez
+define("CONFIG_LIMITE_VIDEOS",4); //numero de videos maximo que se pueden procesar a la vez (F6: cada procesa_video carga insightface ~1GB; 70 provocaba OOM)
+define("CONFIG_REINTENTOS_VIDEO",3); //reintentos de un vídeo antes de descartarlo (F6: marcadores huérfanos)
+define("CONFIG_MARCADOR_HUERFANO_SEGS",300); //antigüedad mínima del marcador para considerar procesa_video muerto
 define("CONFIG_TIEMPOPROCESODECLISIFICARCARAS",60*10);  //en segs tiempo max q puede estar el proceso de procesar caras, luego se reinicia
 
 //define("CONFIG_SENSIBILIDAD_ES_CARA","0.68");
