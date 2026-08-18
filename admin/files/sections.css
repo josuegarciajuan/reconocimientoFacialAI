@@ -184,6 +184,15 @@
   border-radius: 0.5rem;
 }
 
+/* Auto-zoom hacia la cara: las fotos de caras_procesadas ya llevan la cara
+   centrada (recorte simétrico), así que cover + object-position center
+   la amplía dentro del modal sin recortarla. */
+.modal__content .media-modal__img--zoom {
+  object-fit: cover;
+  height: 72vh;
+  object-position: center;
+}
+
 .media-modal__title {
   font-family: "Cinzel", serif;
   font-size: 1.05rem;
