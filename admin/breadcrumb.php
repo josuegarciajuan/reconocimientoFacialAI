@@ -13,5 +13,5 @@ if($_GET["page"]==""){
 ?>
 
 <!-- BEGIN: Breadcrumb -->
-<div class="-intro-x breadcrumb breadcrumb--light mr-auto"> <a href="?" class="">Aplicación</a> <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right breadcrumb__icon"><polyline points="9 18 15 12 9 6"></polyline></svg> <a href="" class="breadcrumb--active"><?= $page; ?></a> </div>
+<div class="-intro-x breadcrumb breadcrumb--light mr-auto"> <a href="?" class="">🏰 Mordor</a> <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right breadcrumb__icon"><polyline points="9 18 15 12 9 6"></polyline></svg> <a href="" class="breadcrumb--active"><?= $page; ?></a> </div>
 <!-- END: Breadcrumb -->

@@ -50,7 +50,7 @@ if (!empty($_SESSION["admin"])) {
                 <?php endforeach; ?>
             </div>
             <div class="p-2 border-t border-theme-40 dark:border-dark-3">
-                <a href="?desconectar=1" class="flex items-center block p-2 transition duration-300 ease-in-out hover:bg-theme-1 dark:hover:bg-dark-3 rounded-md">Desconectar</a>
+                <a href="?desconectar=1" class="flex items-center block p-2 transition duration-300 ease-in-out hover:bg-theme-1 dark:hover:bg-dark-3 rounded-md">Abandonar Mordor 🚪</a>
             </div>
         </div>
     </div>

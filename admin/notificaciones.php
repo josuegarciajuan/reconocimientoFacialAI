@@ -30,7 +30,7 @@ $hay_notificaciones = $num_notificaciones > 0;
 
     <div class="notification-content dropdown-box mt-8 absolute top-0 right-0 z-10 -mr-10 sm:mr-0">
         <div class="notification-content__box dropdown-box__content box dark:bg-dark-6" id="capa_notificaciones">
-            <div class="notification-content__title">Notificaciones</div>
+            <div class="notification-content__title">🛎️ Señales de Guerra</div>
 
             <?php
             $notis = DB::select(
@@ -46,7 +46,7 @@ $hay_notificaciones = $num_notificaciones > 0;
                 ?>
                 <div class="flex flex-col items-center py-8 text-center">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather feather-bell-off w-10 h-10 text-gray-400 mb-3"><path d="M13.73 21a2 2 0 0 1-3.46 0"></path><path d="M18.63 13A17.89 17.89 0 0 1 18 8"></path><path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"></path><path d="M18 8a6 6 0 0 0-9.33-5"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                    <div class="text-sm text-gray-500">No hay notificaciones</div>
+                    <div class="text-sm text-gray-500">Ninguna señal de guerra</div>
                     <div class="text-xs text-gray-400 mt-1">Los movimientos de puerta y salida aparecerán aquí</div>
                 </div>
                 <?php

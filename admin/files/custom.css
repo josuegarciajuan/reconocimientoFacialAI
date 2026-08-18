@@ -423,3 +423,420 @@ input:focus-visible {
     animation: none;
   }
 }
+
+/* ============================================================
+   MORDOR · Capa de tema forzado — "El Ojo que Todo lo Ve"
+   Tema oscuro permanente (html.dark se fuerza desde el head).
+   ============================================================ */
+
+:root {
+  --mordor-negro: #0b0a0e;
+  --mordor-carbon: #16121a;
+  --mordor-carbon-2: #1d1820;
+  --mordor-brasa: #ff5a1f;
+  --mordor-magma: #e03c00;
+  --mordor-oro: #c9a227;
+  --mordor-verde: #3d5a3a;
+  --mordor-ceniza: #d8d0c4;
+  --mordor-humo: #8a8078;
+  --mordor-oro-suave: rgba(201, 162, 39, 0.28);
+  --mordor-brasa-suave: rgba(255, 90, 31, 0.16);
+}
+
+/* --- Fondo: volcán del Monte del Destino -------------------- */
+html.dark {
+  background:
+    radial-gradient(1000px 460px at 88% -6%, rgba(224, 60, 0, 0.28), transparent 60%),
+    radial-gradient(760px 420px at -6% 4%, rgba(201, 162, 39, 0.10), transparent 55%),
+    radial-gradient(1400px 900px at 50% 120%, rgba(255, 90, 31, 0.10), transparent 60%),
+    linear-gradient(180deg, #0b0a0e 0%, #120d0b 55%, #0b0a0e 100%);
+  background-attachment: fixed;
+}
+
+.dark body,
+.dark .content {
+  background-color: transparent;
+}
+
+.dark .box {
+  background-color: var(--mordor-carbon);
+  border-color: rgba(201, 162, 39, 0.18);
+  box-shadow: 0 14px 34px -18px rgba(0, 0, 0, 0.8);
+}
+
+.dark .report-box:before {
+  background: linear-gradient(180deg, rgba(255, 90, 31, 0.16), transparent);
+}
+
+/* --- Tipografía: Cinzel para los títulos --------------------- */
+.content h2,
+.intro-y h2,
+.kpi-number,
+.login-brand__title,
+.login h2 {
+  font-family: "Cinzel", "Cinzel Decorative", serif;
+  letter-spacing: 0.01em;
+}
+
+/* --- Marca: Barad-dûr en inscripción dorada ------------------ */
+.baradur-brand__word {
+  font-family: "Cinzel Decorative", "Cinzel", serif;
+  font-weight: 700;
+  color: #f0d78c;
+  background: linear-gradient(180deg, #f6e6ae 10%, #c9a227 55%, #8a6a1c 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.85));
+}
+
+.baradur-brand__sub {
+  color: rgba(255, 138, 76, 0.9);
+  letter-spacing: 0.32em;
+}
+
+.baradur-brand__img {
+  box-shadow: 0 4px 16px rgba(224, 60, 0, 0.35), inset 0 0 0 1px rgba(201, 162, 39, 0.35);
+}
+
+/* --- El Ojo de Sauron (SVG inline) --------------------------- */
+.sauron-eye {
+  display: block;
+  width: 38px;
+  height: 38px;
+  overflow: visible;
+  filter: drop-shadow(0 0 7px rgba(255, 90, 31, 0.55));
+  animation: sauron-eye-pulse 4.5s ease-in-out infinite;
+  transform-origin: 50% 50%;
+  transition: transform 0.16s ease;
+  cursor: default;
+}
+
+.sauron-eye--blink {
+  transform: scaleY(0.08);
+}
+
+@keyframes sauron-eye-pulse {
+  0%, 100% { filter: drop-shadow(0 0 5px rgba(255, 90, 31, 0.45)); }
+  50% { filter: drop-shadow(0 0 13px rgba(255, 90, 31, 0.85)); }
+}
+
+.sauron-eye__iris {
+  animation: sauron-iris-glow 3s ease-in-out infinite;
+}
+
+@keyframes sauron-iris-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.82; }
+}
+
+/* --- Menú superior: activo en brasa + oro --------------------- */
+.dark .top-nav > ul li .top-menu.top-menu--active {
+  background: linear-gradient(180deg, rgba(255, 90, 31, 0.22), rgba(224, 60, 0, 0.10));
+  box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.45), 0 6px 18px -8px rgba(224, 60, 0, 0.5);
+}
+
+.dark .top-nav > ul li .top-menu.top-menu--active .top-menu__title {
+  color: #f6e6ae;
+}
+
+.dark .top-nav > ul li .top-menu:hover:not(.top-menu--active) {
+  background: rgba(255, 90, 31, 0.10);
+}
+
+/* iconos emoji del menú */
+.menu__emoji {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+/* --- Buscador: brasa sobre carbón ----------------------------- */
+.dark .search .search__input {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(201, 162, 39, 0.28);
+  color: var(--mordor-ceniza);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.dark .search .search__input::placeholder {
+  color: rgba(216, 208, 196, 0.4);
+}
+
+.dark .search .search__input:focus {
+  background: rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 3px rgba(255, 90, 31, 0.28);
+}
+
+.dark .search .search__icon {
+  color: rgba(255, 138, 76, 0.8);
+}
+
+/* --- KPIs: números en dorado, chips de brasa ------------------ */
+.dark .kpi-number {
+  color: #f0d78c;
+}
+
+.dark .kpi-chip {
+  background: rgba(255, 90, 31, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.25);
+}
+
+.dark .kpi-chip .feather,
+.kpi-chip .menu__emoji {
+  color: var(--mordor-brasa);
+}
+
+.kpi-emoji {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.dark .kpi-label {
+  color: var(--mordor-humo);
+}
+
+.dark .live-dot {
+  background: var(--mordor-brasa);
+  animation: mordor-live-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes mordor-live-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 90, 31, 0.55); }
+  50% { box-shadow: 0 0 0 6px rgba(255, 90, 31, 0); }
+}
+
+/* --- Tablas e inputs ------------------------------------------ */
+.dark .input {
+  background-color: rgba(0, 0, 0, 0.35);
+  border-color: rgba(201, 162, 39, 0.25);
+  color: var(--mordor-ceniza);
+}
+
+.dark .table,
+.dark .table-report td,
+.dark .table-report:not(.table-report--bordered) td,
+.dark .table-report:not(.table-report--bordered) td.table-report__action:before {
+  background-color: transparent;
+}
+
+.dark .table thead th,
+.dark .table-report thead th {
+  color: var(--mordor-oro);
+  border-color: rgba(201, 162, 39, 0.18);
+}
+
+.dark .table-report td {
+  border-color: rgba(201, 162, 39, 0.12);
+  color: var(--mordor-ceniza);
+}
+
+.dark .datatable-wrapper.box {
+  background-color: var(--mordor-carbon);
+}
+
+.dark .breadcrumb {
+  color: var(--mordor-humo);
+}
+
+.dark .breadcrumb--active,
+.dark .breadcrumb a {
+  color: var(--mordor-ceniza);
+}
+
+/* --- Notificaciones: señal de guerra --------------------------- */
+.dark .notification--light {
+  color: var(--mordor-ceniza);
+}
+
+.dark .notification .notification-badge {
+  background: linear-gradient(180deg, #ff5a1f, #e03c00);
+}
+
+/* --- Widget "Un Anillo" (sustituye al toggle de modo oscuro) --- */
+.ring-widget {
+  position: fixed;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 9999px;
+  background: rgba(13, 10, 14, 0.85);
+  border: 1px solid rgba(201, 162, 39, 0.4);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8), 0 0 18px -4px rgba(201, 162, 39, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: default;
+}
+
+.ring-widget__emoji {
+  font-size: 1.3rem;
+  line-height: 1;
+  animation: ring-widget-float 3.2s ease-in-out infinite;
+}
+
+.ring-widget__label {
+  font-family: "Cinzel", serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #f0d78c;
+}
+
+@keyframes ring-widget-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-3px) rotate(-8deg); }
+}
+
+/* --- Cenizas y brasas del Monte del Destino -------------------- */
+.mordor-ashes {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 45;
+}
+
+.mordor-ashes span {
+  position: absolute;
+  bottom: -12px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffb36b 0%, rgba(255, 90, 31, 0) 70%);
+  animation: mordor-rise linear infinite;
+  opacity: 0;
+}
+
+.mordor-ashes span:nth-child(1)  { left: 4%;  width: 5px;  height: 5px;  animation-duration: 15s; animation-delay: 0s; }
+.mordor-ashes span:nth-child(2)  { left: 12%; width: 3px;  height: 3px;  animation-duration: 19s; animation-delay: 3s; }
+.mordor-ashes span:nth-child(3)  { left: 21%; width: 6px;  height: 6px;  animation-duration: 22s; animation-delay: 7s; }
+.mordor-ashes span:nth-child(4)  { left: 29%; width: 4px;  height: 4px;  animation-duration: 17s; animation-delay: 1.5s; }
+.mordor-ashes span:nth-child(5)  { left: 38%; width: 3px;  height: 3px;  animation-duration: 24s; animation-delay: 9s; }
+.mordor-ashes span:nth-child(6)  { left: 46%; width: 7px;  height: 7px;  animation-duration: 21s; animation-delay: 4s; }
+.mordor-ashes span:nth-child(7)  { left: 55%; width: 4px;  height: 4px;  animation-duration: 16s; animation-delay: 11s; }
+.mordor-ashes span:nth-child(8)  { left: 63%; width: 5px;  height: 5px;  animation-duration: 23s; animation-delay: 2s; }
+.mordor-ashes span:nth-child(9)  { left: 71%; width: 3px;  height: 3px;  animation-duration: 18s; animation-delay: 6s; }
+.mordor-ashes span:nth-child(10) { left: 79%; width: 6px;  height: 6px;  animation-duration: 20s; animation-delay: 12s; }
+.mordor-ashes span:nth-child(11) { left: 87%; width: 4px;  height: 4px;  animation-duration: 25s; animation-delay: 5s; }
+.mordor-ashes span:nth-child(12) { left: 94%; width: 3px;  height: 3px;  animation-duration: 14s; animation-delay: 8s; }
+
+@keyframes mordor-rise {
+  0%   { transform: translateY(0) translateX(0); opacity: 0; }
+  8%   { opacity: 0.85; }
+  55%  { transform: translateY(-48vh) translateX(14px); opacity: 0.5; }
+  100% { transform: translateY(-100vh) translateX(-10px); opacity: 0; }
+}
+
+/* --- Login: la Puerta Negra ------------------------------------ */
+.dark body.login {
+  background-color: transparent;
+}
+
+.login {
+  background:
+    radial-gradient(900px 520px at 50% -10%, rgba(224, 60, 0, 0.30), transparent 60%),
+    radial-gradient(1200px 800px at 50% 115%, rgba(255, 90, 31, 0.12), transparent 62%),
+    linear-gradient(180deg, #0b0a0e 0%, #140d0a 60%, #0b0a0e 100%);
+  background-attachment: fixed;
+}
+
+.login .bg-white {
+  background: rgba(22, 18, 26, 0.92);
+  border: 1px solid rgba(201, 162, 39, 0.25);
+  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.9);
+}
+
+.login h2 {
+  color: #f0d78c;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+}
+
+.login .text-gray-500 {
+  color: var(--mordor-humo);
+}
+
+.login .login__input {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: rgba(201, 162, 39, 0.28);
+  color: var(--mordor-ceniza);
+}
+
+.login .login__input::placeholder {
+  color: rgba(216, 208, 196, 0.4);
+}
+
+.login .input-icon .feather {
+  color: rgba(255, 138, 76, 0.85);
+}
+
+.login .password-toggle {
+  color: var(--mordor-humo);
+}
+
+.login .password-toggle:hover {
+  color: var(--mordor-brasa);
+}
+
+.login-brand__overlay {
+  background: linear-gradient(180deg, rgba(10, 8, 12, 0.25) 0%, rgba(10, 8, 12, 0.82) 100%);
+}
+
+.login-brand__title {
+  color: #f0d78c;
+  background: linear-gradient(180deg, #f6e6ae 10%, #c9a227 60%, #8a6a1c 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.login-brand__tagline {
+  color: rgba(216, 208, 196, 0.85);
+}
+
+.btn-login {
+  background: linear-gradient(135deg, #e04a10 0%, #b33400 100%);
+  box-shadow: 0 10px 24px -8px rgba(224, 60, 0, 0.65);
+}
+
+.btn-login:hover {
+  box-shadow: 0 14px 30px -10px rgba(255, 90, 31, 0.75);
+}
+
+/* --- Scrollbar de orco ----------------------------------------- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0b0a0e;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #3a2c16, #201808);
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #c9a227, #8a6a1c);
+}
+
+/* --- Foco: brasa en vez de azul -------------------------------- */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline-color: rgba(255, 90, 31, 0.8);
+}
+
+/* --- Reducción de movimiento (capa Mordor) ---------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .sauron-eye,
+  .ring-widget__emoji,
+  .mordor-ashes span,
+  .live-dot,
+  .sauron-eye__iris {
+    animation: none;
+  }
+}

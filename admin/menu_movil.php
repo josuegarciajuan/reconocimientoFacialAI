@@ -12,7 +12,7 @@
 <div class="mobile-menu md:hidden">
     <div class="mobile-menu-bar">
         <a href="?" class="flex mr-auto baradur-brand">
-            <img alt="Barad-dûr" class="baradur-brand__img" src="./files/logo-sauron.png">
+            <span class="menu__emoji" style="font-size:1.6rem">👁️</span>
             <span class="baradur-brand__word">Barad-<span class="font-medium">dûr</span></span>
         </a>
         <a href="javascript:;" id="mobile-menu-toggler"> <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather feather-bar-chart-2 w-8 h-8 text-white transform -rotate-90"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg> </a>
@@ -23,9 +23,9 @@
         <li>
             <a href="?" class="menu menu<?php if(isset($_GET["page"]) or $_GET["page"]=="" or $_GET["page"]=="dash"){ echo "--active"; } ?>">
                 
-                <div class="menu__icon" data-feather="monitor"></div>
+                <div class="menu__icon menu__emoji">👁️</div>
                 
-                <div class="menu__title"> Dashboard </div>
+                <div class="menu__title"> La Torre </div>
             </a>
         </li>
         
@@ -37,9 +37,9 @@
         <li>
             <a href="?page=locales" class="menu menu<?php if(isset($_GET["page"]) and $_GET["page"]=="locales"){ echo "--active"; } ?>">
                 
-                <div class="menu__icon" data-feather="map-pin"></div>
+                <div class="menu__icon menu__emoji">🏰</div>
                 
-                <div class="menu__title"> Locales </div>
+                <div class="menu__title"> Fortalezas </div>
             </a>
         </li>
         
@@ -50,59 +50,59 @@
         <li>
             <a href="?page=visitantes" class="menu menu<?php if(isset($_GET["page"]) and $_GET["page"]=="visitantes"){ echo "--active"; } ?>">
                 
-                <div class="menu__icon" data-feather="users"></div>
+                <div class="menu__icon menu__emoji">🧝</div>
                 
-                <div class="menu__title"> Personas </div>
+                <div class="menu__title"> Pueblos </div>
             </a>
         </li>
         
         <li>
             <a href="?page=accesos" class="menu menu<?php if(isset($_GET["page"]) and $_GET["page"]=="accesos"){ echo "--active"; } ?>">
-                <div class="menu__icon" data-feather="activity"></div>
+                <div class="menu__icon menu__emoji">⚔️</div>
                 <div class="menu__title"> Movimientos </div>
             </a>
         </li>
         
         <li>
             <a href="?page=lineas" class="menu menu<?php if(isset($_GET["page"]) and $_GET["page"]=="lineas"){ echo "--active"; } ?>">
-                <div class="menu__icon" data-feather="layers"></div>
-                <div class="menu__title"> Lineas </div>
+                <div class="menu__icon menu__emoji">🧭</div>
+                <div class="menu__title"> Líneas </div>
             </a>
         </li>
         
         <li>
             <a href="?page=rutas" class="menu menu<?php if(isset($_GET["page"]) and $_GET["page"]=="rutas"){ echo "--active"; } ?>">
-                <div class="menu__icon" data-feather="navigation"></div>
-                <div class="menu__title"> Rutas </div>
+                <div class="menu__icon menu__emoji">🗺️</div>
+                <div class="menu__title"> Caminos </div>
             </a>
         </li>
         
         <li>
             <a href="?page=config" class="menu menu<?php if(isset($_GET["page"]) and $_GET["page"]=="config"){ echo "--active"; } ?>">
-                <div class="menu__icon" data-feather="sliders"></div>
-                <div class="menu__title"> Config. </div>
+                <div class="menu__icon menu__emoji">⚒️</div>
+                <div class="menu__title"> La Forja </div>
             </a>
         </li>
         
         <li>
             <a href="?page=camaras" class="menu menu<?php if(isset($_GET["page"]) and $_GET["page"]=="camaras"){ echo "--active"; } ?>">
-                <div class="menu__icon" data-feather="video"></div>
-                <div class="menu__title"> En Directo </div>
+                <div class="menu__icon menu__emoji">📡</div>
+                <div class="menu__title"> El Ojo en Vivo </div>
             </a>
         </li>
         
         
         <li>
             <a href="?page=fichajes" class="menu menu<?php if(isset($_GET["page"]) and $_GET["page"]=="fichajes"){ echo "--active"; } ?>">
-                <div class="menu__icon" data-feather="clock"></div>
+                <div class="menu__icon menu__emoji">⏳</div>
                 <div class="menu__title"> Fichajes </div>
             </a>
         </li>
         
         <li>
             <a href="?page=ayuda" class="menu menu<?php if(isset($_GET["page"]) and $_GET["page"]=="ayuda"){ echo "--active"; } ?>">
-                <div class="menu__icon" data-feather="help-circle"></div>
-                <div class="menu__title"> Ayuda </div>
+                <div class="menu__icon menu__emoji">📜</div>
+                <div class="menu__title"> El Concilio </div>
             </a>
         </li>
         

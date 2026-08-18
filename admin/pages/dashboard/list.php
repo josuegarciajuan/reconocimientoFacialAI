@@ -143,50 +143,50 @@ function tendencia_pill($pct) {
 
 <div class="col-span-12 mt-8">
     <div class="intro-y flex items-center h-10">
-        <h2 class="text-lg font-medium truncate mr-5">Reporte General</h2>
-        <a href="?page=dash" class="ml-auto flex text-theme-1 dark:text-theme-10">Recargar Datos</a>
+        <h2 class="text-lg font-medium truncate mr-5">⚔️ Crónicas de Guerra</h2>
+        <a href="?page=dash" class="ml-auto flex text-theme-1 dark:text-theme-10">🔮 Reinvocar Datos</a>
     </div>
     <div class="grid grid-cols-12 gap-6 mt-5">
         <div class="col-span-12 sm:col-span-6 xl:col-span-3 intro-y">
             <div class="report-box zoom-in">
                 <div class="box p-5">
                     <div class="flex">
-                        <div class="kpi-chip"><div class="menu__icon" data-feather="users"></div></div>
+                        <div class="kpi-chip"><div class="menu__emoji kpi-emoji">👁️</div></div>
                         <div class="ml-auto">
                             <span class="live-dot"></span>
-                            <input type="text" name="aforo_input" id="aforo_input" style="background-color:#F0F4F7;width:100px" placeholder="<?= $aforo_actual; ?>">
+                            <input type="text" name="aforo_input" id="aforo_input" style="background-color:#0f0c10;width:100px;color:#d8d0c4;border:1px solid rgba(201,162,39,.25)" placeholder="<?= $aforo_actual; ?>">
                             <button class="button text-white bg-theme-1 shadow-md mr-2" onclick="cambiar_aforo()">Actualizar</button>
                         </div>
                     </div>
                     <div class="kpi-number mt-6 tnum"><?= $aforo_actual; ?></div>
-                    <div class="kpi-label mt-1">Aforo Actual <span class="text-xs font-semibold uppercase tracking-wide text-green-600">· en vivo</span></div>
+                    <div class="kpi-label mt-1">Almas en la Fortaleza <span class="text-xs font-semibold uppercase tracking-wide text-green-600">· en vivo</span></div>
                 </div>
             </div>
         </div>
         <div class="col-span-12 sm:col-span-6 xl:col-span-3 intro-y">
             <div class="report-box zoom-in">
                 <div class="box p-5">
-                    <div class="flex"><div class="kpi-chip"><div class="menu__icon" data-feather="trending-up"></div></div><?= tendencia_pill($pct_visitas); ?></div>
+                    <div class="flex"><div class="kpi-chip"><div class="menu__emoji kpi-emoji">🔥</div></div><?= tendencia_pill($pct_visitas); ?></div>
                     <div class="kpi-number mt-6 tnum"><?= $visitas_hoy; ?></div>
-                    <div class="kpi-label mt-1">Visitas Hoy</div>
+                    <div class="kpi-label mt-1">Cruzaron la Puerta Negra</div>
                 </div>
             </div>
         </div>
         <div class="col-span-12 sm:col-span-6 xl:col-span-3 intro-y">
             <div class="report-box zoom-in">
                 <div class="box p-5">
-                    <div class="flex"><div class="kpi-chip"><div class="menu__icon" data-feather="activity"></div></div><?= tendencia_pill($pct_media); ?></div>
+                    <div class="flex"><div class="kpi-chip"><div class="menu__emoji kpi-emoji">🛡️</div></div><?= tendencia_pill($pct_media); ?></div>
                     <div class="kpi-number mt-6 tnum"><?= $visitas_medias_diarias; ?></div>
-                    <div class="kpi-label mt-1">Visitas Medias Diarias</div>
+                    <div class="kpi-label mt-1">Huestes al Día</div>
                 </div>
             </div>
         </div>
         <div class="col-span-12 sm:col-span-6 xl:col-span-3 intro-y">
             <div class="report-box zoom-in">
                 <div class="box p-5">
-                    <div class="flex"><div class="kpi-chip"><div class="menu__icon" data-feather="refresh-cw"></div></div><?= tendencia_pill($pct_recurrentes); ?></div>
+                    <div class="flex"><div class="kpi-chip"><div class="menu__emoji kpi-emoji">💍</div></div><?= tendencia_pill($pct_recurrentes); ?></div>
                     <div class="kpi-number mt-6 tnum"><?= $visitantes_recurrentes; ?></div>
-                    <div class="kpi-label mt-1">Visitantes Recurrentes</div>
+                    <div class="kpi-label mt-1">Leales a Mordor</div>
                 </div>
             </div>
         </div>
@@ -195,7 +195,7 @@ function tendencia_pill($pct) {
 
 <div class="col-span-12 lg:col-span-6 mt-8">
     <div class="intro-y block sm:flex items-center h-10">
-        <h2 class="text-lg font-medium truncate mr-5">Gráfico Visitas</h2>
+        <h2 class="text-lg font-medium truncate mr-5">🗺️ Mapa de Asedio</h2>
     </div>
     <div class="intro-y box p-5 mt-12 sm:mt-5">
         <div class="flex flex-col xl:flex-row xl:items-center">
@@ -211,13 +211,13 @@ function tendencia_pill($pct) {
                 </div>
             </div>
             <div class="dropdown relative xl:ml-auto mt-5 xl:mt-0">
-                <button class="dropdown-toggle button font-normal border dark:border-dark-5 text-white dark:text-gray-300 relative flex items-center text-gray-700">Elegir periodo</button>
+                <button class="dropdown-toggle button font-normal border dark:border-dark-5 text-white dark:text-gray-300 relative flex items-center text-gray-700">🕰️ Elegir era</button>
                 <div class="dropdown-box mt-10 absolute w-40 top-0 xl:right-0 z-20">
                     <div class="dropdown-box__content box dark:bg-dark-1 p-2 overflow-y-auto h-32">
-                        <a href="?page=dash&filtro=dia" class="flex items-center block p-2">Un dia</a>
-                        <a href="?page=dash&filtro=semana" class="flex items-center block p-2">Una semana</a>
-                        <a href="?page=dash&filtro=mes" class="flex items-center block p-2">Un mes</a>
-                        <a href="?page=dash&filtro=anyo" class="flex items-center block p-2">Un año</a>
+                        <a href="?page=dash&filtro=dia" class="flex items-center block p-2">Un amanecer</a>
+                        <a href="?page=dash&filtro=semana" class="flex items-center block p-2">Una luna</a>
+                        <a href="?page=dash&filtro=mes" class="flex items-center block p-2">Un ciclo</a>
+                        <a href="?page=dash&filtro=anyo" class="flex items-center block p-2">Una era</a>
                     </div>
                 </div>
             </div>
