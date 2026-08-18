@@ -43,23 +43,25 @@ if(isset($_GET["login"]) and $_GET["login"]==1 and $_SERVER["REQUEST_METHOD"]===
             exit;
         }
         rate_limit_record("login_" . $ip);
-        $login_error = "Usuario o contraseña incorrectos.";
+        $login_error = "La Puerta Negra te ha rechazado. Usuario o contraseña incorrectos.";
     }
 }
 ?>
 <!DOCTYPE html>
-<html lang="en"><!-- BEGIN: Head --><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<html lang="es" class="dark"><!-- BEGIN: Head --><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         
         <link href="./files_login/logo-sauron.png" rel="shortcut icon">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="Barad-dûr · Control de Accesos por Reconocimiento Facial.">
+        <meta name="description" content="Mordor · La Puerta Negra. Acceso restringido: El Ojo que Todo lo Ve vigila cada entrada.">
         <meta name="keywords" content="Reconocimiento Facial">
         <meta name="author" content="Josue">
-        <title>Barad-dûr · Control de Accesos</title>
+        <title>Mordor · La Puerta Negra</title>
+        <!-- Fuerza el tema oscuro (Mordor) antes de que cargue app.js -->
+        <script>document.documentElement.classList.add('dark');</script>
         <!-- BEGIN: CSS Assets-->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cinzel:wght@500;600;700;800&family=Cinzel+Decorative:wght@700;900&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="./files_login/app.css">
         <link rel="stylesheet" href="./files/custom.css">
         <!-- END: CSS Assets-->
@@ -1590,9 +1592,9 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
                 <div class="h-screen xl:h-auto flex py-5 xl:py-0 my-10 xl:my-0">
                     <div class="my-auto mx-auto xl:ml-20 bg-white xl:bg-transparent px-5 sm:px-8 py-8 xl:p-0 rounded-md shadow-md xl:shadow-none w-full sm:w-3/4 lg:w-2/4 xl:w-auto">
                         <h2 class="intro-x font-bold text-2xl xl:text-3xl text-center xl:text-left">
-                            Control Accesos
+                            👁️ La Puerta Negra
                         </h2>
-                        <div class="intro-x mt-2 text-gray-500 xl:hidden text-center">Unos pocos clicks más para entrar a tu cuenta. Gestiona todos los locales desde una misma cuenta</div>
+                        <div class="intro-x mt-2 text-gray-500 xl:hidden text-center">El Ojo vigila a quien osa cruzar. Identifícate, o la torre te rechazará.</div>
                         <form action="?login=1" method="POST">
                             <?= csrf_field(); ?>
                             <div class="intro-x mt-8">
@@ -1610,12 +1612,12 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
                             </div>
                             <?php if ($login_error !== ""): ?>
                                 <div class="intro-x login-alert mt-4" role="alert">
-                                    <svg class="feather feather-alert-triangle" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                                    <span aria-hidden="true">🕳️</span>
                                     <?= htmlspecialchars($login_error); ?>
                                 </div>
                             <?php endif; ?>
                             <div class="intro-x mt-5 xl:mt-8 text-center xl:text-left">
-                                <button id="boton_acceder" class="button button--lg w-full xl:w-32 btn-login xl:mr-3">Acceder</button>
+                                <button id="boton_acceder" class="button button--lg w-full xl:w-32 btn-login xl:mr-3">🔥 Entrar a Mordor</button>
                             </div>
                         </form>    
                             
@@ -1629,8 +1631,9 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
                         <img class="login-brand__hero" src="./files_login/hero-sauron.png" alt="El ojo que todo lo ve">
                         <div class="login-brand__overlay">
                             <img class="login-brand__logo" src="./files_login/logo-sauron.png" alt="Barad-dûr">
-                            <div class="login-brand__title">Barad-dûr</div>
-                            <div class="login-brand__tagline">El ojo que todo lo ve vigila cada acceso. Control de entradas y salidas por reconocimiento facial.</div>
+                            <div class="login-brand__title">Mordor</div>
+                            <div class="login-brand__tagline">“Ash nazg durbatulûk, ash nazg gimbatul, ash nazg thrakatulûk agh burzum-ishi krimpatul.”</div>
+                            <div class="login-brand__tagline mt-2" style="font-size:0.85rem">Un Anillo para gobernarlos a todos… y El Ojo que todo lo ve vigila cada acceso por reconocimiento facial.</div>
                         </div>
                     </div>
                 </div>
@@ -1656,7 +1659,7 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
                 var boton = document.getElementById("boton_acceder");
                 if (boton) {
                     boton.disabled = true;
-                    boton.textContent = "Accediendo…";
+                    boton.textContent = "El Ojo te observa…";
                 }
             });
         })();

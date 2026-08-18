@@ -10,7 +10,7 @@
 <!-- BEGIN: Search -->
 <div class="intro-x relative mr-3 sm:mr-6">
     <div class="search hidden sm:block">
-        <input onkeypress="enterpressed_buscar(event,this)"  type="text" class="search__input input dark:bg-dark-1 placeholder-theme-13" placeholder="Buscar visitante..." id="campo_buscar">
+        <input onkeypress="enterpressed_buscar(event,this)"  type="text" class="search__input input dark:bg-dark-1 placeholder-theme-13" placeholder="Buscar en Mordor…" id="campo_buscar">
         <svg onclick="buscar()" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search search__icon dark:text-gray-300"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> 
     </div>
 

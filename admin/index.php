@@ -51,7 +51,7 @@ if (!$local) {
 
 ?>
 <!DOCTYPE html>
-<html lang="en"><!-- BEGIN: Head --><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style>.gm-style .gm-style-mtc label,.gm-style .gm-style-mtc div{font-weight:400}
+<html lang="es" class="dark"><!-- BEGIN: Head --><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style>.gm-style .gm-style-mtc label,.gm-style .gm-style-mtc div{font-weight:400}
 </style><style>.gm-control-active>img{box-sizing:content-box;display:none;left:50%;pointer-events:none;position:absolute;top:50%;transform:translate(-50%,-50%)}.gm-control-active>img:nth-child(1){display:block}.gm-control-active:hover>img:nth-child(1),.gm-control-active:active>img:nth-child(1){display:none}.gm-control-active:hover>img:nth-child(2),.gm-control-active:active>img:nth-child(3){display:block}
 </style><link type="text/css" rel="stylesheet" href="./files/css"><style>.gm-ui-hover-effect{opacity:.6}.gm-ui-hover-effect:hover{opacity:1}
 </style><style>.gm-style .gm-style-cc span,.gm-style .gm-style-cc a,.gm-style .gm-style-mtc div{font-size:10px;box-sizing:border-box}
@@ -60,14 +60,16 @@ if (!$local) {
         
         <link href="./files/logo-sauron.png" rel="shortcut icon">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="Barad-dûr · Control de Accesos por Reconocimiento Facial.">
+        <meta name="description" content="Mordor · El Ojo que Todo lo Ve. Vigilancia y Control de Accesos por Reconocimiento Facial.">
         <meta name="keywords" content="Reconocimiento Facial">
         <meta name="author" content="Josue">
-        <title>Barad-dûr · Control de Accesos</title>
+        <title>Mordor · El Ojo que Todo lo Ve</title>
+        <!-- Fuerza el tema oscuro (Mordor) antes de que cargue app.js -->
+        <script>document.documentElement.classList.add('dark');</script>
         <!-- BEGIN: CSS Assets-->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cinzel:wght@500;600;700;800&family=Cinzel+Decorative:wght@700;900&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="./files/app.css">
         <link rel="stylesheet" href="./files/custom.css">
         <!-- END: CSS Assets-->
@@ -1650,9 +1652,29 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
             <div class="top-bar-boxed flex items-center">
                 <!-- BEGIN: Logo -->
                 <a href="?" class="-intro-x hidden md:flex baradur-brand">
-                    <img alt="Barad-dûr" class="baradur-brand__img" src="./files/logo-sauron.png">
+                    <svg class="sauron-eye" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+                        <defs>
+                            <radialGradient id="sauron-iris-grad" cx="50%" cy="38%" r="75%">
+                                <stop offset="0%" stop-color="#ffd9a0"/>
+                                <stop offset="45%" stop-color="#ff5a1f"/>
+                                <stop offset="100%" stop-color="#8c1f00"/>
+                            </radialGradient>
+                        </defs>
+                        <!-- anillo exterior orco -->
+                        <circle cx="24" cy="24" r="22" fill="none" stroke="rgba(201,162,39,0.55)" stroke-width="1.6"/>
+                        <!-- contorno superior (ceño de Sauron) -->
+                        <path d="M9 16 C 14 10, 20 7.5, 24 7.5 C 28 7.5, 34 10, 39 16" fill="none" stroke="rgba(255,90,31,0.7)" stroke-width="1.8" stroke-linecap="round"/>
+                        <!-- forma del ojo (rendija) -->
+                        <path d="M4.5 24 C 8 16.5, 15 12.5, 24 12.5 C 33 12.5, 40 16.5, 43.5 24 C 40 31.5, 33 35.5, 24 35.5 C 15 35.5, 8 31.5, 4.5 24 Z" fill="rgba(255,90,31,0.10)" stroke="#ff5a1f" stroke-width="1.4"/>
+                        <!-- iris -->
+                        <ellipse class="sauron-eye__iris" cx="24" cy="24" rx="11.5" ry="8.5" fill="url(#sauron-iris-grad)"/>
+                        <!-- pupila vertical (se mueve con el cursor) -->
+                        <path class="sauron-eye__pupil" d="M24 16.5 C 26.6 16.5 27.4 22 27.4 24 C 27.4 26 26.6 31.5 24 31.5 C 21.4 31.5 20.6 26 20.6 24 C 20.6 22 21.4 16.5 24 16.5 Z" fill="#0d0503"/>
+                        <!-- brillo -->
+                        <circle class="sauron-eye__shine" cx="27.4" cy="20.5" r="1.5" fill="rgba(255,235,205,0.95)"/>
+                    </svg>
                     <span class="baradur-brand__word">Barad-<span class="font-medium">dûr</span>
-                        <span class="baradur-brand__sub">Control de Accesos</span>
+                        <span class="baradur-brand__sub">El Ojo que Todo lo Ve</span>
                     </span>
                 </a>
                 <!-- END: Logo -->
@@ -1675,27 +1697,27 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
         
         
 
-        <!-- BEGIN: Dark Mode Switcher-->
-        <div class="dark-mode-switcher shadow-md fixed bottom-0 right-0 box dark:bg-dark-2 border rounded-full w-44 h-12 flex items-center justify-center z-50 mb-10 mr-10" role="switch" aria-checked="false" aria-label="Alternar modo oscuro">
-            <div class="dm-label">
-                <svg class="feather feather-moon dm-icon dm-icon--moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-                <svg class="feather feather-sun dm-icon dm-icon--sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-            </div>
-            <input class="input input--switch border" type="checkbox" value="1">
+        <!-- BEGIN: Un Anillo para gobernarlos a todos -->
+        <div class="ring-widget" role="img" aria-label="Un Anillo para gobernarlos a todos">
+            <span class="ring-widget__emoji">💍</span>
+            <span class="ring-widget__label">Un Anillo</span>
         </div>
-        <!-- END: Dark Mode Switcher-->
+        <!-- END: Anillo -->
+        <!-- Cenizas del Monte del Destino -->
+        <div class="mordor-ashes" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
         <!-- BEGIN: JS Assets-->
         <script src="./files/markerclusterer.js"></script>
         <script src="./files/js"></script>
         <script src="./files/app.js"></script>
+        <script src="./files/sauron-eye.js"></script>
         <?php
         require_once("../includes/javascript.php");
         ?>
 
-        
+
         <div class="daterangepicker ltr show-calendar opensright"><div class="ranges"></div><div class="drp-calendar left"><div class="calendar-table"></div><div class="calendar-time" style="display: none;"></div></div><div class="drp-calendar right"><div class="calendar-table"></div><div class="calendar-time" style="display: none;"></div></div><div class="drp-buttons"><span class="drp-selected"></span><button class="cancelBtn btn btn-sm btn-default" type="button">Cancel</button><button class="applyBtn btn btn-sm btn-primary" disabled="disabled" type="button">Apply</button> </div></div>
         <!-- END: JS Assets-->
-    
+
 </body></html>
 
 
