@@ -12,8 +12,9 @@ de cruces de línea virtuales, control de aforo y fichajes.
   (insightface `buffalo_l`) para embeddings, matching por similitud coseno multi-pose,
   diccionario `face_enc_v2` atómico (`motor/core/`).
 - **BD**: MySQL/MariaDB (esquema `reconocimientofacial-20260817.sql`).
-- **Daemons**: 5 servicios `systemd` (`deploy/systemd/`) — capturador, detector, clasificador,
-  panel-control y conciliador de fichajes. Logs vía `journalctl` (rotación del sistema).
+- **Daemons**: 6 servicios `systemd` (`deploy/systemd/`) — capturador, detector, clasificador,
+  panel-control, conciliador de fichajes y vinculador de vídeos/personas/cruces.
+  Logs vía `journalctl` (rotación del sistema).
 
 ## Procesos (daemons)
 
@@ -21,9 +22,10 @@ de cruces de línea virtuales, control de aforo y fichajes.
 |---|---|---|
 | rf-capturador (p4) | `capturador.php` → `motor/guarda_movimientosV3.py` | Detecta movimiento, graba MP4 H.264 directo (con 2 s de pre-roll y post-roll) en `motor/videos/<local>/<cam>/` |
 | rf-detector (p5) | `detector.php` → `motor/procesa_video.py` + `motor/archiva_video.py` | Cruces de línea (MOG2+tracking) + extracción de caras + archivado a `motor/videos_archivo/` (miniatura incluida) + purga por retención |
-| rf-clasificador (p3) | `clasificadorV2.php` | Ingesta a BD (personas/estancias/fotos) desde `motor/caras/` |
+| rf-clasificador (p3) | `clasificadorV2.php` | Ingesta a BD (personas/estancias/fotos) desde `motor/caras/`; enlaza cada estancia con su vídeo de movimiento |
 | rf-panel-control (p1) | `procesos_panel_control.php` → `motor/pose.py` | Validador de pose para el registro webcam multi-pose |
 | rf-conciliador (p6) | `conciliador.php` → `libs/conciliador.php` | Concilia fichajes según el horario del local: provisional en vivo, conciliado (salida definitiva) al cerrar el día |
+| rf-vinculador (p7) | `vinculador.php` → `libs/vinculos.php` | Enlaza vídeos ↔ estancias (personas) ↔ cruces por cámara + solape temporal (backfill + incremental) |
 
 Scripts actuales del motor: `core/` (model, matching, store, quality, config), `clasificador.py`,
 `procesa_video.py`, `enrolamiento.py`, `pose.py`, `cambiar_foto.py`, `cruces.py`,
@@ -53,6 +55,7 @@ sudo bash deploy/install_services.sh start
 motor/venv/bin/python -m pytest motor/tests -q        # tests del motor (29)
 motor/venv/bin/python -m motor.eval.eval              # métricas TAR/FAR (set en motor/eval/data/)
 php tests/fichajes_conciliador_test.php               # lógica de conciliación de fichajes (13)
+php tests/vinculos_test.php                           # lógica de vínculos vídeos↔estancias↔cruces (18)
 ```
 
 ## Documentación
@@ -67,6 +70,7 @@ php tests/fichajes_conciliador_test.php               # lógica de conciliación
 | `docs/specs/06-plan-bugs-mejoras.md` | Backlog de bugs y mejoras |
 | `docs/specs/07-roadmap-implementacion.md` | Plan por fases |
 | `docs/specs/08-fichajes-horarios.md` | Fichajes con horario habitual y conciliador |
+| `docs/specs/09-vinculos.md` | Vínculos automáticos vídeos ↔ personas ↔ cruces de línea |
 
 ## Seguridad
 
