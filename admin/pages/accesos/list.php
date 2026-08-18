@@ -11,10 +11,12 @@ $local_id = (int)$_SESSION["local_id"];
 $camara_filtro = (isset($_GET["camara"]) && $_GET["camara"] !== "" && $_GET["camara"] !== "-") ? (int)$_GET["camara"] : 0;
 $persona_filtro = (isset($_GET["persona_id"]) && $_GET["persona_id"] !== "" && $_GET["persona_id"] !== "-") ? (int)$_GET["persona_id"] : 0;
 
-$desde_sql = rango_a_sql($_GET["desde"] ?? "", date("Y-m-d 00:00:00"));
-$hasta_sql = rango_a_sql($_GET["hasta"] ?? "", date("Y-m-d 23:59:59"));
-$desde = $_GET["desde"] ?? (date("n/d") . " 12:01 AM");
-$hasta = $_GET["hasta"] ?? (date("n/d") . " 12:59 PM");
+// Rango por defecto: últimas 24h (desde hace 24h hasta ahora) para que el listado nunca arranque vacío.
+$ahora = time();
+$desde = $_GET["desde"] ?? date("n/d h:i A", $ahora - 86400);
+$hasta = $_GET["hasta"] ?? date("n/d h:i A", $ahora);
+$desde_sql = rango_a_sql($desde, date("Y-m-d H:i:s", $ahora - 86400));
+$hasta_sql = rango_a_sql($hasta, date("Y-m-d H:i:s", $ahora));
 
 $camaras = DB::select("SELECT id, descripcion FROM camaras WHERE local_id = ?", [$local_id]);
 $personas = DB::select(
@@ -65,6 +67,7 @@ foreach ($videos as $v) {
             <input data-timepicker="true" class="datepicker input border w-32" id="hasta" value="<?= $hasta; ?>">
         </div>
         <button class="button text-white bg-theme-1 shadow-md" onclick="buscar()">Buscar</button>
+        <button class="button text-white bg-theme-1 shadow-md" onclick="buscarHoy()">Hoy</button>
     </div>
 </div>
 
