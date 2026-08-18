@@ -158,11 +158,14 @@
 
   /* ------------------------------------------------------------------ */
   /* Modal de vídeo: reproducción de un vídeo de movimiento (MP4 H.264)  */
-  /* rfVideoModal(id, url, poster, titulo)                               */
+  /* rfVideoModal(id, url, poster, titulo, personaId, personaNombre)     */
   /*   - url:    video.php?id=<id> (stream con Range)                    */
   /*   - poster: video.php?id=<id>&poster=1 (miniatura, opcional)        */
+  /*   - personaId/personaNombre: si el vídeo está vinculado a una       */
+  /*     persona, se muestra su enlace en el pie del modal (vínculo      */
+  /*     automático vídeos ↔ personas).                                  */
   /* ------------------------------------------------------------------ */
-  function rfVideoModal(id, url, poster, titulo) {
+  function rfVideoModal(id, url, poster, titulo, personaId, personaNombre) {
     titulo = titulo || "Vídeo";
     var modal = doc.getElementById("rf-video-modal");
     if (!modal) {
@@ -178,6 +181,7 @@
         '<a href="javascript:;" data-dismiss="modal" class="button button--sm text-white bg-theme-6 ml-3">Cerrar</a>' +
         "</div>" +
         '<video class="rf-video-modal__player" controls autoplay playsinline preload="metadata"></video>' +
+        '<div class="rf-video-modal__personas mt-3 text-sm"></div>' +
         "</div>";
       doc.body.appendChild(modal);
     }
@@ -188,6 +192,18 @@
       '<source src="' + url + '" type="video/mp4">' +
       "Tu navegador no soporta la etiqueta de video.";
     video.load();
+    var pie = modal.querySelector(".rf-video-modal__personas");
+    if (pie) {
+      if (personaId) {
+        var nombre = personaNombre || "persona " + personaId;
+        pie.innerHTML =
+          '<a href="?page=visitantes&mode=editar&id=' + personaId +
+          '" class="inline-flex items-center gap-1 text-theme-1 font-medium hover:underline">' +
+          "👤 Ver persona: " + nombre + "</a>";
+      } else {
+        pie.innerHTML = "";
+      }
+    }
     rfAbrirModal(modal.id);
   }
 

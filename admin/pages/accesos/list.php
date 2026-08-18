@@ -152,7 +152,7 @@ foreach ($videos as $v) {
                 <td class="text-center border-b">
                     <?php if ($video_id > 0): ?>
                     <a href="javascript:;" title="Ver el vídeo del movimiento"
-                       onclick="rfVideoModal(<?= $video_id; ?>,'../video.php?id=<?= $video_id; ?>','<?= $js_quote("../video.php?id=" . $video_id . "&poster=1"); ?>','<?= $js_quote($nombre); ?> · <?= $js_quote($r["camara_nombre"]); ?>')">
+                       onclick="rfVideoModal(<?= $video_id; ?>,'../video.php?id=<?= $video_id; ?>','<?= $js_quote("../video.php?id=" . $video_id . "&poster=1"); ?>','<?= $js_quote($nombre); ?> · <?= $js_quote($r["camara_nombre"]); ?>',<?= (int)$r["persona_id"]; ?>,'<?= $js_quote($nombre); ?>')">
                         <img alt="Miniatura del vídeo de <?= htmlspecialchars($nombre); ?>"
                              src="../video.php?id=<?= $video_id; ?>&poster=1"
                              onerror="this.onerror=null;this.outerHTML='<span class=\'text-theme-1 font-medium text-xs underline cursor-pointer\'>▶ Ver</span>';"

@@ -139,6 +139,8 @@ $js_quote = function ($s) {
                     <div class="flex sm:justify-center items-center">
                         <a class="flex items-center mr-3" href="?page=visitantes&mode=editar&id=<?= $pid; ?>">Ver</a>
                         <a class="flex items-center mr-3" href="?page=accesos&persona_id=<?= $pid; ?>">Movimientos</a>
+                        <a class="flex items-center mr-3" href="?page=visitantes&mode=editar&id=<?= $pid; ?>#videos">Vídeos</a>
+                        <a class="flex items-center mr-3" href="?page=lineas&persona_id=<?= $pid; ?>">Cruces</a>
                         <a class="flex items-center mr-3" href="?page=rutas&persona_id=<?= $pid; ?>">Rutas</a>
                         <?php if (!isset($_GET["unir"])): ?>
                             <a class="flex items-center mr-3" href="?page=visitantes&unir=<?= $pid; ?>&camara=<?= $camara_filtro; ?>&desde=<?= urlencode($desde); ?>&hasta=<?= urlencode($hasta); ?>&trabajador=<?= $trabajador_filtro ? 1 : 0; ?>">Unir</a>

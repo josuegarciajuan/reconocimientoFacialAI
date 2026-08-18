@@ -16,11 +16,10 @@
        linea=document.getElementById("linea").value;
        desde=document.getElementById("desde").value;
        hasta=document.getElementById("hasta").value;
-       //persona_id=document.getElementById("persona_id").value;
        trayectoria=document.getElementById("trayectoria").value;
+       persona_id=document.getElementById("persona_id").value;
        
-       //url='?page=accesos&buscar=1&camara='+camara+'&desde='+desde+'&hasta='+hasta+'&persona_id='+persona_id+'&trayectoria='+trayectoria;
-       url='?page=lineas&buscar=1&camara='+camara+'&linea='+linea+'&desde='+desde+'&hasta='+hasta+'&trayectoria='+trayectoria;
+       url='?page=lineas&buscar=1&camara='+encodeURIComponent(camara)+'&linea='+encodeURIComponent(linea)+'&desde='+encodeURIComponent(desde)+'&hasta='+encodeURIComponent(hasta)+'&trayectoria='+encodeURIComponent(trayectoria)+'&persona_id='+encodeURIComponent(persona_id);
        if(descargar>0){
            url+="&descargar="+descargar;
        }

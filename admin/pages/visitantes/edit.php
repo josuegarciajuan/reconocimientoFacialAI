@@ -14,6 +14,7 @@ if (!$persona) {
     echo "Persona no encontrada";
     return;
 }
+$nombre_pers = ($persona["nombre"] !== "") ? $persona["nombre"] : $persona["cod_interno"];
 
 $foto = DB::selectOne(
     "SELECT f.id AS fid FROM fotos f JOIN estancias e ON e.id = f.estancia_id WHERE e.persona_id = ? ORDER BY f.id ASC LIMIT 1",
@@ -46,6 +47,21 @@ foreach ($estancias as $e) {
         $galeria[] = ["fecha_ini" => $e["fecha_ini"], "fecha_fin" => $e["fecha_fin"], "fotos" => $fotos];
     }
 }
+
+// vídeos de movimiento vinculados a la persona (vía estancias.video_id)
+$videos_persona = DB::select(
+    "SELECT DISTINCT v.id, v.camara_id, v.fecha_ini, v.poster, v.nombre, c.descripcion AS camara_nombre
+     FROM videos v
+     JOIN estancias e ON e.video_id = v.id
+     JOIN camaras c ON c.id = v.camara_id
+     WHERE e.persona_id = ?
+     ORDER BY v.fecha_ini DESC",
+    [$persona_id]
+);
+
+// cruces de línea atribuidos a la persona (FK nullable)
+$cruces_cnt = DB::selectOne("SELECT COUNT(*) AS n FROM cruces_lineas WHERE persona_id = ?", [$persona_id]);
+$num_cruces = $cruces_cnt ? (int)$cruces_cnt["n"] : 0;
 ?>
 
 <div class="intro-y flex items-center mt-8">
@@ -90,6 +106,8 @@ foreach ($estancias as $e) {
     <div class="nav-tabs flex flex-col sm:flex-row justify-center lg:justify-start">
         <a href="?page=accesos&persona_id=<?= $persona_id; ?>" class="py-4 sm:mr-8 flex items-center active">Ver Movimientos</a>
         <a href="?page=rutas&persona_id=<?= $persona_id; ?>" class="py-4 sm:mr-8 flex items-center">Ver rutas</a>
+        <a href="#videos" class="py-4 sm:mr-8 flex items-center">Ver Vídeos (<?= count($videos_persona); ?>)</a>
+        <a href="?page=lineas&persona_id=<?= $persona_id; ?>" class="py-4 sm:mr-8 flex items-center">Ver Cruces (<?= $num_cruces; ?>)</a>
     </div>
 </div>
 
@@ -137,6 +155,62 @@ foreach ($estancias as $e) {
                     ?>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-12 gap-6 mt-5" id="videos">
+        <div class="intro-y box col-span-12">
+            <div class="flex items-center px-5 py-3 border-b border-gray-200 dark:border-dark-5">
+                <h2 class="font-medium text-base mr-auto">Vídeos de movimiento (<?= count($videos_persona); ?>)</h2>
+                <a href="?page=accesos&persona_id=<?= $persona_id; ?>" class="text-theme-1 font-medium text-sm hover:underline">Ver en Movimientos</a>
+            </div>
+            <div class="p-3 sm:p-5">
+                <?php if (!$videos_persona): ?>
+                <div class="empty-state">
+                    <div class="empty-state__title">Sin vídeos vinculados</div>
+                    <div class="empty-state__hint">Los vídeos de movimiento de esta persona aparecerán aquí cuando el vinculador los enlace (misma cámara y fecha).</div>
+                </div>
+                <?php else: ?>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    <?php foreach ($videos_persona as $v): ?>
+                        <?php $ts_v = strtotime($v["fecha_ini"]); ?>
+                        <?php $fecha_v = $ts_v ? date("d/m/Y H:i", $ts_v) : $v["fecha_ini"]; ?>
+                        <div class="box p-3">
+                            <div class="text-xs text-center text-gray-600 dark:text-gray-300 truncate mb-2"><?= htmlspecialchars($fecha_v); ?> · <?= htmlspecialchars($v["camara_nombre"] ?? ""); ?></div>
+                            <a href="javascript:;" title="Ver el vídeo del movimiento"
+                               onclick="rfVideoModal(<?= (int)$v["id"]; ?>,'../video.php?id=<?= (int)$v["id"]; ?>','<?= $js_quote("../video.php?id=" . (int)$v["id"] . "&poster=1"); ?>','<?= $js_quote($persona["cod_interno"] . " · " . ($v["camara_nombre"] ?? "")); ?>',<?= $persona_id; ?>,'<?= $js_quote($nombre_pers); ?>')">
+                                <img src="<?= htmlspecialchars("../video.php?id=" . (int)$v["id"] . "&poster=1"); ?>"
+                                     alt="Vídeo del <?= htmlspecialchars($fecha_v); ?>"
+                                     onerror="this.onerror=null;this.outerHTML='<div class=\'w-full flex items-center justify-center h-24 rounded bg-gray-800 dark:bg-gray-900 text-theme-1 font-medium text-xs\'>▶ Ver vídeo</div>';"
+                                     class="w-full object-cover rounded cursor-pointer" style="aspect-ratio:16/9">
+                            </a>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-12 gap-6 mt-5">
+        <div class="intro-y box col-span-12">
+            <div class="flex items-center px-5 py-3 border-b border-gray-200 dark:border-dark-5">
+                <h2 class="font-medium text-base mr-auto">Cruces de línea (<?= $num_cruces; ?>)</h2>
+                <a href="?page=lineas&persona_id=<?= $persona_id; ?>" class="text-theme-1 font-medium text-sm hover:underline">Ver en Líneas</a>
+            </div>
+            <div class="p-3 sm:p-5">
+                <?php if ($num_cruces === 0): ?>
+                <div class="empty-state">
+                    <div class="empty-state__title">Sin cruces atribuidos</div>
+                    <div class="empty-state__hint">Los cruces de línea de esta persona aparecerán aquí cuando el vinculador los atribuya (estancia del mismo vídeo que cubre el cruce).</div>
+                </div>
+                <?php else: ?>
+                <p class="text-sm text-gray-600 dark:text-gray-300">
+                    Esta persona tiene <b><?= $num_cruces; ?></b> cruce(s) de línea atribuido(s).
+                    <a class="text-theme-1 font-medium hover:underline" href="?page=lineas&persona_id=<?= $persona_id; ?>">Ver el listado completo</a>.
+                </p>
+                <?php endif; ?>
             </div>
         </div>
     </div>
