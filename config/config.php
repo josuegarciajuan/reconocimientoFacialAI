@@ -212,4 +212,11 @@ define("CONFIG_VIDEO_MARGEN_ESTANCIA", "30"); // segundos máx. entre vídeo y e
 define("CONFIG_CONCILIADOR_LOOP", env_or("RF_CONCILIADOR_LOOP", "60"));                // segundos entre pasadas del conciliador
 define("CONFIG_CONCILIADOR_BACKFILL_DIAS", env_or("RF_CONCILIADOR_BACKFILL_DIAS", "30")); // días históricos poblados la 1ª vez por local
 define("CONFIG_CONCILIADOR_MARGEN_DEFECTO", env_or("RF_CONCILIADOR_MARGEN_DEFECTO", "30")); // margen (min) por defecto si el local no lo define
+
+/*
+ * vinculador.php (vínculos vídeos ↔ estancias ↔ cruces) -> libs/vinculos.php
+ */
+define("CONFIG_VINCULADOR_LOOP", env_or("RF_VINCULADOR_LOOP", "60"));                  // segundos entre pasadas del vinculador
+define("CONFIG_VINCULADOR_BACKFILL_DIAS", env_or("RF_VINCULADOR_BACKFILL_DIAS", "30")); // días históricos con vínculo la 1ª vez por local
+define("CONFIG_VINCULO_MARGEN_SEGS", env_or("RF_VINCULO_MARGEN_SEGS", "30"));          // segundos de margen en el solape vídeo↔estancia/cruce
     
