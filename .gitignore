@@ -21,6 +21,7 @@ motor/removidas/
 motor/bbdd_reconocimiento/
 motor/fotos_lineas/
 motor/videos/
+motor/videos_archivo/
 motor/alinear_caras/
 motor/laterales_test/
 motor/cosas_en_la_cara/

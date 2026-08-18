@@ -60,7 +60,49 @@ while (true) {
                 }
             }
 
+            // nº de procesos en curso (análisis de caras + archivado comprimido)
+            $numero_videos = 0;
+            $numero_archiva = 0;
+            if (is_dir(RUTA_PROYECTO . "aux")) {
+                $dir = opendir(RUTA_PROYECTO . "aux");
+                while (($el = readdir($dir)) !== false) {
+                    if ($el === "." || $el === "..") { continue; }
+                    if (strpos($el, "procesar") !== false) { continue; }
+                    if (strpos($el, "archiva_") === 0) { $numero_archiva++; }
+                    elseif (substr($el, -8) === ".avi.txt") { $numero_videos++; }
+                }
+            }
+
             foreach ($subidos as $video) {
+                // ---- archivo comprimido: AVI -> MP4 H.264 (motor/archiva_video.py) ----
+                $marker_arch = RUTA_PROYECTO . "aux/archiva_" . $video . ".txt";
+                if (file_exists($marker_arch)) {
+                    // marker huérfano: proceso muerto y marker viejo -> limpiar para reintentar
+                    $rc_arch = [];
+                    exec("pgrep -f \"[a]rchiva_video.py " . $local_id . " " . $cam_id . " '" . $video . "'\" > /dev/null 2>&1; echo $?", $rc_arch);
+                    $vivo_arch = (isset($rc_arch[0]) && trim($rc_arch[0]) === "0");
+                    $video_arch_ya_no_existe = !file_exists($dir_videos . $video);
+                    if (!$vivo_arch && $video_arch_ya_no_existe) {
+                        // archiva terminó (el AVI ya lo borró procesa_video) o murió con el origen borrado
+                        @unlink($marker_arch);
+                        echo "Marker archiva limpiado (vídeo ya no existe): " . $video . "\n";
+                    } elseif (!$vivo_arch && (time() - @filemtime($marker_arch)) > CONFIG_MARCADOR_HUERFANO_SEGS) {
+                        @unlink($marker_arch);
+                        echo "Marker archiva huérfano limpiado: " . $video . "\n";
+                    }
+                } elseif ($numero_archiva < (int)CONFIG_LIMITE_ARCHIVA) {
+                    exec("echo '" . date("Y-m-d H:i:s") . "' > " . $marker_arch);
+                    $log_arch = RUTA_PROYECTO . "motor/logs/archiva_video_" . $cam_id . ".log";
+                    $cmd_arch = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/archiva_video.py " . $local_id . " " . $cam_id
+                        . " '" . $video . "' --ruta " . RUTA_PROYECTO
+                        . " --crf " . CONFIG_VIDEO_CRF . " --fps " . CONFIG_VIDEO_FPS_ARCHIVO
+                        . " --preset " . CONFIG_VIDEO_PRESET
+                        . " >> " . $log_arch . " 2>&1 &";
+                    echo $cmd_arch . "\n";
+                    exec($cmd_arch);
+                    $numero_archiva++;
+                }
+
                 $marker = RUTA_PROYECTO . "aux/" . $video . ".txt";
 
                 // marker existente: ¿sigue vivo el procesa_video.py que lo creó?
@@ -100,16 +142,6 @@ while (true) {
                     continue;
                 }
 
-                // nº de vídeos en procesamiento
-                $numero_videos = 0;
-                if (is_dir(RUTA_PROYECTO . "aux")) {
-                    $dir = opendir(RUTA_PROYECTO . "aux");
-                    while (($el = readdir($dir)) !== false) {
-                        if ($el !== "." && $el !== ".." && strpos($el, "procesar") === false && substr($el, -8) === ".avi.txt") {
-                            $numero_videos++;
-                        }
-                    }
-                }
                 if ($numero_videos >= CONFIG_LIMITE_VIDEOS) {
                     continue;
                 }
@@ -129,6 +161,34 @@ while (true) {
                 $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/procesa_video.py " . $local_id . " " . $cam_id . " '" . $video . "' --ruta " . RUTA_PROYECTO . " >> " . $log . " 2>&1 &";
                 echo $cmd . "\n";
                 exec($cmd);
+                $numero_videos++;
+            }
+        }
+    }
+
+    // Purga de vídeos antiguos (retención): cada CONFIG_VIDEO_PURGA_LOOP iteraciones
+    static $loop_purga = 0;
+    $loop_purga++;
+    if ($loop_purga % (int)CONFIG_VIDEO_PURGA_LOOP === 0) {
+        $out = [];
+        exec("php " . RUTA_PROYECTO . "ws.php listado_videos_antiguos " . CONFIG_VIDEO_RETENCION_DIAS, $out);
+        $rows = json_decode(implode("", $out), true);
+        if (is_array($rows) && count($rows) > 0) {
+            $archivo_root = realpath(RUTA_PROYECTO . "motor/videos_archivo");
+            $ids = [];
+            foreach ($rows as $row) {
+                $file = rtrim(RUTA_PROYECTO, "/") . "/" . $row["ruta"];
+                if (is_file($file)) {
+                    $real = realpath($file);
+                    if ($archivo_root !== false && $real !== false && strpos($real, $archivo_root) === 0) {
+                        @unlink($file);
+                    }
+                }
+                $ids[] = (int)$row["id"];
+            }
+            if ($ids) {
+                exec("php " . RUTA_PROYECTO . "ws.php borrar_videos " . implode(",", $ids));
+                echo "Purga de vídeos: " . count($ids) . " registros eliminados\n";
             }
         }
     }
