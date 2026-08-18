@@ -1657,8 +1657,13 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
         <?php require_once 'menu_movil.php'; ?>
         
         <!-- BEGIN: Top Bar -->
-        <div class="border-b border-theme-24 -mt-10 md:-mt-5 -mx-3 sm:-mx-8 px-3 sm:px-8 pt-3 md:pt-0 mb-10">
+        <div class="topbar-sticky border-b border-theme-24 -mt-10 md:-mt-5 -mx-3 sm:-mx-8 px-3 sm:px-8 pt-3 md:pt-0 mb-10">
             <div class="top-bar-boxed flex items-center">
+                <!-- BEGIN: Hamburguesa (solo móvil) -->
+                <a href="javascript:;" id="panel-drawer-toggler" class="panel-drawer-toggler md:hidden mr-2" aria-label="Abrir menú principal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </a>
+                <!-- END: Hamburguesa -->
                 <!-- BEGIN: Logo -->
                 <a href="?" class="-intro-x hidden md:flex baradur-brand">
                     <svg class="sauron-eye" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
