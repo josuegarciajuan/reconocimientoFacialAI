@@ -33,7 +33,7 @@
         
         <li>
             <a href="?page=visitantes" class="top-menu top-menu<?php if(isset($_GET["page"]) and $_GET["page"]=="visitantes"){ echo "--active"; } ?>">
-                <div class="menu__icon menu__emoji">🧝</div>
+                <div class="menu__icon menu__emoji">🧙</div>
                 <div class="top-menu__title"> Pueblos </div>
             </a>
         </li>
@@ -47,7 +47,7 @@
         </li>
         <li>
             <a href="?page=lineas" class="top-menu top-menu<?php if(isset($_GET["page"]) and $_GET["page"]=="lineas"){ echo "--active"; } ?>">
-                <div class="menu__icon menu__emoji">🧭</div>
+                <div class="menu__icon menu__emoji">📐</div>
                 <div class="top-menu__title"> Líneas </div>
             </a>
         </li>
