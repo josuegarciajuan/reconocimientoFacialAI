@@ -17,10 +17,10 @@
    function enterpressed_buscar(e,c){
     var code = (e.keyCode ? e.keyCode : e.which);
     if(code == 13) { //Enter keycode
-        buscar();
+        buscarGlobal();
     }
    } 
-   function buscar(){
+   function buscarGlobal(){
        busca=document.getElementById("campo_buscar").value;
        location.href="?page=visitantes&buscador="+busca;
    }

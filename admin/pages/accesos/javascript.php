@@ -17,13 +17,21 @@
        hasta=document.getElementById("hasta").value;
        persona_id=document.getElementById("persona_id").value;
        
-       url='?page=accesos&buscar=1&camara='+camara+'&desde='+desde+'&hasta='+hasta+'&persona_id='+persona_id;
+       url='?page=accesos&buscar=1&camara='+encodeURIComponent(camara)+'&desde='+encodeURIComponent(desde)+'&hasta='+encodeURIComponent(hasta)+'&persona_id='+encodeURIComponent(persona_id);
        if(descargar>0){
            url+="&descargar="+descargar;
        }
        location.href=url;
        
-   } 
+   }
+
+   /* Filtro rápido "Hoy": fechas de hoy estrictas, mantiene cámara/persona y lanza la consulta. */
+   function buscarHoy(){
+       var d=new Date();
+       document.getElementById("desde").value=(d.getMonth()+1)+"/"+d.getDate()+" 12:00 AM";
+       document.getElementById("hasta").value=(d.getMonth()+1)+"/"+d.getDate()+" 11:59 PM";
+       buscar();
+   }
    
    function sleep(ms) {
      return new Promise(resolve => setTimeout(resolve, ms));
