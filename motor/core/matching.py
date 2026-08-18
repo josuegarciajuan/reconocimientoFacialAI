@@ -52,12 +52,16 @@ def decide(scores: dict[str, float], cfg: Config) -> MatchResult:
 
 def match_group(query_embeddings: list[np.ndarray], store: FaceStore, cfg: Config) -> MatchResult:
     """Agrega un grupo de caras (misma persona en la escena): la similitud por persona
-    es la media de la mejor coincidencia de cada cara del grupo."""
+    es el MAXIMO de la mejor coincidencia de cada cara del grupo.
+
+    Se usa max (no media) para que una sola cara frontal y nítida del grupo no quede
+    diluida por caras en pose/perfil de la misma batería; alineado con la decisión
+    multi-plantilla que ya usa `best_cosine` (max)."""
     if not query_embeddings:
         return MatchResult(verdict="new", scores={})
     agg: dict[str, list[float]] = {}
     for q in query_embeddings:
         for cod, s in scores_per_person(q, store).items():
             agg.setdefault(cod, []).append(s)
-    scores = {cod: float(np.mean(v)) for cod, v in agg.items()}
+    scores = {cod: float(np.max(v)) for cod, v in agg.items()}
     return decide(scores, cfg)
