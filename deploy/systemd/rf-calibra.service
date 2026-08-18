@@ -1,0 +1,10 @@
+[Unit]
+Description=RF Calibración diaria (F3) — re-pondera la cascada con feedback humano
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/reconocimientoFacial
+ExecStart=/root/reconocimientoFacial/motor/venv/bin/python /root/reconocimientoFacial/motor/calibrar.py --ruta /root/reconocimientoFacial
+User=root

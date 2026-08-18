@@ -92,6 +92,63 @@ class _Track:
         self.stale = 0
 
 
+class PersonDetector:
+    """Detector de PERSONAS completas (F7) — MOG2 + filtro de área/aspecto.
+
+    Reutiliza la maquinaria MOG2 de CrossingDetector pero SIN lógica de línea:
+    devuelve los bounding boxes de los objetos en movimiento en cada frame
+    (personas), aunque NO tengan cara visible (identificar "de espaldas").
+    """
+
+    def __init__(self, cfg: CrossingConfig | None = None):
+        self.cfg = cfg or CrossingConfig()
+        self.fgbg = cv2.createBackgroundSubtractorMOG2(
+            history=self.cfg.history,
+            varThreshold=self.cfg.var_threshold,
+            detectShadows=self.cfg.detect_shadows,
+        )
+        self.kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+
+    def process(self, frame: np.ndarray) -> list[tuple[int, int, int, int]]:
+        """Devuelve [(x, y, w, h), ...] de los objetos en movimiento del frame."""
+        fg = self.fgbg.apply(frame)
+        fg = cv2.morphologyEx(fg, cv2.MORPH_OPEN, self.kernel)
+        fg = cv2.morphologyEx(fg, cv2.MORPH_CLOSE, self.kernel)
+        fg = cv2.dilate(fg, None, iterations=2)
+
+        contours, _ = cv2.findContours(fg, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        out = []
+        for c in contours:
+            area = cv2.contourArea(c)
+            if area < self.cfg.area_min or area > self.cfg.area_max:
+                continue
+            x, y, w, h = cv2.boundingRect(c)
+            ar = h / max(1, w)
+            if not (self.cfg.aspect_min <= ar <= self.cfg.aspect_max):
+                continue
+            out.append((x, y, w, h))
+        return out
+
+
+def bbox_iou(a: tuple[int, int, int, int], b: tuple[int, int, int, int]) -> float:
+    """IoU entre dos bboxes (x, y, w, h) — para dedup de crops de cuerpo."""
+    x1, y1, w1, h1 = a
+    x2, y2, w2, h2 = b
+    ix1, iy1 = max(x1, x2), max(y1, y2)
+    ix2, iy2 = min(x1 + w1, x2 + w2), min(y1 + h1, y2 + h2)
+    iw, ih = max(0, ix2 - ix1), max(0, iy2 - iy1)
+    inter = iw * ih
+    union = (w1 * h1) + (w2 * h2) - inter
+    return inter / union if union > 0 else 0.0
+
+
+def bbox_overlap(a: tuple[int, int, int, int], b: tuple[int, int, int, int]) -> bool:
+    """¿Se solapan dos bboxes? (para saber si una cara está dentro de una persona)."""
+    x1, y1, w1, h1 = a
+    x2, y2, w2, h2 = b
+    return not (x1 + w1 < x2 or x2 + w2 < x1 or y1 + h1 < y2 or y2 + h2 < y1)
+
+
 class CrossingDetector:
     def __init__(self, line: Line, cfg: CrossingConfig | None = None):
         self.line = line

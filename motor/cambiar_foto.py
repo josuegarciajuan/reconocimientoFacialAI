@@ -11,6 +11,8 @@ Acción:
   1. Re-encodea `admin/caras_procesadas/<foto_id>.jpg` (RetinaFace/ArcFace).
   2. Añade el encoding a la persona destino.
   3. Elimina de la persona origen el encoding más parecido (si supera min_cosine).
+  4. Emite etiqueta de feedback (F3, §5): la foto movida NO era de la persona
+     origen -> par IMPOSTOR (verdad de calibración del panel).
 """
 from __future__ import annotations
 
@@ -62,6 +64,13 @@ def main() -> int:
               [face_sharpness(img, face)],
               [pose_label(face, cfg.yaw_frontal, cfg.yaw_45, cfg.yaw_90, cfg.pitch_frontal)])
     removed = store.remove_closest(args.cod_origen, face.embedding, min_cosine=args.min_cosine)
+
+    # F3: feedback — la foto movida era IMPOSTOR de la persona origen
+    if cfg.feedback_enabled:
+        from motor.core.feedback import FeedbackCollector, embedding_hash
+        fc = FeedbackCollector(args.ruta, args.local_id, enabled=True)
+        fc.label_move(embedding_hash(face.embedding), args.cod_origen)
+
     print(f"ok (encoding añadido a {args.cod_destino}; removido de origen: {removed})")
     return 0
 

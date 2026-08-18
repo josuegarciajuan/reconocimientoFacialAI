@@ -94,15 +94,18 @@ class Config:
     # --- zonas/ángulos (F2, L1c) ---
     zones_enabled: bool = False
 
+    # --- F7: identificar de espaldas (crops de cuerpo sin cara) ---
+    body_match_conf: float = 0.9        # confianza mínima (torso+VLM) para asignar un cuerpo
+
     # --- VLM local (F4, L2) — Ollama, UN solo worker compartido ---
     # Nota: el registro de Ollama ya no ofrece qwen2-vl:4b; se usa qwen2.5vl:3b
     # (3.2 GB, orientado a edge AI, ver docs) con el mismo prompt de identidad.
     vlm_enabled: bool = False
     vlm_base_url: str = "http://localhost:11434"
     vlm_model: str = "qwen2.5vl:3b"
-    vlm_num_ctx: int = 1024             # KV limitado para no desbordar RAM en CPU
+    vlm_num_ctx: int = 4096             # mínimo útil: 2 imgs (384px) + prompt ≈ 900 tokens
     vlm_num_gpu: int = 0
-    vlm_timeout_s: float = 30.0
+    vlm_timeout_s: float = 90.0         # CPU compartida y bajo carga: margen amplio
     vlm_keep_alive_s: float = 300.0     # descarga el modelo tras N s sin peticiones
     vlm_max_pending: int = 20           # cola acotada; si se llena, se degrada (no bloquea)
     vlm_ram_defer_gb: float = 2.0       # RAM libre < esto => diferir (encolar)

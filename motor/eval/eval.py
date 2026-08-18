@@ -20,9 +20,14 @@ Reporta:
 
 Uso:
   motor/venv/bin/python -m motor.eval.eval --data-dir motor/eval/data
+  motor/venv/bin/python -m motor.eval.eval --data-dir motor/eval/data --pose-aware
 
 Requiere venv (insightface/onnxruntime). Caché de embeddings en motor/eval/.cache
 para no re-encodear en cada ejecución.
+
+--pose-aware (F2/L1c): la similitud de cada par se calcula SOLO contra las
+muestras de la galería con clase de pose COMPARABLE a la del query (mismo
+comportamiento que scores_per_person_pose_aware del motor).
 """
 from __future__ import annotations
 
@@ -120,6 +125,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Evaluación TAR/FAR del motor")
     parser.add_argument("--data-dir", default=os.path.join(os.path.dirname(__file__), "data"))
     parser.add_argument("--det-size", type=int, default=640)
+    parser.add_argument("--pose-aware", action="store_true",
+                        help="similitud solo entre poses comparables (L1c)")
     args = parser.parse_args()
 
     data_dir = Path(args.data_dir)
@@ -138,19 +145,29 @@ def main() -> int:
         personas[e["persona"]].append(e)
 
     # pares genuinos e impostores (coseno)
+    from motor.core.zones import pose_compatible  # noqa: E402
+
     genuine, impostor = [], []
     gen_fp = []  # genuinos frontal↔perfil
     n_personas = len(personas)
     keys = list(personas.keys())
+
+    def _score(a, b) -> float:
+        """Similitud del par: coseno puro o pose-consciente (L1c)."""
+        if args.pose_aware and a["pose"] and b["pose"]:
+            if not pose_compatible(a["pose"], b["pose"]):
+                return 0.0
+        return cos_sim(a["embedding"], b["embedding"])
+
     for i in range(n_personas):
         for j in range(i + 1, n_personas):
             for a in personas[keys[i]]:
                 for b in personas[keys[j]]:
-                    impostor.append(cos_sim(a["embedding"], b["embedding"]))
+                    impostor.append(_score(a, b))
     for k in keys:
         for i, a in enumerate(personas[k]):
             for b in personas[k][i + 1:]:
-                s = cos_sim(a["embedding"], b["embedding"])
+                s = _score(a, b)
                 genuine.append(s)
                 if a["pose"] in POSE_FRONTAL and b["pose"] in POSE_PERFIL:
                     gen_fp.append(s)
@@ -162,7 +179,8 @@ def main() -> int:
     gen_fp = np.array(gen_fp)
 
     print("=" * 60)
-    print("MÉTRICAS DE PRECISIÓN (embedding ArcFace buffalo_l)")
+    print("MÉTRICAS DE PRECISIÓN (embedding ArcFace buffalo_l)"
+          + (" + pose-consciente L1c" if args.pose_aware else ""))
     print("=" * 60)
     print(f"personas: {n_personas}  imágenes: {len(entries)}")
     print(f"pares genuinos: {len(genuine)}  impostores: {len(impostor)}  (frente↔perfil: {len(gen_fp)})")

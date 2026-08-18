@@ -425,6 +425,126 @@ def _copy_to_revision(ruta: str, local_id: str, camara_id: str,
         shutil.copy2(src, os.path.join(rev_dir, out_name))
 
 
+def process_body_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
+                      store: FaceStore) -> int:
+    """F7: procesa crops de CUERPO sin cara (`*_nocara.jpg` en <cam>_cuerpo/).
+
+    Solo torso (L1b) + VLM (L2): si identifican a la persona con confianza MUY
+    alta (>= cfg.body_match_conf) se asigna; si no, el crop va a revisión manual.
+    NUNCA se crea una persona nueva por un crop de espaldas no identificable.
+    """
+    from motor.core.appearance import Appearance, layer_score, torso_descriptor
+    from motor.core.feedback import FeedbackCollector
+    from motor.core.matching import LayerScore
+    from motor.core.fusion import CascadeContext, run_cascade
+
+    torso_dir = os.path.join(ruta, "motor/caras/sinclasificar", local_id, f"{camara_id}_cuerpo")
+    if not os.path.isdir(torso_dir):
+        return 0
+
+    items = []
+    for f in sorted(os.listdir(torso_dir)):
+        if not f.lower().endswith(IMG_EXTS) or not f.endswith("_nocara.jpg"):
+            continue
+        p = os.path.join(torso_dir, f)
+        img = cv2.imread(p)
+        if img is None:
+            os.remove(p)
+            continue
+        items.append({"file": f, "path": p, "img": img, "ts": parse_timestamp(f)})
+
+    if not items:
+        return 0
+    items.sort(key=lambda x: (x["ts"] is None, x["ts"] or 0))
+
+    # baterías temporales (mismo criterio que las caras)
+    baterias = []
+    cur = []
+    prev_ts = None
+    for it in items:
+        if prev_ts is None or (it["ts"] is not None and prev_ts is not None
+                               and (it["ts"] - prev_ts) <= cfg.batch_seconds):
+            cur.append(it)
+        else:
+            if cur:
+                baterias.append(cur)
+            cur = [it]
+        prev_ts = it["ts"]
+    if cur:
+        baterias.append(cur)
+
+    n = 0
+    for bat in baterias:
+        # representativo = el item más reciente de la batería
+        it = max(bat, key=lambda x: x["ts"] or 0)
+        h, w = it["img"].shape[:2]
+        query_desc = torso_descriptor(it["img"], (0, 0, w, h))
+
+        # candidatos por apariencia (galería de torso de cada persona)
+        scores: dict[str, LayerScore] = {}
+        for cod in store.persons():
+            gal = store.person_appearance(cod)
+            if not gal or not gal.get("desc"):
+                continue
+            gallery = [Appearance(d, ts, s) for d, ts, s in
+                       zip(gal["desc"], gal["ts"], gal.get("src", [""] * len(gal["desc"])))]
+            s, c, avail = layer_score(query_desc, gallery, ttl_days=cfg.torso_ttl_days)
+            if avail and c > 0:
+                scores[cod] = LayerScore(score=s, confidence=c)
+        if not scores:
+            # sin galería de torso todavía: revisión manual, nunca persona nueva
+            _body_to_revision(ruta, local_id, camara_id, [x["path"] for x in bat], cfg)
+            n += 1
+            continue
+
+        face_scores = {c: ls.score for c, ls in scores.items()}
+        best_cod = max(scores, key=lambda c: scores[c].score * scores[c].confidence)
+
+        def _body_vlm(cod: str) -> LayerScore:
+            from motor.core.photos import find_person_photos
+            from motor.core.vlm_local import VLMClient
+            refs = find_person_photos(ruta, local_id, cod, max_n=1)
+            if not refs or not cfg.vlm_enabled:
+                return LayerScore(available=False)
+            vlm = VLMClient(cfg, ruta)
+            return vlm.compare(it["path"], refs[0])
+
+        ctx = CascadeContext(torso=lambda cod: scores.get(cod, LayerScore(available=False)),
+                             vlm=_body_vlm)
+        face_layer = LayerScore(score=scores[best_cod].score,
+                                confidence=scores[best_cod].confidence)
+        result = run_cascade(face_scores, ctx, cfg, face_layer)
+
+        if result.verdict == "match" and result.person is not None:
+            # asignar: mover el crop al álbum de la persona (mismo contrato)
+            out_dir = os.path.join(ruta, "motor/caras", local_id, camara_id, result.person)
+            os.makedirs(out_dir, exist_ok=True)
+            foto_id = random_code()
+            out_name = f"{it['file'].rsplit('.', 1)[0]}_{foto_id}.jpg"
+            cv2.imwrite(os.path.join(out_dir, out_name), it["img"],
+                        [cv2.IMWRITE_JPEG_QUALITY, 95])
+            store.add_appearance(result.person, query_desc, ts=it["ts"] or time.time(),
+                                 src=out_name)
+            for x in bat:
+                if os.path.exists(x["path"]):
+                    os.remove(x["path"])
+            log(f"[body-match] {len(bat)} crop(s) -> {result.person} (torso+VLM)")
+        else:
+            _body_to_revision(ruta, local_id, camara_id, [x["path"] for x in bat], cfg)
+            log(f"[body-revision] {len(bat)} crop(s) sin identidad concluyente -> revisión")
+        n += 1
+    return n
+
+
+def _body_to_revision(ruta: str, local_id: str, camara_id: str,
+                      paths: list[str], cfg: Config) -> None:
+    rev_dir = os.path.join(ruta, cfg.revision_dir, local_id, camara_id)
+    os.makedirs(rev_dir, exist_ok=True)
+    for p in paths:
+        if os.path.exists(p):
+            shutil.move(p, os.path.join(rev_dir, os.path.basename(p)))
+
+
 def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
                  store: FaceStore, feedback=None) -> int:
     dir_in = os.path.join(ruta, "motor/caras/sinclasificar", local_id, camara_id)
@@ -527,8 +647,9 @@ def main() -> int:
     while True:
         try:
             n = process_once(args.ruta, args.local_id, args.camara_id, cfg, store, feedback)
-            if n:
-                log(f"procesadas {n} batería(s)")
+            nb = process_body_once(args.ruta, args.local_id, args.camara_id, cfg, store)
+            if n or nb:
+                log(f"procesadas {n} batería(s) de caras, {nb} de cuerpos")
             if args.once:
                 return 0
             time.sleep(1)
