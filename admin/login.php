@@ -8,8 +8,31 @@
 require_once '../config/rutas.php';
 require_once '../libs/db.php';
 require_once '../libs/auth.php';
+require_once '../libs/autologin.php';
 
 $login_error = "";
+
+// Auto-login por dispositivo (matrícula única): solo GET + HTTPS + sin sesión.
+// Otros dispositivos/IPs siguen viendo el formulario normal.
+if (!isset($_SESSION["user"]) && $_SERVER["REQUEST_METHOD"] === "GET" && autologin_https_ok()) {
+    $token = $_COOKIE[AUTOLOGIN_COOKIE] ?? "";
+    $row = autologin_validate_token($token);
+    if ($row !== null) {
+        autologin_set_session();
+        DB::execute("UPDATE dispositivos_autologin SET ultimo_uso = NOW() WHERE id = ?", [(int) $row["id"]]);
+        header("Location: ./index.php");
+        exit;
+    }
+    if (($_SERVER["REMOTE_ADDR"] ?? "") === AUTOLOGIN_IP && !autologin_is_enrolled()) {
+        $nuevo = autologin_enroll();
+        if ($nuevo !== null) {
+            autologin_set_cookie($nuevo);
+            autologin_set_session();
+            header("Location: ./index.php");
+            exit;
+        }
+    }
+}
 
 if(isset($_GET["login"]) and $_GET["login"]==1 and $_SERVER["REQUEST_METHOD"]==="POST"){
     $ip = $_SERVER["REMOTE_ADDR"] ?? "cli";
