@@ -206,7 +206,9 @@ $candidatos = DB::select(
 </div>
 <script>
     $(function () {
-        $("#modal-unir").modal("show");
+        if (typeof window.rfAbrirModal === "function") {
+            window.rfAbrirModal("modal-unir");
+        }
     });
 </script>
 <?php endif; ?>

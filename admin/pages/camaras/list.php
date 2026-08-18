@@ -120,7 +120,7 @@ $ph_uri = "data:image/svg+xml;base64," . base64_encode(
     ?>
     <button type="button" class="cam-card box text-left w-full"
             aria-label="Cámara en directo: <?= htmlspecialchars($descripcion, ENT_QUOTES); ?>"
-            onclick="rfCamModal(<?= htmlspecialchars($js_args, ENT_QUOTES); ?>)">
+            onclick="rfCamModal(...<?= htmlspecialchars($js_args, ENT_QUOTES); ?>)">
         <span class="cam-card__media block">
             <?php if (!$existe): ?>
             <span class="cam-card__placeholder absolute inset-0 flex items-center justify-center empty-state__hint">Cargando…</span>
@@ -192,7 +192,7 @@ if ($detalle):
     /* Enlaces antiguos (?page=camaras&id=X): abrir el modal al cargar. */
     $(function () {
         if (typeof window.rfCamModal === "function") {
-            window.rfCamModal(<?= $det_args; ?>);
+            window.rfCamModal(...<?= $det_args; ?>);
         }
     });
 </script>

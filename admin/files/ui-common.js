@@ -12,6 +12,36 @@
   "use strict";
 
   /* ------------------------------------------------------------------ */
+  /* Apertura de modales Midone                                          */
+  /* El plugin de modales vive en el jQuery interno del bundle app.js y   */
+  /* se engancha por delegación en body (a[data-toggle="modal"]).        */
+  /* El panel carga además un jQuery 1.4.4 global SIN el plugin, así que  */
+  /* en lugar de $().modal('show') reutilizamos el mecanismo de la app:   */
+  /* un disparador <a data-toggle="modal" data-target="#id"> clicado.     */
+  /* ------------------------------------------------------------------ */
+  function rfAbrirModal(id) {
+    var modal = doc.getElementById(id);
+    if (!modal) {
+      return;
+    }
+    var trigger = doc.getElementById(id + "-trigger");
+    if (!trigger) {
+      trigger = doc.createElement("a");
+      trigger.id = id + "-trigger";
+      trigger.href = "javascript:;";
+      trigger.setAttribute("data-toggle", "modal");
+      trigger.setAttribute("data-target", "#" + id);
+      trigger.style.display = "none";
+      doc.body.appendChild(trigger);
+    }
+    try {
+      trigger.click();
+    } catch (e) {
+      /* nada que hacer si el mecanismo de la app no está disponible */
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
   /* Toast minimalista (top-right, auto-dismiss)                         */
   /* ------------------------------------------------------------------ */
   var toastTimer = null;
@@ -69,11 +99,7 @@
     var img = modal.querySelector(".media-modal__img");
     img.setAttribute("alt", titulo);
     img.src = url;
-    try {
-      $("#" + modal.id).modal("show");
-    } catch (e) {
-      /* el plugin de modal no está disponible: nada que hacer */
-    }
+    rfAbrirModal(modal.id);
   }
 
   /* ------------------------------------------------------------------ */
@@ -120,11 +146,7 @@
     if (hint) {
       hint.textContent = "";
     }
-    try {
-      $("#" + modal.id).modal("show");
-    } catch (e) {
-      /* plugin de modal no disponible */
-    }
+    rfAbrirModal(modal.id);
   }
 
   /* ------------------------------------------------------------------ */
