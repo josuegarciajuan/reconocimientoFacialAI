@@ -1,0 +1,425 @@
+/* ============================================================
+   Barad-dûr · Capa de modernización UI (aditiva, no destructiva)
+   Se carga DESPUÉS de app.css. Conserva el ADN Midone
+   (top bar azul índigo, menú superior, tarjetas report-box).
+   ============================================================ */
+
+/* --- Tipografía ------------------------------------------- */
+body {
+  font-family: "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  letter-spacing: -0.005em;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "cv11" 1;
+}
+
+/* --- Fondo general: profundidad + glows sutiles ------------ */
+html:not(.dark) {
+  background:
+    radial-gradient(1100px 520px at 88% -8%, rgba(120, 160, 255, 0.35), transparent 62%),
+    radial-gradient(900px 480px at -8% 6%, rgba(56, 189, 248, 0.16), transparent 55%),
+    linear-gradient(180deg, #142c91 0%, #1c3faa 58%, #1c3faa 100%);
+  background-attachment: fixed;
+}
+
+/* --- Top bar: hairline luminoso en la base ----------------- */
+.top-bar-boxed::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  pointer-events: none;
+}
+
+/* Lockup de marca */
+.baradur-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.baradur-brand .baradur-brand__img {
+  width: 36px;
+  height: 36px;
+  border-radius: 0.75rem;
+  object-fit: cover;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  transition: transform 0.25s ease;
+}
+
+.baradur-brand:hover .baradur-brand__img {
+  transform: scale(1.06) rotate(-2deg);
+}
+
+.baradur-brand__word {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.baradur-brand__sub {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(198, 212, 253, 0.85);
+  margin-top: 1px;
+}
+
+/* --- Menú superior: píldora translúcida + microinteracción -- */
+.top-nav > ul {
+  gap: 0.25rem;
+}
+
+.top-nav > ul li .top-menu {
+  transition: background-color 0.22s ease, transform 0.22s ease, color 0.22s ease;
+}
+
+.top-nav > ul li .top-menu:hover:not(.top-menu--active) {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  transform: translateY(-1px);
+}
+
+.top-nav > ul li .top-menu.top-menu--active {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 9999px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* ocultar las curvas decorativas claras del activo original */
+.top-nav > ul li .top-menu.top-menu--active:before,
+.top-nav > ul li .top-menu.top-menu--active:after {
+  display: none;
+}
+
+.top-nav > ul li .top-menu.top-menu--active .top-menu__icon,
+.top-nav > ul li .top-menu.top-menu--active .top-menu__title {
+  color: #fff;
+}
+
+.top-nav > ul li .top-menu.top-menu--active .top-menu__title {
+  font-weight: 600;
+}
+
+/* iconos Feather más finos = trazo moderno */
+svg.feather {
+  stroke-width: 1.75;
+}
+
+/* --- Buscador: píldora translúcida -------------------------- */
+.search .search__input {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search .search__input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.search .search__input:focus {
+  background: rgba(255, 255, 255, 0.16);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(120, 160, 255, 0.35);
+}
+
+.search .search__icon {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* --- Tarjetas KPI ------------------------------------------- */
+.kpi-chip {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(28, 63, 170, 0.08);
+  flex: none;
+}
+
+.kpi-chip .feather {
+  width: 22px;
+  height: 22px;
+  color: #1c3faa;
+}
+
+.kpi-number {
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: #1e2533;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.dark .kpi-number {
+  color: #e8eeff;
+}
+
+.kpi-label {
+  font-size: 0.9rem;
+  color: #718096;
+  font-weight: 500;
+}
+
+.report-box.zoom-in {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.report-box.zoom-in:hover {
+  transform: translateY(-4px) scale(1.015);
+}
+
+/* indicador de tendencia (clase report-box__indicator ya existente) */
+.report-box__indicator--up {
+  background: rgba(16, 185, 129, 0.9);
+}
+
+.report-box__indicator--down {
+  background: rgba(239, 68, 68, 0.9);
+}
+
+/* badge "en vivo" para aforo */
+.live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: #10b981;
+  animation: baradur-pulse 1.6s ease-in-out infinite;
+  margin-right: 6px;
+}
+
+@keyframes baradur-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55); }
+  50% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+}
+
+/* --- Notificaciones: badge contador ------------------------- */
+.notification .notification-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.5);
+  animation: baradur-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes baradur-pop {
+  from { transform: scale(0.4); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* --- Dark mode switcher: luna/sol iconográfico -------------- */
+.dark-mode-switcher {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 8px 24px -8px rgba(16, 24, 40, 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.dark-mode-switcher .dm-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #1e2533;
+  margin-right: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dark-mode-switcher .dm-icon {
+  width: 18px;
+  height: 18px;
+  color: #1e2533;
+}
+
+html.dark .dark-mode-switcher .dm-label {
+  color: #e8eeff;
+}
+
+html.dark .dark-mode-switcher .dm-icon {
+  color: #ffd166;
+}
+
+.dm-icon--sun { display: none; }
+html.dark .dm-icon--sun { display: inline-block; }
+html.dark .dm-icon--moon { display: none; }
+
+/* --- Login: panel de marca ---------------------------------- */
+.login-brand {
+  position: relative;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  box-shadow: 0 30px 60px -20px rgba(12, 24, 74, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.login-brand__hero {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.login-brand__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(12, 20, 50, 0.25) 0%, rgba(12, 20, 50, 0.75) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  text-align: center;
+  padding: 2.5rem;
+  color: #fff;
+}
+
+.login-brand__logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 1rem;
+  object-fit: cover;
+  margin-bottom: 1rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.login-brand__title {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.5);
+}
+
+.login-brand__tagline {
+  margin-top: 0.5rem;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 30rem;
+  letter-spacing: 0.01em;
+}
+
+/* inputs con icono */
+.input-icon {
+  position: relative;
+}
+
+.input-icon .feather {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: #a0aec0;
+  pointer-events: none;
+}
+
+.input-icon .login__input {
+  padding-left: 44px;
+}
+
+/* toggle de visibilidad de contraseña */
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 4px;
+  color: #a0aec0;
+  line-height: 0;
+}
+
+.password-toggle:hover {
+  color: #1c3faa;
+}
+
+.password-toggle .feather {
+  width: 18px;
+  height: 18px;
+}
+
+/* botón de acceso con degradado + hover */
+.btn-login {
+  background: linear-gradient(135deg, #1c3faa 0%, #2b51b4 100%);
+  color: #fff;
+  box-shadow: 0 10px 24px -8px rgba(28, 63, 170, 0.6);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-login:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px -10px rgba(28, 63, 170, 0.7);
+}
+
+.btn-login:active {
+  transform: translateY(0);
+}
+
+/* alerta de error de login */
+.login-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #dc2626;
+  border-radius: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.login-alert .feather {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+/* --- Accesibilidad: foco visible ---------------------------- */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid rgba(120, 160, 255, 0.8);
+  outline-offset: 2px;
+}
+
+/* --- Reducción de movimiento --------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .baradur-brand .baradur-brand__img,
+  .report-box.zoom-in,
+  .btn-login,
+  .notification .notification-badge {
+    transition: none;
+    animation: none;
+  }
+}

@@ -23,7 +23,7 @@
         ?>
         <li>
             <a href="?page=locales" class="top-menu top-menu<?php if(isset($_GET["page"]) and $_GET["page"]=="locales"){ echo "--active"; } ?>">
-                <div class="menu__icon" data-feather="home"></div>
+                <div class="menu__icon" data-feather="map-pin"></div>
                 <div class="top-menu__title"> Locales </div>
             </a>
         </li>
@@ -41,34 +41,34 @@
         
         <li>
             <a href="?page=accesos" class="top-menu top-menu<?php if(isset($_GET["page"]) and $_GET["page"]=="accesos"){ echo "--active"; } ?>">
-                <div class="menu__icon" data-feather="thumbs-up"></div>
+                <div class="menu__icon" data-feather="activity"></div>
                 <div class="top-menu__title"> Movimientos </div>
             </a>
         </li>
         <li>
             <a href="?page=lineas" class="top-menu top-menu<?php if(isset($_GET["page"]) and $_GET["page"]=="lineas"){ echo "--active"; } ?>">
-                <div class="menu__icon" data-feather="thumbs-up"></div>
+                <div class="menu__icon" data-feather="layers"></div>
                 <div class="top-menu__title"> Lineas </div>
             </a>
         </li>
         
         <li>
             <a href="?page=rutas" class="top-menu top-menu<?php if(isset($_GET["page"]) and $_GET["page"]=="rutas"){ echo "--active"; } ?>">
-                <div class="menu__icon" data-feather="repeat"></div>
+                <div class="menu__icon" data-feather="navigation"></div>
                 <div class="top-menu__title"> Rutas </div>
             </a>
         </li>
         
         <li>
             <a href="?page=config" class="top-menu top-menu<?php if(isset($_GET["page"]) and $_GET["page"]=="config"){ echo "--active"; } ?>">
-                <div class="menu__icon" data-feather="settings"></div>
+                <div class="menu__icon" data-feather="sliders"></div>
                 <div class="top-menu__title"> Config. </div>
             </a>
         </li>
         
         <li>
             <a href="?page=camaras" class="top-menu top-menu<?php if(isset($_GET["page"]) and $_GET["page"]=="camaras"){ echo "--active"; } ?>">
-                <div class="menu__icon" data-feather="camera"></div>
+                <div class="menu__icon" data-feather="video"></div>
                 <div class="top-menu__title"> En Directo </div>
             </a>
         </li>
@@ -84,7 +84,7 @@
         
         <li>
             <a href="?page=ayuda" class="top-menu top-menu<?php if(isset($_GET["page"]) and $_GET["page"]=="ayuda"){ echo "--active"; } ?>">
-                <div class="menu__icon" data-feather="heart"></div>
+                <div class="menu__icon" data-feather="help-circle"></div>
                 <div class="top-menu__title"> Ayuda </div>
             </a>
         </li>
