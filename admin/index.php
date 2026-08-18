@@ -80,6 +80,7 @@ if (!$local) {
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cinzel:wght@500;600;700;800&family=Cinzel+Decorative:wght@700;900&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="./files/app.css">
         <link rel="stylesheet" href="./files/custom.css">
+        <link rel="stylesheet" href="./files/sections.css">
         <!-- END: CSS Assets-->
         <script type="text/javascript" src="./includes/jquery.js"></script>
         <script type="text/javascript" src="./includes/ajax.js"></script>
@@ -1718,6 +1719,7 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
         <script src="./files/js"></script>
         <script src="./files/app.js"></script>
         <script src="./files/sauron-eye.js"></script>
+        <script src="./files/ui-common.js"></script>
         <?php
         require_once("../includes/javascript.php");
         ?>

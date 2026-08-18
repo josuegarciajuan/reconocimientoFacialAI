@@ -27,32 +27,38 @@ $personas = DB::select(
 
 <div class="intro-y flex flex-col sm:flex-row items-center mt-8">
     <h2 class="text-lg font-medium mr-auto">Listado Movimientos</h2>
-    <div class="w-full sm:w-auto flex mt-4 sm:mt-0">
-
-    Cámara:&nbsp;
-    <select class="input border mr-2" id="camara">
-        <option value="-" <?php if (!$camara_filtro) { echo "selected='selected'"; } ?>>Todas</option>
-        <?php foreach ($camaras as $c): ?>
-            <option value="<?= $c["id"]; ?>" <?php if ($camara_filtro === (int)$c["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars($c["descripcion"]); ?></option>
-        <?php endforeach; ?>
-    </select>
-
-    Persona:&nbsp;
-    <select class="input border mr-2" id="persona_id">
-        <option value="-" <?php if (!$persona_filtro) { echo "selected='selected'"; } ?>>Todos</option>
-        <?php foreach ($personas as $p): ?>
-            <option value="<?= $p["id"]; ?>" <?php if ($persona_filtro === (int)$p["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars($p["cod_interno"] . " - " . $p["nombre"]); ?></option>
-        <?php endforeach; ?>
-    </select>
-
-    Desde:&nbsp;<input data-timepicker="true" class="datepicker input border mx-auto" id="desde" value="<?= $desde; ?>" style="width:120px">
-    Hasta:&nbsp;<input data-timepicker="true" class="datepicker input border mx-auto" id="hasta" value="<?= $hasta; ?>" style="width:120px">
-    <button class="button text-white bg-theme-1 shadow-md mr-2" onclick="buscar()">Buscar</button>
-
+    <div class="filter-bar mt-4 sm:mt-0">
+        <div class="filter-item">
+            <label for="camara">Cámara</label>
+            <select class="input border" id="camara">
+                <option value="-" <?php if (!$camara_filtro) { echo "selected='selected'"; } ?>>Todas</option>
+                <?php foreach ($camaras as $c): ?>
+                    <option value="<?= $c["id"]; ?>" <?php if ($camara_filtro === (int)$c["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars($c["descripcion"]); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="persona_id">Persona</label>
+            <select class="input border" id="persona_id">
+                <option value="-" <?php if (!$persona_filtro) { echo "selected='selected'"; } ?>>Todos</option>
+                <?php foreach ($personas as $p): ?>
+                    <option value="<?= $p["id"]; ?>" <?php if ($persona_filtro === (int)$p["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars($p["cod_interno"] . " - " . $p["nombre"]); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="desde">Desde</label>
+            <input data-timepicker="true" class="datepicker input border w-32" id="desde" value="<?= $desde; ?>">
+        </div>
+        <div class="filter-item">
+            <label for="hasta">Hasta</label>
+            <input data-timepicker="true" class="datepicker input border w-32" id="hasta" value="<?= $hasta; ?>">
+        </div>
+        <button class="button text-white bg-theme-1 shadow-md" onclick="buscar()">Buscar</button>
     </div>
 </div>
 
-<div class="intro-y datatable-wrapper box p-5 mt-5">
+<div class="intro-y datatable-wrapper box p-5 mt-5 table-wrap">
     <table class="table table-report table-report--bordered display datatable w-full">
         <thead>
             <tr>
@@ -61,7 +67,6 @@ $personas = DB::select(
                 <th class="border-b-2 text-center">CÁMARA</th>
                 <th class="border-b-2 text-center">FOTOS</th>
                 <th class="border-b-2 text-center">TIEMPO</th>
-                <th class="border-b-2 text-center">ACCIONES</th>
             </tr>
         </thead>
         <tbody>
@@ -81,6 +86,9 @@ $personas = DB::select(
             $params
         );
 
+        $js_quote = function ($s) {
+            return htmlspecialchars(str_replace(["\\", "'"], ["\\\\", "\\'"], (string)$s), ENT_QUOTES);
+        };
         $par = "odd";
         foreach ($rows as $r) {
             $nombre = ($r["nombre"] !== "") ? $r["nombre"] : $r["cod_interno"];
@@ -88,21 +96,24 @@ $personas = DB::select(
             $fotos = DB::select("SELECT id FROM fotos WHERE estancia_id = ? ORDER BY id ASC", [(int)$r["id"]]);
             $imagen1 = isset($fotos[0]) ? "./caras_procesadas/" . $fotos[0]["id"] . ".jpg" : "";
             $imagen2 = isset($fotos[1]) ? "./caras_procesadas/" . $fotos[1]["id"] . ".jpg" : "";
+            $ts = strtotime($r["fecha_ini"]);
+            $fecha_fmt = $ts ? date("d/m/Y H:i:s", $ts) : $r["fecha_ini"];
         ?>
             <tr class="<?= $par; ?>">
-                <td class="border-b" align="center"><?= htmlspecialchars($r["fecha_ini"]); ?></td>
-                <td class="border-b" align="center"><?= htmlspecialchars($nombre); ?></td>
-                <td class="border-b" align="center"><?= htmlspecialchars($r["camara_nombre"]); ?></td>
+                <td class="text-center border-b"><?= htmlspecialchars($fecha_fmt); ?></td>
+                <td class="text-center border-b"><?= htmlspecialchars($nombre); ?></td>
+                <td class="text-center border-b"><?= htmlspecialchars($r["camara_nombre"]); ?></td>
                 <td class="text-center border-b">
                     <div class="flex sm:justify-center">
-                        <div class="intro-x w-10 h-10 image-fit">
-                            <img alt="" onclick="scale(this,this.id,1)" class="rounded-full" src="<?= htmlspecialchars($imagen1); ?>">
-                            <img alt="" onclick="scale(this,this.id,2)" class="rounded-full" src="<?= htmlspecialchars($imagen2); ?>" style="position:relative;left:30px;top:-40px">
-                        </div>
+                        <?php if ($imagen1 !== ""): ?>
+                        <img alt="Foto 1 de <?= htmlspecialchars($nombre); ?>" onclick="verFoto('<?= $js_quote($imagen1); ?>','<?= $js_quote($nombre); ?>')" onerror="this.style.display='none'" class="img-thumb cursor-pointer -mr-2" src="<?= htmlspecialchars($imagen1); ?>">
+                        <?php endif; ?>
+                        <?php if ($imagen2 !== ""): ?>
+                        <img alt="Foto 2 de <?= htmlspecialchars($nombre); ?>" onclick="verFoto('<?= $js_quote($imagen2); ?>','<?= $js_quote($nombre); ?>')" onerror="this.style.display='none'" class="img-thumb cursor-pointer border border-gray-700 dark:border-gray-700" src="<?= htmlspecialchars($imagen2); ?>">
+                        <?php endif; ?>
                     </div>
                 </td>
-                <td class="border-b" align="center"><?= $tiempo; ?>s</td>
-                <td class="border-b w-5"></td>
+                <td class="text-center border-b"><?= formato_duracion($tiempo); ?></td>
             </tr>
         <?php
             $par = ($par === "odd") ? "pair" : "odd";

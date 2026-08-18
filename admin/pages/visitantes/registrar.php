@@ -16,49 +16,41 @@
 
 <div class="intro-y box px-5 pt-5 mt-5">
     <div class="flex flex-col lg:flex-row border-b border-gray-200 dark:border-dark-5 pb-5 -mx-5">
-        <div class="flex flex-1 px-5 items-center justify-center lg:justify-start">
-                <table style="width:100%">
-                    <tr><td>
-                        Nombre:&nbsp;<input type="text" name="nombre" id="nombre" placeholder="Nombre" style="border-color:blue;border-style:solid;border-width:2px;border-radius:15px;width:70%">
-                    </td></tr>
-                    
-                    <tr><td align="center">
-                        <button id="btn_grabar" class="button text-white bg-theme-1 shadow-md mr-2" onclick="grabarParar()">Empezar a capturar</button>
-                        
-                        <!--
-                        <button id="btn_pruebas" class="button text-white bg-theme-1 shadow-md mr-2" onclick="pruebaAjax()">Pruebas</button>
-                        -->
-                        
-                    </td></tr>
-                
-                   
-                    <tr><td align="center">
-                            
-                            <table style="width:100%" border="1"><tr>
-                            
-                            <td style="width:50%">
-                                <video autoplay id="web-cam-container" 
-                                    style="background-color: black;width: 100%;height:800px;border-color:blue;border-style:solid;border-width:2px; transform: rotateY(180deg); -webkit-transform:rotateY(180deg); -moz-transform:rotateY(180deg);">
-                                    Your browser doesn't support 
-                                    the video tag
-                                </video>
+        <div class="flex flex-1 px-5 items-center justify-center lg:justify-start w-full">
 
-                                <span id="padescargar"></span>
-                            </td>
-                            <td>
-                                <img src="" id="sigueme" style="width:100%">
-                                <center><span id="textocabeza" style="text-align:center;font-size:25px;width:100%;color:blue;font-weight:bold;border-color:blue;border-style:solid;border-width:2px;padding:10px"></span></center>
-                            </td>
-                            
-                            
-                            </tr></table>
-                            
-                    </td></tr>        
+            <div class="w-full max-w-3xl">
+
+                <div class="form-grid">
+                    <div>
+                        <label class="field-label" for="nombre">Nombre</label>
+                        <input type="text" name="nombre" id="nombre" placeholder="Nombre" class="input border w-full">
+                    </div>
+                    <div class="flex items-end justify-center lg:justify-start">
+                        <button id="btn_grabar" class="button text-white bg-theme-1 shadow-md" onclick="grabarParar()">Empezar a capturar</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
+                    <div>
+                        <span class="field-label">Cámara en vivo</span>
+                        <video autoplay id="web-cam-container" class="w-full"
+                            style="background-color:black;max-height:70vh;object-fit:contain;transform:rotateY(180deg);-webkit-transform:rotateY(180deg);-moz-transform:rotateY(180deg);border-radius:0.5rem;border:1px solid rgba(201,162,39,0.25);">
+                            Tu navegador no soporta la etiqueta de video.
+                        </video>
+                        <span id="padescargar"></span>
+                    </div>
+                    <div>
+                        <span class="field-label">Pose a imitar</span>
+                        <img src="" id="sigueme" alt="Guía de pose a imitar" class="w-full"
+                            style="max-height:70vh;object-fit:contain;background-color:black;border-radius:0.5rem;">
+                        <span id="textocabeza" class="block w-full text-center mt-2"
+                            style="font-size:1.25rem;font-weight:bold;color:var(--mordor-ceniza);border:1px solid var(--mordor-humo);background-color:var(--mordor-carbon-2);padding:10px;border-radius:0.5rem;"></span>
+                    </div>
+                </div>
+
+            </div>
+
         </div>
-        
-        
-       
-        
     </div>
 </div>
 
@@ -105,7 +97,7 @@
         
         console.log("cabezon actuializar a la posicion:" + posicion)
         
-        style="background-color: black;width: 100%;height:800px; transform: rotateY(180deg); -webkit-transform:rotateY(180deg); -moz-transform:rotateY(180deg);";
+        style="background-color: black;width: 100%;max-height:70vh;object-fit:contain; transform: rotateY(180deg); -webkit-transform:rotateY(180deg); -moz-transform:rotateY(180deg);";
         style+="border-left:  5px solid red;";
         style+="border-top:    5px solid red;";
         style+="border-right:  5px solid red;";
@@ -447,7 +439,7 @@
 
        console.log("interpretaRespuesta:::::::::::::::::::::::::::::::"+respuesta);
 
-        style="background-color: black;width: 100%;height:800px; transform: rotateY(180deg); -webkit-transform:rotateY(180deg); -moz-transform:rotateY(180deg);";
+        style="background-color: black;width: 100%;max-height:70vh;object-fit:contain; transform: rotateY(180deg); -webkit-transform:rotateY(180deg); -moz-transform:rotateY(180deg);";
         if(respuesta=="NOOK"){
             style+="border-color:red;border-style:solid;border-width:5px";
 

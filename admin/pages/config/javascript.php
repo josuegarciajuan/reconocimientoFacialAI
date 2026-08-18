@@ -47,7 +47,6 @@ window.onload=function(){
             $url_conexion = $cam["url_conexion"];
             $cmd=RUTA_PYTHON." ".RUTA_PROYECTO."motor/dofoto.py ".$camara_id." '".$url_conexion."' '".RUTA_PROYECTO."'";
         ?>
-        console.log("---><?= $cmd; ?>");
         <?php
         //echo "->".$cmd."<-";
         exec($cmd);

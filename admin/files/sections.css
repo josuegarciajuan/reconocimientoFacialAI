@@ -1,0 +1,376 @@
+/* ============================================================
+   Barad-dûr · Capa de patrones de sección (aditiva, responsive)
+   Se carga DESPUÉS de app.css y custom.css.
+   Patrones reutilizables para el contenido de las secciones:
+   filtros, rejilla de cámaras, lightbox, empty states, formularios.
+   ============================================================ */
+
+/* --- Barra de filtros: apilable y con wrap ------------------ */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 0.9rem;
+  width: 100%;
+}
+
+.filter-bar .filter-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.filter-bar .filter-item label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--mordor-humo);
+  white-space: nowrap;
+}
+
+.filter-bar .filter-item .input,
+.filter-bar .filter-item input[type="text"],
+.filter-bar .filter-item select,
+.filter-bar .filter-item .datepicker {
+  min-width: 0;
+}
+
+.dark .filter-bar .filter-item label {
+  color: var(--mordor-humo);
+}
+
+/* Contenedor de tabla con scroll horizontal solo si desborda */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* --- Rejilla de cámaras ------------------------------------ */
+.cam-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 1rem;
+}
+
+.cam-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+  border: 1px solid rgba(201, 162, 39, 0.16);
+}
+
+.cam-card:hover,
+.cam-card:focus-visible {
+  transform: translateY(-3px);
+  border-color: rgba(201, 162, 39, 0.5);
+  box-shadow: 0 16px 34px -16px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(201, 162, 39, 0.28);
+}
+
+.cam-card__media {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background: #000;
+  overflow: hidden;
+}
+
+.cam-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: opacity 0.3s ease;
+}
+
+.cam-card__media--loading .cam-card__img {
+  opacity: 0.35;
+}
+
+.cam-card__status {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.cam-card__status .live-dot {
+  width: 7px;
+  height: 7px;
+  margin-right: 0;
+}
+
+.cam-card__body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem;
+}
+
+.cam-card__name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--mordor-ceniza);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dark .cam-card__name {
+  color: var(--mordor-ceniza);
+}
+
+.cam-card__cta {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--mordor-brasa);
+}
+
+/* --- Empty state -------------------------------------------- */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: var(--mordor-humo);
+}
+
+.empty-state__icon {
+  font-size: 2.4rem;
+  line-height: 1;
+  opacity: 0.75;
+}
+
+.empty-state__title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--mordor-ceniza);
+}
+
+.empty-state__hint {
+  font-size: 0.85rem;
+  color: var(--mordor-humo);
+  max-width: 30rem;
+}
+
+/* --- Lightbox / modal de imagen ----------------------------- */
+.modal__content .media-modal__img {
+  display: block;
+  width: 100%;
+  max-height: 72vh;
+  object-fit: contain;
+  background: #000;
+  border-radius: 0.5rem;
+}
+
+.media-modal__title {
+  font-family: "Cinzel", serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--mordor-ceniza);
+}
+
+/* Modal de stream de cámara */
+.live-modal__img {
+  display: block;
+  width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  background: #000;
+  border-radius: 0.5rem;
+}
+
+/* --- Formularios -------------------------------------------- */
+.field-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mordor-humo);
+  margin-bottom: 0.35rem;
+}
+
+.dark .field-label {
+  color: var(--mordor-humo);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem 1.25rem;
+}
+
+.form-grid .form-grid__full {
+  grid-column: 1 / -1;
+}
+
+.form-section {
+  margin-bottom: 1.5rem;
+}
+
+.form-section__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: "Cinzel", serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--mordor-oro);
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(201, 162, 39, 0.18);
+}
+
+.form-section__title .form-section__emoji {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+/* Inputs/selects sobre el tema oscuro (refuerzo) */
+.dark .input {
+  background-color: rgba(0, 0, 0, 0.35);
+  border-color: rgba(201, 162, 39, 0.25);
+  color: var(--mordor-ceniza);
+}
+
+.dark .input:focus {
+  border-color: rgba(255, 90, 31, 0.55);
+  box-shadow: 0 0 0 3px rgba(255, 90, 31, 0.16);
+}
+
+.dark .input::placeholder {
+  color: rgba(216, 208, 196, 0.4);
+}
+
+/* --- Imagen de avatar/thumbnail ------------------------------ */
+.img-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+/* --- Toasts de feedback -------------------------------------- */
+.rf-toast {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: min(92vw, 360px);
+  padding: 0.7rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--mordor-ceniza);
+  background: rgba(22, 18, 26, 0.96);
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  box-shadow: 0 14px 34px -12px rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+}
+
+.rf-toast--show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.rf-toast--ok { border-color: rgba(16, 185, 129, 0.55); }
+.rf-toast--ok .rf-toast__icon { color: #10b981; }
+.rf-toast--err { border-color: rgba(239, 68, 68, 0.6); }
+.rf-toast--err .rf-toast__icon { color: #ef4444; }
+
+/* --- Dashboard: KPI de aforo responsive ----------------------- */
+.aforo-control {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+@media (max-width: 640px) {
+  .aforo-control {
+    justify-content: flex-start;
+    width: 100%;
+    margin-top: 0.75rem;
+  }
+}
+
+/* --- Canvas de planos: escalado al contenedor ----------------- */
+.plan-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.plan-wrap canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* --- Detalle de cámara (modal stream) ------------------------- */
+.stream-detail__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  border-top: 1px solid rgba(201, 162, 39, 0.14);
+}
+
+.stream-detail__meta .live-dot {
+  margin-right: 0;
+}
+
+/* --- Popup de "unir usuario": siempre centrado en móvil ------- */
+@media (max-width: 640px) {
+  .unir-popup {
+    width: 94vw !important;
+    left: 3vw !important;
+    margin-left: 0 !important;
+  }
+}
+
+/* --- Accesibilidad: contraste y foco --------------------------- */
+.cam-card:focus-visible,
+.filter-bar button:focus-visible {
+  outline: 2px solid rgba(255, 90, 31, 0.8);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cam-card,
+  .cam-card__img,
+  .rf-toast {
+    transition: none;
+  }
+}

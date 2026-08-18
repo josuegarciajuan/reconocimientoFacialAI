@@ -32,6 +32,11 @@ foreach ($camaras as $c) {
 // listado de personas para "mover imagen"
 $personas_list = DB::select("SELECT id, cod_interno, nombre FROM personas WHERE local_id = ? ORDER BY id ASC", [$local_id]);
 
+// escapado para atributos onclick (patrón ui-common: verFoto('url','titulo'))
+$js_quote = function ($s) {
+    return htmlspecialchars(str_replace(["\\", "'"], ["\\\\", "\\'"], (string)$s), ENT_QUOTES);
+};
+
 // galería de fotos (estancias + fotos)
 $galeria = [];  // [{fecha_ini, fecha_fin, fotos: [ids]}]
 $estancias = DB::select("SELECT * FROM estancias WHERE persona_id = ? ORDER BY id ASC", [$persona_id]);
@@ -50,7 +55,7 @@ foreach ($estancias as $e) {
 <div class="intro-y box px-5 pt-5 mt-5">
     <div class="flex flex-col lg:flex-row border-b border-gray-200 dark:border-dark-5 pb-5 -mx-5">
         <div class="flex flex-1 px-5 items-center justify-center lg:justify-start">
-            <center><img alt="" class="rounded-full" src="<?= htmlspecialchars($imagen_perfil); ?>"></center>
+            <img alt="Foto de perfil de <?= htmlspecialchars($persona["nombre"]); ?>" class="rounded-full w-32 h-32 object-cover" src="<?= htmlspecialchars($imagen_perfil); ?>">
         </div>
 
         <div class="flex mt-6 lg:mt-0 items-center lg:items-start flex-1 flex-col justify-center text-gray-600 dark:text-gray-300 px-5 border-l border-r border-gray-200 dark:border-dark-5 border-t lg:border-t-0 pt-5 lg:pt-0">
@@ -62,11 +67,13 @@ foreach ($estancias as $e) {
             </div>
             <br />
             <div class="truncate sm:whitespace-normal flex items-center">
-                &nbsp;Nombre:&nbsp;<input type="text" value="<?= htmlspecialchars($persona["nombre"]); ?>" onblur="cambiar_nombre(this.value,<?= $persona_id; ?>)" style="width:100%;border-style:solid;border-width:1px;border-color:#EDF2F7">
+                &nbsp;Nombre:&nbsp;<input type="text" class="input border w-full" value="<?= htmlspecialchars($persona["nombre"]); ?>" onblur="cambiar_nombre(this.value,<?= $persona_id; ?>)" style="max-width:16rem">
+                <span style="display:none" id="cargador<?= $persona_id; ?>"></span>
             </div>
             <div class="truncate sm:whitespace-normal flex items-center">
                 &nbsp;Es Trabajador:&nbsp;
                 <input type="checkbox" name="trabajador_edit" id="trabajador_edit" value="1" <?php if ((int)$persona["trabajador"] === 1) { echo "checked='checked'"; } ?> onclick="cambiar_trabajador(<?= $persona_id; ?>)">
+                <span style="display:none" id="cargador2<?= $persona_id; ?>"></span>
             </div>
         </div>
 
@@ -93,34 +100,42 @@ foreach ($estancias as $e) {
                 <div class="flex items-center px-5 py-3 border-b border-gray-200 dark:border-dark-5">
                     <h2 class="font-medium text-base mr-auto">Listado Fotos</h2>
                 </div>
-                <div style="padding:10px">
-                    <table cellpadding="0" cellspacing="0">
+                <div class="p-3 sm:p-5">
+                    <?php if (!$galeria): ?>
+                    <div class="empty-state">
+                        <div class="empty-state__title">Sin fotos todavía</div>
+                        <div class="empty-state__hint">Este usuario aún no tiene fotos asociadas a ninguna estancia.</div>
+                    </div>
+                    <?php endif; ?>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                     <?php
-                    $count = 0;
                     foreach ($galeria as $g) {
                         $primera = true;
                         foreach ($g["fotos"] as $fid) {
-                            $count++;
-                            if ($count === 1) { echo "<tr>"; }
                             $fecha = $primera ? $g["fecha_ini"] : $g["fecha_fin"];
                             $primera = false;
                             $img = "./caras_procesadas/" . $fid . ".jpg";
-                            echo '<td align="center">' . htmlspecialchars($fecha) . '<br />
-                                <img src="' . htmlspecialchars($img) . '" style="width:150px">
-                                <select style="width:150px" onchange="mover_img(' . (int)$fid . ',this.value)">
+                    ?>
+                        <div class="box p-3">
+                            <div class="text-xs text-center text-gray-600 dark:text-gray-300 truncate mb-2"><?= htmlspecialchars($fecha); ?></div>
+                            <img src="<?= htmlspecialchars($img); ?>" alt="Foto <?= $fid; ?> del <?= htmlspecialchars($fecha); ?>"
+                                 onclick="verFoto('<?= $js_quote($img); ?>','<?= $js_quote($fecha); ?>')"
+                                 class="w-full object-cover rounded cursor-pointer" style="aspect-ratio:1/1">
+                            <label class="field-label mt-3" for="mover_<?= $fid; ?>">Mover imagen</label>
+                            <select id="mover_<?= $fid; ?>" class="input border w-full mt-1" onchange="mover_img(<?= (int)$fid; ?>,this.value)">
                                 <option>Mover Imagen</option>
-                                <option value="0">NUEVA PERSONA</option>';
-                            foreach ($personas_list as $p) {
-                                $pn = ($p["nombre"] !== "") ? $p["nombre"] : $p["cod_interno"];
-                                echo '<option value="' . (int)$p["id"] . '">' . htmlspecialchars($pn) . '</option>';
-                            }
-                            echo '</select></td>';
-                            if ($count === 7) { $count = 0; echo "</tr><tr><td colspan='7'><br /></td></tr>"; }
+                                <option value="0">NUEVA PERSONA</option>
+                                <?php foreach ($personas_list as $p): ?>
+                                    <?php $pn = ($p["nombre"] !== "") ? $p["nombre"] : $p["cod_interno"]; ?>
+                                    <option value="<?= (int)$p["id"]; ?>"><?= htmlspecialchars($pn); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    <?php
                         }
                     }
-                    if ($count > 0) { echo "</tr>"; }
                     ?>
-                    </table>
+                    </div>
                 </div>
             </div>
         </div>
