@@ -22,31 +22,52 @@ $buscador = trim($_GET["buscador"] ?? "");
 // cámaras del local (para el select y para el contador "todas")
 $camaras = DB::select("SELECT id, descripcion FROM camaras WHERE local_id = ?", [$local_id]);
 $camaras_ids = array_column($camaras, "id");
+
+// escapado para atributos onclick (patrón ui-common: verFoto('url','titulo'))
+$js_quote = function ($s) {
+    return htmlspecialchars(str_replace(["\\", "'"], ["\\\\", "\\'"], (string)$s), ENT_QUOTES);
+};
 ?>
 
 <div class="intro-y flex flex-col sm:flex-row items-center mt-8">
     <h2 class="text-lg font-medium mr-auto">Listado Visitantes</h2>
-    <div class="w-full sm:w-auto flex mt-4 sm:mt-0">
+    <div class="filter-bar mt-4 sm:mt-0">
 
-        Trabajadores&nbsp;<input type="checkbox" name="trabajador" id="trabajador" value="1" <?php if ($trabajador_filtro) { echo "checked='checked'"; } ?>>&nbsp;&nbsp;&nbsp;
+        <span class="filter-item">
+            <label for="trabajador">Trabajadores</label>
+            <input type="checkbox" name="trabajador" id="trabajador" value="1" <?php if ($trabajador_filtro) { echo "checked='checked'"; } ?>>
+        </span>
 
-    Cámara:&nbsp;
-    <select class="input border mr-2" id="camara">
-        <option value="-" <?php if (!$camara_filtro) { echo "selected='selected'"; } ?>>Todas</option>
-        <?php foreach ($camaras as $c): ?>
-            <option value="<?= $c["id"]; ?>" <?php if ($camara_filtro === (int)$c["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars($c["descripcion"]); ?></option>
-        <?php endforeach; ?>
-    </select>
+        <span class="filter-item">
+            <label for="camara">Cámara</label>
+            <select class="input border" id="camara">
+                <option value="-" <?php if (!$camara_filtro) { echo "selected='selected'"; } ?>>Todas</option>
+                <?php foreach ($camaras as $c): ?>
+                    <option value="<?= $c["id"]; ?>" <?php if ($camara_filtro === (int)$c["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars($c["descripcion"]); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </span>
 
-    Desde:&nbsp;<input data-timepicker="true" class="datepicker input w-56 border mx-auto" id="desde" value="<?= $desde; ?>">
-    Hasta:&nbsp;<input data-timepicker="true" class="datepicker input w-56 border mx-auto" id="hasta" value="<?= $hasta; ?>">
-    <button class="button text-white bg-theme-1 shadow-md mr-2" onclick="buscar1()">Buscar</button>
-    <button class="button text-white bg-theme-1 shadow-md mr-2" onclick="location.href='?page=visitantes&mode=registrar'">Registrar</button>
+        <span class="filter-item">
+            <label for="desde">Desde</label>
+            <input data-timepicker="true" class="datepicker input w-56 border" id="desde" value="<?= $desde; ?>">
+        </span>
+
+        <span class="filter-item">
+            <label for="hasta">Hasta</label>
+            <input data-timepicker="true" class="datepicker input w-56 border" id="hasta" value="<?= $hasta; ?>">
+        </span>
+
+        <span class="filter-item">
+            <button class="button text-white bg-theme-1 shadow-md" onclick="buscar1()">Buscar</button>
+            <button class="button text-white bg-theme-1 shadow-md" onclick="location.href='?page=visitantes&mode=registrar'">Registrar</button>
+        </span>
 
     </div>
 </div>
 
 <div class="intro-y datatable-wrapper box p-5 mt-5">
+    <div class="table-wrap">
     <table class="table table-report table-report--bordered display datatable w-full">
         <thead>
             <tr>
@@ -100,17 +121,18 @@ $camaras_ids = array_column($camaras, "id");
             }
             $veces = $cnt ? (int)$cnt["veces"] : 0;
         ?>
-            <tr role="row" class="<?= $par; ?>" <?php if (isset($_GET["unir"]) && $_GET["unir"] == $pid) { echo "style='background-color:yellow'"; } ?>>
+            <tr role="row" class="<?= $par; ?>" <?php if (isset($_GET["unir"]) && $_GET["unir"] == $pid) { echo "style='background-color:var(--mordor-oro-suave)'"; } ?>>
                 <td class="text-center border-b">
                     <div class="flex sm:justify-center">
                         <div class="intro-x w-10 h-10 image-fit">
-                            <img alt="" onclick="scale(this,this.id,1)" src="<?= htmlspecialchars($imagen); ?>">
+                            <img alt="Foto de <?= htmlspecialchars($nombre); ?>" onclick="verFoto('<?= $js_quote($imagen); ?>','<?= $js_quote($nombre); ?>')" class="cursor-pointer" src="<?= htmlspecialchars($imagen); ?>">
                         </div>
                     </div>
                 </td>
                 <td class="border-b" align="center"><?= htmlspecialchars($cod_interno); ?></td>
                 <td class="border-b" align="center">
-                    <input type="text" value="<?= htmlspecialchars($nombre); ?>" onblur="cambiar_nombre(this.value,<?= $pid; ?>)" style="width:75%">
+                    <input type="text" class="input border w-full" value="<?= htmlspecialchars($nombre); ?>" onblur="cambiar_nombre(this.value,<?= $pid; ?>)" style="max-width:13rem">
+                    <span style="display:none" id="cargador<?= $pid; ?>"></span>
                 </td>
                 <td class="text-center border-b" align="center"><?= $veces; ?></td>
                 <td class="border-b w-5">
@@ -132,6 +154,7 @@ $camaras_ids = array_column($camaras, "id");
         ?>
         </tbody>
     </table>
+    </div>
 </div>
 
 <?php if (isset($_GET["unir"]) && $_GET["unir"] !== ""): ?>
@@ -142,14 +165,48 @@ $img_row = DB::selectOne(
     [(int)$_GET["unir"]]
 );
 $imagen_unir = "./caras_procesadas/" . ($img_row ? $img_row["fid"] : 0) . ".jpg";
+$unir_id = (int)$_GET["unir"];
+$candidatos = DB::select(
+    "SELECT id, cod_interno, nombre FROM personas WHERE local_id = ? AND id <> ? ORDER BY nombre ASC, cod_interno ASC",
+    [$local_id, $unir_id]
+);
 ?>
-<div style="width:500px;height:220px;background-color:white;position:fixed;left:50%;margin-left:-250px;top:10px;z-index:999;border-radius:20px;padding:20px">
-    <table style="width:100%;height:100%">
-        <tr style="background-color:cyan"><td colspan="2" align="center"><b>Unir usuario</b> <i>(Selecciona con quien)</i></td></tr>
-        <tr>
-            <td style="width:60%"><img src="<?= htmlspecialchars($imagen_unir); ?>" style="height:100%"></td>
-            <td style="width:40%" valign="top"><?= htmlspecialchars($u["cod_interno"] ?? ""); ?><br /><?= htmlspecialchars($u["nombre"] ?? ""); ?></td>
-        </tr>
-    </table>
+<div class="modal" id="modal-unir" role="dialog" aria-modal="true" aria-labelledby="modal-unir-titulo">
+    <div class="modal__content box p-5">
+        <div class="flex items-center mb-4">
+            <h3 id="modal-unir-titulo" class="media-modal__title mr-auto truncate">Unir usuario</h3>
+            <a href="javascript:;" data-dismiss="modal" class="button button--sm text-white bg-theme-6 ml-3">Cerrar</a>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center gap-4">
+            <img class="w-24 h-24 object-cover rounded cursor-pointer flex-none"
+                 alt="Foto de <?= htmlspecialchars($u["cod_interno"] ?? ""); ?>"
+                 onclick="verFoto('<?= $js_quote($imagen_unir); ?>','<?= $js_quote($u["cod_interno"] ?? ""); ?>')"
+                 src="<?= htmlspecialchars($imagen_unir); ?>">
+            <div class="text-center sm:text-left text-gray-600 dark:text-gray-300">
+                <div class="font-semibold"><?= htmlspecialchars($u["cod_interno"] ?? ""); ?></div>
+                <div><?= htmlspecialchars($u["nombre"] ?? ""); ?></div>
+            </div>
+        </div>
+
+        <form method="get" action="?page=visitantes" class="mt-4 pt-4 border-t border-gray-200 dark:border-dark-5">
+            <input type="hidden" name="este" value="<?= $unir_id; ?>">
+            <label class="field-label" for="coneste">Unir con</label>
+            <div class="flex flex-col sm:flex-row gap-2">
+                <select name="coneste" id="coneste" class="input border w-full">
+                    <option value="">Selecciona un usuario</option>
+                    <?php foreach ($candidatos as $cand): ?>
+                        <option value="<?= (int)$cand["id"]; ?>"><?= htmlspecialchars($cand["cod_interno"] . " - " . $cand["nombre"]); ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <button type="submit" class="button text-white bg-theme-1 shadow-md flex-none">Unir</button>
+            </div>
+        </form>
+    </div>
 </div>
+<script>
+    $(function () {
+        $("#modal-unir").modal("show");
+    });
+</script>
 <?php endif; ?>
