@@ -157,6 +157,41 @@
   }
 
   /* ------------------------------------------------------------------ */
+  /* Modal de vídeo: reproducción de un vídeo de movimiento (MP4 H.264)  */
+  /* rfVideoModal(id, url, poster, titulo)                               */
+  /*   - url:    video.php?id=<id> (stream con Range)                    */
+  /*   - poster: video.php?id=<id>&poster=1 (miniatura, opcional)        */
+  /* ------------------------------------------------------------------ */
+  function rfVideoModal(id, url, poster, titulo) {
+    titulo = titulo || "Vídeo";
+    var modal = doc.getElementById("rf-video-modal");
+    if (!modal) {
+      modal = doc.createElement("div");
+      modal.id = "rf-video-modal";
+      modal.className = "modal";
+      modal.setAttribute("role", "dialog");
+      modal.setAttribute("aria-modal", "true");
+      modal.innerHTML =
+        '<div class="modal__content box p-4 sm:p-5">' +
+        '<div class="flex items-center mb-4">' +
+        '<h3 class="media-modal__title mr-auto truncate"></h3>' +
+        '<a href="javascript:;" data-dismiss="modal" class="button button--sm text-white bg-theme-6 ml-3">Cerrar</a>' +
+        "</div>" +
+        '<video class="rf-video-modal__player" controls autoplay playsinline preload="metadata"></video>' +
+        "</div>";
+      doc.body.appendChild(modal);
+    }
+    modal.querySelector(".media-modal__title").textContent = titulo;
+    var video = modal.querySelector(".rf-video-modal__player");
+    video.poster = poster || "";
+    video.innerHTML =
+      '<source src="' + url + '" type="video/mp4">' +
+      "Tu navegador no soporta la etiqueta de video.";
+    video.load();
+    rfAbrirModal(modal.id);
+  }
+
+  /* ------------------------------------------------------------------ */
   /* Refresco periódico de snapshots (cache-buster ligero)               */
   /* Marca las imágenes .cam-card__img[data-snapshot] y re-apunta el src  */
   /* cada intervalo respetando la caché de dofoto (15s).                  */
@@ -249,6 +284,7 @@
   win.rfToast = rfToast;
   win.rfLightbox = rfLightbox;
   win.rfCamModal = rfCamModal;
+  win.rfVideoModal = rfVideoModal;
   win.rfRefrescarSnapshots = rfRefrescarSnapshots;
   win.verFoto = rfLightbox; // alias legacy de los javascript.php de secciones
 

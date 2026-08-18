@@ -69,7 +69,7 @@ while (true) {
                     if ($el === "." || $el === "..") { continue; }
                     if (strpos($el, "procesar") !== false) { continue; }
                     if (strpos($el, "archiva_") === 0) { $numero_archiva++; }
-                    elseif (substr($el, -8) === ".avi.txt") { $numero_videos++; }
+                    elseif (preg_match('/\.(avi|mp4)\.txt$/', $el)) { $numero_videos++; }
                 }
             }
 
@@ -182,6 +182,16 @@ while (true) {
                     $real = realpath($file);
                     if ($archivo_root !== false && $real !== false && strpos($real, $archivo_root) === 0) {
                         @unlink($file);
+                    }
+                }
+                // la miniatura JPG (poster) se purga junto con el vídeo
+                if (!empty($row["poster"])) {
+                    $poster_file = rtrim(RUTA_PROYECTO, "/") . "/" . $row["poster"];
+                    if (is_file($poster_file)) {
+                        $real_p = realpath($poster_file);
+                        if ($archivo_root !== false && $real_p !== false && strpos($real_p, $archivo_root) === 0) {
+                            @unlink($poster_file);
+                        }
                     }
                 }
                 $ids[] = (int)$row["id"];

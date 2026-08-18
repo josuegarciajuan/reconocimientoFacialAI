@@ -19,8 +19,8 @@ de cruces de línea virtuales, control de aforo y fichajes.
 
 | Servicio | Script | Rol |
 |---|---|---|
-| rf-capturador (p4) | `capturador.php` → `motor/guarda_movimientosV3.py` | Detecta movimiento, graba `.avi` en `motor/videos/<local>/<cam>/` |
-| rf-detector (p5) | `detector.php` → `motor/procesa_video.py` + `motor/clasificador.py` | Cruces de línea (MOG2+tracking) + extracción de caras + clasificación por persona |
+| rf-capturador (p4) | `capturador.php` → `motor/guarda_movimientosV3.py` | Detecta movimiento, graba MP4 H.264 directo (con 2 s de pre-roll y post-roll) en `motor/videos/<local>/<cam>/` |
+| rf-detector (p5) | `detector.php` → `motor/procesa_video.py` + `motor/archiva_video.py` | Cruces de línea (MOG2+tracking) + extracción de caras + archivado a `motor/videos_archivo/` (miniatura incluida) + purga por retención |
 | rf-clasificador (p3) | `clasificadorV2.php` | Ingesta a BD (personas/estancias/fotos) desde `motor/caras/` |
 | rf-panel-control (p1) | `procesos_panel_control.php` → `motor/pose.py` | Validador de pose para el registro webcam multi-pose |
 

@@ -210,6 +210,24 @@
   border-radius: 0.5rem;
 }
 
+/* Modal de vídeo de movimiento (MP4 H.264) */
+.rf-video-modal__player {
+  display: block;
+  width: 100%;
+  max-height: 70vh;
+  background: #000;
+  border-radius: 0.5rem;
+}
+
+/* Miniatura del vídeo en la columna VÍDEO del listado de movimientos */
+.video-thumb {
+  width: 76px;
+  height: 48px;
+  border-radius: 0.375rem;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
 /* --- Formularios -------------------------------------------- */
 .field-label {
   display: block;

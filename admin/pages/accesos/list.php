@@ -26,7 +26,7 @@ $personas = DB::select(
 
 // vídeos de movimiento del local en el rango (para enlazar "Ver vídeo" por estancia)
 $videos = DB::select(
-    "SELECT id, camara_id, fecha_ini FROM videos WHERE local_id = ? AND fecha_ini BETWEEN ? AND ? ORDER BY fecha_ini ASC",
+    "SELECT id, camara_id, fecha_ini, fecha_fin, poster FROM videos WHERE local_id = ? AND fecha_ini BETWEEN ? AND ? ORDER BY fecha_ini ASC",
     [$local_id, $desde_sql, $hasta_sql]
 );
 $videos_por_cam = [];
@@ -107,14 +107,22 @@ foreach ($videos as $v) {
             $fotos = DB::select("SELECT id FROM fotos WHERE estancia_id = ? ORDER BY id ASC", [(int)$r["id"]]);
             $imagen1 = isset($fotos[0]) ? "./caras_procesadas/" . $fotos[0]["id"] . ".jpg" : "";
             $imagen2 = isset($fotos[1]) ? "./caras_procesadas/" . $fotos[1]["id"] . ".jpg" : "";
-            // vídeo de movimiento más cercano en el tiempo (misma cámara, margen configurable)
+            // vídeo de movimiento más cercano en el tiempo (misma cámara, margen configurable).
+            // Distancia entre intervalos [fecha_ini,fecha_fin]: 0 si solapan (lo normal,
+            // el vídeo cubre el movimiento), si no la separación entre intervalos.
             $video_id = 0;
             $ts_ini = strtotime($r["fecha_ini"]);
+            $ts_fin = strtotime($r["fecha_fin"]) ?: $ts_ini;
             if ($ts_ini && isset($videos_por_cam[(int)$r["camara_id"]])) {
                 $mejor = null;
                 $mejor_d = PHP_INT_MAX;
                 foreach ($videos_por_cam[(int)$r["camara_id"]] as $v) {
-                    $d = abs(strtotime($v["fecha_ini"]) - $ts_ini);
+                    $v_ini = strtotime($v["fecha_ini"]);
+                    $v_fin = strtotime((string)($v["fecha_fin"] ?? "")) ?: $v_ini;
+                    if ($v_ini === false) { continue; }
+                    if ($ts_fin < $v_ini) { $d = $v_ini - $ts_fin; }
+                    elseif ($v_fin < $ts_ini) { $d = $ts_ini - $v_fin; }
+                    else { $d = 0; }
                     if ($d < $mejor_d) { $mejor_d = $d; $mejor = $v; }
                 }
                 if ($mejor !== null && $mejor_d <= (int)CONFIG_VIDEO_MARGEN_ESTANCIA) {
@@ -140,7 +148,15 @@ foreach ($videos as $v) {
                 </td>
                 <td class="text-center border-b">
                     <?php if ($video_id > 0): ?>
-                    <a href="../video.php?id=<?= $video_id; ?>" target="_blank" title="Ver el vídeo del movimiento" class="text-theme-1 font-medium text-xs underline">▶ Ver</a>
+                    <a href="javascript:;" title="Ver el vídeo del movimiento"
+                       onclick="rfVideoModal(<?= $video_id; ?>,'../video.php?id=<?= $video_id; ?>','<?= $js_quote("../video.php?id=" . $video_id . "&poster=1"); ?>','<?= $js_quote($nombre); ?> · <?= $js_quote($r["camara_nombre"]); ?>')">
+                        <img alt="Miniatura del vídeo de <?= htmlspecialchars($nombre); ?>"
+                             src="../video.php?id=<?= $video_id; ?>&poster=1"
+                             onerror="this.onerror=null;this.outerHTML='<span class=\'text-theme-1 font-medium text-xs underline cursor-pointer\'>▶ Ver</span>';"
+                             class="video-thumb cursor-pointer">
+                    </a>
+                    <?php else: ?>
+                    <span class="text-xs text-gray-500 dark:text-gray-600">—</span>
                     <?php endif; ?>
                 </td>
                 <td class="text-center border-b"><?= formato_duracion($tiempo); ?></td>
