@@ -21,7 +21,7 @@
         
         
         <li>
-            <a href="?" class="menu menu<?php if(isset($_GET["page"]) or $_GET["page"]=="" or $_GET["page"]=="dash"){ echo "--active"; } ?>">
+            <a href="?" class="menu menu<?php if(!isset($_GET["page"]) or $_GET["page"]=="" or $_GET["page"]=="dash"){ echo "--active"; } ?>">
                 
                 <div class="menu__icon menu__emoji">👁️</div>
                 
