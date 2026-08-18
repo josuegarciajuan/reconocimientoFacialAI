@@ -36,7 +36,7 @@ from motor.core.matching import cosine, match_group  # noqa: E402
 from motor.core.model import analyze           # noqa: E402
 from motor.core.quality import face_sharpness, pose_label  # noqa: E402
 from motor.core.store import FaceStore         # noqa: E402
-from motor.core.superres import enhance        # noqa: E402
+from motor.core.superres import zoom_photo              # noqa: E402
 
 ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 IMG_EXTS = (".jpg", ".jpeg", ".png")
@@ -137,9 +137,10 @@ def process_battery(battery, ruta: str, local_id: str, camara_id: str, cfg: Conf
         os.makedirs(out_dir, exist_ok=True)
         out_name = f"{nombre}_{foto_id}.jpg"
         rep_item = battery[best[0]]
-        # Super-resolución de la foto representativa (solo visual; embeddings intactos):
-        # el crop original es de ~130-180 px, SR x4 lo deja nítido para el panel.
-        final_img = enhance(rep_item["img"], cfg)
+        # Auto-zoom hacia la cara + super-resolución (solo visual; embeddings intactos):
+        # reencuadramos la representativa para que la cara ocupe ~face_fill del encuadre
+        # y SR x4 la deja nítida al tamaño nativo del recorte (el lightbox amplía en pantalla).
+        final_img = zoom_photo(rep_item["img"], best[1].bbox, cfg)
         cv2.imwrite(os.path.join(out_dir, out_name), final_img, [cv2.IMWRITE_JPEG_QUALITY, 95])
         if os.path.exists(rep_item["path"]):
             os.remove(rep_item["path"])

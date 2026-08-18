@@ -43,6 +43,12 @@ class Config:
     sr_target_side: int = 512      # lado mínimo de salida en fallback LANCZOS4+unsharp
     sr_min_side: int = 320         # solo SR si el lado mayor del crop es < esto (caras pequeñas)
 
+    # --- encuadre de la cara (auto-zoom hacia la cara en la foto guardada) ---
+    face_fill: float = 0.70        # fracción del encuadre que debe ocupar la cara
+    face_min_pad: int = 8          # pad mínimo (px) para no cortar frente/barbilla
+                                   # (la foto queda al tamaño nativo del SR x4: nítida;
+                                   #  el lightbox del panel la amplía en pantalla)
+
     # --- enrolamiento ---
     enrollment_min_sharpness: float = 80.0
     min_poses: list[str] = field(default_factory=lambda: ["f", "pi", "pd"])

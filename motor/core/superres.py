@@ -280,6 +280,43 @@ def _fallback_upscale(img: np.ndarray, target_side: int) -> np.ndarray:
 
 # ------------------------------------------------------------------- API pública
 
+def frame_face(img: np.ndarray, bbox, face_fill: float, min_pad: int) -> np.ndarray:
+    """Reencuadra alrededor de la cara para que ocupe ~face_fill del encuadre.
+
+    bbox = (x1, y1, x2, y2) en coordenadas de `img`. Recorte centrado en la cara
+    con ventana (fw/face_fill, fh/face_fill), piso de min_pad px alrededor, y
+    clamp a los bordes de la imagen. La cara ya queda centrada por el recorte
+    simétrico, así que el zoom centrado es seguro (auto-zoom de captura).
+    """
+    h, w = img.shape[:2]
+    x1, y1, x2, y2 = (int(round(v)) for v in bbox)
+    fw, fh = max(1, x2 - x1), max(1, y2 - y1)
+    crop_w = min(max(int(round(fw / face_fill)), fw + 2 * min_pad), w)
+    crop_h = min(max(int(round(fh / face_fill)), fh + 2 * min_pad), h)
+    if crop_w == w and crop_h == h:
+        return img
+    cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
+    x1c = max(0, min(cx - crop_w // 2, w - crop_w))
+    y1c = max(0, min(cy - crop_h // 2, h - crop_h))
+    return img[y1c:y1c + crop_h, x1c:x1c + crop_w]
+
+
+def zoom_photo(img: np.ndarray, bbox, cfg) -> np.ndarray:
+    """Auto-zoom hacia la cara + SR (foto final de la persona).
+
+    1. `frame_face`: reencuadre para que la cara ocupe ~cfg.face_fill del encuadre.
+    2. `enhance`: SR x4 (o fallback LANCZOS4+unsharp) para nitidez.
+
+    NOTA: NO se hace top-up LANCZOS4 para "agrandar" la foto: medido, ese paso
+    difumina la cara (laplaciano de la cara 90.9 -> 5). La foto queda al tamaño
+    nativo del SR (crop x4), nítida y con la cara dominando el encuadre; el
+    lightbox del panel (Capa B) la amplía en pantalla sin perder nitidez nativa.
+    Devuelve SIEMPRE BGR uint8.
+    """
+    z = frame_face(img, bbox, cfg.face_fill, cfg.face_min_pad)
+    return enhance(z, cfg)
+
+
 def enhance(img: np.ndarray, cfg) -> np.ndarray:
     """Mejora una imagen de cara. Devuelve SIEMPRE BGR uint8 (nunca None).
 

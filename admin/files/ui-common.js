@@ -99,6 +99,13 @@
     var img = modal.querySelector(".media-modal__img");
     img.setAttribute("alt", titulo);
     img.src = url;
+    // Auto-zoom hacia la cara: las fotos de caras_procesadas llevan la cara
+    // centrada (recorte simétrico + SR), así que el modo cover las amplía.
+    if (url.indexOf("caras_procesadas/") !== -1) {
+      img.classList.add("media-modal__img--zoom");
+    } else {
+      img.classList.remove("media-modal__img--zoom");
+    }
     rfAbrirModal(modal.id);
   }
 
