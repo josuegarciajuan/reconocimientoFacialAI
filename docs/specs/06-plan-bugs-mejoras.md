@@ -55,3 +55,19 @@
 
 Cada bug/mejora se marca `[x]` en su fichero de fase al completarse, con la verificación
 que la cerró. Los nuevos hallazgos se añaden aquí con ID correlativo.
+
+## 5. Hallazgos 2026-08-18 (calibración + limpieza de identidades)
+
+| # | Hallazgo | Solución | Estado |
+|---|---|---|---|
+| N1 | Umbrales 0.45/0.35 demasiado altos: coseno genuino de videovigilancia ~0.32–0.38 → la misma persona se fragmentaba en varias (p. ej. `KaiZA3…`↔`nRLmEs…` = 0.385 quedaba como "new") | Calibrados a secure=0.40, match=0.30, margin=0.03, group=0.30 (`motor/core/config.py`) | ✅ merge `6990371` |
+| N2 | `match_group` agregaba por media: una cara frontal nítida quedaba diluida por caras en pose de la misma batería | Agregación **max** en `motor/core/matching.py` | ✅ merge `6990371` |
+| N3 | Galerías "catch-all" (`0EQGxYBl4d…`, `M4uYLqx…`, +4 más) con 500 encs de gente mezclada: rompían la regla del margen (impostores hasta 0.85) | `motor/limpiar_catchall.py`: re-clusteriza por centroide (umbral 0.45) → 6 galerías → ~46 personas reales | ✅ merge `9d0e350` |
+| N4 | Botón "Unir" escribía en el legacy `face_enc` (no existe): el clasificador volvía a separar la persona | `motor/juntar_personas_v2.py` usa `FaceStore.merge` sobre `face_enc_v2` | ✅ merge `6990371` |
+| N5 | Duplicados residuales (misma cara enrolada en 2 personas, coseno 1.000) | `motor/backfill_merge.py`: fusiona pares ≥0.60 con coherencia de clúster ≥0.45 (8 fusiones, 71→63) | ✅ merge `9d0e350` |
+| N6 | Pipeline vídeo→caras atascado: 46 markers huérfanos en `aux/` + `CONFIG_LIMITE_VIDEOS=70` (cada `procesa_video.py` carga insightface ~1GB → OOM) | `detector.php`: reintentos (3×) de markers huérfanos, log a `motor/logs/procesa_video_<cam>.log`, límite 70→4 | ✅ merge `9d0e350` |
+
+> Nota de calibración: con los umbrales nuevos, los pares marginales del usuario
+> (`KaiZA3…`↔`nRLmEs…` = 0.385, `1oN9gY…`↔`eYPdoo…` = 0.319) ya se unen en el flujo
+> normal del clasificador (simulado: verdict match); el backfill automático se queda en
+> ≥0.60 para no fusionar impostores (p95 ≈ 0.36).

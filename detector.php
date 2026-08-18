@@ -66,7 +66,10 @@ while (true) {
                 // marker existente: ¿sigue vivo el procesa_video.py que lo creó?
                 if (file_exists($marker)) {
                     $vivo = false;
-                    exec("pgrep -f \"procesa_video.py " . $local_id . " " . $cam_id . " '" . $video . "'\" > /dev/null 2>&1; echo $?", $rc_out);
+                    // [p]rocesa: el corchete evita que pgrep se auto-matchee con el shell
+                    // que lanza este comando (contenía el patrón literal -> siempre "vivo").
+                    $rc_out = [];
+                    exec("pgrep -f \"[p]rocesa_video.py " . $local_id . " " . $cam_id . " '" . $video . "'\" > /dev/null 2>&1; echo $?", $rc_out);
                     $vivo = (isset($rc_out[0]) && trim($rc_out[0]) === "0");
                     $antiguedad = time() - @filemtime($marker);
                     $video_ya_no_existe = !file_exists($dir_videos . $video);
