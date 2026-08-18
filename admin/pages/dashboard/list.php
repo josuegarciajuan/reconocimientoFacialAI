@@ -82,6 +82,61 @@ switch ($filtro) {
 $txt1_1 = entradas_periodo($local_id, $desde1, $hasta1);
 $txt2_2 = entradas_periodo($local_id, $desde2, $hasta2);
 
+// --- Series para el gráfico de líneas (periodo actual vs anterior) ---
+// Se calculan desde PHP según $filtro y se inyectan como variables globales
+// (v_etiquetas / v_datos1 / v_datos2) antes del canvas. app.js las espera
+// como: array de strings (etiquetas) y arrays de números (dos series).
+$v_etiquetas = [];
+$v_datos1 = [];
+$v_datos2 = [];
+
+switch ($filtro) {
+    case "dia":
+        // 24 franjas horarias: hoy vs ayer
+        for ($h = 0; $h < 24; $h++) {
+            $hora = str_pad($h, 2, "0", STR_PAD_LEFT);
+            $v_etiquetas[] = $hora . ":00";
+            $v_datos1[] = entradas_periodo($local_id, date("Y-m-d $hora:00:00"), date("Y-m-d $hora:59:59"));
+            $v_datos2[] = entradas_periodo($local_id, date("Y-m-d $hora:00:00", strtotime("-1 day")), date("Y-m-d $hora:59:59", strtotime("-1 day")));
+        }
+        break;
+
+    case "semana":
+        // 7 días: esta semana vs semana pasada
+        $dias_es = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+        $dias_en = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+        for ($i = 0; $i < 7; $i++) {
+            $dia = $dias_en[$i];
+            $v_etiquetas[] = $dias_es[$i];
+            $v_datos1[] = entradas_periodo($local_id, date("Y-m-d 00:00:00", strtotime("$dia this week")), date("Y-m-d 23:59:59", strtotime("$dia this week")));
+            $v_datos2[] = entradas_periodo($local_id, date("Y-m-d 00:00:00", strtotime("$dia last week")), date("Y-m-d 23:59:59", strtotime("$dia last week")));
+        }
+        break;
+
+    case "mes":
+        // días del mes en curso: este mes vs mes pasado
+        $ultimo_dia = (int)date("t");
+        for ($d = 1; $d <= $ultimo_dia; $d++) {
+            $dia = str_pad($d, 2, "0", STR_PAD_LEFT);
+            $v_etiquetas[] = $dia;
+            $v_datos1[] = entradas_periodo($local_id, date("Y-m-$dia 00:00:00"), date("Y-m-$dia 23:59:59"));
+            $v_datos2[] = entradas_periodo($local_id, date("Y-m-$dia 00:00:00", strtotime("-1 month")), date("Y-m-$dia 23:59:59", strtotime("-1 month")));
+        }
+        break;
+
+    case "anyo":
+        // 12 meses: este año vs año pasado
+        $meses_es = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+        $meses_en = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        for ($m = 1; $m <= 12; $m++) {
+            $label = str_pad($m, 2, "0", STR_PAD_LEFT);
+            $v_etiquetas[] = $meses_es[$m - 1];
+            $v_datos1[] = entradas_periodo($local_id, date("Y-$label-01 00:00:00"), date("Y-$label-01 23:59:59"));
+            $v_datos2[] = entradas_periodo($local_id, date("Y-$label-01 00:00:00", strtotime("-1 year")), date("Y-$label-01 23:59:59", strtotime("-1 year")));
+        }
+        break;
+}
+
 // tendencias para los indicadores de las tarjetas
 function pct_cambio($actual, $anterior) {
     if ($anterior <= 0) {
@@ -152,10 +207,10 @@ function tendencia_pill($pct) {
                 <div class="box p-5">
                     <div class="flex">
                         <div class="kpi-chip"><div class="menu__emoji kpi-emoji">👁️</div></div>
-                        <div class="ml-auto">
-                            <span class="live-dot"></span>
-                            <input type="text" name="aforo_input" id="aforo_input" style="background-color:#0f0c10;width:100px;color:#d8d0c4;border:1px solid rgba(201,162,39,.25)" placeholder="<?= $aforo_actual; ?>">
-                            <button class="button text-white bg-theme-1 shadow-md mr-2" onclick="cambiar_aforo()">Actualizar</button>
+                        <div class="ml-auto aforo-control">
+                            <span class="live-dot" aria-hidden="true"></span>
+                            <input type="text" name="aforo_input" id="aforo_input" class="input border w-20" placeholder="<?= $aforo_actual; ?>" aria-label="Nuevo aforo máximo de la fortaleza" title="Nuevo aforo máximo">
+                            <button type="button" class="button text-white bg-theme-1 shadow-md mr-2" onclick="cambiar_aforo()">Actualizar</button>
                         </div>
                     </div>
                     <div class="kpi-number mt-6 tnum"><?= $aforo_actual; ?></div>
@@ -222,8 +277,31 @@ function tendencia_pill($pct) {
                 </div>
             </div>
         </div>
+        <script>
+            // Series del gráfico calculadas en PHP según el filtro elegido.
+            // app.js las consume como v_etiquetas / v_datos1 / v_datos2
+            // (array de strings + arrays de números, formato idéntico al AJAX).
+            var v_etiquetas = <?= json_encode($v_etiquetas, JSON_UNESCAPED_UNICODE); ?>;
+            var v_datos1 = <?= json_encode($v_datos1); ?>;
+            var v_datos2 = <?= json_encode($v_datos2); ?>;
+
+            // El dashboard es la página por defecto del panel: si la URL no
+            // lleva ?page=dash, app.js no detecta la sección y omite la carga
+            // de las series (gráfico vacío). Normalizamos la URL sin recargar,
+            // ANTES de que se ejecute app.js, para que el gráfico pinte en
+            // cualquier vía de entrada (admin/, ?page=, filtro sin page...).
+            (function () {
+                var params = new URLSearchParams(window.location.search);
+                var page = params.get("page");
+                if (page === null || page === "") {
+                    var u = new URL(window.location.href);
+                    u.searchParams.set("page", "dash");
+                    history.replaceState(null, "", u.toString());
+                }
+            })();
+        </script>
         <div class="report-chart">
-            <canvas id="report-line-chart" height="263" class="mt-6" width="494"></canvas>
+            <canvas id="report-line-chart" class="mt-6"></canvas>
         </div>
     </div>
 </div>
