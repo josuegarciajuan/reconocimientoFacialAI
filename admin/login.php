@@ -56,6 +56,14 @@ if(isset($_GET["login"]) and $_GET["login"]==1 and $_SERVER["REQUEST_METHOD"]===
         <meta name="keywords" content="Reconocimiento Facial">
         <meta name="author" content="Josue">
         <title>Mordor · La Puerta Negra</title>
+        <!-- PWA: manifest + instalación (el modal solo aparece en index.php tras el login) -->
+        <link rel="manifest" href="./manifest.json">
+        <meta name="theme-color" content="#16121a">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <meta name="apple-mobile-web-app-title" content="Barad-dûr">
+        <link rel="apple-touch-icon" href="./files/icon-192.png">
         <!-- Fuerza el tema oscuro (Mordor) antes de que cargue app.js -->
         <script>document.documentElement.classList.add('dark');</script>
         <!-- BEGIN: CSS Assets-->
@@ -1665,5 +1673,12 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
         })();
         </script>
         <!-- END: JS Assets-->
+
+        <!-- PWA: registro del Service Worker (el modal de instalación solo aparece tras el login) -->
+        <script>
+        if ('serviceWorker' in navigator && location.protocol === 'https:') {
+            navigator.serviceWorker.register('./sw.js?v=1', { scope: './' }).catch(function () {});
+        }
+        </script>
     
     </body></html>

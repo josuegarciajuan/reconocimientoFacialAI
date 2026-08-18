@@ -64,6 +64,14 @@ if (!$local) {
         <meta name="keywords" content="Reconocimiento Facial">
         <meta name="author" content="Josue">
         <title>Mordor · El Ojo que Todo lo Ve</title>
+        <!-- PWA: manifest + instalación (ver files/pwa-install.js) -->
+        <link rel="manifest" href="./manifest.json">
+        <meta name="theme-color" content="#16121a">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <meta name="apple-mobile-web-app-title" content="Barad-dûr">
+        <link rel="apple-touch-icon" href="./files/icon-192.png">
         <!-- Fuerza el tema oscuro (Mordor) antes de que cargue app.js -->
         <script>document.documentElement.classList.add('dark');</script>
         <!-- BEGIN: CSS Assets-->
@@ -1717,6 +1725,9 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
 
         <div class="daterangepicker ltr show-calendar opensright"><div class="ranges"></div><div class="drp-calendar left"><div class="calendar-table"></div><div class="calendar-time" style="display: none;"></div></div><div class="drp-calendar right"><div class="calendar-table"></div><div class="calendar-time" style="display: none;"></div></div><div class="drp-buttons"><span class="drp-selected"></span><button class="cancelBtn btn btn-sm btn-default" type="button">Cancel</button><button class="applyBtn btn btn-sm btn-primary" disabled="disabled" type="button">Apply</button> </div></div>
         <!-- END: JS Assets-->
+
+        <!-- PWA: registro SW + modal de instalación (post-login) -->
+        <script src="./files/pwa-install.js?v=1"></script>
 
 </body></html>
 
