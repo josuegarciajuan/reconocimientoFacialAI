@@ -190,4 +190,17 @@ define("CONFIG_fps","14");
 define("CONFIG_maximo_videos","60");
 define("CONFIG_redimesionframe","60");
 define("CONFIG_sensibilidad","1");
+
+/*
+ *  detector.php -> motor/archiva_video.py  y  video.php  (vídeos de movimiento)
+ *  Compresión H.264 CRF: CRF bajo = mejor calidad/más peso; preset lento = más pequeño.
+ *  FPS del archivo remuestrea conservando la duración (velocidad natural en la web).
+ */
+define("CONFIG_VIDEO_CRF", env_or("RF_VIDEO_CRF", "26"));
+define("CONFIG_VIDEO_FPS_ARCHIVO", env_or("RF_VIDEO_FPS_ARCHIVO", "10"));
+define("CONFIG_VIDEO_PRESET", env_or("RF_VIDEO_PRESET", "medium"));
+define("CONFIG_VIDEO_RETENCION_DIAS", env_or("RF_VIDEO_RETENCION_DIAS", "30")); // purga automática
+define("CONFIG_VIDEO_PURGA_LOOP", env_or("RF_VIDEO_PURGA_LOOP", "1800"));       // cada N iteraciones del detector (~30 min)
+define("CONFIG_LIMITE_ARCHIVA", env_or("RF_LIMITE_ARCHIVA", "2"));              // nº máx. de archiva simultáneos
+define("CONFIG_VIDEO_MARGEN_ESTANCIA", "30"); // segundos máx. entre vídeo y estancia para enlazarlos en la UI
     

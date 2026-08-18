@@ -90,6 +90,68 @@ switch ($accion) {
                    [$linea_id, $fecha, $direccion, $x_cruce, $y_cruce, $identificador]);
         break;
 
+    case "guardar_video":
+        // argv: local_id, camara_id, nombre, ruta, fecha_ini, fecha_fin, duracion, peso, fps, ancho, alto
+        $video_id = DB::insert(
+            "INSERT INTO videos (local_id, camara_id, nombre, ruta, fecha_ini, fecha_fin, duracion, peso, fps, ancho, alto)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [(int) arg(2), (int) arg(3), (string) arg(4), (string) arg(5),
+             (string) arg(6), (string) arg(7), (float) arg(8), (int) arg(9),
+             (float) arg(10), (int) arg(11), (int) arg(12)]
+        );
+        echo $video_id;
+        exit;
+
+    case "video_info":
+        // devuelve la fila de `videos` (JSON) por id
+        $v = DB::selectOne("SELECT * FROM videos WHERE id = ?", [(int) arg(2)]);
+        echo json_encode($v);
+        exit;
+
+    case "listado_videos":
+        // argv: local_id [camara_id] [desde] [hasta] [limite]
+        $v_where = ["local_id = ?"];
+        $v_params = [(int) arg(2)];
+        $cam_f = (int) (arg(3) ?? 0);
+        if ($cam_f > 0) { $v_where[] = "camara_id = ?"; $v_params[] = $cam_f; }
+        $desde_f = (string) (arg(4) ?? "");
+        if ($desde_f !== "") { $v_where[] = "fecha_ini >= ?"; $v_params[] = $desde_f; }
+        $hasta_f = (string) (arg(5) ?? "");
+        if ($hasta_f !== "") { $v_where[] = "fecha_ini <= ?"; $v_params[] = $hasta_f; }
+        $limite = min(500, max(1, (int) (arg(6) ?? 200)));
+        $videos = DB::select(
+            "SELECT * FROM videos WHERE " . implode(" AND ", $v_where) . " ORDER BY fecha_ini DESC LIMIT " . $limite,
+            $v_params
+        );
+        echo json_encode($videos);
+        exit;
+
+    case "listado_videos_antiguos":
+        // argv: dias  -> filas (id, ruta) más antiguas que N días (para purgar)
+        $dias = max(1, (int) arg(2));
+        $rows = DB::select(
+            "SELECT id, ruta FROM videos WHERE fecha_ini < (NOW() - INTERVAL ? DAY) ORDER BY fecha_ini ASC LIMIT 500",
+            [$dias]
+        );
+        echo json_encode($rows);
+        exit;
+
+    case "borrar_videos":
+        // argv: id1,id2,...  -> borra las filas de `videos` indicadas (los ficheros los borra el llamante)
+        $ids = [];
+        foreach (explode(",", (string) (arg(2) ?? "")) as $id_raw) {
+            $id_v = (int) trim($id_raw);
+            if ($id_v > 0) { $ids[] = $id_v; }
+        }
+        if (!$ids) {
+            echo "0";
+            break;
+        }
+        $marks = implode(",", array_fill(0, count($ids), "?"));
+        $n = DB::execute("DELETE FROM videos WHERE id IN (" . $marks . ")", $ids);
+        echo (string) $n;
+        break;
+
     default:
         $return["cod"] = "200";
         $return["resp"] = "La accion solicitada no puede ser procesada";
