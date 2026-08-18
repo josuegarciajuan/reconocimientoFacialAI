@@ -15,6 +15,7 @@ motor/.pytest_cache/
 
 # --- Datos runtime (git = código, no datos) ---
 motor/logs/
+motor/models/
 motor/caras/
 motor/removidas/
 motor/bbdd_reconocimiento/

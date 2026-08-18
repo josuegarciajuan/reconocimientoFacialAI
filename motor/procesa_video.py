@@ -104,7 +104,9 @@ def guardar_cara(ruta: str, local_id: str, camara_id: str, fichero: str, frame,
 
     h, w = frame.shape[:2]
     x1, y1, x2, y2 = face.bbox
-    pad = 50
+    # pad proporcional al tamaño de la cara (más contexto en caras pequeñas;
+    # antes era un pad fijo de 50 px que recortaba caras lejanas).
+    pad = int(0.35 * max(y2 - y1, x2 - x1)) + 10
     x1, y1 = max(0, x1 - pad), max(0, y1 - pad)
     x2, y2 = min(w, x2 + pad), min(h, y2 + pad)
     crop = frame[y1:y2, x1:x2]
