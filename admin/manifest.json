@@ -1,0 +1,33 @@
+{
+  "name": "Mordor · El Ojo que Todo lo Ve",
+  "short_name": "Barad-dûr",
+  "description": "Mordor · Vigilancia y Control de Accesos por Reconocimiento Facial.",
+  "start_url": "./index.php",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#0b0a0e",
+  "theme_color": "#16121a",
+  "orientation": "portrait",
+  "lang": "es-ES",
+  "icons": [
+    {
+      "src": "files/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "files/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "files/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
