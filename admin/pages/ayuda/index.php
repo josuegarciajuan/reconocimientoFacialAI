@@ -6,7 +6,7 @@
  * 07/08/2020
  */
 
-switch($_GET["mode"]){
+switch($_GET["mode"] ?? ""){
     case "editar":
         include "edit.php";
         break;
