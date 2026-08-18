@@ -28,8 +28,11 @@ if (isset($_GET["este"]) and $_GET["este"] !== "") {
     if ($o && $c && $original !== $copia) {
         DB::execute("UPDATE estancias SET persona_id = ? WHERE persona_id = ?", [$original, $copia]);
 
-        $cmd = RUTA_PYTHON . " ../motor/juntar_personas.py " . intval($_SESSION["local_id"])
-             . " " . escapeshellarg($o["cod_interno"]) . " " . escapeshellarg($c["cod_interno"]);
+        // face_enc_v2 (motor nuevo): el legacy juntar_personas.py escribía en face_enc
+        // y el clasificador volvía a separar la persona al siguiente evento.
+        $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/juntar_personas_v2.py " . intval($_SESSION["local_id"])
+             . " " . escapeshellarg($o["cod_interno"]) . " " . escapeshellarg($c["cod_interno"])
+             . " --ruta " . RUTA_PROYECTO . " > /dev/null 2>/dev/null &";
         exec($cmd);
 
         DB::execute("DELETE FROM personas WHERE id = ?", [$copia]);

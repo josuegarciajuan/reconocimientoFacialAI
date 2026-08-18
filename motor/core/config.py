@@ -1,7 +1,8 @@
 """Configuración central del motor (sustituye a los ~36 argv mágicos del código legacy).
 
-Los umbrales de matching son valores iniciales razonables para ArcFace (coseno);
-se calibran en la Fase 1 con `motor/eval` (T1.4). Ver NFR-ACC en docs/specs/01.
+Los umbrales de matching se calibraron con datos reales de videovigilancia (2026-08-18):
+el coseno genuino (misma persona) en recortes de cámara es ~0.32-0.38, por lo que los
+valores iniciales (0.45/0.35) fragmentaban identidades. Ver NFR-ACC en docs/specs/01.
 """
 from __future__ import annotations
 
@@ -20,10 +21,11 @@ class Config:
     frontal_pitch_tol: float = 25.0
 
     # --- matching (similitud coseno, embeddings L2-normalizados) ---
-    secure_threshold: float = 0.45   # >= esto: match seguro
-    match_threshold: float = 0.35    # >= esto: match si la diferencia con el 2º >= margin
-    margin: float = 0.05             # separación frente al 2º para evitar confusión
-    group_threshold: float = 0.40    # intra-batería: >= esto = misma persona en la escena
+    # Calibrado 2026-08-18 con datos reales: genuino ~0.32-0.38, impostor p95 ~0.36.
+    secure_threshold: float = 0.40   # >= esto: match seguro
+    match_threshold: float = 0.30    # >= esto: match si la diferencia con el 2º >= margin
+    margin: float = 0.03             # separación frente al 2º para evitar confusión
+    group_threshold: float = 0.30    # intra-batería: >= esto = misma persona en la escena
 
     # --- agrupación temporal ---
     batch_seconds: float = 6.0       # ventana para agrupar fotos de un mismo evento
