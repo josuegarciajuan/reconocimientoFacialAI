@@ -53,14 +53,20 @@ FPS = float(sys.argv[6])
 maximo_videos=int(sys.argv[7]) #tiempo en segundos maximo de grabado
 REDIMENSIONFRAME=float(sys.argv[8])
 SENSIBILIDAD=int(sys.argv[9]) #CUANTO MAS BAJO menos sensible
-FTP_SERVER=sys.argv[10]   # legacy, sin uso (almacenaje local vía archiva_video.py)
-FTP_USER=sys.argv[11]
-FTP_PASS=sys.argv[12]
-URL_CONEXION=sys.argv[13]
 
-# segundos antes/después del movimiento que se incluyen en el vídeo (1-2 s por defecto)
-SEG_ANTES = float(sys.argv[14]) if len(sys.argv) > 14 else 2.0
-SEG_DESPUES = float(sys.argv[15]) if len(sys.argv) > 15 else 2.0
+# Orden de argv (capturador.php): 1-9 como arriba, 10=seg_antes, 11=seg_despues,
+# 12=FTP_SERVER, 13=FTP_USER, 14=FTP_PASS, 15=URL_CONEXION (Jos_Thread añade un
+# identificador de 12 chars al final, se ignora). Fallback a la posición legacy 13
+# para invocaciones antiguas con 13 args.
+SEG_ANTES = float(sys.argv[10]) if len(sys.argv) > 10 else 2.0
+SEG_DESPUES = float(sys.argv[11]) if len(sys.argv) > 11 else 2.0
+FTP_SERVER = sys.argv[12] if len(sys.argv) > 12 else "localhost"  # legacy, sin uso
+FTP_USER = sys.argv[13] if len(sys.argv) > 13 else "-"
+FTP_PASS = sys.argv[14] if len(sys.argv) > 14 else "-"
+URL_CONEXION = sys.argv[15] if len(sys.argv) > 15 else (sys.argv[13] if len(sys.argv) > 13 else "")
+
+printLog("seg_antes=" + str(SEG_ANTES) + " seg_despues=" + str(SEG_DESPUES))
+printLog("url=" + URL_CONEXION)
 
 tiempo_espera_fps=int(1000/FPS)   # en 1000 ms / numero Fotogramas por segundo  =>  tiempo espera entre fotogramas
 frames_a_analizar=int(segundos_analizar*FPS)  #cada X frames es 1 segundo
