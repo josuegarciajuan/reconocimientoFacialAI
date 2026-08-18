@@ -23,6 +23,16 @@ $personas = DB::select(
      ORDER BY p.nombre ASC, p.cod_interno ASC",
     [$local_id]
 );
+
+// vídeos de movimiento del local en el rango (para enlazar "Ver vídeo" por estancia)
+$videos = DB::select(
+    "SELECT id, camara_id, fecha_ini FROM videos WHERE local_id = ? AND fecha_ini BETWEEN ? AND ? ORDER BY fecha_ini ASC",
+    [$local_id, $desde_sql, $hasta_sql]
+);
+$videos_por_cam = [];
+foreach ($videos as $v) {
+    $videos_por_cam[(int)$v["camara_id"]][] = $v;
+}
 ?>
 
 <div class="intro-y flex flex-col sm:flex-row items-center mt-8">
@@ -66,6 +76,7 @@ $personas = DB::select(
                 <th class="border-b-2 text-center">PERSONA</th>
                 <th class="border-b-2 text-center">CÁMARA</th>
                 <th class="border-b-2 text-center">FOTOS</th>
+                <th class="border-b-2 text-center">VÍDEO</th>
                 <th class="border-b-2 text-center">TIEMPO</th>
             </tr>
         </thead>
@@ -96,6 +107,20 @@ $personas = DB::select(
             $fotos = DB::select("SELECT id FROM fotos WHERE estancia_id = ? ORDER BY id ASC", [(int)$r["id"]]);
             $imagen1 = isset($fotos[0]) ? "./caras_procesadas/" . $fotos[0]["id"] . ".jpg" : "";
             $imagen2 = isset($fotos[1]) ? "./caras_procesadas/" . $fotos[1]["id"] . ".jpg" : "";
+            // vídeo de movimiento más cercano en el tiempo (misma cámara, margen configurable)
+            $video_id = 0;
+            $ts_ini = strtotime($r["fecha_ini"]);
+            if ($ts_ini && isset($videos_por_cam[(int)$r["camara_id"]])) {
+                $mejor = null;
+                $mejor_d = PHP_INT_MAX;
+                foreach ($videos_por_cam[(int)$r["camara_id"]] as $v) {
+                    $d = abs(strtotime($v["fecha_ini"]) - $ts_ini);
+                    if ($d < $mejor_d) { $mejor_d = $d; $mejor = $v; }
+                }
+                if ($mejor !== null && $mejor_d <= (int)CONFIG_VIDEO_MARGEN_ESTANCIA) {
+                    $video_id = (int)$mejor["id"];
+                }
+            }
             $ts = strtotime($r["fecha_ini"]);
             $fecha_fmt = $ts ? date("d/m/Y H:i:s", $ts) : $r["fecha_ini"];
         ?>
@@ -112,6 +137,11 @@ $personas = DB::select(
                         <img alt="Foto 2 de <?= htmlspecialchars($nombre); ?>" onclick="verFoto('<?= $js_quote($imagen2); ?>','<?= $js_quote($nombre); ?>')" onerror="this.style.display='none'" class="img-thumb cursor-pointer border border-gray-700 dark:border-gray-700" src="<?= htmlspecialchars($imagen2); ?>">
                         <?php endif; ?>
                     </div>
+                </td>
+                <td class="text-center border-b">
+                    <?php if ($video_id > 0): ?>
+                    <a href="../video.php?id=<?= $video_id; ?>" target="_blank" title="Ver el vídeo del movimiento" class="text-theme-1 font-medium text-xs underline">▶ Ver</a>
+                    <?php endif; ?>
                 </td>
                 <td class="text-center border-b"><?= formato_duracion($tiempo); ?></td>
             </tr>
