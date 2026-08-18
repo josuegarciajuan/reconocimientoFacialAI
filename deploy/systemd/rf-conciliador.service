@@ -1,0 +1,15 @@
+[Unit]
+Description=RF Conciliador de fichajes (p6) — concilia entradas/salidas con horario del local
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+WorkingDirectory=/root/reconocimientoFacial
+ExecStart=/usr/bin/php /root/reconocimientoFacial/conciliador.php
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target

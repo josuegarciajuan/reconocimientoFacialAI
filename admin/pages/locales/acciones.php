@@ -13,11 +13,28 @@ if (isset($_GET["submit"]) and $_GET["submit"] !== "") {
     $usuario = $_POST["usuario"] ?? "";
     $aforo_max = (int)($_POST["aforo_max"] ?? 0);
 
+    // Horario de fichajes (vacio => NULL => detección simple en el conciliador)
+    $jornada_partida = (isset($_POST["jornada_partida"]) && (int)$_POST["jornada_partida"] === 1) ? 1 : 0;
+    $hora_entrada1 = ($_POST["hora_entrada1"] ?? "") !== "" ? $_POST["hora_entrada1"] : null;
+    $hora_salida1  = ($_POST["hora_salida1"] ?? "") !== "" ? $_POST["hora_salida1"] : null;
+    $hora_entrada2 = ($_POST["hora_entrada2"] ?? "") !== "" ? $_POST["hora_entrada2"] : null;
+    $hora_salida2  = ($_POST["hora_salida2"] ?? "") !== "" ? $_POST["hora_salida2"] : null;
+    $margen_fichaje_min = max(0, (int)($_POST["margen_fichaje_min"] ?? 30));
+
     if (isset($_GET["id"]) and $_GET["id"] !== "") {
         $id = (int)$_GET["id"];
-        DB::execute("UPDATE locales SET nombre=?, url_logo=?, usuario=?, aforo_max=? WHERE id=?", [$nombre, $url_logo, $usuario, $aforo_max, $id]);
+        DB::execute(
+            "UPDATE locales SET nombre=?, url_logo=?, usuario=?, aforo_max=?,
+                    jornada_partida=?, hora_entrada1=?, hora_salida1=?, hora_entrada2=?, hora_salida2=?, margen_fichaje_min=?
+             WHERE id=?",
+            [$nombre, $url_logo, $usuario, $aforo_max, $jornada_partida, $hora_entrada1, $hora_salida1, $hora_entrada2, $hora_salida2, $margen_fichaje_min, $id]
+        );
     } else {
-        $id = DB::insert("INSERT INTO locales (nombre, url_logo, usuario, aforo_max) VALUES (?, ?, ?, ?)", [$nombre, $url_logo, $usuario, $aforo_max]);
+        $id = DB::insert(
+            "INSERT INTO locales (nombre, url_logo, usuario, aforo_max, jornada_partida, hora_entrada1, hora_salida1, hora_entrada2, hora_salida2, margen_fichaje_min)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [$nombre, $url_logo, $usuario, $aforo_max, $jornada_partida, $hora_entrada1, $hora_salida1, $hora_entrada2, $hora_salida2, $margen_fichaje_min]
+        );
 
         // scaffolding de carpetas (Fase 5: sustituir chmod 777 por permisos correctos)
         $cmds = [

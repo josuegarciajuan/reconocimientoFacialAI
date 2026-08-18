@@ -205,4 +205,11 @@ define("CONFIG_LIMITE_ARCHIVA", env_or("RF_LIMITE_ARCHIVA", "2"));              
 define("CONFIG_VIDEO_SEG_ANTES", env_or("RF_VIDEO_SEG_ANTES", "2"));           // pre-roll: 1-2 s antes del movimiento
 define("CONFIG_VIDEO_SEG_DESPUES", env_or("RF_VIDEO_SEG_DESPUES", "2"));       // post-roll: 1-2 s después del movimiento
 define("CONFIG_VIDEO_MARGEN_ESTANCIA", "30"); // segundos máx. entre vídeo y estancia para enlazarlos en la UI
+
+/*
+ * conciliador.php (fichajes con horario) -> libs/conciliador.php
+ */
+define("CONFIG_CONCILIADOR_LOOP", env_or("RF_CONCILIADOR_LOOP", "60"));                // segundos entre pasadas del conciliador
+define("CONFIG_CONCILIADOR_BACKFILL_DIAS", env_or("RF_CONCILIADOR_BACKFILL_DIAS", "30")); // días históricos poblados la 1ª vez por local
+define("CONFIG_CONCILIADOR_MARGEN_DEFECTO", env_or("RF_CONCILIADOR_MARGEN_DEFECTO", "30")); // margen (min) por defecto si el local no lo define
     
