@@ -18,8 +18,8 @@ class Jos_Thread{
     function __construct($id="0",$comando="",$debug=false){
         $this->id=$id;
         $this->comando=$comando;
+        $this->file_aux="libs/threads_files_aux/aux_".$this->id.".txt";  // fix: ANTES de crearIdentificador
         $this->identificador_unico=$this->crearIdentificador();
-        $this->file_aux="libs/threads_files_aux/aux_".$this->id.".txt";
         $this->debug=$debug;
         $this->tiempo_inicial = microtime(true);
         

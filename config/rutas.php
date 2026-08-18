@@ -94,9 +94,8 @@ switch($server){
         die("Entorno no soportado: ".$server);
 }
 
-// Credenciales del superadmin (M10: mover a .env en Fase 5).
-// PASSWORD POR DEFECTO: "cambiar-ahora" — CAMBIAR obligatoriamente.
-define("ADMIN_USER", "admin");
-define("ADMIN_PASS_HASH", password_hash("cambiar-ahora", PASSWORD_DEFAULT));
+// Credenciales del superadmin (M10: desde .env). Por defecto: cambiar-ahora.
+define("ADMIN_USER", env_or("RF_ADMIN_USER", "admin"));
+define("ADMIN_PASS_HASH", password_hash(env_or("RF_ADMIN_PASS", "cambiar-ahora"), PASSWORD_DEFAULT));
 
 require_once(__DIR__ . "/config.php");
