@@ -4,7 +4,7 @@
 set -euo pipefail
 
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
-SERVICES=(rf-capturador rf-detector rf-clasificador rf-panel-control)
+SERVICES=(rf-capturador rf-detector rf-clasificador rf-panel-control rf-live)
 
 echo "==> Copiando unidades systemd desde $DIR/deploy/systemd"
 for s in "${SERVICES[@]}"; do
@@ -25,5 +25,5 @@ if [ "${1:-}" = "start" ]; then
 fi
 
 echo "==> Listo. Comandos útiles:"
-echo "    systemctl status rf-{capturador,detector,clasificador,panel-control}"
-echo "    journalctl -u rf-detector -f"
+echo "    systemctl status rf-{capturador,detector,clasificador,panel-control,live}"
+echo "    journalctl -u rf-live -f"
