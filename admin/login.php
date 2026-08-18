@@ -50,14 +50,18 @@ if(isset($_GET["login"]) and $_GET["login"]==1 and $_SERVER["REQUEST_METHOD"]===
 <!DOCTYPE html>
 <html lang="en"><!-- BEGIN: Head --><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         
-        <link href="./files_login/logo.svg" rel="shortcut icon">
+        <link href="./files_login/logo-sauron.png" rel="shortcut icon">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="Reconocimiento Facial.">
+        <meta name="description" content="Barad-dûr · Control de Accesos por Reconocimiento Facial.">
         <meta name="keywords" content="Reconocimiento Facial">
         <meta name="author" content="Josue">
-        <title>Reconocimiento Facial</title>
+        <title>Barad-dûr · Control de Accesos</title>
         <!-- BEGIN: CSS Assets-->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="./files_login/app.css">
+        <link rel="stylesheet" href="./files/custom.css">
         <!-- END: CSS Assets-->
     <style type="text/css">/*!
  * 
@@ -1592,26 +1596,71 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
                         <form action="?login=1" method="POST">
                             <?= csrf_field(); ?>
                             <div class="intro-x mt-8">
-                                <input type="text" class="intro-x login__input input input--lg border border-gray-300 block" placeholder="Usuario" name="usuario">
-                                <input type="password" class="intro-x login__input input input--lg border border-gray-300 block mt-4" placeholder="Contraseña" name="contrasenya">
+                                <div class="input-icon">
+                                    <svg class="feather feather-user" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                    <input type="text" class="login__input input input--lg border border-gray-300 block" placeholder="Usuario" name="usuario" autocomplete="username">
+                                </div>
+                                <div class="input-icon mt-4">
+                                    <svg class="feather feather-lock" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                    <input type="password" id="campo_contrasenya" class="login__input input input--lg border border-gray-300 block" placeholder="Contraseña" name="contrasenya" autocomplete="current-password">
+                                    <button type="button" class="password-toggle" onclick="alternarContrasenya()" aria-label="Mostrar u ocultar contraseña">
+                                        <svg class="feather feather-eye" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                    </button>
+                                </div>
                             </div>
                             <?php if ($login_error !== ""): ?>
-                                <div class="intro-x mt-2 text-red-600"><?= htmlspecialchars($login_error); ?></div>
+                                <div class="intro-x login-alert mt-4" role="alert">
+                                    <svg class="feather feather-alert-triangle" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                                    <?= htmlspecialchars($login_error); ?>
+                                </div>
                             <?php endif; ?>
                             <div class="intro-x mt-5 xl:mt-8 text-center xl:text-left">
-                                <button class="button button--lg w-full xl:w-32 text-white bg-theme-1 xl:mr-3">Acceder</button>
-
+                                <button id="boton_acceder" class="button button--lg w-full xl:w-32 btn-login xl:mr-3">Acceder</button>
                             </div>
                         </form>    
                             
                     </div>
                 </div>
                 <!-- END: Login Form -->
+                
+                <!-- BEGIN: Brand Panel -->
+                <div class="hidden xl:flex py-5 my-10 justify-end">
+                    <div class="login-brand w-3/4 max-w-lg">
+                        <img class="login-brand__hero" src="./files_login/hero-sauron.png" alt="El ojo que todo lo ve">
+                        <div class="login-brand__overlay">
+                            <img class="login-brand__logo" src="./files_login/logo-sauron.png" alt="Barad-dûr">
+                            <div class="login-brand__title">Barad-dûr</div>
+                            <div class="login-brand__tagline">El ojo que todo lo ve vigila cada acceso. Control de entradas y salidas por reconocimiento facial.</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- END: Brand Panel -->
             </div>
         </div>
 
         <!-- BEGIN: JS Assets-->
         <script src="./files_login/app.js"></script>
+        <script>
+        function alternarContrasenya() {
+            var campo = document.getElementById("campo_contrasenya");
+            if (campo.type === "password") {
+                campo.type = "text";
+            } else {
+                campo.type = "password";
+            }
+        }
+        (function () {
+            var form = document.querySelector("form[action='?login=1']");
+            if (!form) return;
+            form.addEventListener("submit", function () {
+                var boton = document.getElementById("boton_acceder");
+                if (boton) {
+                    boton.disabled = true;
+                    boton.textContent = "Accediendo…";
+                }
+            });
+        })();
+        </script>
         <!-- END: JS Assets-->
     
-</body></html>
+    </body></html>

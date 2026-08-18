@@ -58,14 +58,18 @@ if (!$local) {
 </style><style>@media print {  .gm-style .gmnoprint, .gmnoprint {    display:none  }}@media screen {  .gm-style .gmnoscreen, .gmnoscreen {    display:none  }}</style><style>.gm-style-pbc{transition:opacity ease-in-out;background-color:rgba(0,0,0,0.45);text-align:center}.gm-style-pbt{font-size:22px;color:white;font-family:Roboto,Arial,sans-serif;position:relative;margin:0;top:50%;-webkit-transform:translateY(-50%);-ms-transform:translateY(-50%);transform:translateY(-50%)}
 </style><style>.gm-style img{max-width: none;}.gm-style {font: 400 11px Roboto, Arial, sans-serif; text-decoration: none;}</style>
         
-        <link href="./files/logo.svg" rel="shortcut icon">
+        <link href="./files/logo-sauron.png" rel="shortcut icon">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="Reconocimiento Facial.">
+        <meta name="description" content="Barad-dûr · Control de Accesos por Reconocimiento Facial.">
         <meta name="keywords" content="Reconocimiento Facial">
         <meta name="author" content="Josue">
-        <title>Reconocimiento Facial</title>
+        <title>Barad-dûr · Control de Accesos</title>
         <!-- BEGIN: CSS Assets-->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="./files/app.css">
+        <link rel="stylesheet" href="./files/custom.css">
         <!-- END: CSS Assets-->
         <script type="text/javascript" src="./includes/jquery.js"></script>
         <script type="text/javascript" src="./includes/ajax.js"></script>
@@ -1645,9 +1649,11 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
         <div class="border-b border-theme-24 -mt-10 md:-mt-5 -mx-3 sm:-mx-8 px-3 sm:px-8 pt-3 md:pt-0 mb-10">
             <div class="top-bar-boxed flex items-center">
                 <!-- BEGIN: Logo -->
-                <a href="?" class="-intro-x hidden md:flex">
-                    <img alt="" class="w-6" src="./files/logo.svg">
-                    <span class="text-white text-lg ml-3"> Mid<span class="font-medium">one</span> </span>
+                <a href="?" class="-intro-x hidden md:flex baradur-brand">
+                    <img alt="Barad-dûr" class="baradur-brand__img" src="./files/logo-sauron.png">
+                    <span class="baradur-brand__word">Barad-<span class="font-medium">dûr</span>
+                        <span class="baradur-brand__sub">Control de Accesos</span>
+                    </span>
                 </a>
                 <!-- END: Logo -->
                 <?php require_once "breadcrumb.php"; ?>
@@ -1670,8 +1676,11 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
         
 
         <!-- BEGIN: Dark Mode Switcher-->
-        <div class="dark-mode-switcher shadow-md fixed bottom-0 right-0 box dark:bg-dark-2 border rounded-full w-40 h-12 flex items-center justify-center z-50 mb-10 mr-10">
-            <div class="mr-4 text-gray-700 dark:text-gray-300">Dark Mode</div>
+        <div class="dark-mode-switcher shadow-md fixed bottom-0 right-0 box dark:bg-dark-2 border rounded-full w-44 h-12 flex items-center justify-center z-50 mb-10 mr-10" role="switch" aria-checked="false" aria-label="Alternar modo oscuro">
+            <div class="dm-label">
+                <svg class="feather feather-moon dm-icon dm-icon--moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                <svg class="feather feather-sun dm-icon dm-icon--sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            </div>
             <input class="input input--switch border" type="checkbox" value="1">
         </div>
         <!-- END: Dark Mode Switcher-->
