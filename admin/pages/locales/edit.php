@@ -55,6 +55,43 @@ if (isset($_GET["id"]) and $_GET["id"] !== "") {
                     </div>
                 </div>
 
+                <div class="mt-5">
+                    <h3 class="field-label">Horario de trabajo habitual (fichajes)</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                        La primera captura del día por cámara de puerta es la entrada y la última por cámara de
+                        salida es la salida definitiva. Con jornada partida se generan hasta 2 bloques al día.
+                        Déjalo vacío para usar la detección simple (1 entrada + 1 salida).
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                        <div class="sm:col-span-2">
+                            <label for="jornada_partida" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+                                <input type="checkbox" name="jornada_partida" id="jornada_partida" value="1" <?php if ((int)($local["jornada_partida"] ?? 0) === 1) { echo "checked='checked'"; } ?>>
+                                Jornada partida (entra y sale 2 veces al día)
+                            </label>
+                        </div>
+                        <div>
+                            <label for="hora_entrada1" class="field-label">Entrada 1</label>
+                            <input type="time" name="hora_entrada1" id="hora_entrada1" value="<?= htmlspecialchars($local["hora_entrada1"] ?? ""); ?>" class="input border w-full">
+                        </div>
+                        <div>
+                            <label for="hora_salida1" class="field-label">Salida 1</label>
+                            <input type="time" name="hora_salida1" id="hora_salida1" value="<?= htmlspecialchars($local["hora_salida1"] ?? ""); ?>" class="input border w-full">
+                        </div>
+                        <div>
+                            <label for="hora_entrada2" class="field-label">Entrada 2 (tarde)</label>
+                            <input type="time" name="hora_entrada2" id="hora_entrada2" value="<?= htmlspecialchars($local["hora_entrada2"] ?? ""); ?>" class="input border w-full">
+                        </div>
+                        <div>
+                            <label for="hora_salida2" class="field-label">Salida 2 (tarde)</label>
+                            <input type="time" name="hora_salida2" id="hora_salida2" value="<?= htmlspecialchars($local["hora_salida2"] ?? ""); ?>" class="input border w-full">
+                        </div>
+                        <div>
+                            <label for="margen_fichaje_min" class="field-label">Margen (minutos)</label>
+                            <input type="number" name="margen_fichaje_min" id="margen_fichaje_min" min="0" step="5" value="<?= (int)($local["margen_fichaje_min"] ?? 30); ?>" class="input border w-full">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="mt-5 flex justify-end">
                     <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="aceptar()">Aceptar</button>
                 </div>
