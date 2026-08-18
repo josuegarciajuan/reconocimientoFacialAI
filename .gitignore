@@ -3,6 +3,9 @@ motor/venv/
 .env
 *.env
 
+# --- IDE ---
+nbproject/
+
 # --- Python ---
 __pycache__/
 *.py[cod]
