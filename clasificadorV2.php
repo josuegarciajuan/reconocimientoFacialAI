@@ -10,6 +10,7 @@
 require_once("config/rutas.php");
 require_once("libs/db.php");
 require_once("libs/fechas.php");
+require_once("libs/vinculos.php");
 
 $path = "motor/caras/";
 
@@ -135,6 +136,15 @@ function procesa_foto($ruta, $elemento) {
             }
         }
     }
+
+    // Enlace inmediato de la estancia con su vídeo de movimiento (misma cámara + solape).
+    // El daemon vinculador.php (libs/vinculos.php) es la red de seguridad/backfill.
+    vinculos_vincular_estancia(
+        ["id" => $estancia_id, "camara_id" => $camara_id,
+         "fecha_ini" => $datos["entrada"]["fecha_completa_consegs"],
+         "fecha_fin" => $datos["salida"]["fecha_completa_consegs"]],
+        (int)CONFIG_VINCULO_MARGEN_SEGS
+    );
 
     $foto_id = DB::insert(
         "INSERT INTO fotos (estancia_id, nombre_real_antesconversion, identificador_unico) VALUES (?, ?, ?)",
