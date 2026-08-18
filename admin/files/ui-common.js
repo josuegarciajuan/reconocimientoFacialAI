@@ -177,6 +177,67 @@
     }
   }
 
+  /* ------------------------------------------------------------------ */
+  /* Drawer lateral del panel (móvil <768px)                             */
+  /* Hamburguesa (#panel-drawer-toggler) -> abre; cierra con el botón ✕, */
+  /* el backdrop o la tecla Esc. Bloquea el scroll de fondo.             */
+  /* ------------------------------------------------------------------ */
+  function rfPanelDrawer() {
+    var drawer = doc.getElementById("panel-drawer");
+    if (!drawer) {
+      return;
+    }
+    var backdrop = doc.getElementById("panel-drawer-backdrop");
+    var toggler = doc.getElementById("panel-drawer-toggler");
+    var closer = doc.getElementById("panel-drawer-close");
+
+    function abrir() {
+      drawer.classList.add("panel-drawer--open");
+      drawer.setAttribute("aria-hidden", "false");
+      if (backdrop) {
+        backdrop.classList.add("panel-drawer-backdrop--open");
+        backdrop.setAttribute("aria-hidden", "false");
+      }
+      doc.body.classList.add("panel-drawer-lock");
+    }
+
+    function cerrar() {
+      drawer.classList.remove("panel-drawer--open");
+      drawer.setAttribute("aria-hidden", "true");
+      if (backdrop) {
+        backdrop.classList.remove("panel-drawer-backdrop--open");
+        backdrop.setAttribute("aria-hidden", "true");
+      }
+      doc.body.classList.remove("panel-drawer-lock");
+    }
+
+    if (toggler) {
+      toggler.addEventListener("click", function (e) {
+        e.preventDefault();
+        abrir();
+      });
+    }
+    if (closer) {
+      closer.addEventListener("click", function (e) {
+        e.preventDefault();
+        cerrar();
+      });
+    }
+    if (backdrop) {
+      backdrop.addEventListener("click", cerrar);
+    }
+    // cerrar al pulsar cualquier item del menú
+    drawer.querySelectorAll(".menu").forEach(function (item) {
+      item.addEventListener("click", cerrar);
+    });
+    // tecla Escape
+    doc.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && drawer.classList.contains("panel-drawer--open")) {
+        cerrar();
+      }
+    });
+  }
+
   /* Exposición global */
   win.rfToast = rfToast;
   win.rfLightbox = rfLightbox;
@@ -186,6 +247,7 @@
 
   // Inicialización automática de refresco cuando hay rejilla de cámaras
   $(function () {
+    rfPanelDrawer();
     if (doc.querySelectorAll(".cam-card__img[data-snapshot]").length > 0) {
       rfRefrescarSnapshots(15000);
     }

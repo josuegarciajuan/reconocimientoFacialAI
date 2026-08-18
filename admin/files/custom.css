@@ -855,3 +855,157 @@ input:focus-visible {
     animation: none;
   }
 }
+
+/* ============================================================
+   Responsive (<768px): barra superior FIJA + drawer lateral
+   ============================================================ */
+@media (max-width: 767px) {
+  /* --- Barra superior fija al hacer scroll ------------------ */
+  .topbar-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 55;
+    margin-top: 0; /* cancela -mt-10 (ya no hay barra móvil encima) */
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+    margin-bottom: 1.25rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(11, 10, 14, 0.92);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(201, 162, 39, 0.22);
+    box-shadow: 0 10px 26px -14px rgba(0, 0, 0, 0.75);
+  }
+
+  .topbar-sticky .top-bar-boxed {
+    height: 52px;
+  }
+
+  /* --- Hamburguesa ------------------------------------------- */
+  .panel-drawer-toggler {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    flex: none;
+    border-radius: 0.75rem;
+    color: var(--mordor-ceniza);
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .panel-drawer-toggler:active {
+    background: rgba(255, 90, 31, 0.14);
+    color: var(--mordor-brasa);
+  }
+
+  /* --- Drawer: panel deslizante desde la izquierda ----------- */
+  .panel-drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 280px;
+    max-width: 85vw;
+    z-index: 70;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: var(--mordor-carbon);
+    border-right: 1px solid rgba(201, 162, 39, 0.25);
+    box-shadow: 0 0 60px -12px rgba(0, 0, 0, 0.85);
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+  }
+
+  .panel-drawer--open {
+    transform: translateX(0);
+  }
+
+  .panel-drawer__header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 1.1rem;
+    border-bottom: 1px solid rgba(201, 162, 39, 0.18);
+    background: linear-gradient(180deg, rgba(255, 90, 31, 0.1), transparent);
+  }
+
+  .panel-drawer__header .baradur-brand {
+    margin-right: auto;
+  }
+
+  .panel-drawer__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    flex: none;
+    border-radius: 9999px;
+    color: var(--mordor-humo);
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .panel-drawer__close:active {
+    background: rgba(255, 90, 31, 0.16);
+    color: var(--mordor-brasa);
+  }
+
+  .panel-drawer__menu {
+    padding: 0.75rem 0.6rem 1.5rem;
+  }
+
+  .panel-drawer__menu li {
+    margin-bottom: 0.125rem;
+  }
+
+  .panel-drawer .menu {
+    display: flex;
+    align-items: center;
+    height: 46px;
+    padding: 0 0.9rem;
+    border-radius: 0.75rem;
+    color: var(--mordor-ceniza);
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .panel-drawer .menu .menu__title {
+    margin-left: 0.8rem;
+    font-weight: 500;
+  }
+
+  .panel-drawer .menu:hover:not(.menu--active) {
+    background: rgba(255, 90, 31, 0.1);
+  }
+
+  .panel-drawer .menu.menu--active {
+    background: linear-gradient(180deg, rgba(255, 90, 31, 0.2), rgba(224, 60, 0, 0.1));
+    box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.4);
+    color: #f6e6ae;
+  }
+
+  /* --- Backdrop ---------------------------------------------- */
+  .panel-drawer-backdrop {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 65;
+    background: rgba(0, 0, 0, 0.55);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.28s ease, visibility 0.28s ease;
+  }
+
+  .panel-drawer-backdrop--open {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* Bloquea el scroll del fondo mientras el drawer está abierto */
+  body.panel-drawer-lock {
+    overflow: hidden;
+  }
+}
