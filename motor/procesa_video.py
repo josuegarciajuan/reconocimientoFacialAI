@@ -90,6 +90,30 @@ def guardar_cruce(ruta: str, ev, linea: Line, fecha_base: datetime | None) -> No
     php_ws("guarda_cruce", linea.line_id, fecha_str, str(ev.direction), str(int(ev.x)), str(int(ev.y)), uid)
 
 
+def torso_bbox(face, frame_w: int, frame_h: int, cfg: Config):
+    """Caja de torso (F1, L1b): bajo la barbilla, ancho/alto proporcionales a la cara.
+
+    Devuelve (x1, y1, x2, y2) o None si el crop no es viable (persona muy cerca,
+    caja fuera del frame). NO altera el bbox ni el embedding de la cara: es un
+    artefacto aparte con el mismo stem (mismo timestamp) para poder emparejarlo.
+    """
+    x1, y1, x2, y2 = face.bbox
+    fw, fh = x2 - x1, y2 - y1
+    if fw <= 0 or fh <= 0:
+        return None
+    cx = (x1 + x2) / 2.0
+    w = fw * cfg.torso_w_face
+    h = fh * cfg.torso_h_face
+    tx1, tx2 = cx - w / 2.0, cx + w / 2.0
+    ty1 = y2 + int(0.15 * fh)          # barbilla + pequeño offset
+    ty2 = ty1 + h
+    tx1, ty1 = max(0, int(tx1)), max(0, int(ty1))
+    tx2, ty2 = min(frame_w, int(tx2)), min(frame_h, int(ty2))
+    if (tx2 - tx1) < 0.5 * fw or (ty2 - ty1) < 0.5 * fh:
+        return None
+    return (tx1, ty1, tx2, ty2)
+
+
 def guardar_cara(ruta: str, local_id: str, camara_id: str, fichero: str, frame,
                  face, segs: float, cfg: Config, buffer: list) -> None:
     # dedup: si ya guardamos una cara casi idéntica hace poco, la saltamos
@@ -117,6 +141,17 @@ def guardar_cara(ruta: str, local_id: str, camara_id: str, fichero: str, frame,
     os.makedirs(out_dir, exist_ok=True)
     nombre = f"{fichero}_{segs:.6f}"
     cv2.imwrite(os.path.join(out_dir, nombre + ".jpg"), crop)
+
+    # F1: crop de torso separado (mismo stem) para la capa L1b.
+    # Si no hay torso visible (persona muy cerca / caja fuera), NO se guarda:
+    # la capa quedará sin señal (c_torso=0) y el peso se redistribuye.
+    tb = torso_bbox(face, w, h, cfg)
+    if tb is not None:
+        torso = frame[tb[1]:tb[3], tb[0]:tb[2]]
+        if torso.size > 0:
+            torso_dir = os.path.join(ruta, "motor/caras/sinclasificar", local_id, f"{camara_id}_cuerpo")
+            os.makedirs(torso_dir, exist_ok=True)
+            cv2.imwrite(os.path.join(torso_dir, nombre + ".jpg"), torso)
 
 
 def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,

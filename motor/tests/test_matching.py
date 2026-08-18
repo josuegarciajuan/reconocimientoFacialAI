@@ -2,7 +2,9 @@
 import numpy as np
 
 from motor.core.config import Config
-from motor.core.matching import MatchResult, cosine, decide, match_group
+from motor.core.matching import (MatchResult, cosine, decide, face_confidence,
+                                 match_group, scores_per_person_pose_aware,
+                                 select_candidates)
 from motor.core.store import FaceStore
 
 
@@ -122,3 +124,43 @@ def test_match_group_uses_max_not_mean(tmp_path):
 
     # comprobación de la premisa: con media NO habría match (0.34 < match_threshold)
     assert (0.60 + 0.08) / 2.0 < cfg.match_threshold
+
+
+# --- F2: confidence, pose-aware y candidatos ---
+
+def test_face_confidence_high_with_margin_and_sharpness():
+    cfg = Config()
+    c = face_confidence(0.45, 0.10, 100.0, cfg)
+    assert 0.5 < c <= 1.0
+
+
+def test_face_confidence_low_when_no_margin():
+    cfg = Config()
+    c_close = face_confidence(0.40, 0.39, 100.0, cfg)
+    c_far = face_confidence(0.40, 0.10, 100.0, cfg)
+    assert c_close < c_far
+
+
+def test_decide_exposes_confidence():
+    cfg = Config(secure_threshold=0.5, match_threshold=0.35, margin=0.05)
+    r = decide({"A": 0.6, "B": 0.1}, cfg, sharpness=90.0)
+    assert r.verdict == "match"
+    assert r.confidence > 0.5
+
+
+def test_pose_aware_skips_incompatible(tmp_path):
+    """Pose-aware: un query de perfil no compara contra encodings frontales."""
+    base = np.zeros(512, dtype=np.float64)
+    base[0] = 1.0
+    cfg = Config()
+    store = FaceStore(str(tmp_path / "f_pose"), max_per_person=10)
+    store.add("F", [base.astype(np.float32)], [80.0], ["f"])        # frontal
+    store.add("P", [(0.5 * base + 0.5 * np.roll(base, 1)).astype(np.float32)], [80.0], ["pi"])
+
+    q = (0.9 * base + 0.1 * np.roll(base, 1)).astype(np.float32)
+    q /= np.linalg.norm(q)
+    full = {c: float(np.max(store.person_encodings(c) @ q)) for c in store.persons()}
+    pa = scores_per_person_pose_aware(q, store, cfg, "pi")
+    # pose-aware descarta la persona frontal (sin encodings de perfil compatibles)
+    assert pa["F"] == 0.0
+    assert full["F"] > 0.0

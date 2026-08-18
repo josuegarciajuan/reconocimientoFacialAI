@@ -123,3 +123,60 @@ def test_concurrent_adds_no_loss(tmp_path):
         t.join()
     assert not errors
     assert set(s.persons()) == {f"P{i}" for i in range(8)}
+
+
+# --- F1/F6: apariencia + snapshot/merge_undoable ---
+
+def test_add_appearance_and_read(tmp_path):
+    s = FaceStore(str(tmp_path / "f"), max_per_person=10)
+    s.add("A", [rnd_emb(1)], [80.0], ["f"])
+    s.add_appearance("A", np.full(144, 0.01, dtype=np.float32), ts=1.0, src="crop.jpg")
+    ap = s.person_appearance("A")
+    assert ap and len(ap["desc"]) == 1
+    assert ap["ts"] == [1.0]
+    assert ap["src"] == ["crop.jpg"]
+
+
+def test_merge_undoable_journal(tmp_path):
+    p = str(tmp_path / "f")
+    s = FaceStore(p)
+    s.add("A", [rnd_emb(1)], [80.0], ["f"])
+    s.add("B", [rnd_emb(2), rnd_emb(3)], [70.0, 60.0], ["pi", "pd"])
+    s.add_appearance("B", np.full(144, 0.5, dtype=np.float32), ts=2.0, src="b.jpg")
+
+    journal = s.merge_undoable("A", "B")
+    assert journal["op"] == "merge"
+    assert journal["src"] == "B" and journal["dst"] == "A"
+    assert journal["encodings_moved"] == 2
+    assert "src_person" in journal and journal["src_person"]["encodings"]
+
+    # después del merge: B eliminada, A con 3 encodings + apariencia fusionada
+    assert set(s.persons()) == {"A"}
+    assert s.count("A") == 3
+    assert len(s.person_appearance("A")["desc"]) == 1
+
+    # rollback: re-inyectar la persona fuente
+    s.restore_person("B", journal["src_person"])
+    assert set(s.persons()) == {"A", "B"}
+    assert s.count("B") == 2
+    assert len(s.person_appearance("B")["desc"]) == 1
+
+
+def test_snapshot_deep_copy(tmp_path):
+    s = FaceStore(str(tmp_path / "f"), max_per_person=10)
+    s.add("A", [rnd_emb(1)], [80.0], ["f"])
+    snap = s.snapshot()
+    assert snap["persons"]["A"]["encodings"]
+    s.add("B", [rnd_emb(2)], [70.0], ["f"])
+    assert "B" not in snap["persons"]      # copia independiente
+
+
+def test_save_load_snapshot_bytes(tmp_path):
+    p = str(tmp_path / "f")
+    s = FaceStore(p)
+    s.add("A", [rnd_emb(1)], [80.0], ["f"])
+    out = str(tmp_path / "backup" / "face_enc_v2.bak")
+    s.save_snapshot_bytes(out)
+    s2 = FaceStore(p)
+    data = s2.load_snapshot_bytes(out)
+    assert set(data["persons"]) == {"A"}
