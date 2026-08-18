@@ -48,26 +48,31 @@ $personas_opciones = DB::select(
 
 <div class="intro-y flex flex-col sm:flex-row items-center mt-8">
     <h2 class="text-lg font-medium mr-auto">Rutas</h2>
-    <div class="w-full sm:w-auto flex mt-4 sm:mt-0">
-
-    Persona:&nbsp;
-    <select class="input border mr-2" id="persona_id">
-        <option value="-" <?php if (!isset($_GET["persona_id"]) || $_GET["persona_id"] === "-") { echo "selected='selected'"; } ?>>Todos</option>
-        <?php foreach ($personas_opciones as $p): ?>
-            <option value="<?= $p["id"]; ?>" <?php if (isset($_GET["persona_id"]) && $_GET["persona_id"] == $p["id"]) { echo "selected='selected'"; } ?>>
-                <?= htmlspecialchars($p["cod_interno"] . " - " . $p["nombre"]); ?>
-            </option>
-        <?php endforeach; ?>
-    </select>
-
-    Desde:&nbsp;<input data-timepicker="true" class="datepicker input border mx-auto" id="desde" value="<?= $desde; ?>" style="width:120px">
-    Hasta:&nbsp;<input data-timepicker="true" class="datepicker input border mx-auto" id="hasta" value="<?= $hasta; ?>" style="width:120px">
-    <button class="button text-white bg-theme-1 shadow-md mr-2" onclick="buscar()">Buscar</button>
-
+    <div class="filter-bar mt-4 sm:mt-0">
+        <div class="filter-item">
+            <label for="persona_id">Persona</label>
+            <select class="input border" id="persona_id">
+                <option value="-" <?php if (!isset($_GET["persona_id"]) || $_GET["persona_id"] === "-") { echo "selected='selected'"; } ?>>Todos</option>
+                <?php foreach ($personas_opciones as $p): ?>
+                    <option value="<?= $p["id"]; ?>" <?php if (isset($_GET["persona_id"]) && $_GET["persona_id"] == $p["id"]) { echo "selected='selected'"; } ?>>
+                        <?= htmlspecialchars($p["cod_interno"] . " - " . $p["nombre"]); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="desde">Desde</label>
+            <input data-timepicker="true" class="datepicker input border w-32" id="desde" value="<?= $desde; ?>">
+        </div>
+        <div class="filter-item">
+            <label for="hasta">Hasta</label>
+            <input data-timepicker="true" class="datepicker input border w-32" id="hasta" value="<?= $hasta; ?>">
+        </div>
+        <button class="button text-white bg-theme-1 shadow-md" onclick="buscar()">Buscar</button>
     </div>
 </div>
 
-<div class="intro-y datatable-wrapper box p-5 mt-5">
+<div class="intro-y datatable-wrapper box p-5 mt-5 table-wrap">
     <table class="table table-report table-report--bordered display datatable w-full">
         <thead>
             <tr>
@@ -81,26 +86,34 @@ $personas_opciones = DB::select(
         </thead>
         <tbody>
         <?php if ($num_puerta === 0): ?>
-            <tr><td colspan="6" align="center">No hay cámaras de entrada (puerta) configuradas en este local.</td></tr>
+            <tr><td colspan="6" class="text-center py-8 text-gray-500 dark:text-gray-500">No hay cámaras de entrada (puerta) configuradas en este local.</td></tr>
         <?php elseif (count($rutas_data) === 0): ?>
-            <tr><td colspan="6" align="center">No hay rutas para el filtro seleccionado.</td></tr>
+            <tr><td colspan="6" class="text-center py-8 text-gray-500 dark:text-gray-500">No hay rutas para el filtro seleccionado.</td></tr>
         <?php else: ?>
-            <?php $par = "odd"; foreach ($rutas_data as $i => $r): ?>
+            <?php
+            $js_quote = function ($s) {
+                return htmlspecialchars(str_replace(["\\", "'"], ["\\\\", "\\'"], (string)$s), ENT_QUOTES);
+            };
+            $par = "odd";
+            foreach ($rutas_data as $i => $r):
+                $ts_ini = strtotime($r["inicio"]);
+                $ts_fin = strtotime($r["fin"]);
+                $inicio_fmt = $ts_ini ? date("d/m/Y H:i", $ts_ini) : $r["inicio"];
+                $fin_fmt = $ts_fin ? date("d/m/Y H:i", $ts_fin) : $r["fin"];
+            ?>
                 <tr class="<?= $par; ?>">
-                    <td class="border-b" align="center"><?= htmlspecialchars($r["inicio"]); ?></td>
-                    <td class="border-b" align="center"><?= htmlspecialchars($r["fin"]); ?></td>
-                    <td class="border-b" align="center">
-                        <?= htmlspecialchars($r["nombre"]); ?>
-                        <div class="flex sm:justify-center">
-                            <div class="intro-x w-10 h-10 image-fit">
-                                <img alt="" class="rounded-full" src="<?= htmlspecialchars($r["imagen"]); ?>">
-                            </div>
+                    <td class="text-center border-b"><?= htmlspecialchars($inicio_fmt); ?></td>
+                    <td class="text-center border-b"><?= htmlspecialchars($fin_fmt); ?></td>
+                    <td class="text-center border-b">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-1 sm:gap-2">
+                            <span><?= htmlspecialchars($r["nombre"]); ?></span>
+                            <img alt="Foto de <?= htmlspecialchars($r["nombre"]); ?>" onclick="verFoto('<?= $js_quote($r["imagen"]); ?>','<?= $js_quote($r["nombre"]); ?>')" onerror="this.style.display='none'" class="img-thumb cursor-pointer mx-auto sm:mx-0" src="<?= htmlspecialchars($r["imagen"]); ?>">
                         </div>
                     </td>
-                    <td class="border-b" align="center"><?= $r["num_camaras"]; ?></td>
-                    <td class="border-b" align="center"><?= htmlspecialchars($r["tiempo"]); ?></td>
-                    <td class="border-b w-5">
-                        <div class="flex sm:justify-center items-center">
+                    <td class="text-center border-b"><?= $r["num_camaras"]; ?></td>
+                    <td class="text-center border-b"><?= htmlspecialchars($r["tiempo"]); ?></td>
+                    <td class="text-center border-b">
+                        <div class="flex flex-col sm:flex-row sm:justify-center items-center gap-2">
                             <a href="javascript:;" data-toggle="modal" data-target="#basic-modal-preview" onclick="ver_ruta(<?= $i; ?>)" class="button inline-block bg-theme-1 text-white">Ver Ruta</a>
                             <a target="_blank" href="?page=visitantes&mode=editar&id=<?= $r["persona_id"]; ?>" class="button inline-block bg-theme-1 text-white">Ver Persona</a>
                         </div>
@@ -114,5 +127,13 @@ $personas_opciones = DB::select(
 </div>
 
 <div class="modal" id="basic-modal-preview">
-    <canvas id="canvasID" width="<?= CANVAS_WIDTH; ?>" height="<?= CANVAS_HEIGHT; ?>" style="position:relative;left:0px;border-style:solid;border-width:1px;border-color:black;z-index:999999"></canvas>
+    <div class="modal__content box p-5 modal__content--xl">
+        <div class="flex items-center mb-4">
+            <h3 class="media-modal__title mr-auto truncate">Plano de la ruta</h3>
+            <a href="javascript:;" data-dismiss="modal" class="button button--sm text-white bg-theme-6 ml-3">Cerrar</a>
+        </div>
+        <div class="plan-wrap">
+            <canvas id="canvasID" width="<?= CANVAS_WIDTH; ?>" height="<?= CANVAS_HEIGHT; ?>" style="border-style:solid;border-width:1px;border-color:var(--mordor-humo);"></canvas>
+        </div>
+    </div>
 </div>

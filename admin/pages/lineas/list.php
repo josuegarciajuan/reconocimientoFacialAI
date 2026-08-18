@@ -32,39 +32,46 @@ $lineas = DB::select("SELECT id, nombre FROM lineas WHERE " . $lineas_where, $li
 
 <div class="intro-y flex flex-col sm:flex-row items-center mt-8">
     <h2 class="text-lg font-medium mr-auto">Listado Cruces Lineas</h2>
-    <div class="w-full sm:w-auto flex mt-4 sm:mt-0">
-
-    Cámara:&nbsp;
-    <select class="input border mr-2" id="camara">
-        <option value="-" <?php if (!$camara_filtro) { echo "selected='selected'"; } ?>>Todas</option>
-        <?php foreach ($camaras as $c): ?>
-            <option value="<?= $c["id"]; ?>" <?php if ($camara_filtro === (int)$c["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars($c["descripcion"]); ?></option>
-        <?php endforeach; ?>
-    </select>
-
-    Linea:&nbsp;
-    <select class="input border mr-2" id="linea">
-        <option value="-" <?php if (!$linea_filtro) { echo "selected='selected'"; } ?>>Todas</option>
-        <?php foreach ($lineas as $l): ?>
-            <option value="<?= $l["id"]; ?>" <?php if ($linea_filtro === (int)$l["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars($l["nombre"]); ?></option>
-        <?php endforeach; ?>
-    </select>
-
-    Trayectoria:&nbsp;
-    <select class="input border mr-2" id="trayectoria">
-        <option value="-" <?php if (!$trayectoria) { echo "selected='selected'"; } ?>>Todas</option>
-        <option value="2" <?php if ($trayectoria === 2) { echo "selected='selected'"; } ?>>-></option>
-        <option value="1" <?php if ($trayectoria === 1) { echo "selected='selected'"; } ?>><-</option>
-    </select>
-
-    Desde:&nbsp;<input data-timepicker="true" class="datepicker input border mx-auto" id="desde" value="<?= $desde; ?>" style="width:120px">
-    Hasta:&nbsp;<input data-timepicker="true" class="datepicker input border mx-auto" id="hasta" value="<?= $hasta; ?>" style="width:120px">
-    <button class="button text-white bg-theme-1 shadow-md mr-2" onclick="buscar()">Buscar</button>
-
+    <div class="filter-bar mt-4 sm:mt-0">
+        <div class="filter-item">
+            <label for="camara">Cámara</label>
+            <select class="input border" id="camara">
+                <option value="-" <?php if (!$camara_filtro) { echo "selected='selected'"; } ?>>Todas</option>
+                <?php foreach ($camaras as $c): ?>
+                    <option value="<?= $c["id"]; ?>" <?php if ($camara_filtro === (int)$c["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars($c["descripcion"]); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="linea">Línea</label>
+            <select class="input border" id="linea">
+                <option value="-" <?php if (!$linea_filtro) { echo "selected='selected'"; } ?>>Todas</option>
+                <?php foreach ($lineas as $l): ?>
+                    <option value="<?= $l["id"]; ?>" <?php if ($linea_filtro === (int)$l["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars($l["nombre"]); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="trayectoria">Dirección</label>
+            <select class="input border" id="trayectoria">
+                <option value="-" <?php if (!$trayectoria) { echo "selected='selected'"; } ?>>Todas</option>
+                <option value="2" <?php if ($trayectoria === 2) { echo "selected='selected'"; } ?>>→ Izquierda a Derecha</option>
+                <option value="1" <?php if ($trayectoria === 1) { echo "selected='selected'"; } ?>>← Derecha a Izquierda</option>
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="desde">Desde</label>
+            <input data-timepicker="true" class="datepicker input border w-32" id="desde" value="<?= $desde; ?>">
+        </div>
+        <div class="filter-item">
+            <label for="hasta">Hasta</label>
+            <input data-timepicker="true" class="datepicker input border w-32" id="hasta" value="<?= $hasta; ?>">
+        </div>
+        <button class="button text-white bg-theme-1 shadow-md" onclick="buscar()">Buscar</button>
     </div>
 </div>
 
-<div class="intro-y datatable-wrapper box p-5 mt-5">
+<div class="intro-y datatable-wrapper box p-5 mt-5 table-wrap">
     <table class="table table-report table-report--bordered display datatable w-full">
         <thead>
             <tr>
@@ -73,7 +80,6 @@ $lineas = DB::select("SELECT id, nombre FROM lineas WHERE " . $lineas_where, $li
                 <th class="border-b-2 text-center">LINEA</th>
                 <th class="border-b-2 text-center">DIRECCION</th>
                 <th class="border-b-2 text-center">FOTOS</th>
-                <th class="border-b-2 text-center">ACCIONES</th>
             </tr>
         </thead>
         <tbody>
@@ -98,24 +104,32 @@ $lineas = DB::select("SELECT id, nombre FROM lineas WHERE " . $lineas_where, $li
             $params
         );
 
+        $js_quote = function ($s) {
+            return htmlspecialchars(str_replace(["\\", "'"], ["\\\\", "\\'"], (string)$s), ENT_QUOTES);
+        };
         $par = "odd";
         foreach ($cruces as $cr) {
-            $direccion = ((int)$cr["direccion"] === 1) ? "<-" : "->";
+            // Convención del panel (legado): 1 = de derecha a izquierda, 2 = de izquierda a derecha (pantalla).
+            $dir_flecha = ((int)$cr["direccion"] === 1) ? "←" : "→";
+            $dir_texto  = ((int)$cr["direccion"] === 1) ? "Derecha a Izquierda" : "Izquierda a Derecha";
             $imagen = URL_BASE_SERVER . "motor/fotos_lineas/" . $cr["linea_id"] . "/" . $cr["identificador"] . ".jpg";
+            $ts = strtotime($cr["fecha"]);
+            $fecha_fmt = $ts ? date("d/m/Y H:i:s", $ts) : $cr["fecha"];
         ?>
             <tr class="<?= $par; ?>">
-                <td class="border-b" align="center"><?= date("Y-m-d H:i:s", strtotime($cr["fecha"])); ?></td>
-                <td class="border-b" align="center"><?= htmlspecialchars($cr["camara_nombre"] ?? ""); ?></td>
-                <td class="border-b" align="center"><?= htmlspecialchars($cr["linea_nombre"] ?? ""); ?></td>
-                <td class="border-b" align="center"><?= $direccion; ?></td>
+                <td class="text-center border-b"><?= htmlspecialchars($fecha_fmt); ?></td>
+                <td class="text-center border-b"><?= htmlspecialchars($cr["camara_nombre"] ?? ""); ?></td>
+                <td class="text-center border-b"><?= htmlspecialchars($cr["linea_nombre"] ?? ""); ?></td>
+                <td class="text-center border-b">
+                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-gray-800 dark:bg-gray-900 text-gray-300 border border-gray-700 dark:border-gray-700">
+                        <span aria-hidden="true"><?= $dir_flecha; ?></span><?= $dir_texto; ?>
+                    </span>
+                </td>
                 <td class="text-center border-b">
                     <div class="flex sm:justify-center">
-                        <div class="intro-x w-10 h-10 image-fit">
-                            <img alt="" onclick="scale(this,this.id,1)" src="<?= htmlspecialchars($imagen); ?>" style="position:relative;left:-10px">
-                        </div>
+                        <img alt="Foto del cruce en <?= htmlspecialchars($cr["linea_nombre"] ?? "línea"); ?>" onclick="verFoto('<?= $js_quote($imagen); ?>','Cruce · <?= $js_quote($cr["linea_nombre"] ?? "Línea"); ?>')" onerror="this.style.display='none'" class="img-thumb cursor-pointer" src="<?= htmlspecialchars($imagen); ?>">
                     </div>
                 </td>
-                <td class="border-b w-5"></td>
             </tr>
         <?php
             $par = ($par === "odd") ? "pair" : "odd";

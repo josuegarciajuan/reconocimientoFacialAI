@@ -27,24 +27,29 @@ $trabajadores = DB::select(
 
 <div class="intro-y flex flex-col sm:flex-row items-center mt-8">
     <h2 class="text-lg font-medium mr-auto">Listado Fichajes</h2>
-    <div class="w-full sm:w-auto flex mt-4 sm:mt-0">
-
-    Trabajador:&nbsp;
-    <select class="input border mr-2" id="persona_id">
-        <option value="-" <?php if (!$persona_filtro) { echo "selected='selected'"; } ?>>Todos</option>
-        <?php foreach ($trabajadores as $t): ?>
-            <option value="<?= $t["id"]; ?>" <?php if ($persona_filtro === (int)$t["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars($t["cod_interno"] . " - " . $t["nombre"]); ?></option>
-        <?php endforeach; ?>
-    </select>
-
-    Desde:&nbsp;<input data-timepicker="true" class="datepicker input border mx-auto" id="desde" value="<?= $desde; ?>" style="width:120px">
-    Hasta:&nbsp;<input data-timepicker="true" class="datepicker input border mx-auto" id="hasta" value="<?= $hasta; ?>" style="width:120px">
-    <button class="button text-white bg-theme-1 shadow-md mr-2" onclick="buscar()">Buscar</button>
-
+    <div class="filter-bar mt-4 sm:mt-0">
+        <div class="filter-item">
+            <label for="persona_id">Trabajador</label>
+            <select class="input border" id="persona_id">
+                <option value="-" <?php if (!$persona_filtro) { echo "selected='selected'"; } ?>>Todos</option>
+                <?php foreach ($trabajadores as $t): ?>
+                    <option value="<?= $t["id"]; ?>" <?php if ($persona_filtro === (int)$t["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars($t["cod_interno"] . " - " . $t["nombre"]); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="desde">Desde</label>
+            <input data-timepicker="true" class="datepicker input border w-32" id="desde" value="<?= $desde; ?>">
+        </div>
+        <div class="filter-item">
+            <label for="hasta">Hasta</label>
+            <input data-timepicker="true" class="datepicker input border w-32" id="hasta" value="<?= $hasta; ?>">
+        </div>
+        <button class="button text-white bg-theme-1 shadow-md" onclick="buscar()">Buscar</button>
     </div>
 </div>
 
-<div class="intro-y datatable-wrapper box p-5 mt-5">
+<div class="intro-y datatable-wrapper box p-5 mt-5 table-wrap">
     <table class="table table-report table-report--bordered display datatable w-full">
         <thead>
             <tr>
@@ -55,7 +60,6 @@ $trabajadores = DB::select(
                 <th class="border-b-2 text-center">SALIDA</th>
                 <th class="border-b-2 text-center">CÁMARA</th>
                 <th class="border-b-2 text-center">FOTO</th>
-                <th class="border-b-2 text-center">ACCIONES</th>
             </tr>
         </thead>
         <tbody>
@@ -105,23 +109,35 @@ $trabajadores = DB::select(
             }
         }
 
+        $js_quote = function ($s) {
+            return htmlspecialchars(str_replace(["\\", "'"], ["\\\\", "\\'"], (string)$s), ENT_QUOTES);
+        };
         $par = "odd";
         foreach ($data as $d) {
             $nombre = ($d["nombre"] !== "") ? $d["nombre"] : $d["cod_interno"];
+            $entrada_fmt = ($d["entrada"] !== "") ? date("d/m/Y H:i", strtotime($d["entrada"])) : "—";
+            $salida_fmt  = ($d["salida"] !== "") ? date("d/m/Y H:i", strtotime($d["salida"])) : "—";
         ?>
             <tr class="<?= $par; ?>">
-                <td class="border-b" align="center"><?= htmlspecialchars($d["cod_interno"] . " - " . $nombre); ?></td>
-                <td class="text-center border-b"><?= htmlspecialchars($d["entrada"]); ?></td>
+                <td class="text-center border-b"><?= htmlspecialchars($d["cod_interno"] . " - " . $nombre); ?></td>
+                <td class="text-center border-b"><?= htmlspecialchars($entrada_fmt); ?></td>
                 <td class="text-center border-b"><?= htmlspecialchars($d["camara_entrada"]); ?></td>
                 <td class="text-center border-b">
-                    <img alt="" onclick="scale(this,this.id,1)" class="rounded-full" src="<?= htmlspecialchars($d["foto_entrada"]); ?>">
+                    <?php if ($d["foto_entrada"] !== ""): ?>
+                    <img alt="Foto de entrada de <?= htmlspecialchars($nombre); ?>" onclick="verFoto('<?= $js_quote($d["foto_entrada"]); ?>','Entrada · <?= $js_quote($nombre); ?>')" onerror="this.style.display='none'" class="img-thumb cursor-pointer" src="<?= htmlspecialchars($d["foto_entrada"]); ?>">
+                    <?php else: ?>
+                    <span class="text-gray-500 dark:text-gray-500">—</span>
+                    <?php endif; ?>
                 </td>
-                <td class="text-center border-b"><?= htmlspecialchars($d["salida"]); ?></td>
+                <td class="text-center border-b"><?= htmlspecialchars($salida_fmt); ?></td>
                 <td class="text-center border-b"><?= htmlspecialchars($d["camara_salida"]); ?></td>
                 <td class="text-center border-b">
-                    <img alt="" onclick="scale(this,this.id,1)" class="rounded-full" src="<?= htmlspecialchars($d["foto_salida"]); ?>">
+                    <?php if ($d["foto_salida"] !== ""): ?>
+                    <img alt="Foto de salida de <?= htmlspecialchars($nombre); ?>" onclick="verFoto('<?= $js_quote($d["foto_salida"]); ?>','Salida · <?= $js_quote($nombre); ?>')" onerror="this.style.display='none'" class="img-thumb cursor-pointer" src="<?= htmlspecialchars($d["foto_salida"]); ?>">
+                    <?php else: ?>
+                    <span class="text-gray-500 dark:text-gray-500">—</span>
+                    <?php endif; ?>
                 </td>
-                <td class="border-b w-5"></td>
             </tr>
         <?php
             $par = ($par === "odd") ? "pair" : "odd";
