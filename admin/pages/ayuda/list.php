@@ -206,7 +206,7 @@ $diagnostico = "Usuario: " . ($usuario !== "" ? $usuario : "—")
     </a>
 
     <a href="?page=visitantes" class="ayuda-card box p-5 intro-y block">
-        <div class="ayuda-card__head"><span class="ayuda-card__emoji" aria-hidden="true">🧙</span><span class="ayuda-card__title">Pueblos · Visitantes</span></div>
+        <div class="ayuda-card__head"><span class="ayuda-card__emoji" aria-hidden="true">👹</span><span class="ayuda-card__title">Pueblos · Visitantes</span></div>
         <p class="ayuda-card__text">Registra visitantes con un vídeo corto para crear su identidad facial. El listado permite buscar por nombre o código y filtrar por cámara y fechas.</p>
         <span class="ayuda-card__go">Entrar →</span>
     </a>

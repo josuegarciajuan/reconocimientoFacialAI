@@ -56,8 +56,8 @@
         <li>
             <a href="?page=visitantes" class="menu menu<?php if(isset($_GET["page"]) and $_GET["page"]=="visitantes"){ echo "--active"; } ?>">
 
-                <div class="menu__icon menu__emoji">🧙</div>
-
+                <div class="menu__icon menu__emoji">👹</div>
+                
                 <div class="menu__title"> Pueblos </div>
             </a>
         </li>
