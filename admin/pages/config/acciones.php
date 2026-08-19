@@ -87,6 +87,16 @@ switch ($_GET["accion"]) {
                 if (!is_dir("pages/config/planos")) {
                     @mkdir("pages/config/planos", 0777, true);
                 }
+                /* Respaldo del croquis anterior antes de sobrescribir: copia
+                 * histórica con marca de tiempo en planos/historial/ por si hay
+                 * que recuperar una versión previa. */
+                if (file_exists($dibujo)) {
+                    $hist = "pages/config/planos/historial";
+                    if (!is_dir($hist)) {
+                        @mkdir($hist, 0777, true);
+                    }
+                    @copy($dibujo, $hist . "/plano_dibujo_" . $local_id . "_" . date("Ymd_His") . ".png");
+                }
                 if (file_put_contents($dibujo, $bin) !== false) {
                     DB::execute("UPDATE locales SET plano_activo = 'dibujo' WHERE id = ?", [$local_id]);
                     header("Location: ?page=config&tab=plano");

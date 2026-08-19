@@ -35,6 +35,8 @@ motor/llm_cache/
 # Informes de re-matching (reagrupar.py)
 motor/reagrupar_out/
 aux/
+# Respaldo histórico de croquis del plano (nunca versionar)
+admin/pages/config/planos/historial/
 admin/caras_procesadas/
 admin/fotos_camara/
 admin/files/videos_registro/
