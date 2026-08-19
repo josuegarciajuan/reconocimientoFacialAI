@@ -1180,3 +1180,107 @@ input:focus-visible {
     transition: none;
   }
 }
+
+/* ============================================================
+   MENÚ · "El Ojo en Vivo" destacado + iconos SVG temáticos
+   (2026-08-19) — tema Mordor
+   ============================================================ */
+
+/* --- Micro-iconos SVG del menú (Líneas / Fichajes) ---------- */
+.menu__svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+  flex: none;
+  color: var(--mordor-humo); /* trazo principal (currentColor) */
+}
+
+/* Activo: el trazo principal pasa a dorado claro */
+.dark .top-menu--active .menu__svg,
+.dark .menu--active .menu__svg {
+  color: #f6e6ae;
+}
+
+/* Hover (no activo): el trazo principal se aclara */
+.top-nav > ul li .top-menu:hover:not(.top-menu--active) .menu__svg,
+.panel-drawer .menu:hover:not(.menu--active) .menu__svg {
+  color: var(--mordor-ceniza);
+  transition: color 0.15s ease;
+}
+
+/* --- Ojo de Sauron a tamaño de menú (reutiliza el SVG del logo) */
+.sauron-eye--menu {
+  width: 22px;
+  height: 22px;
+  cursor: inherit; /* hereda la mano del enlace, no 'default' */
+  filter: drop-shadow(0 0 4px rgba(255, 90, 31, 0.5));
+  animation: sauron-eye-pulse--menu 4.5s ease-in-out infinite;
+  transform-origin: 50% 50%;
+}
+
+@keyframes sauron-eye-pulse--menu {
+  0%, 100% { filter: drop-shadow(0 0 3px rgba(255, 90, 31, 0.4)); }
+  50%      { filter: drop-shadow(0 0 7px rgba(255, 90, 31, 0.7)); }
+}
+
+/* --- Píldora destacada (desktop) ----------------------------
+   Solo background + box-shadow: NO tocar animation/opacity/
+   transform del ancla (la intro de app.css anima esas props). */
+.dark .top-nav > ul li .top-menu--featured {
+  background: linear-gradient(135deg,
+      rgba(255, 90, 31, 0.20) 0%,
+      rgba(224, 60, 0, 0.06) 55%,
+      rgba(201, 162, 39, 0.12) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(201, 162, 39, 0.5),  /* hairline oro */
+    0 0 10px -2px rgba(255, 90, 31, 0.55),    /* halo de brasa */
+    0 4px 14px -8px rgba(224, 60, 0, 0.7);    /* sombra de magma */
+}
+
+/* Mantiene el hairline oro cuando además está activo */
+.dark .top-nav > ul li .top-menu--featured.top-menu--active {
+  box-shadow:
+    inset 0 0 0 1px rgba(201, 162, 39, 0.7),
+    0 0 12px -2px rgba(255, 90, 31, 0.7),
+    0 6px 18px -8px rgba(224, 60, 0, 0.6);
+}
+
+/* --- Elemento destacado (drawer móvil) ----------------------- */
+.panel-drawer .menu.menu--featured {
+  background: linear-gradient(135deg,
+      rgba(255, 90, 31, 0.18) 0%,
+      rgba(224, 60, 0, 0.05) 55%,
+      rgba(201, 162, 39, 0.10) 100%);
+  box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.45);
+}
+
+/* Hover: el ojo crece ligeramente (solo scale, GPU) */
+.dark .top-nav > ul li .top-menu--featured:hover .sauron-eye--menu,
+.panel-drawer .menu--featured:hover .sauron-eye--menu {
+  scale: 1.14;
+  transition: scale 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* --- Punto "en vivo" del título (solo menú) ------------------ */
+.live-dot--menu {
+  width: 7px;
+  height: 7px;
+  margin-right: 0;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* --- Foco visible para teclado ------------------------------- */
+.dark .top-nav > ul li .top-menu--featured:focus-visible,
+.panel-drawer .menu--featured:focus-visible {
+  outline: 2px solid var(--mordor-brasa);
+  outline-offset: 2px;
+}
+
+/* --- Reducción de movimiento: calma el ojo del menú ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .sauron-eye--menu,
+  .sauron-eye--menu .sauron-eye__iris {
+    animation: none;
+  }
+}
