@@ -262,6 +262,9 @@ def main() -> int:
     if sin_cara:
         cod = new_cod(args.ruta)
         nuevos_cods.append(cod)
+        # entrada vacía en face_enc_v2: la persona existe para que store==BD
+        # (el clasificador la ignora: 0 encodings -> score 0 en el matching)
+        store.add(cod, [], [], [])
         pid = int(_mysql(args.ruta,
             "INSERT INTO personas (local_id, cod_interno, nombre) VALUES "
             f"({args.local_id}, '{cod}', 'sinclasificar_{datetime.now():%Y%m%d_%H%M%S}'); "
