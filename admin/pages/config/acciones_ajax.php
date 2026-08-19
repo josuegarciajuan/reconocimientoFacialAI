@@ -6,6 +6,7 @@
 
 require_once __DIR__ . "/../../../config/rutas.php";
 require_once __DIR__ . "/../../../libs/db.php";
+require_once __DIR__ . "/../../../libs/nodos.php";
 
 switch ($_GET["a"]) {
     case "1": // datos de una cámara
@@ -131,6 +132,82 @@ switch ($_GET["a"]) {
             [$x, $y, $id, $local]
         );
         echo "ok";
+        break;
+
+    case "9": // guardar cadena de nodos con camino automático (JSON POST): {camara1, camara2, nodos:[{x,y},...]}
+        $body = json_decode((string)file_get_contents("php://input"), true);
+        $camara1 = (int)($body["camara1"] ?? 0);
+        $camara2 = (int)($body["camara2"] ?? 0);
+        $nodos   = $body["nodos"] ?? [];
+
+        if ($camara1 <= 0 || $camara2 <= 0 || $camara1 === $camara2 || !is_array($nodos) || count($nodos) === 0) {
+            http_response_code(400);
+            echo json_encode(["ok" => false, "error" => "datos inválidos"]);
+            break;
+        }
+        foreach ($nodos as $n) {
+            if (!is_array($n) || !isset($n["x"], $n["y"])) {
+                http_response_code(400);
+                echo json_encode(["ok" => false, "error" => "nodo inválido en el lote"]);
+                break 2;
+            }
+        }
+
+        // Camino automático: 0 si es el primero entre el par, si no MAX(camino)+1.
+        // Consulta canónica del par en ambos sentidos (como nodos_caminos_entre()).
+        $filas = DB::select(
+            "SELECT camino FROM nodos
+             WHERE (camara_id1 = ? AND camara_id2 = ?) OR (camara_id1 = ? AND camara_id2 = ?)",
+            [$camara1, $camara2, $camara2, $camara1]
+        );
+        $camino = siguiente_camino($filas);
+
+        DB::beginTransaction();
+        try {
+            $guardados = [];
+            $orden = 1;
+            foreach ($nodos as $n) {
+                $id = DB::insert(
+                    "INSERT INTO nodos (camara_id1, camara_id2, x, y, orden, camino) VALUES (?, ?, ?, ?, ?, ?)",
+                    [$camara1, $camara2, (int)$n["x"], (int)$n["y"], $orden, $camino]
+                );
+                $guardados[] = [
+                    "id"          => $id,
+                    "camara_id1"  => $camara1,
+                    "camara_id2"  => $camara2,
+                    "camino"      => $camino,
+                    "x"           => (int)$n["x"],
+                    "y"           => (int)$n["y"],
+                    "orden"       => $orden,
+                ];
+                $orden++;
+            }
+            DB::commit();
+        } catch (Throwable $e) {
+            DB::rollBack();
+            http_response_code(500);
+            echo json_encode(["ok" => false, "error" => $e->getMessage()]);
+            break;
+        }
+        echo json_encode(["ok" => true, "camino" => $camino, "nodos" => $guardados]);
+        break;
+
+    case "10": // eliminar cadena completa por par+camino (JSON POST): {camara1, camara2, camino}
+        $body = json_decode((string)file_get_contents("php://input"), true);
+        $camara1 = (int)($body["camara1"] ?? 0);
+        $camara2 = (int)($body["camara2"] ?? 0);
+        $camino  = (int)($body["camino"] ?? 0);
+        if ($camara1 <= 0 || $camara2 <= 0 || $camara1 === $camara2) {
+            http_response_code(400);
+            echo json_encode(["ok" => false, "error" => "datos inválidos"]);
+            break;
+        }
+        DB::execute(
+            "DELETE FROM nodos
+             WHERE ((camara_id1 = ? AND camara_id2 = ?) OR (camara_id1 = ? AND camara_id2 = ?)) AND camino = ?",
+            [$camara1, $camara2, $camara2, $camara1, $camino]
+        );
+        echo json_encode(["ok" => true]);
         break;
 
     default:

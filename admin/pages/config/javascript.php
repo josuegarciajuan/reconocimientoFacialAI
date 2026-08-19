@@ -83,6 +83,13 @@ var Forge = {
     camDrag: null,              // cámara en arrastre en el plano: {index, x0, y0}
     camHover: null,             // índice de cámara bajo el cursor (resaltado)
     planoImg: null,             // Image del plano activo cacheada (redibujado síncrono)
+    crear: {                    // flujo visual de creación de caminos (nodos/crear)
+        cam1: null,             // cámara 1 seleccionada (objeto de FORGE_CAMS) o null
+        cam2: null,             // cámara 2 seleccionada o null
+        trazando: false,        // true mientras se arrastra el trazo a mano alzada
+        trazo: [],              // puntos [{x,y}] del trazo en curso
+        ultimo: null,           // {camara1, camara2, camino} del último guardado (para Deshacer)
+    },
 };
 
 /* ------------------------------------------------------------------ */
@@ -216,30 +223,40 @@ function ForgeRender() {
         ctx.fillStyle = "#D22829";
         ctx.fillRect(Forge.marcador.x - 5, Forge.marcador.y - 5, 10, 10);
     }
-    if (Forge.nodos_x.length) {
-        // Vista previa en vivo: cámara1 → nodos marcados → cámara2.
-        if (Forge.tab === "nodos" && Forge.sub === "crear") {
-            var sel1 = document.getElementById("camara1");
-            var sel2 = document.getElementById("camara2");
-            var c1 = sel1 ? ForgeCamCoord(sel1.value) : null;
-            var c2 = sel2 ? ForgeCamCoord(sel2.value) : null;
-            ctx.save();
-            ctx.strokeStyle = "#718E06";
-            ctx.lineWidth = 2;
-            ctx.setLineDash([5, 4]);
-            ctx.beginPath();
-            if (c1) { ctx.moveTo(c1.x, c1.y); } else { ctx.moveTo(Forge.nodos_x[0], Forge.nodos_y[0]); }
-            for (var i = 0; i < Forge.nodos_x.length; i++) {
-                ctx.lineTo(Forge.nodos_x[i], Forge.nodos_y[i]);
-            }
-            if (c2) { ctx.lineTo(c2.x, c2.y); }
-            ctx.stroke();
-            ctx.restore();
+    if (Forge.tab === "nodos" && Forge.sub === "crear") {
+        ForgePintarCrear(ctx);
+    }
+}
+
+/* Modo crear (nodos/crear): resalta las cámaras seleccionadas y dibuja la
+ * vista previa en vivo del trazo a mano alzada (verde, discontinua). */
+function ForgePintarCrear(ctx) {
+    var s = Forge.crear;
+    // Resaltado verde de la(s) cámara(s) seleccionada(s).
+    ctx.save();
+    ctx.strokeStyle = "#2e9e44";
+    ctx.lineWidth = 3;
+    if (s.cam1) { ctx.strokeRect(s.cam1.x - 3, s.cam1.y - 3, 16, 16); }
+    if (s.cam2) { ctx.strokeRect(s.cam2.x - 3, s.cam2.y - 3, 16, 16); }
+    ctx.restore();
+    // Trazo en vivo mientras se arrastra.
+    if (s.trazo.length >= 2) {
+        ctx.save();
+        ctx.strokeStyle = "#2e9e44";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.moveTo(s.trazo[0].x, s.trazo[0].y);
+        for (var i = 1; i < s.trazo.length; i++) {
+            ctx.lineTo(s.trazo[i].x, s.trazo[i].y);
         }
-        ctx.fillStyle = "#718E06";
-        for (var i = 0; i < Forge.nodos_x.length; i++) {
-            ctx.fillRect(Forge.nodos_x[i] - 5, Forge.nodos_y[i] - 5, 10, 10);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = "#2e9e44";
+        for (var j = 0; j < s.trazo.length; j++) {
+            ctx.fillRect(s.trazo[j].x - 2, s.trazo[j].y - 2, 4, 4);
         }
+        ctx.restore();
     }
 }
 
@@ -381,17 +398,202 @@ function ForgeMarcaPosicion(p) {
     }
 }
 
-function ForgeMarcaNodo(p) {
-    var c1 = document.getElementById("camara1").value;
-    var c2 = document.getElementById("camara2").value;
-    if (c1 === "-" || c2 === "-" || c1 === c2) {
-        if (typeof rfToast === "function") {
-            rfToast("Selecciona dos cámaras distintas antes de marcar nodos.", "err");
+/* =========================================================================
+ * Modo crear nodos (sub=crear): flujo 100% visual sobre el lienzo.
+ * 1) Clic sobre una cámara → cámara 1 (resaltada en verde).
+ * 2) Clic sobre otra cámara → cámara 2 (resaltada).
+ * 3) Arrastrar desde la cámara 1 hasta la cámara 2 dibujando el camino real.
+ * 4) Al soltar: el trazo se muestrea a nodos, se ancla a ambas cámaras y se
+ *    guarda con camino automático (AJAX a=9). Deshacer: AJAX a=10.
+ * ========================================================================= */
+
+/* Refresca el panel de estado (indicadores de cámara y botón Deshacer). */
+function ForgeCrearActualizarPanel() {
+    var el1 = document.getElementById("forgeSelCam1");
+    var el2 = document.getElementById("forgeSelCam2");
+    var btn = document.getElementById("forgeDeshacerBtn");
+    if (el1) { el1.textContent = Forge.crear.cam1 ? Forge.crear.cam1.desc : "—"; }
+    if (el2) { el2.textContent = Forge.crear.cam2 ? Forge.crear.cam2.desc : "—"; }
+    if (btn) { btn.disabled = !Forge.crear.ultimo; }
+}
+
+/* Despacho del clic en nodos/crear: selección de cámaras y comienzo del trazo. */
+function ForgeCrearClic(p) {
+    var idx = ForgeCamHitTest(p);
+    if (Forge.crear.cam1 && Forge.crear.cam2) {
+        // Ambos seleccionados: el clic comienza el trazo a mano alzada.
+        Forge.crear.trazando = true;
+        Forge.crear.trazo = [{ x: Math.round(p.x), y: Math.round(p.y) }];
+        ForgeRender();
+        return;
+    }
+    if (idx < 0) {
+        if (!Forge.crear.cam1 && typeof rfToast === "function") {
+            rfToast("Haz clic sobre una cámara del plano.", "err");
         }
         return;
     }
-    Forge.nodos_x.push(Math.round(p.x));
-    Forge.nodos_y.push(Math.round(p.y));
+    var cam = FORGE_CAMS[idx];
+    if (!Forge.crear.cam1) {
+        Forge.crear.cam1 = cam;
+    } else if (Forge.crear.cam1.id === cam.id) {
+        if (typeof rfToast === "function") {
+            rfToast("Elige otra cámara distinta.", "err");
+        }
+        return;
+    } else {
+        Forge.crear.cam2 = cam;
+    }
+    ForgeCrearActualizarPanel();
+    ForgeRender();
+}
+
+/* Empuja puntos al trazo mientras se arrastra (desde el listener de mousemove). */
+function ForgeCrearMouseMove(p) {
+    if (!Forge.crear.trazando) return;
+    Forge.crear.trazo.push({ x: Math.round(p.x), y: Math.round(p.y) });
+    ForgeRender();
+}
+
+/* Fin del arrastre: ancla los extremos a las cámaras y guarda la cadena. */
+function ForgeCrearSoltar() {
+    if (!Forge.crear.trazando) return;
+    Forge.crear.trazando = false;
+    if (Forge.crear.trazo.length < 2) {
+        Forge.crear.trazo = [];
+        if (typeof rfToast === "function") {
+            rfToast("Arrastra entre las dos cámaras para dibujar el camino real.", "err");
+        }
+        return;
+    }
+    var c1 = ForgeCamCoord(Forge.crear.cam1.id);
+    var c2 = ForgeCamCoord(Forge.crear.cam2.id);
+    // Anclar el primer punto a la cámara 1 y el último a la cámara 2.
+    Forge.crear.trazo[0] = { x: c1.x, y: c1.y };
+    Forge.crear.trazo[Forge.crear.trazo.length - 1] = { x: c2.x, y: c2.y };
+    var nodos = ForgeMuestrearTrazo(Forge.crear.trazo);
+    Forge.crear.trazo = [];
+    ForgeCrearGuardar(nodos);
+}
+
+/* Remuestrea el trazo por distancia acumulada: conserva un punto cada vez
+ * que se superan 18px desde el último conservado, y siempre el último.
+ * Garantiza al menos un nodo interior (punto medio) para no guardar cadenas
+ * vacías. Devuelve nodos [{x,y}] ordenados cam1 → cam2. */
+function ForgeMuestrearTrazo(puntos) {
+    var umbral = 18;
+    var out = [{ x: puntos[0].x, y: puntos[0].y }];
+    var acum = 0;
+    var ultimo = out[0];
+    for (var i = 1; i < puntos.length; i++) {
+        var dx = puntos[i].x - ultimo.x;
+        var dy = puntos[i].y - ultimo.y;
+        acum += Math.sqrt(dx * dx + dy * dy);
+        if (acum >= umbral && i < puntos.length - 1) {
+            out.push({ x: puntos[i].x, y: puntos[i].y });
+            acum = 0;
+            ultimo = out[out.length - 1];
+        }
+    }
+    // El último punto siempre se conserva (está anclado a la cámara 2).
+    var fin = puntos[puntos.length - 1];
+    if (out[out.length - 1].x !== fin.x || out[out.length - 1].y !== fin.y) {
+        out.push({ x: fin.x, y: fin.y });
+    }
+    // Sin nodos interiores (p. ej. trazo casi recto y corto): punto medio.
+    if (out.length < 3) {
+        var medio = {
+            x: Math.round((out[0].x + out[out.length - 1].x) / 2),
+            y: Math.round((out[0].y + out[out.length - 1].y) / 2)
+        };
+        out.splice(1, 0, medio);
+    }
+    return out;
+}
+
+/* Guarda la cadena con camino automático (AJAX a=9) y refresca el lienzo. */
+function ForgeCrearGuardar(nodos) {
+    if (!Forge.crear.cam1 || !Forge.crear.cam2) return;
+    var c1 = Forge.crear.cam1, c2 = Forge.crear.cam2;
+    fetch("pages/config/acciones_ajax.php?a=9", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ camara1: c1.id, camara2: c2.id, nodos: nodos })
+    })
+    .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+    })
+    .then(function (data) {
+        if (!data || !data.ok) {
+            var m = (data && data.error) ? data.error : "respuesta inválida";
+            if (typeof rfToast === "function") {
+                rfToast("No se pudo guardar el camino: " + m, "err");
+            }
+            return;
+        }
+        for (var i = 0; i < (data.nodos || []).length; i++) {
+            FORGE_NODOS.push(data.nodos[i]);
+        }
+        Forge.crear.ultimo = { camara1: c1.id, camara2: c2.id, camino: data.camino };
+        ForgeDibujarPlano();
+        ForgeCrearReset();
+        if (typeof rfToast === "function") {
+            rfToast("Camino " + data.camino + " guardado entre " + c1.desc + " y " + c2.desc + ".", "ok");
+        }
+    })
+    .catch(function (err) {
+        var m = "No se pudo guardar el camino: " + err.message;
+        if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
+    });
+}
+
+/* Deshace el último camino guardado (AJAX a=10) y resetea la selección. */
+function ForgeCrearDeshacer() {
+    var u = Forge.crear.ultimo;
+    if (!u) return;
+    fetch("pages/config/acciones_ajax.php?a=10", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ camara1: u.camara1, camara2: u.camara2, camino: u.camino })
+    })
+    .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+    })
+    .then(function (data) {
+        if (!data || !data.ok) {
+            var m = (data && data.error) ? data.error : "respuesta inválida";
+            if (typeof rfToast === "function") {
+                rfToast("No se pudo eliminar el camino: " + m, "err");
+            }
+            return;
+        }
+        var a = u.camara1, b = u.camara2, c = u.camino;
+        FORGE_NODOS = FORGE_NODOS.filter(function (n) {
+            var n1 = parseInt(n.camara_id1, 10), n2 = parseInt(n.camara_id2, 10);
+            var nc = parseInt(n.camino || 0, 10);
+            var esPar = (n1 === a && n2 === b) || (n1 === b && n2 === a);
+            return !(esPar && nc === c);
+        });
+        Forge.crear.ultimo = null;
+        ForgeDibujarPlano();
+        ForgeCrearReset();
+        if (typeof rfToast === "function") rfToast("Camino eliminado.", "ok");
+    })
+    .catch(function (err) {
+        var m = "No se pudo eliminar el camino: " + err.message;
+        if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
+    });
+}
+
+/* Limpia la selección y el trazo del modo crear (mantiene `ultimo`). */
+function ForgeCrearReset() {
+    Forge.crear.cam1 = null;
+    Forge.crear.cam2 = null;
+    Forge.crear.trazando = false;
+    Forge.crear.trazo = [];
+    ForgeCrearActualizarPanel();
     ForgeRender();
 }
 
@@ -595,12 +797,16 @@ function ForgeQuitarNodo(id) {
  * el marcador mida 10x10; coordenadas acotadas al lienzo.
  * ========================================================================= */
 
-/* Índice de la cámara bajo el cursor, o -1. */
+/* Índice de la cámara bajo el cursor, o -1. Distancia al centro del marcador
+ * (cuadrado 10x10 en x,y) <= 12px. Lo usan el arrastre de cámaras en el plano
+ * y la selección visual de cámaras en nodos/crear. */
 function ForgeCamHitTest(p) {
-    var R = 14;
+    var R = 12;
     for (var i = 0; i < FORGE_CAMS.length; i++) {
         var c = FORGE_CAMS[i];
-        if (Math.abs(c.x - p.x) <= R && Math.abs(c.y - p.y) <= R) {
+        var cx = c.x + 5, cy = c.y + 5;
+        var dx = cx - p.x, dy = cy - p.y;
+        if (Math.sqrt(dx * dx + dy * dy) <= R) {
             return i;
         }
     }
@@ -725,7 +931,7 @@ function ForgeOnCanvasMouseDown(e) {
     if (Forge.tab === "camaras") {
         ForgeMarcaPosicion(p);
     } else if (Forge.tab === "nodos" && Forge.sub === "crear") {
-        ForgeMarcaNodo(p);
+        ForgeCrearClic(p);
     } else if (Forge.tab === "nodos" && Forge.sub === "editar") {
         ForgeEditarMouseDown(p);
     }
@@ -904,49 +1110,6 @@ function seleccionar_camara(){
 function cargarplano(){
     formplano=document.getElementById("formplano");
     formplano.submit();
-}
-
-function guardar_nodos(){
-    var camara1 = parseInt(document.getElementById("camara1").value, 10);
-    var camara2 = parseInt(document.getElementById("camara2").value, 10);
-    var caminoSel = document.getElementById("camino");
-    var camino = caminoSel ? (parseInt(caminoSel.value, 10) || 0) : 0;
-
-    if(Forge.nodos_x.length === 0){
-        if (typeof rfToast === "function") rfToast("Marca al menos un nodo en el lienzo.", "err");
-        return;
-    }
-    if(!camara1 || !camara2 || camara1 === camara2){
-        if (typeof rfToast === "function") rfToast("Selecciona dos cámaras distintas antes de guardar.", "err");
-        return;
-    }
-
-    var nodos = [];
-    for (var i = 0; i < Forge.nodos_x.length; i++) {
-        nodos.push({ x: Forge.nodos_x[i], y: Forge.nodos_y[i] });
-    }
-
-    fetch("pages/config/acciones_ajax.php?a=5", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ camara1: camara1, camara2: camara2, camino: camino, nodos: nodos })
-    })
-    .then(function (res) {
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        return res.text();
-    })
-    .then(function (txt) {
-        if (txt.indexOf("error") !== -1) {
-            var msg = "No se pudo guardar: " + txt;
-            if (typeof rfToast === "function") rfToast(msg, "err"); else alert(msg);
-            return;
-        }
-        location.href = "?page=config&tab=nodos&sub=crear";
-    })
-    .catch(function (err) {
-        var msg = "No se pudo guardar: " + err.message;
-        if (typeof rfToast === "function") rfToast(msg, "err"); else alert(msg);
-    });
 }
 
 function eliminar_nodos(){
@@ -1268,20 +1431,26 @@ document.addEventListener("DOMContentLoaded", function () {
         Forge.ctx = Forge.canvas.getContext("2d");
         Forge.canvas.addEventListener("mousedown", ForgeOnCanvasMouseDown);
 
-        // Arrastre de nodos en modo editar.
+        // Arrastre de nodos en modo editar y trazo en vivo en modo crear.
         Forge.canvas.addEventListener("mousemove", function (e) {
             if (Forge.tab === "nodos" && Forge.sub === "editar" && Forge.drag) {
                 ForgeEditarMouseMove(ForgeCoord(e));
+            } else if (Forge.tab === "nodos" && Forge.sub === "crear") {
+                ForgeCrearMouseMove(ForgeCoord(e));
             }
         });
         Forge.canvas.addEventListener("mouseup", function () {
             if (Forge.tab === "nodos" && Forge.sub === "editar" && Forge.drag) {
                 ForgeEditarMouseUp();
+            } else if (Forge.tab === "nodos" && Forge.sub === "crear") {
+                ForgeCrearSoltar();
             }
         });
         Forge.canvas.addEventListener("mouseleave", function () {
             if (Forge.tab === "nodos" && Forge.sub === "editar" && Forge.drag) {
                 ForgeEditarMouseUp();
+            } else if (Forge.tab === "nodos" && Forge.sub === "crear") {
+                ForgeCrearSoltar();
             }
         });
         // Clic derecho: eliminar nodo en modo editar.

@@ -116,36 +116,22 @@
 
     <div class="form-grid">
         <div>
-            <label for="camara1" class="field-label">Cámara (1)</label>
-            <select id="camara1" name="camara1" class="input border w-full">
-                <option value="-">Selecciona Cámara</option>
-                <?php foreach ($camaras as $c): ?>
-                    <option value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
-                <?php endforeach; ?>
-            </select>
+            <span class="field-label">Cámara 1</span>
+            <p class="forge-seleccion" id="forgeSelCam1">—</p>
         </div>
         <div>
-            <label for="camara2" class="field-label">Cámara (2)</label>
-            <select id="camara2" name="camara2" class="input border w-full">
-                <option value="-">Selecciona Cámara</option>
-                <?php foreach ($camaras as $c): ?>
-                    <option value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
-                <?php endforeach; ?>
-            </select>
+            <span class="field-label">Cámara 2</span>
+            <p class="forge-seleccion" id="forgeSelCam2">—</p>
         </div>
         <div>
-            <label for="camino" class="field-label">Camino</label>
-            <select id="camino" name="camino" class="input border w-full">
-                <option value="0">Principal (0)</option>
-                <option value="1">Alternativo 1</option>
-                <option value="2">Alternativo 2</option>
-            </select>
+            <span class="field-label">Camino</span>
+            <p class="forge-seleccion">Automático</p>
         </div>
         <div class="form-grid__full">
             <div class="flex flex-col sm:flex-row sm:items-center gap-2">
-                <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="guardar_nodos()">Guardar nodos</button>
+                <button type="button" id="forgeDeshacerBtn" class="button text-white bg-theme-6 shadow-md" onclick="ForgeCrearDeshacer()" disabled>Deshacer</button>
                 <span class="text-xs text-gray-500 dark:text-gray-600">
-                    Selecciona ambas cámaras (y el camino) y haz clic en el lienzo para marcar cada nodo.
+                    Haz clic sobre dos cámaras del plano y arrastra entre ellas para dibujar el camino real.
                 </span>
             </div>
         </div>
