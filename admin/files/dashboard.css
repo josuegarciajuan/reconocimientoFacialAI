@@ -1,0 +1,1146 @@
+/* ============================================================
+   Barad-dûr · Dashboard "La Torre" (2026-08-19)
+   Capa aditiva. Se carga DESPUÉS de app.css, custom.css y
+   sections.css (solo en ?page=dash). No toca el ADN Midone.
+   ============================================================ */
+
+/* --- Tooltip dorado CSS-only (data-tip) ---------------------- */
+[data-tip] {
+  position: relative;
+}
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  z-index: 40;
+  max-width: 220px;
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.5rem;
+  background: #16121a;
+  border: 1px solid rgba(201, 162, 39, 0.55);
+  color: var(--mordor-ceniza);
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  letter-spacing: 0.02em;
+  text-align: center;
+  white-space: normal;
+  box-shadow: 0 10px 24px -10px rgba(0, 0, 0, 0.85);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+[data-tip]:hover::after,
+[data-tip]:focus-visible::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ============================================================
+   🧭 ACCESOS DIRECTOS
+   ============================================================ */
+.quick-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.quick-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.95rem;
+  border-radius: 9999px;
+  background: var(--mordor-carbon);
+  border: 1px solid rgba(201, 162, 39, 0.28);
+  color: var(--mordor-ceniza);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: "Cinzel", serif;
+  text-decoration: none;
+  box-shadow: 0 8px 22px -12px rgba(0, 0, 0, 0.8);
+  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease;
+}
+
+.quick-link__emoji {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.quick-link:hover,
+.quick-link:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(255, 90, 31, 0.6);
+  background: linear-gradient(180deg, rgba(255, 90, 31, 0.14), rgba(224, 60, 0, 0.05));
+  box-shadow: 0 12px 26px -12px rgba(224, 60, 0, 0.45);
+  color: #f6e6ae;
+}
+
+.quick-link--anchor {
+  border-style: dashed;
+  border-color: rgba(216, 208, 196, 0.35);
+}
+
+/* ============================================================
+   🏰 HERO — ESTADO DE MORDOR
+   ============================================================ */
+.mordor-hero {
+  position: relative;
+  overflow: hidden;
+}
+.mordor-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(520px 220px at 90% -10%, rgba(224, 60, 0, 0.18), transparent 60%),
+    radial-gradient(420px 200px at -4% 110%, rgba(201, 162, 39, 0.10), transparent 55%);
+  pointer-events: none;
+}
+
+.mordor-hero__grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2rem 2.5rem;
+  align-items: center;
+}
+
+.mordor-hero__eyebrow {
+  font-family: "Cinzel", serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--mordor-brasa);
+}
+
+.mordor-hero__title {
+  font-family: "Cinzel Decorative", "Cinzel", serif;
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+  font-weight: 800;
+  margin-top: 0.15rem;
+  color: #f0d78c;
+  background: linear-gradient(180deg, #f6e6ae 10%, #c9a227 60%, #8a6a1c 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.7));
+}
+
+.mordor-hero__saludo {
+  margin-top: 0.4rem;
+  font-size: 0.92rem;
+  color: var(--mordor-humo);
+}
+.mordor-hero__saludo strong {
+  color: var(--mordor-ceniza);
+}
+
+.hero-kpis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.1rem;
+}
+
+.hero-kpi {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 0.9rem;
+  background: rgba(255, 90, 31, 0.06);
+  border: 1px solid rgba(201, 162, 39, 0.18);
+}
+
+.hero-kpi__emoji {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.hero-kpi__num {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #f0d78c;
+}
+
+.hero-kpi__lbl {
+  font-size: 0.72rem;
+  color: var(--mordor-humo);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.hero-kpi--alerta {
+  border-color: rgba(239, 68, 68, 0.55);
+  background: rgba(239, 68, 68, 0.10);
+  animation: dash-alerta-pulso 2s ease-in-out infinite;
+}
+.hero-kpi--alerta .hero-kpi__num {
+  color: #ff6b6b;
+}
+
+@keyframes dash-alerta-pulso {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.35); }
+  50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
+
+.hero-alertas {
+  margin-top: 1rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 0.75rem;
+  font-size: 0.82rem;
+  color: #ffb4a0;
+  background: rgba(224, 60, 0, 0.10);
+  border: 1px solid rgba(255, 90, 31, 0.35);
+  max-width: 46rem;
+}
+
+/* ============================================================
+   ⚗️ CALDERO DE AFORO
+   ============================================================ */
+.aforo-gauge {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+}
+
+.aforo-gauge__vessel {
+  position: relative;
+  width: 108px;
+  height: 148px;
+  border-radius: 18px 18px 30px 30px;
+  border: 2px solid rgba(201, 162, 39, 0.5);
+  background: #0d0a08;
+  overflow: hidden;
+  box-shadow: inset 0 0 26px rgba(0, 0, 0, 0.8), 0 14px 30px -16px rgba(0, 0, 0, 0.9);
+  transition: border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+.aforo-gauge__lava {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--nivel, 0%);
+  min-height: 0;
+  background: linear-gradient(180deg, #ffd9a0 0%, #ff5a1f 30%, #e03c00 75%, #7a1500 100%);
+  border-top: 2px solid rgba(255, 217, 160, 0.9);
+  transition: height 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.aforo-gauge__lava::after {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 0;
+  right: 0;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 217, 160, 0.75);
+  filter: blur(3px);
+}
+
+.aforo-gauge__tick {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(201, 162, 39, 0.3);
+  z-index: 2;
+}
+.aforo-gauge__tick--t1 { bottom: 20%; }
+.aforo-gauge__tick--t2 { bottom: 40%; }
+.aforo-gauge__tick--t3 { bottom: 60%; }
+.aforo-gauge__tick--t4 { bottom: 80%; }
+
+/* semáforo del caldero */
+.aforo-gauge--ok .aforo-gauge__vessel {
+  border-color: rgba(125, 168, 107, 0.6);
+  box-shadow: inset 0 0 26px rgba(0, 0, 0, 0.8), 0 0 18px -4px rgba(125, 168, 107, 0.5);
+}
+.aforo-gauge--warn .aforo-gauge__vessel {
+  border-color: rgba(240, 215, 140, 0.75);
+  box-shadow: inset 0 0 26px rgba(0, 0, 0, 0.8), 0 0 22px -4px rgba(240, 215, 140, 0.55);
+}
+.aforo-gauge--full .aforo-gauge__vessel {
+  border-color: rgba(255, 90, 31, 0.85);
+  box-shadow: inset 0 0 26px rgba(0, 0, 0, 0.8), 0 0 26px -2px rgba(255, 90, 31, 0.7);
+  animation: dash-alerta-pulso 2.2s ease-in-out infinite;
+}
+
+.aforo-gauge__readout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.aforo-gauge__value {
+  font-family: "Cinzel", serif;
+  font-size: 3.4rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #f0d78c;
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.7));
+}
+
+.aforo-gauge__of {
+  font-size: 0.85rem;
+  color: var(--mordor-humo);
+}
+
+.aforo-gauge__sem {
+  margin-top: 0.25rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  align-self: flex-start;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: rgba(201, 162, 39, 0.12);
+  border: 1px solid rgba(201, 162, 39, 0.3);
+  color: var(--mordor-ceniza);
+}
+
+.aforo-gauge__control {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  flex-wrap: wrap;
+}
+
+/* ============================================================
+   👁️ TARJETAS KPI
+   ============================================================ */
+.kpi-card {
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--kpi-accento), transparent 85%);
+  opacity: 0.85;
+}
+
+.kpi-card--brasas  { --kpi-accento: #ff5a1f; }
+.kpi-card--oro     { --kpi-accento: #c9a227; }
+.kpi-card--verde   { --kpi-accento: #7fa86b; }
+.kpi-card--humo    { --kpi-accento: #8a8078; }
+.kpi-card--alerta  { --kpi-accento: #e5484d; }
+
+.kpi-card--brasas .kpi-number { color: #ff8a5c; }
+.kpi-card--oro .kpi-number    { color: #f0d78c; }
+.kpi-card--verde .kpi-number  { color: #a8c99a; }
+.kpi-card--humo .kpi-number   { color: var(--mordor-ceniza); }
+.kpi-card--alerta .kpi-number { color: #ff6b6b; }
+
+.kpi-sub {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--mordor-humo);
+}
+
+.kpi-number__frac {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--mordor-humo);
+  margin-left: 0.15rem;
+}
+
+/* píldora de tendencia */
+.tendencia-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.18rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+.tendencia-pill--up   { background: rgba(125, 168, 107, 0.18); color: #a8c99a; border: 1px solid rgba(125, 168, 107, 0.4); }
+.tendencia-pill--down { background: rgba(229, 72, 77, 0.16); color: #ff8f93; border: 1px solid rgba(229, 72, 77, 0.45); }
+.tendencia-pill--flat { background: rgba(138, 128, 120, 0.16); color: var(--mordor-humo); border: 1px solid rgba(138, 128, 120, 0.35); }
+
+/* barra de progreso (legión) */
+.kpi-progress {
+  height: 7px;
+  border-radius: 9999px;
+  background: rgba(138, 128, 120, 0.18);
+  overflow: hidden;
+}
+.kpi-progress__fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #7fa86b, #a8c99a);
+  transition: width 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.kpi-progress--warn .kpi-progress__fill { background: linear-gradient(90deg, #c9a227, #f0d78c); }
+.kpi-progress--full .kpi-progress__fill { background: linear-gradient(90deg, #e5484d, #ff8f93); animation: dash-alerta-pulso 2.2s ease-in-out infinite; }
+
+/* ============================================================
+   📈 SVG "DIBUJADO A MANO"
+   ============================================================ */
+.dash-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.dash-svg__grid {
+  stroke: rgba(201, 162, 39, 0.10);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+.dash-svg__tick {
+  fill: var(--mordor-humo);
+  font-size: 9.5px;
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+.dash-svg__line {
+  fill: none;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.dash-svg__area {
+  opacity: 1;
+}
+.dash-svg__band {
+  fill: rgba(201, 162, 39, 0.10);
+  stroke: none;
+}
+.dash-svg__pt {
+  opacity: 0.85;
+}
+
+.dash-legend {
+  display: inline-block;
+  width: 16px;
+  height: 4px;
+  border-radius: 2px;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+}
+.dash-legend--actual  { background: #ff5a1f; }
+.dash-legend--pasado  { background: #8a8078; }
+.dash-legend--salidas { background: #7fa86b; }
+
+/* ============================================================
+   ⚖️ DONUT "LA PUERTA VS LAS CÁMARAS"
+   ============================================================ */
+.donut-wrap {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+.donut {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  flex: none;
+  box-shadow: 0 10px 26px -12px rgba(0, 0, 0, 0.8), inset 0 0 0 1px rgba(201, 162, 39, 0.2);
+}
+.donut__hole {
+  position: absolute;
+  inset: 28px;
+  border-radius: 50%;
+  background: var(--mordor-carbon);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(201, 162, 39, 0.22);
+}
+.donut__total {
+  font-family: "Cinzel", serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #f0d78c;
+  line-height: 1;
+}
+.donut__lbl {
+  font-size: 0.6rem;
+  color: var(--mordor-humo);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 0.2rem;
+}
+.donut-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  flex: 1;
+}
+.donut-legend__li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  font-size: 0.82rem;
+  color: var(--mordor-ceniza);
+  border-bottom: 1px dashed rgba(201, 162, 39, 0.12);
+}
+.donut-legend__li:last-child { border-bottom: 0; }
+.donut-legend__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+}
+.donut-legend__name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.donut-legend__val {
+  font-weight: 700;
+}
+
+/* ============================================================
+   🔥 HEATMAP "LAS FRAGUAS POR HORA"
+   ============================================================ */
+.heat-card {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.25rem;
+}
+.heat-row {
+  display: grid;
+  grid-template-columns: 42px repeat(24, 1fr);
+  gap: 2px;
+  align-items: center;
+  margin-bottom: 2px;
+}
+.heat-day {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--mordor-humo);
+  text-align: right;
+  padding-right: 0.4rem;
+}
+.heat-cell {
+  height: 16px;
+  min-width: 14px;
+  border-radius: 3px;
+  background: rgba(138, 128, 120, 0.08);
+  cursor: default;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+.heat-cell:hover,
+.heat-cell:focus-visible {
+  transform: scale(1.35);
+  filter: brightness(1.35);
+  outline: none;
+}
+.heat-cell--empty { background: rgba(138, 128, 120, 0.05); }
+.heat-scale {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+  font-size: 0.62rem;
+  color: var(--mordor-humo);
+}
+.heat-scale__bar {
+  width: 130px;
+  height: 8px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, rgba(138,128,120,0.12), rgba(224,60,0,0.95));
+}
+
+/* ============================================================
+   📊 BARRAS ENTRADAS VS SALIDAS
+   ============================================================ */
+.bars-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 190px;
+  margin-top: 0.5rem;
+}
+.bars-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+.bars-pair {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 100%;
+  width: 100%;
+  justify-content: center;
+}
+.bars-bar {
+  width: 5px;
+  border-radius: 3px 3px 1px 1px;
+  min-height: 2px;
+  transition: height 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.bars-bar--entra { background: linear-gradient(180deg, #ff5a1f, #e03c00); }
+.bars-bar--sale  { background: linear-gradient(180deg, #7fa86b, #3d5a3a); }
+.bars-lbl {
+  font-size: 0.58rem;
+  color: var(--mordor-humo);
+  margin-top: 0.35rem;
+}
+.bars-lbl--void { visibility: hidden; }
+
+/* ============================================================
+   📜 SECCIONES EXPANDIBLES
+   ============================================================ */
+.scroll-section__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  padding: 0.4rem 0;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  border-radius: 0.5rem;
+}
+.scroll-section__toggle:hover,
+.scroll-section__toggle:focus-visible {
+  outline: none;
+}
+.scroll-section__toggle:hover .scroll-section__title {
+  color: #f6e6ae;
+}
+
+.scroll-section__emoji {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.scroll-section__title {
+  font-family: "Cinzel", serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--mordor-ceniza);
+  transition: color 0.2s ease;
+}
+
+.scroll-section__hint {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--mordor-humo);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scroll-section__chevron {
+  font-size: 0.8rem;
+  color: var(--mordor-humo);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.scroll-section--open .scroll-section__chevron {
+  transform: rotate(180deg);
+  color: var(--mordor-oro);
+}
+
+.scroll-section__body {
+  overflow: hidden;
+  transition: max-height 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+}
+.scroll-section__body[hidden] {
+  display: block;
+  max-height: 0;
+  opacity: 0;
+}
+
+.scroll-section__sub {
+  font-family: "Cinzel", serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--mordor-oro);
+  margin: 0 0 0.7rem;
+}
+
+/* --- Feed en vivo --- */
+.live-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin-top: 0.6rem;
+}
+.feed-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: 0.75rem;
+  border-bottom: 1px dashed rgba(201, 162, 39, 0.10);
+  animation: dash-feed-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+.feed-item:last-child { border-bottom: 0; }
+.feed-item:hover { background: rgba(255, 90, 31, 0.05); }
+
+@keyframes dash-feed-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.feed-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 9999px;
+  object-fit: cover;
+  flex: none;
+  border: 2px solid rgba(201, 162, 39, 0.45);
+  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.7);
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+.feed-avatar:hover {
+  transform: scale(1.12);
+  border-color: rgba(255, 90, 31, 0.8);
+}
+
+.feed-item__body { min-width: 0; flex: 1; }
+
+.feed-item__name {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--mordor-ceniza);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feed-item__tag {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 9999px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+}
+.feed-item__tag--entrada { background: rgba(255, 90, 31, 0.16); color: #ff8a5c; border: 1px solid rgba(255, 90, 31, 0.4); }
+.feed-item__tag--salida  { background: rgba(138, 128, 120, 0.16); color: var(--mordor-ceniza); border: 1px solid rgba(138, 128, 120, 0.4); }
+.feed-item__tag--mov     { background: rgba(201, 162, 39, 0.14); color: #f0d78c; border: 1px solid rgba(201, 162, 39, 0.35); }
+
+.feed-item__meta {
+  font-size: 0.72rem;
+  color: var(--mordor-humo);
+  margin-top: 0.1rem;
+}
+
+.feed-item__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 9999px;
+  background: var(--mordor-brasa);
+  flex: none;
+  animation: mordor-live-pulse 1.6s ease-in-out infinite;
+}
+
+/* --- Quién está dentro --- */
+.avatar-stack {
+  display: flex;
+  margin-top: 0.6rem;
+}
+.avatar-stack__img {
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  object-fit: cover;
+  border: 2px solid var(--mordor-carbon);
+  margin-left: -10px;
+  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.8);
+  transition: transform 0.2s ease;
+}
+.avatar-stack__img:first-child { margin-left: 0; }
+.avatar-stack__img:hover { transform: scale(1.15); z-index: 3; }
+.avatar-stack__more {
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  margin-left: -10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #f0d78c;
+  background: var(--mordor-carbon-2);
+  border: 2px solid rgba(201, 162, 39, 0.4);
+}
+
+.inside-now__count {
+  margin-top: 0.9rem;
+  font-family: "Cinzel", serif;
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: #f0d78c;
+}
+.inside-now__lbl {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--mordor-humo);
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.inside-now__list,
+.missing__list {
+  list-style: none;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.35rem 1rem;
+}
+.inside-now__li,
+.missing__li {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.4rem 0.55rem;
+  border-radius: 0.6rem;
+  background: rgba(138, 128, 120, 0.06);
+  min-width: 0;
+}
+.inside-now__avatar,
+.missing__avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  object-fit: cover;
+  flex: none;
+  border: 1px solid rgba(201, 162, 39, 0.35);
+}
+.missing__avatar {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+.inside-now__name,
+.missing__name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--mordor-ceniza);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+.inside-now__when,
+.missing__when {
+  font-size: 0.66rem;
+  color: var(--mordor-humo);
+  white-space: nowrap;
+}
+
+/* --- Ranking --- */
+.ranking {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ranking__li {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px dashed rgba(201, 162, 39, 0.12);
+}
+.ranking__li:last-child { border-bottom: 0; }
+.ranking__li--empty { color: var(--mordor-humo); font-size: 0.85rem; }
+
+.ranking__medal {
+  font-size: 1.25rem;
+  width: 2rem;
+  text-align: center;
+  flex: none;
+  font-family: "Cinzel", serif;
+  color: var(--mordor-oro);
+}
+
+.ranking__avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 9999px;
+  object-fit: cover;
+  flex: none;
+  border: 1px solid rgba(201, 162, 39, 0.4);
+}
+
+.ranking__info { flex: 1; min-width: 0; }
+.ranking__name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--mordor-ceniza);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ranking__bar {
+  height: 6px;
+  border-radius: 9999px;
+  background: rgba(138, 128, 120, 0.16);
+  overflow: hidden;
+  margin-top: 0.3rem;
+}
+.ranking__fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #8a6a1c, #c9a227, #f0d78c);
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ranking__val {
+  font-weight: 800;
+  color: #f0d78c;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+.ranking__val small {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--mordor-humo);
+}
+
+/* --- Premios --- */
+.premios {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.premio {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 0.75rem;
+  background: rgba(201, 162, 39, 0.06);
+  border: 1px solid rgba(201, 162, 39, 0.16);
+}
+.premio__emoji {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.premio__titulo {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--mordor-humo);
+}
+.premio__valor {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--mordor-ceniza);
+  margin-top: 0.15rem;
+}
+.premio__racha {
+  display: inline-block;
+  padding: 0.12rem 0.45rem;
+  margin: 0.15rem 0.2rem 0 0;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  background: rgba(255, 90, 31, 0.12);
+  border: 1px solid rgba(255, 90, 31, 0.3);
+  color: #ffb48a;
+}
+
+/* ============================================================
+   🔮 PROFECÍA
+   ============================================================ */
+.prophecy-pill {
+  padding: 0.28rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  color: var(--mordor-ceniza);
+  background: rgba(201, 162, 39, 0.08);
+  border: 1px solid rgba(201, 162, 39, 0.22);
+}
+.prophecy-pill strong { color: #f0d78c; }
+
+.prophecy__augur {
+  font-family: "Cinzel", serif;
+  font-size: 0.82rem;
+  color: var(--mordor-humo);
+  font-style: italic;
+  border-left: 3px solid rgba(201, 162, 39, 0.4);
+  padding-left: 0.8rem;
+}
+
+/* ============================================================
+   ⚙️ LOS SEIS CENTINELAS
+   ============================================================ */
+.daemons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.7rem;
+}
+.daemon-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.9rem 0.6rem;
+  border-radius: 0.9rem;
+  background: var(--mordor-carbon-2);
+  border: 1px solid rgba(201, 162, 39, 0.16);
+  text-align: center;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.daemon-tile:hover {
+  transform: translateY(-2px);
+  border-color: rgba(201, 162, 39, 0.4);
+}
+
+.daemon-tile__led {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.6rem;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+}
+.daemon-tile--active .daemon-tile__led {
+  background: #7fa86b;
+  animation: mordor-live-pulse 1.8s ease-in-out infinite;
+}
+.daemon-tile--failed .daemon-tile__led {
+  background: #e5484d;
+  animation: dash-alerta-pulso 1.4s ease-in-out infinite;
+}
+.daemon-tile--idle .daemon-tile__led {
+  background: #8a8078;
+}
+.daemon-tile--unknown .daemon-tile__led {
+  background: rgba(201, 162, 39, 0.4);
+}
+
+.daemon-tile__emoji {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.daemon-tile__name {
+  font-family: "Cinzel", serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--mordor-ceniza);
+}
+
+.daemon-tile__svc {
+  font-size: 0.6rem;
+  color: var(--mordor-humo);
+  letter-spacing: 0.04em;
+}
+
+.daemon-tile__estado {
+  margin-top: 0.35rem;
+  padding: 0.14rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.daemon-tile--active .daemon-tile__estado { background: rgba(125, 168, 107, 0.16); color: #a8c99a; border: 1px solid rgba(125, 168, 107, 0.4); }
+.daemon-tile--failed .daemon-tile__estado { background: rgba(229, 72, 77, 0.16); color: #ff8f93; border: 1px solid rgba(229, 72, 77, 0.45); }
+.daemon-tile--idle .daemon-tile__estado    { background: rgba(138, 128, 120, 0.14); color: var(--mordor-humo); border: 1px solid rgba(138, 128, 120, 0.35); }
+.daemon-tile--unknown .daemon-tile__estado { background: rgba(201, 162, 39, 0.12); color: var(--mordor-humo); border: 1px dashed rgba(201, 162, 39, 0.35); }
+
+.daemon-tile--failed {
+  border-color: rgba(229, 72, 77, 0.5);
+  box-shadow: 0 0 20px -6px rgba(229, 72, 77, 0.45);
+}
+
+/* ============================================================
+   📱 RESPONSIVE
+   ============================================================ */
+@media (max-width: 767px) {
+  .mordor-hero__grid {
+    grid-template-columns: 1fr;
+    gap: 1.4rem;
+  }
+  .aforo-gauge {
+    justify-content: flex-start;
+  }
+  .aforo-gauge__value {
+    font-size: 2.6rem;
+  }
+  .quick-links {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 0.4rem;
+  }
+  .quick-link {
+    flex: none;
+    scroll-snap-align: start;
+  }
+  .scroll-section__hint {
+    display: none;
+  }
+  .donut-wrap {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 420px) {
+  .aforo-gauge {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ============================================================
+   ♿ ACCESIBILIDAD / REDUCED MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .aforo-gauge__lava,
+  .kpi-progress__fill,
+  .bars-bar,
+  .ranking__fill,
+  .feed-item,
+  .hero-kpi--alerta,
+  .daemon-tile--active .daemon-tile__led,
+  .daemon-tile--failed .daemon-tile__led,
+  .aforo-gauge--full .aforo-gauge__vessel,
+  .quick-link,
+  .feed-avatar,
+  .avatar-stack__img,
+  .daemon-tile {
+    transition: none;
+    animation: none;
+  }
+}

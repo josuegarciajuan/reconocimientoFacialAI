@@ -9,10 +9,52 @@
 @session_start();
 require_once '../config/rutas.php';
 require_once '../libs/db.php';
+require_once './pages/dashboard/widgets.php';
 
 $local_id = (int)($_SESSION["local_id"] ?? 0);
 
 switch ($_GET["a"]) {
+    case "4": // dashboard: fragmentos en vivo (feed + dentro + falta)
+        header("Content-Type: application/json; charset=utf-8");
+        $dentro = dash_almas_dentro($local_id);
+        $falta  = dash_falta_fichar($local_id);
+        echo json_encode([
+            "ok"          => true,
+            "feed"        => dash_feed_html($local_id, 10),
+            "dentro"      => dash_dentro_html($local_id),
+            "falta"       => dash_falta_html($local_id),
+            "dentro_count"=> count($dentro),
+            "falta_count" => count($falta),
+            "updated"     => "hace un momento",
+        ], JSON_UNESCAPED_UNICODE);
+        break;
+
+    case "5": // dashboard: estado de los daemons
+        header("Content-Type: application/json; charset=utf-8");
+        echo json_encode(["ok" => true, "html" => dash_daemons_html()], JSON_UNESCAPED_UNICODE);
+        break;
+
+    case "6": // dashboard: fijar el aforo actual sin recargar
+        header("Content-Type: application/json; charset=utf-8");
+        $nuevo = (int)($_GET["nuevo_aforo"] ?? -1);
+        $loc = DB::selectOne("SELECT aforo_max FROM locales WHERE id = ?", [$local_id]);
+        $max = (int)($loc["aforo_max"] ?? 0);
+        if ($nuevo < 0) {
+            echo json_encode(["ok" => false, "error" => "valor inválido"]);
+            break;
+        }
+        if ($max > 0 && $nuevo > $max) { $nuevo = $max; }
+        DB::execute("UPDATE locales SET aforo_actual = ? WHERE id = ?", [$nuevo, $local_id]);
+        $a = dash_aforo($local_id);
+        $sem_txt = $a["estado"] === "full"
+            ? "🔴 Asedio · " . $a["pct"] . "%"
+            : ($a["estado"] === "warn" ? "🟡 Animado · " . $a["pct"] . "%" : "🟢 Tranquilo · " . $a["pct"] . "%");
+        echo json_encode([
+            "ok" => true, "actual" => $a["actual"], "max" => $a["max"],
+            "pct" => $a["pct"], "estado" => $a["estado"], "sem_txt" => $sem_txt,
+        ], JSON_UNESCAPED_UNICODE);
+        break;
+
     case "1": // notificaciones sin ver
         $return = "false";
         $rows = DB::select(
