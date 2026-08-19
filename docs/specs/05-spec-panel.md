@@ -73,3 +73,8 @@ libs/db.php            # PDO centralizado (sustituye mysql.class.php)
 - [ ] Fechas/filtros correctos (AM/PM, rangos).
 - [ ] `chmod 777` eliminado de la aplicación (solo dirs de datos necesarios, 775 con ACL si hace falta).
 - [ ] Enrolamiento multi-pose dispara `motor/enrolamiento.py` (venv).
+
+> **Nota UI (ver [Spec 10 — Lore Tooltips](10-lore-tooltips.md))**: toda la terminología
+> temática del panel (Mordor/Barad-dûr) se explica con bocadillos automáticos. Cualquier
+> texto temático nuevo DEBE registrarse en `admin/includes/glosario.php` (los ambiguos,
+> además, con `data-lore`).

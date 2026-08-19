@@ -71,6 +71,7 @@ php tests/vinculos_test.php                           # lógica de vínculos ví
 | `docs/specs/07-roadmap-implementacion.md` | Plan por fases |
 | `docs/specs/08-fichajes-horarios.md` | Fichajes con horario habitual y conciliador |
 | `docs/specs/09-vinculos.md` | Vínculos automáticos vídeos ↔ personas ↔ cruces de línea |
+| `docs/specs/10-lore-tooltips.md` | Bocadillos de lore: explicación de la terminología temática (glosario + motor) |
 
 ## Seguridad
 

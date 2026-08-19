@@ -138,10 +138,10 @@ function rf_cfg_select_rango($ini, $fin, $valor) {
                     <div>
                         <span class="field-label">Tipo de acceso</span>
                         <div class="flex flex-wrap gap-x-4 gap-y-2 items-center">
-                            <label for="entrada1" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                            <label for="entrada1" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="puerta-camara">
                                 <input type="radio" name="eos1" id="entrada1" value="entrada" style="accent-color:var(--mordor-oro)"> Puerta
                             </label>
-                            <label for="salida1" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                            <label for="salida1" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="salida-camara">
                                 <input type="radio" name="eos1" id="salida1" value="salida" style="accent-color:var(--mordor-oro)"> Salida
                             </label>
                         </div>
@@ -149,7 +149,7 @@ function rf_cfg_select_rango($ini, $fin, $valor) {
 
                     <div>
                         <span class="field-label">Estado</span>
-                        <label for="encendida_nueva" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <label for="encendida_nueva" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="encendida">
                             <input type="checkbox" name="encendida_nueva" id="encendida_nueva" value="1" style="accent-color:var(--mordor-oro)"> Encendida
                         </label>
                     </div>
@@ -221,10 +221,10 @@ function rf_cfg_select_rango($ini, $fin, $valor) {
                     <div>
                         <span class="field-label">Tipo de acceso</span>
                         <div class="flex flex-wrap gap-x-4 gap-y-2 items-center">
-                            <label for="entrada2" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                            <label for="entrada2" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="puerta-camara">
                                 <input type="radio" name="eos2" id="entrada2" value="entrada" style="accent-color:var(--mordor-oro)" <?= $puerta_sel === 1 ? "checked" : ""; ?>> Puerta
                             </label>
-                            <label for="salida2" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                            <label for="salida2" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="salida-camara">
                                 <input type="radio" name="eos2" id="salida2" value="salida" style="accent-color:var(--mordor-oro)" <?= $salida_sel === 1 ? "checked" : ""; ?>> Salida
                             </label>
                         </div>
@@ -232,7 +232,7 @@ function rf_cfg_select_rango($ini, $fin, $valor) {
 
                     <div>
                         <span class="field-label">Estado</span>
-                        <label for="encendida" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <label for="encendida" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="encendida">
                             <input type="checkbox" name="encendida" id="encendida" value="1" style="accent-color:var(--mordor-oro)" <?= $encendida_sel === 1 ? "checked" : ""; ?>> Encendida
                         </label>
                     </div>

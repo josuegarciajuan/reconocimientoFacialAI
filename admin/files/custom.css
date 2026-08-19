@@ -1107,3 +1107,91 @@ input:focus-visible {
   margin-top: -5px;
   border-left-color: rgba(201, 162, 39, 0.9);
 }
+
+/* ============================================================
+   MORDOR · Bocadillos de lore (tooltips temáticos)
+   Motor: admin/files/lore.js · Glosario: admin/includes/glosario.php
+   ============================================================ */
+.rf-lore {
+  position: fixed;
+  z-index: 300;
+  max-width: 330px;
+  min-width: 210px;
+  padding: 0.7rem 0.9rem;
+  border-radius: 0.7rem;
+  background: rgba(13, 10, 14, 0.97);
+  border: 1px solid rgba(201, 162, 39, 0.5);
+  box-shadow:
+    0 18px 44px -14px rgba(0, 0, 0, 0.9),
+    0 0 22px -6px rgba(201, 162, 39, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s;
+  pointer-events: none;
+}
+
+.rf-lore--show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* caret (flecha) superior */
+.rf-lore::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  margin-left: -6px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 6px solid rgba(201, 162, 39, 0.5);
+}
+
+.rf-lore__term {
+  font-family: "Cinzel", "Cinzel Decorative", serif;
+  font-weight: 700;
+  font-size: 0.92rem;
+  letter-spacing: 0.02em;
+  color: #f0d78c;
+  margin-bottom: 0.3rem;
+  padding-right: 1.4rem; /* deja hueco al caret */
+}
+
+.rf-lore__mean {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--mordor-ceniza);
+}
+
+.rf-lore__go {
+  margin-top: 0.45rem;
+  padding-top: 0.4rem;
+  border-top: 1px dashed rgba(201, 162, 39, 0.25);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--mordor-oro);
+}
+
+.rf-lore__go a {
+  color: var(--mordor-oro);
+  text-decoration: underline;
+  text-decoration-color: rgba(201, 162, 39, 0.4);
+  text-underline-offset: 3px;
+}
+
+.rf-lore__go a:hover {
+  color: var(--mordor-brasa);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rf-lore {
+    transition: none;
+  }
+}

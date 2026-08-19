@@ -42,6 +42,8 @@ if(isset($_GET["descargar"]) and $_GET["descargar"]!=""){
 
 require_once '../config/rutas.php';
 require_once '../libs/db.php';
+// Lore: glosario de terminología temática (Barad-dûr/Mordor) -> window.RF_GLOSARIO
+require_once __DIR__ . '/includes/glosario.php';
 
 // B9: consulta del local actual con PDO
 $local = DB::selectOne("SELECT * FROM locales WHERE id = ?", [(int)($_SESSION["local_id"] ?? 0)]);
@@ -1725,6 +1727,9 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
         <script src="./files/app.js"></script>
         <script src="./files/sauron-eye.js"></script>
         <script src="./files/ui-common.js"></script>
+        <!-- Lore: glosario temático + motor de bocadillos -->
+        <script>window.RF_GLOSARIO = <?= rf_glosario_json(); ?>;</script>
+        <script src="./files/lore.js"></script>
         <?php
         require_once("../includes/javascript.php");
         ?>
