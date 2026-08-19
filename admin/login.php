@@ -9,6 +9,8 @@ require_once '../config/rutas.php';
 require_once '../libs/db.php';
 require_once '../libs/auth.php';
 require_once '../libs/autologin.php';
+// Lore: glosario de terminología temática (Barad-dûr/Mordor) -> window.RF_GLOSARIO
+require_once __DIR__ . '/includes/glosario.php';
 
 $login_error = "";
 
@@ -1663,8 +1665,8 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
                         <div class="login-brand__overlay">
                             <img class="login-brand__logo" src="./files_login/logo-sauron.png" alt="Barad-dûr">
                             <div class="login-brand__title">Mordor</div>
-                            <div class="login-brand__tagline">“Ash nazg durbatulûk, ash nazg gimbatul, ash nazg thrakatulûk agh burzum-ishi krimpatul.”</div>
-                            <div class="login-brand__tagline mt-2" style="font-size:0.85rem">Un Anillo para gobernarlos a todos… y El Ojo que todo lo ve vigila cada acceso por reconocimiento facial.</div>
+                            <div class="login-brand__tagline" data-lore="inscripcion-anillo">“Ash nazg durbatulûk, ash nazg gimbatul, ash nazg thrakatulûk agh burzum-ishi krimpatul.”</div>
+                            <div class="login-brand__tagline mt-2" style="font-size:0.85rem" data-lore="ojo-todo-lo-ve">Un Anillo para gobernarlos a todos… y El Ojo que todo lo ve vigila cada acceso por reconocimiento facial.</div>
                         </div>
                     </div>
                 </div>
@@ -1674,6 +1676,9 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
 
         <!-- BEGIN: JS Assets-->
         <script src="./files_login/app.js"></script>
+        <!-- Lore: glosario temático + motor de bocadillos -->
+        <script>window.RF_GLOSARIO = <?= rf_glosario_json(); ?>;</script>
+        <script src="./files/lore.js"></script>
         <script>
         function alternarContrasenya() {
             var campo = document.getElementById("campo_contrasenya");
