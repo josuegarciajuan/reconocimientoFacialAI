@@ -50,3 +50,26 @@ function ordenar_cadenas_nodos(array $rows, int $cam_a): array
     }
     return $out;
 }
+
+/**
+ * Siguiente número de camino para un par de cámaras.
+ *
+ * Recibe las filas de nodos existentes entre el par (con la columna "camino")
+ * y devuelve MAX(camino) + 1, o 0 si el par aún no tiene ningún camino.
+ * Es la consulta canónica del par en ambos sentidos la que aporta las filas
+ * (como en nodos_caminos_entre()).
+ *
+ * @param array $rows Filas con clave "camino" (p. ej. SELECT camino FROM nodos ...).
+ * @return int
+ */
+function siguiente_camino(array $rows): int
+{
+    $max = -1;
+    foreach ($rows as $r) {
+        $camino = (int)($r["camino"] ?? -1);
+        if ($camino > $max) {
+            $max = $camino;
+        }
+    }
+    return $max + 1;
+}

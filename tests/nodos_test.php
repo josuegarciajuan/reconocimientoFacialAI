@@ -2,7 +2,7 @@
 
 /*
  * Test de la lógica pura de ordenación/agrupación de nodos (libs/nodos.php).
- * No toca BD: ejercita ordenar_cadenas_nodos() con filas sintéticas.
+ * No toca BD: ejercita ordenar_cadenas_nodos() y siguiente_camino() con datos sintéticos.
  * Ejecutar: php tests/nodos_test.php   (exit 0 = OK)
  */
 
@@ -56,6 +56,24 @@ $r = ordenar_cadenas_nodos([
 ], 1);
 ok($r[0]["camino"] === 0 && $r[0]["nodos"] === [[20, 20], [10, 10]], "5. Camino 0 invertido (20→10)");
 ok($r[1]["camino"] === 1 && $r[1]["nodos"] === [[30, 30], [40, 40]], "5. Camino 1 directo (30→40)");
+
+// --- 6. siguiente_camino: sin caminos entre el par → 0 ---
+ok(siguiente_camino([]) === 0, "6. siguiente_camino: vacío → 0");
+
+// --- 7. Solo existe el camino 0 → siguiente es 1 ---
+ok(siguiente_camino([["camino" => 0]]) === 1, "7. siguiente_camino: solo camino 0 → 1");
+
+// --- 8. Caminos 0 y 1 → siguiente es 2 ---
+ok(siguiente_camino([["camino" => 0], ["camino" => 1]]) === 2, "8. siguiente_camino: 0 y 1 → 2");
+
+// --- 9. Sin huecos con caminos 0, 1 y 2 → siguiente es 3 ---
+ok(
+    siguiente_camino([["camino" => 0], ["camino" => 1], ["camino" => 2]]) === 3,
+    "9. siguiente_camino: 0, 1 y 2 → 3"
+);
+
+// --- 10. Caminos con huecos (0 y 2) → siguiente es MAX+1 = 3 ---
+ok(siguiente_camino([["camino" => 0], ["camino" => 2]]) === 3, "10. siguiente_camino: 0 y 2 → 3 (MAX+1)");
 
 echo "\n$total tests, $fallos fallos\n";
 exit($fallos ? 1 : 0);
