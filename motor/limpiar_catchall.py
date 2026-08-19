@@ -45,6 +45,7 @@ from motor.core.model import analyze                 # noqa: E402
 from motor.core.quality import face_sharpness, pose_label  # noqa: E402
 from motor.core.store import FaceStore               # noqa: E402
 from motor.core.backup import (Journal, count_estancias, count_personas,
+                               load_manifest,
                                new_backup_dir, restore_db, snapshot_db,
                                verify_restore, write_manifest)  # noqa: E402
 
@@ -302,15 +303,15 @@ def _rollback(ruta: str, backup_dir: str) -> int:
     local_id = "1"   # el dump restaura el estado completo; solo necesitamos el path del store
     store = FaceStore(os.path.join(ruta, "motor/bbdd_reconocimiento", local_id, "face_enc_v2"),
                       max_per_person=cfg.max_encodings_per_person)
-    before = {"personas": count_personas(ruta), "estancias": count_estancias(ruta),
-              "store_persons": len(store.persons())}
-    print(f"[rollback] {len(entries)} ops en journal | antes: {before}")
+    manifest = load_manifest(backup_dir)
+    esperado = manifest.get("antes") or {"personas": None, "estancias": None, "store_persons": None}
+    print(f"[rollback] {len(entries)} ops en journal | estado esperado (pre-op): {esperado}")
     restore_db(ruta, db_sql)
     store_data = store.load_snapshot_bytes(store_bak)
     with open(os.path.join(ruta, "motor/bbdd_reconocimiento", local_id, "face_enc_v2"), "wb") as fh:
         pickle.dump(store_data, fh)
     print("[rollback] BD y face_enc_v2 restaurados desde snapshots")
-    verify_restore(ruta, store, before, len(entries))
+    verify_restore(ruta, store, esperado, len(entries))
     return 0
 
 

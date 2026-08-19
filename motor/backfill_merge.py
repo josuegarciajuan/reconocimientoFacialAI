@@ -44,7 +44,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from motor.core.config import Config               # noqa: E402
 from motor.core.store import FaceStore              # noqa: E402
 from motor.core.backup import (Journal, count_estancias, count_personas,
-                               new_backup_dir, restore_db, snapshot_db,
+                               load_manifest, new_backup_dir, restore_db, snapshot_db,
                                verify_restore, write_manifest)  # noqa: E402
 
 
@@ -184,9 +184,12 @@ def main() -> int:
             # estancias que se reasignan (para auditoría)
             estancia_ids: list[int] = []
             if keep in pid_of and c in pid_of:
-                estancia_ids = [int(x) for x in _mysql(
-                    args.ruta, f"SELECT GROUP_CONCAT(id) FROM estancias WHERE persona_id={pid_of[c]}"
-                )[0].split(",")] if _mysql(args.ruta, f"SELECT 1 FROM estancias WHERE persona_id={pid_of[c]} LIMIT 1") else []
+                rows_e = _mysql(
+                    args.ruta, f"SELECT GROUP_CONCAT(id) FROM estancias WHERE persona_id={pid_of[c]}")
+                val = rows_e[0].strip() if rows_e else ""
+                # GROUP_CONCAT sin filas devuelve 'NULL' (no vacío)
+                if val and val != "NULL":
+                    estancia_ids = [int(x) for x in val.split(",")]
                 _mysql(args.ruta, f"UPDATE estancias SET persona_id={pid_of[keep]} WHERE persona_id={pid_of[c]}")
                 _mysql(args.ruta, f"DELETE FROM personas WHERE id={pid_of[c]}")
                 pid_of.pop(c)
@@ -221,17 +224,17 @@ def _rollback(ruta: str, backup_dir: str) -> int:
     cfg = Config()
     store = FaceStore(os.path.join(ruta, "motor/bbdd_reconocimiento", "1", "face_enc_v2"),
                       max_per_person=cfg.max_encodings_per_person)
-    before = {"personas": count_personas(ruta), "estancias": count_estancias(ruta),
-              "store_persons": len(store.persons())}
+    manifest = load_manifest(backup_dir)
+    esperado = manifest.get("antes") or {"personas": None, "estancias": None, "store_persons": None}
 
-    print(f"[rollback] {n_ops} ops en journal | antes: {before}")
+    print(f"[rollback] {n_ops} ops en journal | estado esperado (pre-op): {esperado}")
     restore_db(ruta, db_sql)
     store_data = store.load_snapshot_bytes(store_bak)
     with open(os.path.join(ruta, "motor/bbdd_reconocimiento", "1", "face_enc_v2"), "wb") as fh:
         import pickle
         pickle.dump(store_data, fh)
     print("[rollback] BD y face_enc_v2 restaurados desde snapshots")
-    verify_restore(ruta, store, before, n_ops)
+    verify_restore(ruta, store, esperado, n_ops)
     return 0
 
 
