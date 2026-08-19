@@ -612,6 +612,8 @@
 
 .dibujo-lienzo {
   display: block;
+  max-width: 100%;
+  height: auto;
   background: #ffffff;
   cursor: crosshair;
   touch-action: none;
