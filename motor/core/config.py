@@ -22,7 +22,10 @@ class Config:
     det_size: int = 640
 
     # --- calidad de imagen ---
-    min_sharpness: float = 60.0      # varianza Laplaciano mínima (vigilancia)
+    # 60 -> 80: menos caras borrosas de ruido entran en el pipeline (plan
+    # refinamiento-autoaprendizaje, F2.1). Si una cámara es de baja resolución y
+    # se queda sin detecciones, puede bajarse vía flag por despliegue.
+    min_sharpness: float = 80.0      # varianza Laplaciano mínima (vigilancia)
     frontal_yaw_tol: float = 35.0
     frontal_pitch_tol: float = 25.0
 
@@ -32,6 +35,20 @@ class Config:
     match_threshold: float = 0.30    # >= esto: match si la diferencia con el 2º >= margin
     margin: float = 0.03             # separación frente al 2º para evitar confusión
     group_threshold: float = 0.30    # intra-batería: >= esto = misma persona en la escena
+
+    # --- refinamiento autoaprendizaje (F1): galerías limpias ---
+    # Sub-clustering coherente: dentro de un clúster de batería, un miembro
+    # permanece con el representativo solo si coseno >= cluster_confirm. Evita
+    # que dos personas juntas en la escena se mezclen en una galería (union-find
+    # transitivo a 0.30 enlazaba caras ajenas: impostor p95 ~0.36).
+    cluster_confirm: float = 0.35
+    # Admisión individual: un encoding solo entra en la galería de la persona
+    # asignada si su mejor similitud contra esa persona >= admission_cosine
+    # (y, con zones_enabled, contra una pose comparable). Evita que una cara
+    # ajena agrupada por transitividad contamine la galería y provoque falsos
+    # match posteriores (agregación max).
+    admission_cosine: float = 0.32
+    admission_pose_aware: bool = True
 
     # --- agrupación temporal ---
     batch_seconds: float = 6.0       # ventana para agrupar fotos de un mismo evento
@@ -92,7 +109,10 @@ class Config:
     torso_h_face: float = 2.0           # alto del crop de torso (desde la barbilla) en veces la cara
 
     # --- zonas/ángulos (F2, L1c) ---
-    zones_enabled: bool = False
+    # ACTIVADO por defecto (plan refinamiento-autoaprendizaje, F2.3): matching
+    # pose-consciente (comparar solo poses comparables) es barato (sin VLM) y
+    # reduce tanto falsos match como falsos new.
+    zones_enabled: bool = True
 
     # --- F7: identificar de espaldas (crops de cuerpo sin cara) ---
     body_match_conf: float = 0.9        # confianza mínima (torso+VLM) para asignar un cuerpo
@@ -119,8 +139,12 @@ class Config:
     openai_retries: int = 2
 
     # --- feedback / calibración (F3) ---
-    feedback_enabled: bool = False
-    calibration_enabled: bool = False
+    # ACTIVADOS por defecto (plan refinamiento-autoaprendizaje, F3): el
+    # clasificador registra cada decisión y las acciones del panel ("Unir",
+    # "mover foto") emiten etiquetas genuino/impostor que alimentan la
+    # calibración diaria de pesos/umbrales con validación held-out.
+    feedback_enabled: bool = True
+    calibration_enabled: bool = True
     calib_lr: float = 0.15              # cap al delta diario de pesos (anti-drift)
     calib_ewma_alpha: float = 0.30      # factor de olvido del EWMA de accuracy
 

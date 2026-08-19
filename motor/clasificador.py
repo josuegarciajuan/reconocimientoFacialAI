@@ -103,6 +103,43 @@ def cluster_faces(faces_emb, group_threshold: float) -> list[list[int]]:
     return list(groups.values())
 
 
+def split_coherent_clusters(cluster: list[int], face_list: list[tuple],
+                            battery: list[dict], cfg: Config) -> list[list[int]]:
+    """Divide un clúster de batería en sub-clústeres COHERENTES (F1.1).
+
+    El union-find a `group_threshold` (0.30) puede enlazar transitivamente caras
+    de personas distintas (impostor p95 ~0.36): A~B y B~C unen A~C sin que A~C
+    se parezcan. Aquí cada sub-clúster se construye alrededor de su cara más
+    nítida (representativo) y un miembro permanece SOLO si confirma contra él
+    (coseno >= cfg.cluster_confirm). Dos personas juntas en la escena acaban en
+    sub-clústeres distintos y dejan de contaminarse mutuamente.
+
+    face_list: lista de (embedding, item_idx) de la batería (mismo orden que cluster).
+    """
+    from motor.core.matching import cosine  # noqa: E402
+
+    infos = []   # (emb, item_idx, sharpness)
+    for fi in cluster:
+        emb, item_idx = face_list[fi]
+        sh = max(face_sharpness(battery[item_idx]["img"], f)
+                 for f in battery[item_idx]["faces"]) if battery[item_idx]["faces"] else 0.0
+        infos.append((emb, item_idx, sh))
+
+    remaining = set(range(len(infos)))
+    subs: list[list[int]] = []
+    while remaining:
+        # semilla = cara más nítida restante (representativa del sub-clúster)
+        seed = max(remaining, key=lambda i: infos[i][2])
+        members = {seed}
+        rep_emb = infos[seed][0]
+        for i in sorted(remaining - {seed}):
+            if cosine(infos[i][0], rep_emb) >= cfg.cluster_confirm:
+                members.add(i)
+        subs.append(sorted(members))
+        remaining -= members
+    return subs
+
+
 def _face_scores(embs: list[np.ndarray], store: FaceStore, cfg: Config,
                  pose: str | None) -> dict[str, float]:
     """Similitudes por persona agregadas con MAX (una cara fuerte no se diluye).
@@ -272,130 +309,146 @@ def process_battery(battery, ruta: str, local_id: str, camara_id: str, cfg: Conf
     clusters = cluster_faces([e for e, _ in face_list], cfg.group_threshold)
 
     for cluster in clusters:
-        item_idxs = sorted({face_list[i][1] for i in cluster})
-        embs = [face_list[i][0] for i in cluster]
+        # F1.1: dividir en sub-clústeres coherentes — nunca mezclar personas
+        # distintas dentro de la misma batería (union-find transitivo a 0.30
+        # enlazaba caras ajenas y contaminaba la galería).
+        for sub in split_coherent_clusters(cluster, face_list, battery, cfg):
+            _process_subcluster(sub, face_list, battery, ruta, local_id, camara_id,
+                                cfg, store, feedback, torso_map)
 
-        # foto representativa = la más enfocada del clúster
-        best = None
-        best_sharp = -1.0
-        for idx in item_idxs:
-            it = battery[idx]
-            for f in it["faces"]:
-                sh = face_sharpness(it["img"], f)
-                if sh > best_sharp:
-                    best_sharp = sh
-                    best = (idx, f)
-        rep_item = battery[best[0]]
-        rep_face = best[1]
-        rep_stem = rep_item["file"].rsplit(".", 1)[0]
-        query_pose = pose_label(rep_face, cfg.yaw_frontal, cfg.yaw_45, cfg.yaw_90, cfg.pitch_frontal)
 
-        # crop de torso compañero (mismo stem en <cam>_cuerpo/)
-        torso_path = None
-        if torso_map:
-            torso_path = torso_map.get(rep_stem)
+def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
+                        camara_id: str, cfg: Config, store: FaceStore,
+                        feedback=None, torso_map: dict[str, str] | None = None) -> None:
+    """Clasifica un sub-clúster coherente de caras y actualiza galería/álbum."""
+    item_idxs = sorted({face_list[i][1] for i in sub})
+    embs = [face_list[i][0] for i in sub]
 
-        # F2 fix: en veredicto "uncertain" también se enriquece la galería
-        enrich_on_uncertain = cfg.zones_enabled
+    # foto representativa = la más enfocada del sub-clúster
+    best = None
+    best_sharp = -1.0
+    for idx in item_idxs:
+        it = battery[idx]
+        for f in it["faces"]:
+            sh = face_sharpness(it["img"], f)
+            if sh > best_sharp:
+                best_sharp = sh
+                best = (idx, f)
+    rep_item = battery[best[0]]
+    rep_face = best[1]
+    rep_stem = rep_item["file"].rsplit(".", 1)[0]
+    query_pose = pose_label(rep_face, cfg.yaw_frontal, cfg.yaw_45, cfg.yaw_90, cfg.pitch_frontal)
 
-        if cfg.cascade_enabled:
-            face_scores = _face_scores(embs, store, cfg, query_pose)
-            ranked = sorted(face_scores.items(), key=lambda kv: kv[1], reverse=True)
-            s1 = ranked[0][1] if ranked else 0.0
-            s2 = ranked[1][1] if len(ranked) > 1 else 0.0
-            from motor.core.matching import face_confidence, select_candidates
-            face_layer = LayerScore(score=s1, confidence=face_confidence(s1, s2, best_sharp, cfg))
-            from motor.core.fusion import CascadeContext, run_cascade
-            ctx = _CascadeCtx(ruta, local_id, camara_id, cfg, store, face_scores,
-                              query_pose, rep_item["path"], torso_path, rep_item["img"], rep_face)
-            cc = CascadeContext(torso=ctx.torso_score, zonas=ctx.zonas_score,
-                                vlm=ctx.vlm_score, openai=ctx.openai_score)
-            result = run_cascade(face_scores, cc, cfg, face_layer)
-        else:
-            result = match_group(embs, store, cfg)
-            # pose-consciente (F2) sin cascada: se activa con zones_enabled
-            if cfg.zones_enabled:
-                result = match_group(embs, store, cfg, sharpness=best_sharp, pose=query_pose)
+    # crop de torso compañero (mismo stem en <cam>_cuerpo/)
+    torso_path = None
+    if torso_map:
+        torso_path = torso_map.get(rep_stem)
 
-        if result.verdict == "new" or result.person is None:
-            person = random_code()
-        else:
-            person = result.person
+    # F2 fix: en veredicto "uncertain" también se enriquece la galería
+    enrich_on_uncertain = cfg.zones_enabled
 
-        # nombre de salida: stem representativo (+ "----" entrada/salida si hay >=2 fotos distintas)
-        stems = [battery[idx]["file"].rsplit(".", 1)[0] for idx in item_idxs]
-        stems_sorted = sorted(stems, key=lambda s: parse_timestamp(s + ".jpg") or 0)
-        if len(stems_sorted) >= 2 and stems_sorted[0] != stems_sorted[-1]:
-            nombre = f"{stems_sorted[0]}----{stems_sorted[-1]}"
-        else:
-            nombre = stems_sorted[0] if stems_sorted else battery[item_idxs[0]]["file"].rsplit(".", 1)[0]
+    if cfg.cascade_enabled:
+        face_scores = _face_scores(embs, store, cfg, query_pose)
+        ranked = sorted(face_scores.items(), key=lambda kv: kv[1], reverse=True)
+        s1 = ranked[0][1] if ranked else 0.0
+        s2 = ranked[1][1] if len(ranked) > 1 else 0.0
+        from motor.core.matching import face_confidence, select_candidates
+        face_layer = LayerScore(score=s1, confidence=face_confidence(s1, s2, best_sharp, cfg))
+        from motor.core.fusion import CascadeContext, run_cascade
+        ctx = _CascadeCtx(ruta, local_id, camara_id, cfg, store, face_scores,
+                          query_pose, rep_item["path"], torso_path, rep_item["img"], rep_face)
+        cc = CascadeContext(torso=ctx.torso_score, zonas=ctx.zonas_score,
+                            vlm=ctx.vlm_score, openai=ctx.openai_score)
+        result = run_cascade(face_scores, cc, cfg, face_layer)
+    else:
+        result = match_group(embs, store, cfg)
+        # pose-consciente (F2) sin cascada: se activa con zones_enabled
+        if cfg.zones_enabled:
+            result = match_group(embs, store, cfg, sharpness=best_sharp, pose=query_pose)
 
-        foto_id = random_code()
-        out_dir = os.path.join(ruta, "motor/caras", local_id, camara_id, person)
-        os.makedirs(out_dir, exist_ok=True)
-        out_name = f"{nombre}_{foto_id}.jpg"
-        # Auto-zoom hacia la cara + super-resolución (solo visual; embeddings intactos)
-        final_img = zoom_photo(rep_item["img"], rep_face.bbox, cfg)
-        cv2.imwrite(os.path.join(out_dir, out_name), final_img, [cv2.IMWRITE_JPEG_QUALITY, 95])
-        if os.path.exists(rep_item["path"]):
-            os.remove(rep_item["path"])
+    if result.verdict == "new" or result.person is None:
+        person = random_code()
+    else:
+        person = result.person
 
-        # refinar el diccionario
-        if result.verdict == "match":
-            _store_add(store, person, item_idxs, battery, cfg)
-        elif result.verdict == "new":
-            _store_add(store, person, item_idxs, battery, cfg)
-        elif result.verdict == "uncertain" and enrich_on_uncertain and person != "":
-            # F2 fix: el veredicto "uncertain" asigna persona pero NO enriquecía
-            # la galería -> bucle de fragmentación (perfil↔frontal). Ahora sí.
-            _store_add(store, person, item_idxs, battery, cfg)
+    # nombre de salida: stem representativo (+ "----" entrada/salida si hay >=2 fotos distintas)
+    stems = [battery[idx]["file"].rsplit(".", 1)[0] for idx in item_idxs]
+    stems_sorted = sorted(stems, key=lambda s: parse_timestamp(s + ".jpg") or 0)
+    if len(stems_sorted) >= 2 and stems_sorted[0] != stems_sorted[-1]:
+        nombre = f"{stems_sorted[0]}----{stems_sorted[-1]}"
+    else:
+        nombre = stems_sorted[0] if stems_sorted else battery[item_idxs[0]]["file"].rsplit(".", 1)[0]
 
-        # F1/F3: la capa torso necesita galería de apariencia por persona.
-        if cfg.torso_enabled and person:
-            from motor.core.appearance import torso_descriptor
-            desc = None
-            if torso_path and os.path.exists(torso_path):
-                img = cv2.imread(torso_path)
-                if img is not None:
-                    h, w = img.shape[:2]
-                    desc = torso_descriptor(img, (0, 0, w, h))
-            if desc is None:
-                tb = torso_bbox_local(rep_face, rep_item["img"], cfg)
-                if tb is not None:
-                    desc = torso_descriptor(rep_item["img"], tb)
-            if desc is not None and desc.size > 0:
-                store.add_appearance(person, desc, ts=rep_item["ts"] or time.time(),
-                                     src=out_name)
+    foto_id = random_code()
+    out_dir = os.path.join(ruta, "motor/caras", local_id, camara_id, person)
+    os.makedirs(out_dir, exist_ok=True)
+    out_name = f"{nombre}_{foto_id}.jpg"
+    # Auto-zoom hacia la cara + super-resolución (solo visual; embeddings intactos)
+    final_img = zoom_photo(rep_item["img"], rep_face.bbox, cfg)
+    cv2.imwrite(os.path.join(out_dir, out_name), final_img, [cv2.IMWRITE_JPEG_QUALITY, 95])
+    if os.path.exists(rep_item["path"]):
+        os.remove(rep_item["path"])
 
-        # UNCERTAIN: copia a cola de revisión manual (nunca duplicado en silencio)
-        if result.verdict == "uncertain":
-            _copy_to_revision(ruta, local_id, camara_id, out_dir, out_name, cfg)
+    # refinar el diccionario (F1.2: admisión por cara — solo encodings que
+    # individualmente confirman contra la persona asignada)
+    if result.verdict == "match":
+        _store_add(store, person, item_idxs, battery, cfg)
+    elif result.verdict == "new":
+        # F1.3: el sub-clúster es internamente coherente (split_coherent_clusters):
+        # identidad nueva creada solo con caras de la misma persona real.
+        _store_add(store, person, item_idxs, battery, cfg, new_person=True)
+    elif result.verdict == "uncertain" and enrich_on_uncertain and person != "":
+        # F2 fix: el veredicto "uncertain" asigna persona pero NO enriquecía
+        # la galería -> bucle de fragmentación (perfil↔frontal). Ahora sí, con
+        # admisión por cara para no contaminar.
+        _store_add(store, person, item_idxs, battery, cfg)
 
-        # feedback: registrar la decisión con features por capa
-        if feedback is not None and cfg.feedback_enabled:
-            from motor.core.feedback import embedding_hash
-            feedback.log_decision({
-                "local": local_id, "cam": camara_id,
-                "verdict": result.verdict, "person": person,
-                "top1": result.candidates[0] if result.candidates else None,
-                "top2": result.candidates[1] if len(result.candidates) > 1 else None,
-                "best": result.best_score, "second": result.second_score,
-                "layers": result.layer_scores,
-                "query_hash": embedding_hash(embs[0]),
-                "stem": rep_stem,
-            })
-
-        # eliminar el resto de fotos del clúster (ya procesadas)
-        for idx in item_idxs:
-            p = battery[idx]["path"]
-            if os.path.exists(p):
-                os.remove(p)
-
-        # consumir el crop de torso compañero (ya no hace falta)
+    # F1/F3: la capa torso necesita galería de apariencia por persona.
+    if cfg.torso_enabled and person:
+        from motor.core.appearance import torso_descriptor
+        desc = None
         if torso_path and os.path.exists(torso_path):
-            os.remove(torso_path)
+            img = cv2.imread(torso_path)
+            if img is not None:
+                h, w = img.shape[:2]
+                desc = torso_descriptor(img, (0, 0, w, h))
+        if desc is None:
+            tb = torso_bbox_local(rep_face, rep_item["img"], cfg)
+            if tb is not None:
+                desc = torso_descriptor(rep_item["img"], tb)
+        if desc is not None and desc.size > 0:
+            store.add_appearance(person, desc, ts=rep_item["ts"] or time.time(),
+                                 src=out_name)
 
-        log(f"[{result.verdict}] {len(item_idxs)} foto(s) -> {person} (best={result.best_score:.3f})")
+    # UNCERTAIN: copia a cola de revisión manual (nunca duplicado en silencio)
+    if result.verdict == "uncertain":
+        _copy_to_revision(ruta, local_id, camara_id, out_dir, out_name, cfg)
+
+    # feedback: registrar la decisión con features por capa
+    if feedback is not None and cfg.feedback_enabled:
+        from motor.core.feedback import embedding_hash
+        feedback.log_decision({
+            "local": local_id, "cam": camara_id,
+            "verdict": result.verdict, "person": person,
+            "top1": result.candidates[0] if result.candidates else None,
+            "top2": result.candidates[1] if len(result.candidates) > 1 else None,
+            "best": result.best_score, "second": result.second_score,
+            "layers": result.layer_scores,
+            "query_hash": embedding_hash(embs[0]),
+            "stem": rep_stem,
+        })
+
+    # eliminar el resto de fotos del sub-clúster (ya procesadas)
+    for idx in item_idxs:
+        p = battery[idx]["path"]
+        if os.path.exists(p):
+            os.remove(p)
+
+    # consumir el crop de torso compañero (ya no hace falta)
+    if torso_path and os.path.exists(torso_path):
+        os.remove(torso_path)
+
+    log(f"[{result.verdict}] {len(item_idxs)} foto(s) -> {person} (best={result.best_score:.3f})")
 
 
 def torso_bbox_local(face, img, cfg):
@@ -406,13 +459,41 @@ def torso_bbox_local(face, img, cfg):
     return torso_bbox(face, w, h, cfg)
 
 
-def _store_add(store: FaceStore, person: str, item_idxs, battery, cfg: Config) -> None:
+def _store_add(store: FaceStore, person: str, item_idxs, battery, cfg: Config,
+               new_person: bool = False) -> None:
+    """Añade encodings a la galería de `person` con CONTROL DE ADMISIÓN (F1.2).
+
+    - new_person=True (verdict "new"): el sub-clúster ya es internamente
+      coherente (split_coherent_clusters) -> se añaden todas sus caras.
+    - new_person=False (match/uncertain): cada cara se admite SOLO si su mejor
+      similitud individual contra la persona asignada >= cfg.admission_cosine
+      (pose-consciente si cfg.zones_enabled). Las caras que no confirmen NO
+      entran en la galería: evita que una cara ajena agrupada por transitividad
+      contamine la identidad y provoque falsos match posteriores (agregación max).
+    """
     from motor.core.quality import face_sharpness as _fs, pose_label as _pl
-    encs = [f.embedding for idx in item_idxs for f in battery[idx]["faces"]]
-    quals = [_fs(battery[idx]["img"], f) for idx in item_idxs for f in battery[idx]["faces"]]
-    poses = [_pl(f, cfg.yaw_frontal, cfg.yaw_45, cfg.yaw_90, cfg.pitch_frontal)
-             for idx in item_idxs for f in battery[idx]["faces"]]
-    store.add(person, encs, quals, poses)
+    from motor.core.matching import best_cosine, scores_per_person_pose_aware
+
+    gal_encs = store.person_encodings(person)
+    encs, quals, poses = [], [], []
+    for idx in item_idxs:
+        for f in battery[idx]["faces"]:
+            if new_person:
+                admit = True
+            elif gal_encs is None or len(gal_encs) == 0:
+                admit = False                 # sin galería no puede confirmar (no ocurre en match)
+            elif cfg.zones_enabled and cfg.admission_pose_aware:
+                pose = _pl(f, cfg.yaw_frontal, cfg.yaw_45, cfg.yaw_90, cfg.pitch_frontal)
+                sp = scores_per_person_pose_aware(f.embedding, store, cfg, pose)
+                admit = sp.get(person, 0.0) >= cfg.admission_cosine
+            else:
+                admit = best_cosine(f.embedding, gal_encs) >= cfg.admission_cosine
+            if admit:
+                encs.append(f.embedding)
+                quals.append(_fs(battery[idx]["img"], f))
+                poses.append(_pl(f, cfg.yaw_frontal, cfg.yaw_45, cfg.yaw_90, cfg.pitch_frontal))
+    if encs:
+        store.add(person, encs, quals, poses)
 
 
 def _copy_to_revision(ruta: str, local_id: str, camara_id: str,
