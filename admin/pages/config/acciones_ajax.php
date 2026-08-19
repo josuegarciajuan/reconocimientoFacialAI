@@ -8,6 +8,11 @@ require_once __DIR__ . "/../../../config/rutas.php";
 require_once __DIR__ . "/../../../libs/db.php";
 require_once __DIR__ . "/../../../libs/nodos.php";
 
+/* La sesión debe estar iniciada para leer $_SESSION["local_id"] (caso 8: mover cámara).
+ * Este fichero se llama por fetch directo (no pasa por index.php), así que hay que
+ * iniciarla aquí. Patrón idéntico a admin/accionesAjax.php. */
+@session_start();
+
 switch ($_GET["a"]) {
     case "1": // datos de una cámara
         $camara = (int)$_GET["camara"];
