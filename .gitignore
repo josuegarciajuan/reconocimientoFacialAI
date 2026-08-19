@@ -34,9 +34,13 @@ motor/calib/
 motor/llm_cache/
 # Informes de re-matching (reagrupar.py)
 motor/reagrupar_out/
+# Backups SQL generados por los scripts de backfill/reagrupar
+motor/backup_*.sql
 aux/
 # Respaldo histórico de croquis del plano (nunca versionar)
 admin/pages/config/planos/historial/
+# Croquis dibujado en runtime desde el panel (se regenera)
+admin/pages/config/planos/plano_dibujo_*.png
 admin/caras_procesadas/
 admin/fotos_camara/
 admin/files/videos_registro/
