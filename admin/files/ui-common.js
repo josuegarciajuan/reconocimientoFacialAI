@@ -296,6 +296,116 @@
     });
   }
 
+  /* ------------------------------------------------------------------ */
+  /* Tooltip universal auto-posicionado (rf-tip)                        */
+  /* Cualquier elemento con data-tip="texto" muestra un globo estilo    */
+  /* Mordor que elige dirección entre los 4 puntos cardinales según el  */
+  /* espacio disponible en el viewport. Se puede reutilizar en cualquier */
+  /* sección sin más que añadir el atributo data-tip al elemento.       */
+  /* ------------------------------------------------------------------ */
+  var rfTipEl = null;
+
+  function rfTipObtener() {
+    if (!rfTipEl) {
+      rfTipEl = doc.createElement("div");
+      rfTipEl.className = "rf-tip";
+      rfTipEl.setAttribute("role", "tooltip");
+      rfTipEl.style.display = "none";
+      doc.body.appendChild(rfTipEl);
+    }
+    return rfTipEl;
+  }
+
+  function rfTipMostrar(objetivo, texto) {
+    var tip = rfTipObtener();
+    var margen = 8;
+    tip.textContent = texto;
+    tip.className = "rf-tip";
+    tip.style.display = "block";
+    tip.style.left = "0px";
+    tip.style.top = "0px";
+
+    var rect = objetivo.getBoundingClientRect();
+    var tipW = tip.offsetWidth;
+    var tipH = tip.offsetHeight;
+
+    var abajo = win.innerHeight - rect.bottom; // espacio libre bajo el elemento
+    var arriba = rect.top;                     // espacio libre sobre el elemento
+    var derecha = win.innerWidth - rect.right; // espacio libre a la derecha
+    var izquierda = rect.left;                 // espacio libre a la izquierda
+
+    var cabe = {
+      down: abajo >= tipH + margen,
+      up: arriba >= tipH + margen,
+      right: derecha >= tipW + margen,
+      left: izquierda >= tipW + margen
+    };
+    // Primera dirección que cabe; en caso de empate/nada cabe, cae en down
+    var orden = ["down", "up", "right", "left"];
+    var dir = "down";
+    for (var i = 0; i < orden.length; i++) {
+      if (cabe[orden[i]]) {
+        dir = orden[i];
+        break;
+      }
+    }
+
+    var x = 0;
+    var y = 0;
+    if (dir === "down" || dir === "up") {
+      x = rect.left + rect.width / 2 - tipW / 2;
+      y = (dir === "down") ? rect.bottom + margen : rect.top - tipH - margen;
+      x = Math.max(margen, Math.min(x, win.innerWidth - tipW - margen));
+    } else {
+      x = (dir === "right") ? rect.right + margen : rect.left - tipW - margen;
+      y = rect.top + rect.height / 2 - tipH / 2;
+      y = Math.max(margen, Math.min(y, win.innerHeight - tipH - margen));
+    }
+
+    tip.style.left = x + "px";
+    tip.style.top = y + "px";
+    tip.classList.add("rf-tip--" + dir);
+  }
+
+  function rfTipOcultar() {
+    if (rfTipEl) {
+      rfTipEl.style.display = "none";
+    }
+  }
+
+  function rfTipInit() {
+    // Mostrar al pasar el ratón o al enfocar con teclado
+    function obtenerObjetivo(e) {
+      var t = e.target;
+      return (t && t.closest) ? t.closest("[data-tip]") : null;
+    }
+    doc.addEventListener("mouseover", function (e) {
+      var t = obtenerObjetivo(e);
+      if (t && t.getAttribute("data-tip")) {
+        rfTipMostrar(t, t.getAttribute("data-tip"));
+      }
+    });
+    doc.addEventListener("mouseout", function (e) {
+      if (obtenerObjetivo(e)) {
+        rfTipOcultar();
+      }
+    });
+    doc.addEventListener("focusin", function (e) {
+      var t = obtenerObjetivo(e);
+      if (t && t.getAttribute("data-tip")) {
+        rfTipMostrar(t, t.getAttribute("data-tip"));
+      }
+    });
+    doc.addEventListener("focusout", function (e) {
+      if (obtenerObjetivo(e)) {
+        rfTipOcultar();
+      }
+    });
+    // Ocultar al hacer scroll o redimensionar (el tooltip es position:fixed)
+    doc.addEventListener("scroll", rfTipOcultar, true);
+    win.addEventListener("resize", rfTipOcultar);
+  }
+
   /* Exposición global */
   win.rfToast = rfToast;
   win.rfLightbox = rfLightbox;
@@ -303,10 +413,12 @@
   win.rfVideoModal = rfVideoModal;
   win.rfRefrescarSnapshots = rfRefrescarSnapshots;
   win.verFoto = rfLightbox; // alias legacy de los javascript.php de secciones
+  win.rfTipInit = rfTipInit; // inicialización delegada (ver $(function) abajo)
 
   // Inicialización automática de refresco cuando hay rejilla de cámaras
   $(function () {
     rfPanelDrawer();
+    rfTipInit();
     if (doc.querySelectorAll(".cam-card__img[data-snapshot]").length > 0) {
       rfRefrescarSnapshots(15000);
     }
