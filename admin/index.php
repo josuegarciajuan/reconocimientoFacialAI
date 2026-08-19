@@ -81,6 +81,9 @@ if (!$local) {
         <link rel="stylesheet" href="./files/app.css">
         <link rel="stylesheet" href="./files/custom.css">
         <link rel="stylesheet" href="./files/sections.css">
+        <?php if (($_GET["page"] ?? "dash") === "dash"): ?>
+        <link rel="stylesheet" href="./files/dashboard.css?v=20260819">
+        <?php endif; ?>
         <!-- END: CSS Assets-->
         <script type="text/javascript" src="./includes/jquery.js"></script>
         <script type="text/javascript" src="./includes/ajax.js"></script>
@@ -1725,6 +1728,9 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
         <script src="./files/app.js"></script>
         <script src="./files/sauron-eye.js"></script>
         <script src="./files/ui-common.js"></script>
+        <?php if (($_GET["page"] ?? "dash") === "dash"): ?>
+        <script src="./files/dashboard.js?v=20260819"></script>
+        <?php endif; ?>
         <?php
         require_once("../includes/javascript.php");
         ?>
