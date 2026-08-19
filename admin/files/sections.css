@@ -604,6 +604,12 @@
   accent-color: var(--mordor-oro);
 }
 
+/* Al editar un croquis existente el fondo de referencia sobra (la base lo
+   tapa): se oculta para evitar la confusión de ver el dibujo "tenue". */
+.dibujo-fondo--oculto {
+  display: none;
+}
+
 .dibujo-lienzo-wrap {
   width: 100%;
   overflow-x: auto;

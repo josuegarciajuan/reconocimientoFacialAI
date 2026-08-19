@@ -1199,6 +1199,7 @@ function abrirDibujo() {
 
     // Reset del editor: capa en blanco + herramientas por defecto.
     dibujo.base = null;
+    dibujo.fondo = null;   // el fondo de referencia solo se carga si se dibuja desde cero
     dibujo.undo = [];
     dibujo.borrador = false;
     document.getElementById("dibujoBorrador").classList.remove("is-activo");
@@ -1208,11 +1209,11 @@ function abrirDibujo() {
     document.getElementById("dibujoFondo").checked = true;
     dibujo.capaCtx.clearRect(0, 0, dibujo.canvas.width, dibujo.canvas.height);
 
-    cargarDibujoFondo();
-
-    // Si el local ya tiene croquis guardado, cargarlo como base editable
-    // (el borrador y el deshacer actúan también sobre él).
+    // Si el local ya tiene croquis guardado, cargarlo como base editable: se
+    // muestra a color real, sin el fondo de referencia tenue (que confunde).
+    // El borrador y el deshacer actúan también sobre el dibujo previo.
     if (PLANO_DIBUJO_URL) {
+        document.getElementById("dibujoFondoWrap").classList.add("dibujo-fondo--oculto");
         var img = new Image();
         img.onload = function () {
             dibujo.base = img;
@@ -1223,9 +1224,13 @@ function abrirDibujo() {
         img.onerror = function () {
             dibujo.base = null;
             dibujoRedibujar();
+            alert("No se pudo cargar el croquis existente. Vuelve a intentarlo.");
         };
         img.src = PLANO_DIBUJO_URL + "?v=" + Date.now();
     } else {
+        // Sin croquis: fondo de referencia al 45% para poder calcar.
+        document.getElementById("dibujoFondoWrap").classList.remove("dibujo-fondo--oculto");
+        cargarDibujoFondo();
         dibujoRedibujar();
     }
     dibujo.abierto = true;

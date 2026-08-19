@@ -179,7 +179,7 @@ $hint = $hints[$hint_key] ?? $hints[$tab . "/crear"] ?? "Usa el panel de la izqu
 <div id="planoDibujoModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="planoDibujoTitulo">
     <div class="modal__content box p-5">
         <div class="flex items-center mb-4">
-            <h3 id="planoDibujoTitulo" class="media-modal__title mr-auto truncate">✏️ Dibujar croquis del local</h3>
+            <h3 id="planoDibujoTitulo" class="media-modal__title mr-auto truncate"><?= $plano_dibujo_cfg ? "✏️ Editar croquis del local" : "✏️ Dibujar croquis del local"; ?></h3>
             <a href="javascript:;" data-dismiss="modal" class="button button--sm text-white bg-theme-6 ml-3">Cerrar</a>
         </div>
 
@@ -195,7 +195,7 @@ $hint = $hints[$hint_key] ?? $hints[$tab . "/crear"] ?? "Usa el panel de la izqu
             <button type="button" id="dibujoBorrador" class="button text-white bg-theme-2 shadow-md dibujo-btn" onclick="dibujoToggleBorrador()">Borrador</button>
             <button type="button" class="button text-white bg-theme-2 shadow-md dibujo-btn" onclick="dibujoDeshacer()">Deshacer</button>
             <button type="button" class="button text-white bg-theme-6 shadow-md dibujo-btn" onclick="dibujoLimpiar()">Limpiar todo</button>
-            <label class="dibujo-tool dibujo-fondo" title="Dibuja sobre el plano actual como referencia">
+            <label class="dibujo-tool dibujo-fondo" id="dibujoFondoWrap" title="Dibuja sobre el plano actual como referencia">
                 <input type="checkbox" id="dibujoFondo" checked>
                 <span class="text-xs text-gray-500 dark:text-gray-600">Fondo: plano actual</span>
             </label>
