@@ -112,7 +112,10 @@ switch ($_GET["accion"]) {
         break;
 
     case "eliminar_nodos":
-        DB::execute("DELETE FROM nodos WHERE camara_id1 = ? AND camara_id2 = ?", [(int)$_GET["camara1"], (int)$_GET["camara2"]]);
+        DB::execute(
+            "DELETE FROM nodos WHERE camara_id1 = ? AND camara_id2 = ? AND camino = ?",
+            [(int)$_GET["camara1"], (int)$_GET["camara2"], (int)($_GET["camino"] ?? 0)]
+        );
         break;
 
     case "guardar_lineas":

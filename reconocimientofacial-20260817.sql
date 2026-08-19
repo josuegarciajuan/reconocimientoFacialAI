@@ -216,6 +216,7 @@ CREATE TABLE `nodos` (
   `x` int(11) DEFAULT '0',
   `y` int(11) DEFAULT '0',
   `orden` int(11) DEFAULT '0',
+  `camino` tinyint(4) NOT NULL DEFAULT '0',
   `created` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;

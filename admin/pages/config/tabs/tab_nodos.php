@@ -43,6 +43,14 @@
                 <?php endforeach; ?>
             </select>
         </div>
+        <div>
+            <label for="camino_el" class="field-label">Camino</label>
+            <select id="camino_el" name="camino_el" class="input border w-full">
+                <option value="0">Principal (0)</option>
+                <option value="1">Alternativo 1</option>
+                <option value="2">Alternativo 2</option>
+            </select>
+        </div>
         <div class="form-grid__full">
             <button type="button" class="button text-white bg-theme-6 shadow-md" onclick="eliminar_nodos()">Eliminar nodos</button>
         </div>
@@ -76,11 +84,19 @@
                 <?php endforeach; ?>
             </select>
         </div>
+        <div>
+            <label for="camino" class="field-label">Camino</label>
+            <select id="camino" name="camino" class="input border w-full">
+                <option value="0">Principal (0)</option>
+                <option value="1">Alternativo 1</option>
+                <option value="2">Alternativo 2</option>
+            </select>
+        </div>
         <div class="form-grid__full">
             <div class="flex flex-col sm:flex-row sm:items-center gap-2">
                 <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="guardar_nodos()">Guardar nodos</button>
                 <span class="text-xs text-gray-500 dark:text-gray-600">
-                    Selecciona ambas cámaras y haz clic en el lienzo para marcar cada nodo.
+                    Selecciona ambas cámaras (y el camino) y haz clic en el lienzo para marcar cada nodo.
                 </span>
             </div>
         </div>
