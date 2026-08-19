@@ -23,8 +23,8 @@
   var form    = doc.getElementById("ring-hub-form");
   var badge   = doc.getElementById("ring-hub-badge");
   var resumen = doc.getElementById("ring-hub-estado");
-  var daemons = doc.getElementById("ring-hub-daemons");
-  var cerrar  = doc.getElementById("ring-hub-cerrar");
+  var daemons  = doc.getElementById("ring-hub-daemons");
+  var btnCerrar = doc.getElementById("ring-hub-cerrar");
 
   var abierto = false;
   var timerEstado  = null;  // semáforo: siempre, ~15 s
@@ -138,8 +138,8 @@
    * -------------------------------------------------------- */
   btn.addEventListener("click", toggle);
 
-  if (cerrar) {
-    cerrar.addEventListener("click", function () { cerrar(); });
+  if (btnCerrar) {
+    btnCerrar.addEventListener("click", function () { cerrar(); });
   }
 
   if (form) {
