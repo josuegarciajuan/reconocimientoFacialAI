@@ -202,6 +202,7 @@ define("CONFIG_VIDEO_PRESET", env_or("RF_VIDEO_PRESET", "medium"));
 define("CONFIG_VIDEO_RETENCION_DIAS", env_or("RF_VIDEO_RETENCION_DIAS", "30")); // purga automática
 define("CONFIG_VIDEO_PURGA_LOOP", env_or("RF_VIDEO_PURGA_LOOP", "1800"));       // cada N iteraciones del detector (~30 min)
 define("CONFIG_LIMITE_ARCHIVA", env_or("RF_LIMITE_ARCHIVA", "2"));              // nº máx. de archiva simultáneos
+define("CONFIG_REINTENTOS_ARCHIVA", env_or("RF_REINTENTOS_ARCHIVA", "3"));       // reintentos de archivado antes de descartar un vídeo corrupto (evita bucle infinito)
 define("CONFIG_VIDEO_SEG_ANTES", env_or("RF_VIDEO_SEG_ANTES", "2"));           // pre-roll: 1-2 s antes del movimiento
 define("CONFIG_VIDEO_SEG_DESPUES", env_or("RF_VIDEO_SEG_DESPUES", "2"));       // post-roll: 1-2 s después del movimiento
 define("CONFIG_VIDEO_MARGEN_ESTANCIA", "30"); // segundos máx. entre vídeo y estancia para enlazarlos en la UI
