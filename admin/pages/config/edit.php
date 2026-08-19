@@ -25,6 +25,13 @@ $lineas_edit = DB::select(
     "SELECT l.*, c.descripcion FROM lineas l JOIN camaras c ON c.id = l.camara_id WHERE c.local_id = ?",
     [(int)($_SESSION["local_id"] ?? 0)]
 );
+$lineas_plano = DB::select(
+    "SELECT lp.*, c.descripcion AS camara_nombre FROM lineas_plano lp
+     LEFT JOIN camaras c ON c.id = lp.camara_id
+     WHERE c.local_id = ? AND lp.eliminada = 0
+     ORDER BY lp.id DESC",
+    [(int)($_SESSION["local_id"] ?? 0)]
+);
 
 /* --- Cámara seleccionada (para preseleccionar valores del formulario) --- */
 $camara_sel = null;
@@ -105,6 +112,7 @@ $hints = [
     "nodos/eliminar"   => "Elige el par de cámaras cuya cadena de nodos quieres romper.",
     "lineas/trazar"    => "Elige una cámara: el lienzo mostrará su foto para trazar las líneas de vigilancia.",
     "lineas/editar"    => "Elige una línea: el lienzo mostrará la foto de su cámara para corregirla.",
+    "lineas/plano"     => "Líneas dibujadas sobre el plano del local. Elige una cámara y nombre, pulsa «Dibujar en el plano» y haz dos clics (inicio y fin); luego arrastra los extremos para ajustarla.",
     "plano/"           => "Así se ve el plano activo. Arrastra una cámara para moverla sobre el plano. Usa el panel para subir una imagen o dibujar un croquis.",
 ];
 $hint_key = ($sub !== "") ? $tab . "/" . $sub : $tab . "/";

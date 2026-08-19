@@ -98,6 +98,11 @@ function rf_glosario() {
             "significado" => "Líneas virtuales dibujadas sobre el plano de la cámara: cuando alguien las cruza se registra un 'cruce de línea' con su dirección.",
             "match"      => "auto",
         ],
+        "trazos-plano" => [
+            "termino"    => "Líneas del plano",
+            "significado" => "Líneas dibujadas sobre el plano del local (independientes de los triples de la foto): se trazan a dos clics y se ajustan arrastrando sus extremos.",
+            "match"      => "auto",
+        ],
         "caminos" => [
             "termino"    => "Caminos",
             "significado" => "Los caminos de Mordor: en la app son las rutas que reconstruyen el recorrido de una persona entre cámaras (entrada → salida).",

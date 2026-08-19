@@ -36,6 +36,38 @@ if ($ids_camaras) {
         $params
     );
 }
+
+/* Líneas del plano (La Forja → Trazos → Plano): independientes de los triples de foto. */
+$lineas_plano_json = [];
+if ($ids_camaras) {
+    $in2 = implode(",", array_fill(0, count($ids_camaras), "?"));
+    $lineas_plano_json = DB::select(
+        "SELECT lp.*, c.descripcion AS camara_nombre FROM lineas_plano lp
+         LEFT JOIN camaras c ON c.id = lp.camara_id
+         WHERE lp.camara_id IN ($in2) AND lp.eliminada = 0
+         ORDER BY lp.id DESC",
+        $ids_camaras
+    );
+}
+/* La BD es latin1: json_encode necesita UTF-8 válido (si no, devuelve false y el JS se rompe). */
+$lineas_plano_to_utf8 = function ($v) {
+    $v = (string)$v;
+    return ($v !== "" && function_exists("mb_check_encoding") && !mb_check_encoding($v, "UTF-8"))
+        ? mb_convert_encoding($v, "UTF-8", "latin1")
+        : $v;
+};
+$lineas_plano_json = array_map(function ($lp) use ($lineas_plano_to_utf8) {
+    return [
+        "id"           => (int)$lp["id"],
+        "camara_id"    => (int)$lp["camara_id"],
+        "camara_nombre"=> $lineas_plano_to_utf8($lp["camara_nombre"] ?? ""),
+        "nombre"       => $lineas_plano_to_utf8($lp["nombre"]),
+        "x1"           => (int)$lp["x1"],
+        "y1"           => (int)$lp["y1"],
+        "x2"           => (int)$lp["x2"],
+        "y2"           => (int)$lp["y2"],
+    ];
+}, $lineas_plano_json);
 ?>
 
 <script>
@@ -47,8 +79,13 @@ var FORGE_TAB = <?= json_encode($tab); ?>;
 var FORGE_SUB = <?= json_encode($sub); ?>;
 var FORGE_CAMS = <?= json_encode($cams_json, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
 var FORGE_NODOS = <?= json_encode($nodos_json, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+var FORGE_LINEAS_PLANO = <?= json_encode($lineas_plano_json, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
 var FORGE_MOSTRAR_FOTO = <?= json_encode(($_GET["mostrar_foto"] ?? "")); ?>;
 var FORGE_EDITAR_LINEA = <?= json_encode(($_GET["editar_linea"] ?? "")); ?>;
+
+/* Colores de las líneas del plano (rallitas finas continuas). */
+var COLOR_LINEA_PLANO = "#ffed00";
+var COLOR_LINEA_PLANO_SEL = "#ffffff";
 
 /* --- Estado de las líneas (lo usan guardar_lineas / editar_linea1) --- */
 var x_lineas=[];
@@ -90,6 +127,13 @@ var Forge = {
         trazo: [],              // puntos [{x,y}] del trazo en curso
         ultimo: null,           // {camara1, camara2, camino} del último guardado (para Deshacer)
     },
+    /* Estado de las líneas del plano (tab=lineas, sub=plano) */
+    lineaPlanoSel: null,        // id de la línea del plano seleccionada (resaltada)
+    lpModo: null,               // null | "nueva" | "editar": modo de dibujo en el plano
+    lpTarget: null,             // id de línea a redibujar (modo "editar")
+    lpPunto: 1,                 // 1er/2º clic de la línea del plano
+    lpX1: 0, lpY1: 0, lpX2: 0, lpY2: 0,
+    lpDrag: null,               // extremo en arrastre: {i, ext}
 };
 
 /* ------------------------------------------------------------------ */
@@ -208,6 +252,20 @@ function ForgePintarCamarasNodos(ctx) {
     for (var j = 0; j < FORGE_NODOS.length; j++) {
         ctx.fillRect(parseInt(FORGE_NODOS[j].x, 10), parseInt(FORGE_NODOS[j].y, 10), 10, 10);
     }
+    // líneas del plano: rallitas finas continuas + extremos + nombre
+    for (var li = 0; li < FORGE_LINEAS_PLANO.length; li++) {
+        var L = FORGE_LINEAS_PLANO[li];
+        ctx.strokeStyle = COLOR_LINEA_PLANO;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(L.x1, L.y1);
+        ctx.lineTo(L.x2, L.y2);
+        ctx.stroke();
+        ctx.fillStyle = COLOR_LINEA_PLANO;
+        ctx.fillRect(L.x1 - 3, L.y1 - 3, 6, 6);
+        ctx.fillRect(L.x2 - 3, L.y2 - 3, 6, 6);
+        ctx.fillText(L.nombre, L.x1, L.y1 - 6);
+    }
 }
 
 function ForgeRender() {
@@ -218,6 +276,47 @@ function ForgeRender() {
     }
     if (Forge.tab === "nodos" && Forge.sub === "editar" && Forge.editChain) {
         ForgePintarEditar(ctx);
+    }
+    /* Líneas del plano (tab=lineas, sub=plano): preview de dibujo + resaltado de selección */
+    if (Forge.tab === "lineas" && Forge.sub === "plano" && Forge.mode === "plano") {
+        if (Forge.lpModo) {
+            ctx.save();
+            ctx.strokeStyle = COLOR_LINEA_PLANO;
+            ctx.lineWidth = 2;
+            ctx.fillStyle = COLOR_LINEA_PLANO;
+            if (Forge.lpPunto === 2) {
+                ctx.beginPath();
+                ctx.moveTo(Forge.lpX1, Forge.lpY1);
+                ctx.lineTo(Forge.lpX2, Forge.lpY2);
+                ctx.stroke();
+                ctx.fillRect(Forge.lpX1 - 4, Forge.lpY1 - 4, 8, 8);
+            } else {
+                ctx.fillRect(Forge.lpX1 - 4, Forge.lpY1 - 4, 8, 8);
+            }
+            ctx.restore();
+        }
+        if (Forge.lineaPlanoSel) {
+            var Ls = ForgeLineaPlanoPorId(Forge.lineaPlanoSel);
+            if (Ls) {
+                ctx.save();
+                ctx.strokeStyle = COLOR_LINEA_PLANO_SEL;
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(Ls.x1, Ls.y1);
+                ctx.lineTo(Ls.x2, Ls.y2);
+                ctx.stroke();
+                ctx.fillStyle = COLOR_LINEA_PLANO_SEL;
+                ctx.fillRect(Ls.x1 - 4, Ls.y1 - 4, 8, 8);
+                ctx.fillRect(Ls.x2 - 4, Ls.y2 - 4, 8, 8);
+                var ccLp = ForgeCamCoord(Ls.camara_id);
+                if (ccLp) {
+                    ctx.strokeStyle = "#ffffff";
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(ccLp.x - 3, ccLp.y - 3, 16, 16);
+                }
+                ctx.restore();
+            }
+        }
     }
     if (Forge.marcador) {
         ctx.fillStyle = "#D22829";
@@ -921,6 +1020,324 @@ function ForgeDibujaLinea(p) {
     Forge.punto = (Forge.punto === 1) ? 2 : 1;
 }
 
+/* =========================================================================
+ * Líneas del plano (tab=lineas, sub=plano): listado + dibujo a dos clics +
+ * arrastre de extremos. Se pintan como rallitas finas continuas.
+ * ========================================================================= */
+
+function ForgeEsc(s) {
+    return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function ForgeLineaPlanoPorId(id) {
+    for (var i = 0; i < FORGE_LINEAS_PLANO.length; i++) {
+        if (FORGE_LINEAS_PLANO[i].id === id) return FORGE_LINEAS_PLANO[i];
+    }
+    return null;
+}
+
+function ForgeLineaPlanoCamaraNombre(camId) {
+    for (var i = 0; i < FORGE_CAMS.length; i++) {
+        if (String(FORGE_CAMS[i].id) === String(camId)) return FORGE_CAMS[i].desc;
+    }
+    return "—";
+}
+
+/* Reconstruye el listado (aplica el filtro por cámara) desde FORGE_LINEAS_PLANO. */
+function ForgeLineasPlanoRenderLista() {
+    var cont = document.getElementById("lineas_plano_lista");
+    if (!cont) return;
+    var sel = document.getElementById("filtro_camara_plano");
+    var f = sel ? sel.value : "-";
+    var html = [];
+    for (var i = 0; i < FORGE_LINEAS_PLANO.length; i++) {
+        var L = FORGE_LINEAS_PLANO[i];
+        if (f !== "-" && String(L.camara_id) !== String(f)) continue;
+        html.push('<div class="forge-linea-plano" data-id="' + L.id + '">'
+            + '<button type="button" class="forge-linea-plano__boton' + (Forge.lineaPlanoSel === L.id ? ' is-active' : '') + '"'
+            + ' data-lp-id="' + L.id + '" onclick="ForgeLineaPlanoSeleccionar(' + L.id + ')">'
+            + '<span class="forge-linea-plano__nombre">' + ForgeEsc(L.nombre) + '</span>'
+            + '<span class="forge-linea-plano__camara">' + ForgeEsc(L.camara_nombre || "—") + '</span>'
+            + '</button>'
+            + '<a href="javascript:;" class="forge-linea-plano__borrar" title="Borrar línea del plano"'
+            + ' onclick="ForgeLineaPlanoBorrar(' + L.id + ')">(X)</a>'
+            + '</div>');
+    }
+    if (!html.length) {
+        cont.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-600">'
+            + (f !== "-" ? "Sin líneas para esta cámara." : "Aún no hay líneas en el plano. Crea la primera abajo.")
+            + '</p>';
+    } else {
+        cont.innerHTML = html.join("");
+    }
+}
+
+function ForgeLineaPlanoFiltro() {
+    ForgeLineasPlanoRenderLista();
+}
+
+/* Selecciona una línea del listado: se resalta en el plano junto a su cámara
+ * y se precargan nombre/cámara para poder redibujarla. */
+function ForgeLineaPlanoSeleccionar(id) {
+    var L = ForgeLineaPlanoPorId(id);
+    if (!L) return;
+    Forge.lineaPlanoSel = id;
+    ForgeLineaPlanoResetDibujo();
+    Forge.mode = "plano";
+    ForgeModoActualizarChip();
+    var nombre = document.getElementById("nombre_linea_plano");
+    if (nombre) nombre.value = L.nombre;
+    var camara = document.getElementById("camara_linea_plano");
+    if (camara) camara.value = String(L.camara_id);
+    var hint = document.getElementById("hint_linea_plano");
+    if (hint) {
+        hint.textContent = "Línea «" + L.nombre + "» marcada en el plano. Arrastra sus extremos para ajustarla, pulsa «Redibujar seleccionada» para volver a trazarla o borra con (X).";
+    }
+    ForgeLineasPlanoRenderLista();
+    ForgeDibujarPlano();
+}
+
+/* Limpia el estado de dibujo de línea del plano. */
+function ForgeLineaPlanoResetDibujo() {
+    Forge.lpModo = null;
+    Forge.lpTarget = null;
+    Forge.lpPunto = 1;
+    Forge.lpX1 = 0; Forge.lpY1 = 0; Forge.lpX2 = 0; Forge.lpY2 = 0;
+}
+
+/* Inicia el modo de dibujo de una línea NUEVA en el plano (dos clics). */
+function ForgeLineaPlanoNueva() {
+    var nombre = document.getElementById("nombre_linea_plano");
+    var camara = document.getElementById("camara_linea_plano");
+    if (!nombre || !camara) return;
+    if (nombre.value.trim() === "") {
+        if (typeof rfToast === "function") rfToast("Escribe un nombre para la línea.", "err"); else alert("Escribe un nombre para la línea.");
+        return;
+    }
+    if (camara.value === "-" || camara.value === "") {
+        if (typeof rfToast === "function") rfToast("Elige la cámara a la que pertenece la línea.", "err"); else alert("Elige la cámara.");
+        return;
+    }
+    Forge.lineaPlanoSel = null;
+    Forge.lpModo = "nueva";
+    Forge.lpTarget = null;
+    Forge.lpPunto = 1;
+    Forge.mode = "plano";
+    ForgeModoActualizarChip();
+    var hint = document.getElementById("hint_linea_plano");
+    if (hint) hint.textContent = "Haz clic en el plano para fijar el INICIO de la línea. El segundo clic fija el FIN y la guarda.";
+    ForgeLineasPlanoRenderLista();
+    ForgeDibujarPlano();
+}
+
+/* Redibuja la línea seleccionada: vuelve a trazarla a dos clics sobre la misma. */
+function ForgeLineaPlanoRedibujar() {
+    if (!Forge.lineaPlanoSel) {
+        if (typeof rfToast === "function") rfToast("Selecciona primero una línea del listado.", "err"); else alert("Selecciona primero una línea.");
+        return;
+    }
+    Forge.lpModo = "editar";
+    Forge.lpTarget = Forge.lineaPlanoSel;
+    Forge.lpPunto = 1;
+    Forge.mode = "plano";
+    ForgeModoActualizarChip();
+    var hint = document.getElementById("hint_linea_plano");
+    if (hint) hint.textContent = "Redibujando la línea seleccionada: primer clic = inicio, segundo clic = fin (se guarda sobre la misma).";
+    ForgeDibujarPlano();
+}
+
+/* Despacho del clic en el lienzo para sub=plano. */
+function ForgeLineaPlanoClick(p) {
+    if (!Forge.lpModo) return;
+    var x = Math.max(0, Math.min(Forge.canvas.width - 1, Math.round(p.x)));
+    var y = Math.max(0, Math.min(Forge.canvas.height - 1, Math.round(p.y)));
+    if (Forge.lpPunto === 1) {
+        Forge.lpX1 = x; Forge.lpY1 = y; Forge.lpPunto = 2;
+        ForgeRender();
+        return;
+    }
+    Forge.lpX2 = x; Forge.lpY2 = y;
+    ForgeLineaPlanoGuardar();
+}
+
+/* Persiste la línea dibujada (nueva → a=9, redibujo → a=10). */
+function ForgeLineaPlanoGuardar() {
+    if (Forge.lpModo === "editar") {
+        var body = { id: Forge.lpTarget, x1: Forge.lpX1, y1: Forge.lpY1, x2: Forge.lpX2, y2: Forge.lpY2 };
+        fetch("pages/config/acciones_ajax.php?a=12", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        })
+        .then(function (res) { return res.text(); })
+        .then(function (txt) {
+            if (txt.indexOf("error") !== -1) {
+                var m = "No se pudo redibujar la línea: " + txt;
+                if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
+                return;
+            }
+            var L = ForgeLineaPlanoPorId(Forge.lpTarget);
+            if (L) { L.x1 = body.x1; L.y1 = body.y1; L.x2 = body.x2; L.y2 = body.y2; }
+            ForgeLineaPlanoResetDibujo();
+            if (typeof rfToast === "function") rfToast("Línea redibujada en el plano.", "ok");
+            var hint = document.getElementById("hint_linea_plano");
+            if (hint) hint.textContent = "Línea actualizada. Arrastra sus extremos para ajustarla o dibuja otra.";
+            ForgeLineasPlanoRenderLista();
+            ForgeDibujarPlano();
+        })
+        .catch(function (err) {
+            var m = "No se pudo redibujar la línea: " + err.message;
+            if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
+        });
+        return;
+    }
+
+    var nombreEl = document.getElementById("nombre_linea_plano");
+    var camaraEl = document.getElementById("camara_linea_plano");
+    var body2 = {
+        camara_id: parseInt(camaraEl.value, 10) || 0,
+        nombre: nombreEl.value,
+        x1: Forge.lpX1, y1: Forge.lpY1, x2: Forge.lpX2, y2: Forge.lpY2
+    };
+    fetch("pages/config/acciones_ajax.php?a=11", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body2)
+    })
+    .then(function (res) { return res.text(); })
+    .then(function (txt) {
+        if (txt.indexOf("error") !== -1 || txt.indexOf("ok:") !== 0) {
+            var m = "No se pudo guardar la línea: " + txt;
+            if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
+            return;
+        }
+        var id = parseInt(txt.slice(3), 10) || 0;
+        FORGE_LINEAS_PLANO.unshift({
+            id: id, camara_id: body2.camara_id,
+            camara_nombre: ForgeLineaPlanoCamaraNombre(body2.camara_id),
+            nombre: body2.nombre,
+            x1: body2.x1, y1: body2.y1, x2: body2.x2, y2: body2.y2
+        });
+        Forge.lineaPlanoSel = id;
+        ForgeLineaPlanoResetDibujo();
+        if (typeof rfToast === "function") rfToast("Línea guardada en el plano.", "ok");
+        var hint = document.getElementById("hint_linea_plano");
+        if (hint) hint.textContent = "Línea guardada. Arrastra sus extremos para ajustarla o dibuja otra.";
+        ForgeLineasPlanoRenderLista();
+        ForgeDibujarPlano();
+    })
+    .catch(function (err) {
+        var m = "No se pudo guardar la línea: " + err.message;
+        if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
+    });
+}
+
+/* Borra (soft delete) una línea del plano y la retira del lienzo. */
+function ForgeLineaPlanoBorrar(id) {
+    if (!confirm("¿Borrar esta línea del plano?")) return;
+    fetch("pages/config/acciones_ajax.php?a=13", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id })
+    })
+    .then(function (res) { return res.text(); })
+    .then(function (txt) {
+        if (txt.indexOf("error") !== -1) {
+            var m = "No se pudo borrar la línea: " + txt;
+            if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
+            return;
+        }
+        for (var i = FORGE_LINEAS_PLANO.length - 1; i >= 0; i--) {
+            if (FORGE_LINEAS_PLANO[i].id === id) FORGE_LINEAS_PLANO.splice(i, 1);
+        }
+        if (Forge.lineaPlanoSel === id) {
+            Forge.lineaPlanoSel = null;
+            ForgeLineaPlanoResetDibujo();
+        }
+        if (typeof rfToast === "function") rfToast("Línea borrada del plano.", "ok");
+        ForgeLineasPlanoRenderLista();
+        ForgeDibujarPlano();
+    })
+    .catch(function (err) {
+        var m = "No se pudo borrar la línea: " + err.message;
+        if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
+    });
+}
+
+/* --- Arrastre de extremos de una línea del plano (como las cámaras) --- */
+
+/* Índice y extremo bajo el cursor, o null. */
+function ForgeLineaPlanoHitTest(p) {
+    var R = 12;
+    for (var i = 0; i < FORGE_LINEAS_PLANO.length; i++) {
+        var L = FORGE_LINEAS_PLANO[i];
+        if (Math.abs(L.x1 - p.x) <= R && Math.abs(L.y1 - p.y) <= R) return { i: i, ext: 1 };
+        if (Math.abs(L.x2 - p.x) <= R && Math.abs(L.y2 - p.y) <= R) return { i: i, ext: 2 };
+    }
+    return null;
+}
+
+/* Acota el extremo al lienzo (no se puede sacar del plano). */
+function ForgeLineaPlanoClamp(i, ext) {
+    var L = FORGE_LINEAS_PLANO[i];
+    if (!L) return;
+    var maxX = Forge.canvas.width - 1, maxY = Forge.canvas.height - 1;
+    if (ext === 1) { L.x1 = Math.max(0, Math.min(maxX, L.x1)); L.y1 = Math.max(0, Math.min(maxY, L.y1)); }
+    else           { L.x2 = Math.max(0, Math.min(maxX, L.x2)); L.y2 = Math.max(0, Math.min(maxY, L.y2)); }
+}
+
+function ForgeLineaPlanoDragStart(hit, p) {
+    var L = FORGE_LINEAS_PLANO[hit.i];
+    if (!L) return;
+    Forge.lineaPlanoSel = L.id;
+    Forge.lpDrag = { i: hit.i, ext: hit.ext };
+    Forge.canvas.style.cursor = "grabbing";
+    if (hit.ext === 1) { L.x1 = Math.round(p.x); L.y1 = Math.round(p.y); }
+    else               { L.x2 = Math.round(p.x); L.y2 = Math.round(p.y); }
+    ForgeLineaPlanoClamp(hit.i, hit.ext);
+    ForgeLineasPlanoRenderLista();
+    ForgeDibujarPlano();
+}
+
+function ForgeLineaPlanoDragMove(p) {
+    if (!Forge.lpDrag) return;
+    var L = FORGE_LINEAS_PLANO[Forge.lpDrag.i];
+    if (!L) return;
+    if (Forge.lpDrag.ext === 1) { L.x1 = Math.round(p.x); L.y1 = Math.round(p.y); }
+    else                        { L.x2 = Math.round(p.x); L.y2 = Math.round(p.y); }
+    ForgeLineaPlanoClamp(Forge.lpDrag.i, Forge.lpDrag.ext);
+    ForgeDibujarPlano();
+}
+
+function ForgeLineaPlanoDragEnd() {
+    if (!Forge.lpDrag) return;
+    var d = Forge.lpDrag;
+    var L = FORGE_LINEAS_PLANO[d.i];
+    Forge.lpDrag = null;
+    Forge.canvas.style.cursor = "";
+    if (!L) return;
+    fetch("pages/config/acciones_ajax.php?a=12", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: L.id, x1: L.x1, y1: L.y1, x2: L.x2, y2: L.y2 })
+    })
+    .then(function (res) { return res.text(); })
+    .then(function (txt) {
+        if (txt.indexOf("error") !== -1) {
+            var m = "No se pudo mover la línea: " + txt;
+            if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
+            return;
+        }
+        if (typeof rfToast === "function") rfToast("Línea reposicionada en el plano.", "ok");
+    })
+    .catch(function (err) {
+        var m = "No se pudo mover la línea: " + err.message;
+        if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
+    });
+}
+
 /* Un único listener delegado: todo el clic del lienzo pasa por aquí. */
 function ForgeOnCanvasMouseDown(e) {
     if (Forge.mode === "foto") {
@@ -934,6 +1351,8 @@ function ForgeOnCanvasMouseDown(e) {
         ForgeCrearClic(p);
     } else if (Forge.tab === "nodos" && Forge.sub === "editar") {
         ForgeEditarMouseDown(p);
+    } else if (Forge.tab === "lineas" && Forge.sub === "plano") {
+        ForgeLineaPlanoClick(p);
     }
     /* plano: solo inspección */
 }
@@ -1463,29 +1882,54 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Arrastre de cámaras en el plano (Pointer Events: ratón + táctil + lápiz).
         Forge.canvas.addEventListener("pointerdown", function (e) {
-            if (Forge.mode === "foto" || Forge.tab !== "plano") return;
-            try { Forge.canvas.setPointerCapture(e.pointerId); } catch (err) {}
-            ForgeCamDragStart(ForgeCoord(e));
+            if (Forge.mode === "foto") return;
+            if (Forge.tab === "plano") {
+                try { Forge.canvas.setPointerCapture(e.pointerId); } catch (err) {}
+                ForgeCamDragStart(ForgeCoord(e));
+                return;
+            }
+            if (Forge.tab === "lineas" && Forge.sub === "plano" && !Forge.lpModo) {
+                var h = ForgeLineaPlanoHitTest(ForgeCoord(e));
+                if (h) {
+                    try { Forge.canvas.setPointerCapture(e.pointerId); } catch (err) {}
+                    ForgeLineaPlanoDragStart(h, ForgeCoord(e));
+                }
+            }
         });
         Forge.canvas.addEventListener("pointermove", function (e) {
-            if (Forge.tab !== "plano" || Forge.mode === "foto") return;
-            if (Forge.camDrag) {
-                ForgeCamDragMove(ForgeCoord(e));
-            } else {
-                ForgeCamHover(ForgeCoord(e));
+            if (Forge.mode === "foto") return;
+            if (Forge.tab === "plano") {
+                if (Forge.camDrag) {
+                    ForgeCamDragMove(ForgeCoord(e));
+                } else {
+                    ForgeCamHover(ForgeCoord(e));
+                }
+                return;
+            }
+            if (Forge.tab === "lineas" && Forge.sub === "plano" && Forge.lpDrag) {
+                ForgeLineaPlanoDragMove(ForgeCoord(e));
             }
         });
         Forge.canvas.addEventListener("pointerup", function () {
             if (Forge.tab === "plano") ForgeCamDragEnd();
+            if (Forge.tab === "lineas" && Forge.sub === "plano" && Forge.lpDrag) ForgeLineaPlanoDragEnd();
         });
         Forge.canvas.addEventListener("pointercancel", function () {
             if (Forge.tab === "plano") ForgeCamDragEnd();
+            if (Forge.tab === "lineas" && Forge.sub === "plano" && Forge.lpDrag) ForgeLineaPlanoDragEnd();
         });
         Forge.canvas.addEventListener("pointerleave", function () {
-            if (Forge.tab !== "plano" || Forge.mode === "foto" || Forge.camDrag) return;
-            Forge.camHover = null;
-            Forge.canvas.style.cursor = "";
-            ForgeDibujarPlano();
+            if (Forge.mode === "foto") return;
+            if (Forge.tab === "plano") {
+                if (Forge.camDrag) return; // sigue arrastrando aunque salga (capture)
+                Forge.camHover = null;
+                Forge.canvas.style.cursor = "";
+                ForgeDibujarPlano();
+                return;
+            }
+            if (Forge.tab === "lineas" && Forge.sub === "plano" && Forge.lpDrag) {
+                ForgeLineaPlanoDragEnd();
+            }
         });
 
         if (FORGE_MOSTRAR_FOTO && FORGE_TAB === "lineas") {
@@ -1495,6 +1939,12 @@ document.addEventListener("DOMContentLoaded", function () {
             ForgeDibujarPlano();
         }
         ForgeModoActualizarChip();
+
+        // Líneas del plano: el lienzo siempre en modo plano + listado reconstruido en JS.
+        if (FORGE_TAB === "lineas" && FORGE_SUB === "plano") {
+            Forge.mode = "plano";
+            ForgeLineasPlanoRenderLista();
+        }
     }
 
     /* ---------- Editor de croquis (modal) ---------- */
