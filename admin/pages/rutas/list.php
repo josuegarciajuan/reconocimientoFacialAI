@@ -7,6 +7,7 @@
 require_once __DIR__ . "/../../../libs/db.php";
 require_once __DIR__ . "/../../../libs/fechas.php";
 require_once __DIR__ . "/../../../libs/rutas.php";
+require_once __DIR__ . "/../../../libs/planos.php";
 
 // --- filtros (fechas corregidas) ---
 $desde_sql = rango_a_sql($_GET["desde"] ?? "", date("Y-m-d 00:00:00"));
@@ -23,15 +24,8 @@ $local_id = intval($_SESSION["local_id"]);
 list($rutas_data, $num_puerta) = obtener_rutas($local_id, $desde_sql, $hasta_sql, $persona_filtro);
 $rutas_json = json_encode($rutas_data, JSON_UNESCAPED_UNICODE);
 
-// --- plano de fondo ---
-$plano_url = "";
-foreach (["jpg", "jpeg", "png", "bmp"] as $ext) {
-    $p = "pages/config/planos/plano_" . $local_id . "." . $ext;
-    if (file_exists($p)) {
-        $plano_url = $p;
-        break;
-    }
-}
+// --- plano de fondo (activo: imagen subida o croquis dibujado) ---
+$plano_url = plano_url($local_id);
 
 // --- cámaras para pintar ---
 $camaras_data = DB::select("SELECT id, descripcion, x, y FROM camaras WHERE local_id = ? ORDER BY id ASC", [$local_id]);

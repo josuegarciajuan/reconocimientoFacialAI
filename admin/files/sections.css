@@ -401,3 +401,116 @@
     transition: none;
   }
 }
+
+/* --- Pestañas de plano (imagen subida / croquis dibujado) -------- */
+.rf-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.25rem;
+}
+
+.rf-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  border-radius: 0.45rem;
+  color: var(--mordor-humo);
+  background: rgba(201, 162, 39, 0.06);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.rf-tab:hover {
+  color: var(--mordor-ceniza);
+  border-color: var(--mordor-oro);
+}
+
+.rf-tab.is-active {
+  color: var(--mordor-negro);
+  background: var(--mordor-oro);
+  border-color: var(--mordor-oro);
+}
+
+.rf-tab.is-empty {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.rf-tab.is-empty:hover {
+  border-color: rgba(201, 162, 39, 0.35);
+  color: var(--mordor-humo);
+}
+
+/* --- Modal de dibujo del croquis ---------------------------------- */
+.dibujo-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.6rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.dibujo-tool {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 7rem;
+}
+
+.dibujo-color {
+  width: 3rem;
+  height: 2rem;
+  padding: 0.1rem;
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  border-radius: 0.3rem;
+  background: var(--mordor-carbon-2);
+  cursor: pointer;
+}
+
+.dibujo-rango {
+  accent-color: var(--mordor-oro);
+  width: 8rem;
+  cursor: pointer;
+}
+
+.dibujo-btn.is-activo {
+  outline: 2px solid var(--mordor-oro);
+  outline-offset: 2px;
+}
+
+.dibujo-fondo {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.dibujo-fondo input {
+  accent-color: var(--mordor-oro);
+}
+
+.dibujo-lienzo-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dibujo-lienzo {
+  display: block;
+  background: #ffffff;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+@media (max-width: 640px) {
+  .dibujo-toolbar {
+    align-items: flex-start;
+  }
+}
+
