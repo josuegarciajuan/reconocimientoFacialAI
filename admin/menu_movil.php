@@ -8,6 +8,9 @@
  * REFACTOR: barra móvil superior eliminada; ahora es un DRAWER lateral
  * (panel deslizante) que abre la hamburguesa de la top-bar en responsive
  * (<768px). Solo existe en móvil (md:hidden).
+ * 
+ * MEJORA 2026-08-19: "El Ojo en Vivo" destacado en 2ª posición con el
+ * ojo de Sauron (SVG) + iconos SVG temáticos en Líneas y Fichajes.
  */
 
 ?>
@@ -32,6 +35,37 @@
                 <div class="menu__icon menu__emoji">👁️</div>
 
                 <div class="menu__title"> La Torre </div>
+            </a>
+        </li>
+
+        <li>
+            <a href="?page=camaras" class="menu menu--featured menu<?php if(isset($_GET["page"]) and $_GET["page"]=="camaras"){ echo "--active"; } ?>">
+
+                <div class="menu__icon">
+                    <svg class="sauron-eye sauron-eye--menu" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+                        <defs>
+                            <radialGradient id="sauron-iris-drawer" cx="50%" cy="38%" r="75%">
+                                <stop offset="0%" stop-color="#ffd9a0"/>
+                                <stop offset="45%" stop-color="#ff5a1f"/>
+                                <stop offset="100%" stop-color="#8c1f00"/>
+                            </radialGradient>
+                        </defs>
+                        <!-- anillo exterior orco -->
+                        <circle cx="24" cy="24" r="22" fill="none" stroke="rgba(201,162,39,0.6)" stroke-width="1.6"/>
+                        <!-- contorno superior (ceño de Sauron) -->
+                        <path d="M9 16 C 14 10, 20 7.5, 24 7.5 C 28 7.5, 34 10, 39 16" fill="none" stroke="rgba(255,90,31,0.8)" stroke-width="1.8" stroke-linecap="round"/>
+                        <!-- forma del ojo (rendija) -->
+                        <path d="M4.5 24 C 8 16.5, 15 12.5, 24 12.5 C 33 12.5, 40 16.5, 43.5 24 C 40 31.5, 33 35.5, 24 35.5 C 15 35.5, 8 31.5, 4.5 24 Z" fill="rgba(255,90,31,0.12)" stroke="#ff5a1f" stroke-width="1.4"/>
+                        <!-- iris -->
+                        <ellipse class="sauron-eye__iris" cx="24" cy="24" rx="11.5" ry="8.5" fill="url(#sauron-iris-drawer)"/>
+                        <!-- pupila vertical (se mueve con el cursor) -->
+                        <path class="sauron-eye__pupil" d="M24 16.5 C 26.6 16.5 27.4 22 27.4 24 C 27.4 26 26.6 31.5 24 31.5 C 21.4 31.5 20.6 26 20.6 24 C 20.6 22 21.4 16.5 24 16.5 Z" fill="#0d0503"/>
+                        <!-- brillo -->
+                        <circle class="sauron-eye__shine" cx="27.4" cy="20.5" r="1.5" fill="rgba(255,235,205,0.95)"/>
+                    </svg>
+                </div>
+
+                <div class="menu__title"> El Ojo en Vivo <span class="live-dot live-dot--menu" aria-hidden="true"></span></div>
             </a>
         </li>
 
@@ -71,7 +105,18 @@
 
         <li>
             <a href="?page=lineas" class="menu menu<?php if(isset($_GET["page"]) and $_GET["page"]=="lineas"){ echo "--active"; } ?>">
-                <div class="menu__icon menu__emoji">📐</div>
+                <div class="menu__icon">
+                    <svg class="menu__svg" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <!-- rejilla del plano (apagada) -->
+                        <path d="M5 5h14M5 12h14M5 19h14" stroke="currentColor" stroke-width="1.1" stroke-dasharray="2 2.4" opacity="0.5"/>
+                        <!-- línea de cruce virtual -->
+                        <path d="M4.5 20.5 19.5 3.5" stroke="var(--mordor-brasa)" stroke-width="1.8"/>
+                        <!-- ménsulas de anclaje -->
+                        <path d="M5.5 5.5 8.5 8.5M15.5 15.5 18.5 18.5" stroke="var(--mordor-oro)" stroke-width="1.3"/>
+                        <!-- nodo de cruce -->
+                        <circle cx="12" cy="12" r="1.7" fill="var(--mordor-oro)"/>
+                    </svg>
+                </div>
                 <div class="menu__title"> Líneas </div>
             </a>
         </li>
@@ -91,16 +136,17 @@
         </li>
 
         <li>
-            <a href="?page=camaras" class="menu menu<?php if(isset($_GET["page"]) and $_GET["page"]=="camaras"){ echo "--active"; } ?>">
-                <div class="menu__icon menu__emoji">📡</div>
-                <div class="menu__title"> El Ojo en Vivo </div>
-            </a>
-        </li>
-
-
-        <li>
             <a href="?page=fichajes" class="menu menu<?php if(isset($_GET["page"]) and $_GET["page"]=="fichajes"){ echo "--active"; } ?>">
-                <div class="menu__icon menu__emoji">⏳</div>
+                <div class="menu__icon">
+                    <svg class="menu__svg" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <!-- esfera del reloj -->
+                        <circle cx="12" cy="12" r="8.6" stroke="currentColor" stroke-width="1.5"/>
+                        <!-- manecilla (brasa) -->
+                        <path d="M12 7.6V12l3.1 1.8" stroke="var(--mordor-brasa)" stroke-width="1.8"/>
+                        <!-- check del fichaje (oro) -->
+                        <path d="M8.6 12.3l2.3 2.3 4.4-4.6" stroke="var(--mordor-oro)" stroke-width="1.7"/>
+                    </svg>
+                </div>
                 <div class="menu__title"> Fichajes </div>
             </a>
         </li>
