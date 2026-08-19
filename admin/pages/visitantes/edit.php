@@ -5,6 +5,7 @@
  */
 
 require_once __DIR__ . "/../../../libs/db.php";
+require_once __DIR__ . "/../../../libs/avatars.php";
 
 $local_id = (int)($_SESSION["local_id"] ?? 0);
 $persona_id = (int)($_GET["id"] ?? 0);
@@ -21,6 +22,7 @@ $foto = DB::selectOne(
     [$persona_id]
 );
 $imagen_perfil = "./caras_procesadas/" . ($foto ? $foto["fid"] : 0) . ".jpg";
+$avatar_url = avatar_url($persona_id);
 
 // cámaras del local + nº de estancias por cámara
 $camaras = DB::select("SELECT * FROM camaras WHERE local_id = ?", [$local_id]);
@@ -72,6 +74,12 @@ $num_cruces = $cruces_cnt ? (int)$cruces_cnt["n"] : 0;
     <div class="flex flex-col lg:flex-row border-b border-gray-200 dark:border-dark-5 pb-5 -mx-5">
         <div class="flex flex-1 px-5 items-center justify-center lg:justify-start">
             <img alt="Foto de perfil de <?= htmlspecialchars($persona["nombre"]); ?>" class="rounded-full w-32 h-32 object-cover" src="<?= htmlspecialchars($imagen_perfil); ?>">
+            <?php if ($avatar_url !== ""): ?>
+            <img alt="Avatar (cabeza recortada) de <?= htmlspecialchars($persona["nombre"]); ?>"
+                 title="Avatar del monigote (Caminos)"
+                 class="ml-3 rounded-full w-16 h-16 object-contain bg-gray-900 dark:bg-gray-800 border border-gray-700"
+                 src="<?= htmlspecialchars($avatar_url); ?>">
+            <?php endif; ?>
         </div>
 
         <div class="flex mt-6 lg:mt-0 items-center lg:items-start flex-1 flex-col justify-center text-gray-600 dark:text-gray-300 px-5 border-l border-r border-gray-200 dark:border-dark-5 border-t lg:border-t-0 pt-5 lg:pt-0">

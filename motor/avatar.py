@@ -62,6 +62,7 @@ def main() -> int:
         if not ruta:
             print("no se pudo generar el avatar")
             return 1
+        _escribir_sidecar(args.out, args.foto)
         print(f"generado {args.foto}")
         return 0
 
@@ -86,11 +87,21 @@ def main() -> int:
         if not ruta:
             print("no se pudo generar el avatar")
             return 1
+        _escribir_sidecar(args.out, elegida)
         print(f"generado {elegida}")
         return 0
 
     print("usa --foto/--src o --fotos")
     return 1
+
+
+def _escribir_sidecar(out_png: str, foto_id: int) -> None:
+    """Sidecar <png>.foto con el id de la foto elegida (lo consume el PHP)."""
+    try:
+        with open(out_png + ".foto", "w") as fh:
+            fh.write(str(foto_id))
+    except OSError:
+        pass
 
 
 if __name__ == "__main__":
