@@ -14,7 +14,14 @@ git: git = código, no datos). `enhance(img, cfg)` devuelve SIEMPRE BGR uint8:
 
 - Crop pequeño (lado mayor < cfg.sr_min_side): SR x4 nativo si hay modelo.
 - Sin modelo / falla / deshabilitado: fallback LANCZOS4 + unsharp.
-- Imagen ya grande: intacta (no se toca lo que no lo necesita).
+- Top-up final a cfg.sr_target_side (512): tras el SR x4 se sube con LANCZOS4
+  hasta ese lado mínimo, para que las caras lejanas no salgan con ~150-300 px.
+- Imagen ya grande (>= cfg.sr_target_side): intacta (no se toca lo que no lo
+  necesita).
+
+Además `enhance_embedding(img, face, cfg)` aplica SR-before-embedding: para
+caras pequeñas (< cfg.sr_embed_min_face) recalcula el embedding ArcFace sobre
+el recorte super-resuelto, mejorando el matching (no solo el aspecto).
 
 Singleton lazy con lock (patrón motor/core/model.py). Importable sin torch
 (SR se degrada al fallback sin romper nada).
@@ -302,15 +309,13 @@ def frame_face(img: np.ndarray, bbox, face_fill: float, min_pad: int) -> np.ndar
 
 
 def zoom_photo(img: np.ndarray, bbox, cfg) -> np.ndarray:
-    """Auto-zoom hacia la cara + SR (foto final de la persona).
+    """Auto-zoom hacia la cara + SR + top-up (foto final de la persona).
 
     1. `frame_face`: reencuadre para que la cara ocupe ~cfg.face_fill del encuadre.
-    2. `enhance`: SR x4 (o fallback LANCZOS4+unsharp) para nitidez.
-
-    NOTA: NO se hace top-up LANCZOS4 para "agrandar" la foto: medido, ese paso
-    difumina la cara (laplaciano de la cara 90.9 -> 5). La foto queda al tamaño
-    nativo del SR (crop x4), nítida y con la cara dominando el encuadre; el
-    lightbox del panel (Capa B) la amplía en pantalla sin perder nitidez nativa.
+    2. `enhance`: SR x4 (si la cara es pequeña) + top-up LANCZOS4 hasta
+       cfg.sr_target_side: las caras lejanas (~40 px nativos) acaban en fotos
+       de ~512 px en vez de ~160 px (SR x4 crudo), que es lo que se veía
+       "pixelado" en el panel.
     Devuelve SIEMPRE BGR uint8.
     """
     z = frame_face(img, bbox, cfg.face_fill, cfg.face_min_pad)
@@ -322,20 +327,63 @@ def enhance(img: np.ndarray, cfg) -> np.ndarray:
 
     - Crop pequeño (lado mayor < cfg.sr_min_side): SR x4 nativo si hay modelo
       (cfg.sr_model: "compact" | "x4plus"); si no, fallback LANCZOS4+unsharp.
-    - Imagen ya grande: intacta (no se toca lo que no lo necesita).
+    - Después, top-up LANCZOS4+unsharp hasta que el lado mayor alcance al menos
+      cfg.sr_target_side (512): garantiza resolución útil de salida aunque la
+      cara nativa sea minúscula.
+    - Imagen ya grande (>= sr_target_side): intacta (no se toca lo que no lo
+      necesita).
     """
     h, w = img.shape[:2]
     if h < 1 or w < 1:
         return img
-    if not cfg.sr_enabled:
-        return _fallback_upscale(img, cfg.sr_target_side)
-    if max(h, w) >= cfg.sr_min_side:
-        return img
-    model = get_model(cfg.sr_model)
-    if model is None:
-        return _fallback_upscale(img, cfg.sr_target_side)
-    try:
-        return _sr_infer(model, img)
-    except Exception as e:  # noqa: BLE001
-        print(f"[superres] SR falló, fallback activo: {e}", flush=True)
-        return _fallback_upscale(img, cfg.sr_target_side)
+    if cfg.sr_enabled and max(h, w) < cfg.sr_min_side:
+        model = get_model(cfg.sr_model)
+        if model is not None:
+            try:
+                img = _sr_infer(model, img)
+            except Exception as e:  # noqa: BLE001
+                print(f"[superres] SR falló, fallback activo: {e}", flush=True)
+    return _fallback_upscale(img, cfg.sr_target_side)
+
+
+def enhance_embedding(img: np.ndarray, face, cfg) -> np.ndarray:
+    """SR-before-embedding: embedding ArcFace recalculado sobre la cara SR.
+
+    Para caras pequeñas (lado mayor < cfg.sr_embed_min_face) el embedding nativo
+    se calcula sobre muy pocos píxeles y es poco fiable para el matching. Aquí:
+      1. recorta la cara con margen del frame original,
+      2. SR x4 + top-up (`enhance`) sobre ese recorte,
+      3. re-embebe con el modelo de RECONOCIMIENTO (ArcFace) usando los 5
+         keypoints originales escalados al recorte mejorado. NO se re-detecta
+         con RetinaFace: medido, Real-ESRGAN produce caras tan "plastificadas"
+         que el detector pierde la cara en crops pequeños.
+
+    Degradación segura: sin kps, sin modelo o fallo -> embedding original
+    (nunca None, nunca rompe el pipeline).
+    """
+    from .model import reembed_face  # import tardío: evita acoplar insightface
+
+    fw = face.bbox[2] - face.bbox[0]
+    fh = face.bbox[3] - face.bbox[1]
+    if max(fw, fh) >= cfg.sr_embed_min_face:
+        return face.embedding
+    kps = getattr(face, "kps", None)
+    if kps is None or len(kps) < 5:
+        return face.embedding
+    h, w = img.shape[:2]
+    x1, y1, x2, y2 = face.bbox
+    pad = int(0.35 * max(fw, fh)) + 10
+    x1, y1 = max(0, x1 - pad), max(0, y1 - pad)
+    x2, y2 = min(w, x2 + pad), min(h, y2 + pad)
+    crop = img[y1:y2, x1:x2]
+    if crop.size == 0:
+        return face.embedding
+    up = enhance(crop, cfg)
+    scale_x = up.shape[1] / max(1, crop.shape[1])
+    scale_y = up.shape[0] / max(1, crop.shape[0])
+    kps_up = (np.asarray(kps, dtype=np.float32) - np.array([x1, y1], dtype=np.float32))
+    kps_up = kps_up * np.array([scale_x, scale_y], dtype=np.float32)
+    emb = reembed_face(up, kps_up)
+    if emb is None:
+        return face.embedding
+    return emb

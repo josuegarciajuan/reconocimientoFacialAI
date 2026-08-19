@@ -45,7 +45,7 @@ from motor.core.matching import LayerScore, match_group, scores_per_person, scor
 from motor.core.model import analyze            # noqa: E402
 from motor.core.quality import face_sharpness, pose_label  # noqa: E402
 from motor.core.store import FaceStore          # noqa: E402
-from motor.core.superres import zoom_photo      # noqa: E402
+from motor.core.superres import enhance_embedding, zoom_photo      # noqa: E402
 
 ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 IMG_EXTS = (".jpg", ".jpeg", ".png")
@@ -240,7 +240,7 @@ class _CascadeCtx:
         img = cv2.imread(photos[0])
         if img is None:
             return None
-        faces = analyze(img, det_size=(self.cfg.det_size, self.cfg.det_size),
+        faces = analyze(img, det_size=(self.cfg.crop_det_size, self.cfg.crop_det_size),
                         min_score=self.cfg.min_det_score)
         if not faces:
             return None
@@ -646,7 +646,7 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
         if img is None:
             shutil.move(p, os.path.join(nopasafiltros, f))
             continue
-        faces = analyze(img, det_size=(cfg.det_size, cfg.det_size), min_score=cfg.min_det_score)
+        faces = analyze(img, det_size=(cfg.crop_det_size, cfg.crop_det_size), min_score=cfg.min_det_score)
         if not faces:
             shutil.move(p, os.path.join(notienecaras, f))
             continue
@@ -654,6 +654,10 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
         if not focused:
             shutil.move(p, os.path.join(nopasafiltros, f))
             continue
+        # SR-before-embedding: las caras pequeñas (< sr_embed_min_face) recalculan
+        # su embedding sobre el recorte super-resuelto -> matching más fiable.
+        for fc in focused:
+            fc.embedding = enhance_embedding(img, fc, cfg)
         items.append({"file": f, "path": p, "img": img, "faces": focused, "ts": parse_timestamp(f)})
 
     if not items:
