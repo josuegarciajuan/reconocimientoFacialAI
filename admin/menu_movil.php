@@ -74,7 +74,7 @@
         </li>
 
         <li>
-            <a href="?page=config" class="menu menu--hero menu<?php if(isset($_GET["page"]) and $_GET["page"]=="config"){ echo "--active"; } ?>">
+            <a href="?page=config" class="menu menu<?php if(isset($_GET["page"]) and $_GET["page"]=="config"){ echo "--active"; } ?>">
 
                 <div class="menu__icon menu__emoji">⚒️</div>
 

@@ -58,7 +58,7 @@
         </li>
 
         <li>
-            <a href="?page=config" class="top-menu top-menu--hero top-menu<?php if(isset($_GET["page"]) and $_GET["page"]=="config"){ echo "--active"; } ?>">
+            <a href="?page=config" class="top-menu top-menu<?php if(isset($_GET["page"]) and $_GET["page"]=="config"){ echo "--active"; } ?>">
                 <div class="menu__icon menu__emoji">⚒️</div>
                 <div class="top-menu__title"> La Forja </div>
             </a>
