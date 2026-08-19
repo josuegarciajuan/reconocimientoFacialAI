@@ -1048,16 +1048,18 @@ function abrirDibujo() {
 
     /* Igualar el tamaño VISUAL del lienzo de dibujo al del plano que se
      * muestra a la derecha (canvasID): así lo que se dibuja se ve a la
-     * misma escala. Ambos comparten dimensiones internas (CANVAS_WIDTH x
-     * CANVAS_HEIGHT), solo difiere el tamaño CSS. Las coordenadas ya se
-     * normalizan en dibujoCoord por getBoundingClientRect(), así que el
-     * dibujo sigue exacto. */
+     * misma escala. Se fija SOLO el ancho y se deja el alto automático
+     * (height:auto del CSS) para que la proporción intrínseca 750:562
+     * (horizontal) se mantenga siempre: si el modal fuese más estrecho que
+     * el plano de la derecha, max-width:100% encogería también el alto y
+     * el lienzo nunca se deforma a vertical. Las coordenadas ya se
+     * normalizan en dibujoCoord por getBoundingClientRect(). */
     var plan = document.getElementById("canvasID");
     if (plan) {
         var r = plan.getBoundingClientRect();
         if (r.width > 0 && r.height > 0) {
             dibujo.canvas.style.width = r.width + "px";
-            dibujo.canvas.style.height = r.height + "px";
+            dibujo.canvas.style.height = "auto";
         }
     }
 
