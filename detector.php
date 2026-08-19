@@ -94,13 +94,23 @@ while (true) {
                 $dir = opendir($dir_videos);
                 while (($el = readdir($dir)) !== false) {
                     if ($el !== "." && $el !== "..") {
+                        // publicación atómica (moov-race): los .tmp los escribe
+                        // guarda_movimientosV3.py y se renombran a .mp4 al cerrar;
+                        // un .tmp huérfano (> 10 min) se limpia aquí.
+                        if (substr($el, -4) === ".tmp") {
+                            if (time() - @filemtime($dir_videos . $el) > CONFIG_MARCADOR_HUERFANO_SEGS) {
+                                @unlink($dir_videos . $el);
+                            }
+                            continue;
+                        }
                         $pesos[$el] = filesize($dir_videos . $el);
                     }
                 }
                 sleep(6);  // espera a que termine la subida/grabación
                 $dir = opendir($dir_videos);
                 while (($el = readdir($dir)) !== false) {
-                    if ($el !== "." && $el !== ".." && isset($pesos[$el]) && $pesos[$el] === filesize($dir_videos . $el)) {
+                    if ($el !== "." && $el !== ".." && substr($el, -4) !== ".tmp"
+                        && isset($pesos[$el]) && $pesos[$el] === filesize($dir_videos . $el)) {
                         $subidos[] = $el;
                     }
                 }
