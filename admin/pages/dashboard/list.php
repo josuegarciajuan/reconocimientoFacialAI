@@ -274,13 +274,6 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
     </div>
     <nav class="quick-links mt-3" aria-label="Accesos directos">
         <a class="quick-link quick-link--anchor" href="#seccion-fichajes"><span class="quick-link__emoji" aria-hidden="true">⏳</span><span class="quick-link__label">Fichajes de hoy</span></a>
-        <a class="quick-link" href="?page=camaras"><span class="quick-link__emoji" aria-hidden="true">📡</span><span class="quick-link__label">El Ojo en Vivo</span></a>
-        <a class="quick-link" href="?page=accesos"><span class="quick-link__emoji" aria-hidden="true">⚔️</span><span class="quick-link__label">Movimientos</span></a>
-        <a class="quick-link" href="?page=visitantes"><span class="quick-link__emoji" aria-hidden="true">👹</span><span class="quick-link__label">Pueblos</span></a>
-        <a class="quick-link" href="?page=rutas"><span class="quick-link__emoji" aria-hidden="true">🗺️</span><span class="quick-link__label">Caminos</span></a>
-        <a class="quick-link" href="?page=lineas"><span class="quick-link__emoji" aria-hidden="true">📐</span><span class="quick-link__label">Líneas</span></a>
-        <a class="quick-link" href="?page=config"><span class="quick-link__emoji" aria-hidden="true">⚒️</span><span class="quick-link__label">La Forja</span></a>
-        <a class="quick-link" href="?page=ayuda"><span class="quick-link__emoji" aria-hidden="true">📜</span><span class="quick-link__label">El Concilio</span></a>
         <a class="quick-link quick-link--anchor" href="#seccion-dentro"><span class="quick-link__emoji" aria-hidden="true">🔍</span><span class="quick-link__label">Quién está dentro</span></a>
         <a class="quick-link quick-link--anchor" href="#seccion-falta"><span class="quick-link__emoji" aria-hidden="true">⏰</span><span class="quick-link__label">Falta por fichar</span></a>
     </nav>
