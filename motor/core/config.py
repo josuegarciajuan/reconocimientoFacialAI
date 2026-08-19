@@ -189,4 +189,17 @@ class Config:
         cfg.vlm_max_pending = get_int(ruta, "RF_VLM_MAX_PENDING", cfg.vlm_max_pending)
         cfg.vlm_ram_defer_gb = get_float(ruta, "RF_VLM_RAM_DEFER_GB", cfg.vlm_ram_defer_gb)
         cfg.vlm_ram_skip_gb = get_float(ruta, "RF_VLM_RAM_SKIP_GB", cfg.vlm_ram_skip_gb)
+
+        # Resolución/calidad del pipeline (opcional; por defecto los valores de
+        # esta clase). Permite afinar sin tocar código: p. ej. RF_SR_TARGET_SIDE
+        # para el tamaño de las fotos finales o RF_SR_EMBED_MIN_FACE para
+        # super-resolver más caras pequeñas antes del embedding (mejor matching).
+        cfg.sr_target_side = get_int(ruta, "RF_SR_TARGET_SIDE", cfg.sr_target_side)
+        cfg.sr_min_side = get_int(ruta, "RF_SR_MIN_SIDE", cfg.sr_min_side)
+        cfg.sr_embed_min_face = get_int(ruta, "RF_SR_EMBED_MIN_FACE", cfg.sr_embed_min_face)
+        cfg.min_sharpness = get_float(ruta, "RF_MIN_SHARPNESS", cfg.min_sharpness)
+        cfg.det_size = get_int(ruta, "RF_DET_SIZE", cfg.det_size)
+        cfg.crop_det_size = get_int(ruta, "RF_CROP_DET_SIZE", cfg.crop_det_size)
+        cfg.face_fill = get_float(ruta, "RF_FACE_FILL", cfg.face_fill)
+        cfg.face_min_pad = get_int(ruta, "RF_FACE_MIN_PAD", cfg.face_min_pad)
         return cfg

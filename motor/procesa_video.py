@@ -261,7 +261,9 @@ def main() -> int:
     ap.add_argument("--dedup-cosine", type=float, default=0.97)
     args = ap.parse_args()
 
-    cfg = Config()
+    # Config.from_env (no Config()): aplica los overrides de .env (RF_MIN_SHARPNESS,
+    # RF_DET_SIZE, etc.) igual que clasificador.py y reprocesar.py.
+    cfg = Config.from_env(args.ruta)
     if args.min_sharpness is not None:
         cfg.min_sharpness = args.min_sharpness
     cfg.dedup_cosine = args.dedup_cosine
