@@ -8,8 +8,8 @@
  * UI: Barad-dûr (Mordor). Solo presentación responsive: la lógica
  * (ids, names, onclicks, XHR) la consume admin/pages/config/javascript.php.
  *
- * REFACTOR: secciones agrupadas en pestañas (Cámaras / Nodos / Líneas / Plano)
- * con un lienzo de trabajo persistente. Cada pestaña vive en tabs/tab_*.php y
+ * REFACTOR: secciones agrupadas en pestañas (Plano / Cámaras / Líneas / Nodos,
+ * con Locales primero para administradores) con un lienzo de trabajo persistente. Cada pestaña vive en tabs/tab_*.php y
  * puede tener sub-acciones (sub) que se resuelven en index.php.
  * $tab y $sub vienen resueltos desde index.php.
  */
@@ -82,14 +82,14 @@ function rf_cfg_select_rango($ini, $fin, $valor) {
 
 /* --- Pestañas de sección: [clave] => [emoji, sabor(Cinzel), entidad, lore] --- */
 $tabs_ui = [
-    "camaras" => ["📷", "Forjar", "Cámaras", "forja-camaras"],
-    "nodos"   => ["🔗", "Cadenas", "Nodos", "cadenas"],
-    "lineas"  => ["📏", "Trazos", "Líneas", "trazos"],
     "plano"   => ["🗺️", "El Yunque", "Plano", "el-yunque"],
+    "camaras" => ["📷", "Forjar", "Cámaras", "forja-camaras"],
+    "lineas"  => ["📏", "Trazos", "Líneas", "trazos"],
+    "nodos"   => ["🔗", "Cadenas", "Nodos", "cadenas"],
 ];
-// Fortalezas (locales): pestaña solo para administradores.
+// Fortalezas (locales): pestaña solo para administradores, siempre la primera.
 if (($_SESSION["admin"] ?? 0) == 1) {
-    $tabs_ui["locales"] = ["🏰", "Fortalezas", "Locales", "fortalezas"];
+    $tabs_ui = ["locales" => ["🏰", "Fortalezas", "Locales", "fortalezas"]] + $tabs_ui;
 }
 
 /* En la pestaña "locales" no hay trabajo de plano: oculta el lienzo y
