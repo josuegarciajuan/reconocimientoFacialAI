@@ -14,7 +14,7 @@
 require_once __DIR__ . "/../../../libs/db.php";
 
 $local_id = (int)($_SESSION["local_id"] ?? 0);
-$camaras = DB::select("SELECT * FROM camaras WHERE local_id = ? AND sistema = 0 AND encendida = 1 ORDER BY descripcion ASC", [$local_id]);
+$camaras = DB::select("SELECT * FROM camaras WHERE local_id = ? AND sistema = 0 AND encendida = 1 ORDER BY orden ASC, descripcion ASC", [$local_id]);
 
 /**
  * Lanza dofoto.py en segundo plano si el snapshot es antiguo o no existe.
@@ -90,7 +90,7 @@ $ph_uri = "data:image/svg+xml;base64," . base64_encode(
         <span class="empty-state__hint">Activa y enciende una cámara desde la configuración: sus snapshots aparecerán aquí automáticamente.</span>
     </div>
 <?php else: ?>
-<div class="cam-grid mt-5">
+<div class="cam-grid mt-5" id="cam-grid">
     <?php foreach ($camaras as $c):
         $camara_id = (int)$c["id"];
         $descripcion = rf_utf8_normalizar((string)($c["descripcion"] ?? "Cámara " . $camara_id));
@@ -119,6 +119,8 @@ $ph_uri = "data:image/svg+xml;base64," . base64_encode(
         $alt = "Snapshot de " . $descripcion;
     ?>
     <button type="button" class="cam-card box text-left w-full"
+            draggable="true"
+            data-camara-id="<?= $camara_id; ?>"
             aria-label="Cámara en directo: <?= htmlspecialchars($descripcion, ENT_QUOTES); ?>"
             onclick="rfCamModal(...<?= htmlspecialchars($js_args, ENT_QUOTES); ?>)">
         <span class="cam-card__media block">
@@ -128,10 +130,18 @@ $ph_uri = "data:image/svg+xml;base64," . base64_encode(
             <img class="cam-card__img" data-snapshot="<?= $snapshot_base; ?>"
                  src="<?= $existe ? $snapshot_uri : $ph_uri; ?>"
                  data-ph-uri="<?= $ph_uri; ?>"
+                 draggable="false"
                  alt="<?= htmlspecialchars($alt, ENT_QUOTES); ?>">
             <span class="cam-card__status"><span class="live-dot" aria-hidden="true"></span> EN VIVO</span>
         </span>
         <span class="cam-card__body">
+            <span class="cam-card__grip" aria-hidden="true" title="Arrastra para reordenar">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9" cy="6" r="1"></circle><circle cx="15" cy="6" r="1"></circle>
+                    <circle cx="9" cy="12" r="1"></circle><circle cx="15" cy="12" r="1"></circle>
+                    <circle cx="9" cy="18" r="1"></circle><circle cx="15" cy="18" r="1"></circle>
+                </svg>
+            </span>
             <span class="cam-card__name"><?= htmlspecialchars($descripcion, ENT_QUOTES); ?></span>
             <span class="cam-card__cta">Ver
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -167,6 +177,129 @@ $ph_uri = "data:image/svg+xml;base64," . base64_encode(
                     ph.style.display = "flex";
                 }
             });
+        });
+    });
+</script>
+
+<script>
+    /* Reordenar la rejilla arrastrando y soltando (HTML5 drag & drop).
+       Al soltar, se persiste el orden en camaras.orden vía orden_ajax.php.
+       Un clic simple sigue abriendo el modal (el click no se dispara tras un drag real). */
+    $(function () {
+        var grid = document.getElementById("cam-grid");
+        if (!grid) {
+            return;
+        }
+        var arrastrada = null;
+
+        function tarjetas() {
+            return Array.prototype.slice.call(grid.querySelectorAll(".cam-card[data-camara-id]"));
+        }
+
+        /* Devuelve la tarjeta ANTES de la cual hay que insertar la arrastrada,
+           según la posición vertical del cursor; null = insertar al final. */
+        function tarjetaInsertar(y) {
+            var objetivo = null;
+            var mejor = Number.NEGATIVE_INFINITY;
+            tarjetas().forEach(function (card) {
+                if (card === arrastrada) {
+                    return;
+                }
+                var box = card.getBoundingClientRect();
+                var off = y - box.top - box.height / 2;
+                if (off < 0 && off > mejor) {
+                    mejor = off;
+                    objetivo = card;
+                }
+            });
+            return objetivo;
+        }
+
+        function marcarInsercion(y) {
+            tarjetas().forEach(function (c) { c.classList.remove("is-drop-before"); });
+            grid.classList.remove("is-drop-end");
+            var objetivo = tarjetaInsertar(y);
+            if (objetivo) {
+                objetivo.classList.add("is-drop-before");
+            } else {
+                grid.classList.add("is-drop-end");
+            }
+        }
+
+        function limpiarIndicadores() {
+            tarjetas().forEach(function (c) { c.classList.remove("is-drop-before"); });
+            grid.classList.remove("is-drop-end");
+        }
+
+        function persistir() {
+            var ids = tarjetas().map(function (c) { return c.getAttribute("data-camara-id"); });
+            $.post("pages/camaras/orden_ajax.php", { ids: ids.join(",") }, "json")
+                .done(function (r) {
+                    if (r && r.ok && typeof window.rfToast === "function") {
+                        window.rfToast("Orden de cámaras guardado", "ok");
+                    }
+                })
+                .fail(function () {
+                    if (typeof window.rfToast === "function") {
+                        window.rfToast("No se pudo guardar el orden", "error");
+                    }
+                });
+        }
+
+        grid.addEventListener("dragstart", function (e) {
+            var card = e.target && e.target.closest ? e.target.closest(".cam-card[data-camara-id]") : null;
+            if (!card) {
+                return;
+            }
+            arrastrada = card;
+            e.dataTransfer.effectAllowed = "move";
+            try { e.dataTransfer.setData("text/plain", card.getAttribute("data-camara-id")); } catch (_) {}
+            window.setTimeout(function () { card.classList.add("is-dragging"); }, 0);
+        });
+
+        grid.addEventListener("dragend", function () {
+            if (arrastrada) {
+                arrastrada.classList.remove("is-dragging");
+            }
+            arrastrada = null;
+            limpiarIndicadores();
+        });
+
+        grid.addEventListener("dragover", function (e) {
+            if (!arrastrada) {
+                return;
+            }
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            marcarInsercion(e.clientY);
+        });
+
+        grid.addEventListener("dragleave", function (e) {
+            if (!arrastrada) {
+                return;
+            }
+            /* dragleave burbujea desde los hijos: solo limpia al salir de la rejilla */
+            if (e.relatedTarget && grid.contains(e.relatedTarget)) {
+                return;
+            }
+            limpiarIndicadores();
+        });
+
+        grid.addEventListener("drop", function (e) {
+            if (!arrastrada) {
+                return;
+            }
+            e.preventDefault();
+            var objetivo = tarjetaInsertar(e.clientY);
+            if (objetivo) {
+                grid.insertBefore(arrastrada, objetivo);
+            } else {
+                grid.appendChild(arrastrada);
+            }
+            arrastrada.classList.remove("is-dragging");
+            arrastrada = null;
+            limpiarIndicadores();
+            persistir();
         });
     });
 </script>
