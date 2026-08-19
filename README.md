@@ -27,9 +27,10 @@ de cruces de línea virtuales, control de aforo y fichajes.
 | rf-conciliador (p6) | `conciliador.php` → `libs/conciliador.php` | Concilia fichajes según el horario del local: provisional en vivo, conciliado (salida definitiva) al cerrar el día |
 | rf-vinculador (p7) | `vinculador.php` → `libs/vinculos.php` | Enlaza vídeos ↔ estancias (personas) ↔ cruces por cámara + solape temporal (backfill + incremental) |
 
-Scripts actuales del motor: `core/` (model, matching, store, quality, config), `clasificador.py`,
+Scripts actuales del motor: `core/` (model, matching, store, quality, config, superres), `clasificador.py`,
 `procesa_video.py`, `enrolamiento.py`, `pose.py`, `cambiar_foto.py`, `cruces.py`,
-`guarda_movimientosV3.py`, `juntar_personas.py`, `dofoto.py`, `eval_cruces.py`, `eval/`.
+`guarda_movimientosV3.py`, `juntar_personas.py`, `dofoto.py`, `eval_cruces.py`, `eval/`,
+`reprocesar.py` (backfill de resolución: fotos existentes + re-escaneo de vídeos archivados + re-embedding de galería).
 
 ## Instalación
 

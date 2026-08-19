@@ -18,14 +18,20 @@ from .env import get, get_float, get_int
 @dataclass
 class Config:
     # --- detección ---
-    min_det_score: float = 0.5
-    det_size: int = 640
+    # det_size 640 -> 1280: la cámara graba 1080p y las caras lejanas miden
+    # ~30-90 px; a 640 el detector las pierde. A 1280 se detectan caras mucho
+    # más pequeñas (coste ~4x en CPU, amortizado por el muestreo face-every).
+    min_det_score: float = 0.4
+    det_size: int = 1280
+    # det_size para CROPS de cara ya recortados (clasificador + re-embedding):
+    # la imagen es pequeña (~85-130 px), subirla a 1280 solo desperdicia CPU.
+    crop_det_size: int = 640
 
     # --- calidad de imagen ---
-    # 60 -> 80: menos caras borrosas de ruido entran en el pipeline (plan
-    # refinamiento-autoaprendizaje, F2.1). Si una cámara es de baja resolución y
-    # se queda sin detecciones, puede bajarse vía flag por despliegue.
-    min_sharpness: float = 80.0      # varianza Laplaciano mínima (vigilancia)
+    # 80 -> 55: las caras lejanas (pocos px) tienen varianza de Laplaciano baja
+    # y con 80 se descartaban antes de poder aplicar SR. 55 sigue filtrando
+    # desenfoque real pero admite caras pequeñas aprovechables.
+    min_sharpness: float = 55.0      # varianza Laplaciano mínima (vigilancia)
     frontal_yaw_tol: float = 35.0
     frontal_pitch_tol: float = 25.0
 
@@ -63,8 +69,11 @@ class Config:
     sr_enabled: bool = True
     sr_model: str = "compact"      # "compact" (realesr-general-x4v3, ~2-5 s/cara, recomendado prod)
                                    # "x4plus" (RealESRGAN_x4plus, mejor calidad, ~30 s/cara en CPU)
-    sr_target_side: int = 512      # lado mínimo de salida en fallback LANCZOS4+unsharp
+    sr_target_side: int = 512      # lado mínimo de salida (top-up LANCZOS4 tras SR x4)
     sr_min_side: int = 320         # solo SR si el lado mayor del crop es < esto (caras pequeñas)
+    # SR-before-embedding: caras con lado mayor < esto se super-resuelven ANTES de
+    # recalcular el embedding ArcFace (mejora real del matching, no solo visual).
+    sr_embed_min_face: int = 96
 
     # --- encuadre de la cara (auto-zoom hacia la cara en la foto guardada) ---
     face_fill: float = 0.70        # fracción del encuadre que debe ocupar la cara

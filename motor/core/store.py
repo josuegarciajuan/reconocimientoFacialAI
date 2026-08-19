@@ -254,6 +254,28 @@ class FaceStore:
         with open(path, "rb") as fh:
             return pickle.load(fh)
 
+    def reembed_person(self, cod: str, encodings: list[np.ndarray],
+                       qualities: list[float], poses: list[str]) -> None:
+        """Sustituye los encodings de `cod` por los recalculados (backfill SR-before-embedding).
+
+        Conserva `appearance` (capa L1b) tal cual; solo se reemplazan las listas
+        de cara (encodings/quality/poses/added_at) para que query y galería
+        queden en el mismo dominio (embeddings SR para caras pequeñas).
+        """
+        def _fn(data: dict) -> None:
+            p = data["persons"].get(cod)
+            if not p:
+                return
+            if not encodings:
+                return
+            now = time.time()
+            p["encodings"] = [np.asarray(e, dtype=np.float32) for e in encodings]
+            p["quality"] = [float(q) for q in qualities]
+            p["poses"] = list(poses)
+            p["added_at"] = [now] * len(encodings)
+            self._prune(p, self.max_per_person)
+        self._transaction(_fn)
+
     def remove_closest(self, cod: str, embedding: np.ndarray, min_cosine: float = 0.5) -> int:
         """Elimina de `cod` el encoding más parecido a `embedding` (si supera min_cosine).
         Devuelve 1 si eliminó algo (B4: mover foto entre personas)."""
