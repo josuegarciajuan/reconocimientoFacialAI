@@ -43,14 +43,24 @@ from motor.limpiar_catchall import (cluster_centroide, embed_foto, load_cache,  
 
 
 def find_mixed_profiles(store: FaceStore, thr: float = 0.30,
-                        min_size: int = 2, min_total: int = 6) -> list[dict]:
+                        min_size: int = 2, min_total: int = 6,
+                        bridge_max: float = 0.42,
+                        alien_internal: float = 0.30) -> list[dict]:
     """Devuelve los perfiles candidatos a estar mezclados (análisis SOLO del
     diccionario face_enc_v2, sin re-embebido ni BD).
 
-    Regla: >= 2 sub-clústeres de tamaño >= min_size, con un hueco entre ellos
-    (max sim inter-clúster < thr) y >= min_total encodings en la persona.
-    Un perfil limpio (una sola persona con poses variadas, genuino >= 0.32)
-    normalmente forma 1 clúster o varios conectados por un hueco >= thr.
+    Métrica (calibrada con la galería real 2026-08-19):
+      - Se clusteriza la persona (centroide, umbral `thr`) y se toma el clúster
+        principal (la identidad dominante).
+      - Un sub-clúster satélite es "alien" si:
+          * tamaño >= min_size (cara repetida, no ruido aislado),
+          * coherencia interna >= alien_internal (misma cara repetida),
+          * similitud MÁXIMA al clúster principal < bridge_max.
+      El puente `bridge_max` (0.42) separa lo genuino de lo ajeno: impostores de
+      videovigilancia llegan a ~0.36 (p95), mientras que una variación genuina de
+      pose/apariencia mantiene al menos UN par con similitud >= 0.45 con el
+      núcleo (observado: satélites legítimos con max 0.53-0.88). Un sub-clúster
+      con algún puente >= 0.42 NO es contaminación, es la misma persona.
     """
     out: list[dict] = []
     for cod in store.persons():
@@ -58,23 +68,28 @@ def find_mixed_profiles(store: FaceStore, thr: float = 0.30,
         if encs is None or len(encs) < min_total:
             continue
         clusters = cluster_centroide(list(encs), thr, min_size=1)
-        big = [c for c in clusters if len(c) >= min_size]
-        if len(big) < 2:
-            continue
-        # hueco máximo entre sub-clústeres (similitud media entre miembros)
+        main = max(clusters, key=len)
         S = encs @ encs.T
-        inter_max = 0.0
-        for i in range(len(big)):
-            for j in range(i + 1, len(big)):
-                sub = S[np.ix_(big[i], big[j])]
-                if sub.size:
-                    inter_max = max(inter_max, float(sub.max()))
-        if inter_max < thr:
+        aliens: list[dict] = []
+        for c in clusters:
+            if c is main or len(c) < min_size:
+                continue
+            idx = np.asarray(c)
+            internal = float((S[np.ix_(idx, idx)].sum() - len(c)) /
+                             max(1, len(c) * (len(c) - 1)))
+            inter = S[np.ix_(idx, np.asarray(main))]
+            if internal >= alien_internal and float(inter.max()) < bridge_max:
+                aliens.append({
+                    "size": len(c),
+                    "internal": round(internal, 3),
+                    "max2main": round(float(inter.max()), 3),
+                })
+        if aliens:
             out.append({
                 "cod": cod,
                 "total": len(encs),
-                "clusters": sorted((len(c) for c in big), reverse=True),
-                "inter_max": round(inter_max, 4),
+                "main_size": len(main),
+                "aliens": aliens,
             })
     return out
 
@@ -87,6 +102,8 @@ def main() -> int:
                     help="umbral para considerar 2 sub-clústeres separados (check)")
     ap.add_argument("--min-size", type=int, default=2,
                     help="tamaño mínimo de cada sub-clúster para marcar")
+    ap.add_argument("--bridge", type=float, default=0.42,
+                    help="similitud máxima al clúster principal para considerar 'alien'")
     ap.add_argument("--apply", action="store_true",
                     help="aplicar limpieza a los perfiles marcados (o a --cod)")
     ap.add_argument("--thr-apply", type=float, default=0.45,
@@ -104,13 +121,15 @@ def main() -> int:
     store = FaceStore(os.path.join(args.ruta, "motor/bbdd_reconocimiento", args.local_id, "face_enc_v2"),
                       max_per_person=cfg.max_encodings_per_person)
 
-    marcados = find_mixed_profiles(store, thr=args.thr, min_size=args.min_size)
+    marcados = find_mixed_profiles(store, thr=args.thr, min_size=args.min_size,
+                                   bridge_max=args.bridge)
     print(f"personas en face_enc_v2: {len(store.persons())}")
     if not marcados:
         print("sin perfiles mezclados detectados")
     for m in marcados:
-        print(f"  MIXED {m['cod']}  encodings={m['total']}  sub-clústeres={m['clusters']}  "
-              f"hueco max inter={m['inter_max']}")
+        aliens = ", ".join(f"{a['size']} (max2main={a['max2main']})" for a in m["aliens"])
+        print(f"  MIXED {m['cod']}  total={m['total']}  núcleo={m['main_size']}  "
+              f"aliens=[{aliens}]")
 
     if not args.apply:
         print("\n[check] solo informe. Usa --apply para limpiar (reversible).")

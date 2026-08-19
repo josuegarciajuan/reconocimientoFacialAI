@@ -79,24 +79,27 @@ def test_split_coherent_rompe_cadena_transitiva():
     """A~B (0.33), B~C (0.33) pero A~C (0.10): el union-find los uniría; el
     sub-clustering coherente debe romper la cadena (no mezclar C con A)."""
     cfg = Config(cluster_confirm=0.35)
+    a = _e(0)                      # e0
+    c = _e(1)                      # e1  -> cos(a,c) = 0.10? no: e0·e1 = 0
+    # construimos b en el subespacio {a, c, w}: b = 0.3a + 0.3c + 0.8956 w
     rng = np.random.default_rng(7)
-    # A y B a coseno ~0.33; B y C a coseno ~0.33; A y C a coseno ~0.10
-    a = _e(0)
-    c = _e(1)
-    # construir b como combinación normalizada con los cosenos deseados
-    b = a * 0.33 + c * 0.10 + np.sqrt(1 - 0.33 ** 2 - 0.10 ** 2) * rng.standard_normal(512)
+    w = rng.standard_normal(512)
+    w -= a * float(np.dot(a, w))
+    w -= c * float(np.dot(c, w))
+    w /= np.linalg.norm(w)
+    b = 0.3 * a + 0.3 * c + 0.8956 * w
     b /= np.linalg.norm(b)
-    # comprobar premisa
+    # premisa: A~B = B~C = 0.33, A~C ~ 0.00
     assert 0.30 < cosine(a, b) < 0.36
     assert 0.30 < cosine(b, c) < 0.36
-    assert cosine(a, c) < 0.15
+    assert cosine(a, c) < 0.05
 
     battery = [_item(a, 0), _item(b, 1), _item(c, 2)]
     fl = _face_list(battery)
     subs = split_coherent_clusters([0, 1, 2], fl, battery, cfg)
     assert len(subs) >= 2, f"la cadena transitiva debe romperse: {subs}"
     # ningún sub-clúster puede contener a la vez a (item 0) y c (item 2)
-    # porque coseno(a,c) ~0.10 << cluster_confirm; y todo miembro confirma al rep.
+    # porque coseno(a,c) ~0.00 << cluster_confirm; y todo miembro confirma al rep.
     for s in subs:
         members = sorted(fl[i][1] for i in s)
         assert not ({0, 2} <= set(members)), f"a y c mezclados en {members}"
@@ -158,7 +161,8 @@ def test_prune_conserva_persona_limpia(tmp_path):
     base = _e(0)
     encs = []
     for i in range(9):
-        v = base + 0.08 * rng.standard_normal(512)
+        # ruido 0.01 -> coseno interno ~0.98 (genuino de sobra)
+        v = base + 0.01 * rng.standard_normal(512)
         encs.append(v / np.linalg.norm(v))
     store.add("A", encs, [80.0] * 9, ["f"] * 9)
     assert store.count("A") == 9
@@ -178,7 +182,8 @@ def test_find_mixed_profiles_marca_mezclado(tmp_path):
     cods = [m["cod"] for m in out]
     assert "MIX" in cods
     m = next(m for m in out if m["cod"] == "MIX")
-    assert sorted(m["clusters"], reverse=True)[:2] == [3, 3]
+    assert m["main_size"] == 3
+    assert any(a["size"] == 3 for a in m["aliens"])
 
 
 def test_find_mixed_profiles_no_marca_limpio(tmp_path):
@@ -186,4 +191,18 @@ def test_find_mixed_profiles_no_marca_limpio(tmp_path):
     store = FaceStore(str(tmp_path / "face_enc_v2"), max_per_person=100)
     encs = [_e(0, noise=0.05, seed=i) for i in range(6)]
     store.add("CLEAN", encs, [80.0] * 6, ["f"] * 6)
+    assert find_mixed_profiles(store) == []
+
+
+def test_find_mixed_profiles_no_marca_variacion_genuina(tmp_path):
+    """Variación genuina de apariencia/pose (puente >= 0.42 con el núcleo) no
+    debe marcarse como mezclada (calibrado con la galería real: satélites
+    legítimos con max2main 0.53-0.88)."""
+    store = FaceStore(str(tmp_path / "face_enc_v2"), max_per_person=100)
+    main = [_e(0, noise=0.05, seed=i) for i in range(6)]
+    bridge = np.zeros(512)
+    bridge[0] = 0.50                     # coseno 0.50 con el núcleo e0 (genuino)
+    bridge[2] = np.sqrt(1 - 0.50 ** 2)
+    sat = [bridge.astype(np.float32) for _ in range(3)]
+    store.add("VAR", main + sat, [80.0] * 9, ["f"] * 9)
     assert find_mixed_profiles(store) == []
