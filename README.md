@@ -73,6 +73,7 @@ php tests/vinculos_test.php                           # lógica de vínculos ví
 | `docs/specs/09-vinculos.md` | Vínculos automáticos vídeos ↔ personas ↔ cruces de línea |
 | `docs/specs/10-lore-tooltips.md` | Bocadillos de lore: explicación de la terminología temática (glosario + motor) |
 | `docs/specs/11-anillo-hub.md` | El Ojo del Anillo: hub maestro flotante (búsqueda + accesos rápidos + centinelas + semáforo) |
+| `docs/specs/12-refinar-autoaprendizaje.md` | Refinamiento del autoaprendizaje: galerías limpias, admisión por cara, feedback activo y limpieza de perfiles mezclados |
 
 ## Seguridad
 
