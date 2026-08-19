@@ -144,6 +144,57 @@
   color: var(--mordor-brasa);
 }
 
+/* --- Reordenar cámaras (drag & drop) ------------------------ */
+.cam-card__grip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  color: rgba(201, 162, 39, 0.55);
+  cursor: grab;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.cam-card__grip:hover {
+  color: rgba(201, 162, 39, 0.9);
+  background-color: rgba(201, 162, 39, 0.08);
+}
+
+.cam-card[draggable="true"] {
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Evita el arrastre nativo de la imagen: toda la superficie arrastra la tarjeta */
+.cam-card[draggable="true"] .cam-card__img {
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+.cam-card[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.cam-card.is-dragging {
+  opacity: 0.4;
+  transform: scale(0.97);
+  box-shadow: none;
+}
+
+/* Indicador de inserción: acento superior en la tarjeta que recibe el drop */
+.cam-card.is-drop-before {
+  box-shadow: 0 -3px 0 0 rgba(201, 162, 39, 0.9);
+}
+
+/* Drop al final de la rejilla: acento inferior en el contenedor */
+.cam-grid.is-drop-end {
+  box-shadow: inset 0 -3px 0 0 rgba(201, 162, 39, 0.9);
+}
+
 /* --- Empty state -------------------------------------------- */
 .empty-state {
   display: flex;
