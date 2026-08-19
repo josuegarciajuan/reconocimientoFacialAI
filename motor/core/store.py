@@ -1,13 +1,18 @@
 """Diccionario de identidad `face_enc_v2` — persistencia segura y concurrente.
 
 Formato (pickle):
-    {"version": 2, "schema": "face_enc_v2",
+    {"version": 3, "schema": "face_enc_v2",
      "persons": {
         <cod_interno>: {
             "encodings": [ndarray(512,) ...],
             "quality":   [float ...],       # sharpness en el momento de enrolar
             "poses":     [str ...],         # etiqueta de pose
             "added_at":  [float ...],       # timestamp
+            "appearance": {                 # opcional (capa L1b, F1+)
+                "desc": [ [float...] ],     # descriptores de torso (144-d)
+                "ts":   [float ...],        # epoch de captura
+                "src":  [str ...],          # path del crop (traza)
+            },
         }
      }}
 
@@ -15,6 +20,8 @@ Reglas:
 - Lectura atómica vía os.replace (write-temp-then-rename) bajo FileLock.
 - Mutaciones con bloqueo de TODO el read-modify-write (evita pérdidas entre procesos).
 - Formato legado/desconocido NO se migra (re-enrolado desde cero, decisión de Fase 0).
+- F6: snapshot()/merge_undoable()/restore_person() habilitan la reversibilidad
+  (snapshot + journal + rollback) de fusiones y backfills.
 """
 from __future__ import annotations
 
@@ -26,12 +33,16 @@ from typing import Callable
 import numpy as np
 from filelock import FileLock
 
-VERSION = 2
+VERSION = 3
 SCHEMA = "face_enc_v2"
 
 
 def _empty() -> dict:
     return {"version": VERSION, "schema": SCHEMA, "persons": {}}
+
+
+def _new_person() -> dict:
+    return {"encodings": [], "quality": [], "poses": [], "added_at": [], "appearance": None}
 
 
 class FaceStore:
@@ -91,11 +102,18 @@ class FaceStore:
             idx = sorted(range(len(p["quality"])), key=lambda i: p["quality"][i], reverse=True)[:max_per_person]
             for k in ("encodings", "quality", "poses", "added_at"):
                 p[k] = [p[k][i] for i in idx]
+            if p.get("appearance"):
+                # apariencia alineada por índice (mismo crop); puede tener menos filas
+                n = len(p["appearance"]["desc"])
+                if n:
+                    keep = [i for i in idx if i < n]
+                    for k in ("desc", "ts", "src"):
+                        p["appearance"][k] = [p["appearance"][k][i] for i in keep]
 
     def add(self, cod: str, encodings: list[np.ndarray],
             qualities: list[float], poses: list[str]) -> None:
         def _fn(data: dict) -> None:
-            p = data["persons"].setdefault(cod, {"encodings": [], "quality": [], "poses": [], "added_at": []})
+            p = data["persons"].setdefault(cod, _new_person())
             now = time.time()
             for e, q, po in zip(encodings, qualities, poses):
                 p["encodings"].append(np.asarray(e, dtype=np.float32))
@@ -104,6 +122,25 @@ class FaceStore:
                 p["added_at"].append(now)
             self._prune(p, self.max_per_person)
         self._transaction(_fn)
+
+    def add_appearance(self, cod: str, desc: np.ndarray, ts: float | None = None,
+                       src: str = "") -> None:
+        """Añade un descriptor de torso/ropa a la persona (capa L1b)."""
+        def _fn(data: dict) -> None:
+            p = data["persons"].setdefault(cod, _new_person())
+            if p.get("appearance") is None:
+                p["appearance"] = {"desc": [], "ts": [], "src": []}
+            p["appearance"]["desc"].append(np.asarray(desc, dtype=np.float32))
+            p["appearance"]["ts"].append(float(ts if ts is not None else time.time()))
+            p["appearance"]["src"].append(src)
+        self._transaction(_fn)
+
+    def person_appearance(self, cod: str) -> dict | None:
+        """Devuelve la galería de apariencia de la persona ({desc, ts, src}) o None."""
+        p = self.person(cod)
+        if not p or not p.get("appearance"):
+            return None
+        return p["appearance"]
 
     def remove(self, cod: str) -> None:
         def _fn(data: dict) -> None:
@@ -119,13 +156,76 @@ class FaceStore:
     def merge(self, a: str, b: str) -> None:
         """Mueve todas las caras de `b` a `a` y elimina `b` (juntar personas)."""
         def _fn(data: dict) -> None:
-            pa = data["persons"].setdefault(a, {"encodings": [], "quality": [], "poses": [], "added_at": []})
+            pa = data["persons"].setdefault(a, _new_person())
             pb = data["persons"].pop(b, None)
             if pb is not None:
                 for k in ("encodings", "quality", "poses", "added_at"):
                     pa[k] = pa[k] + pb[k]
+                if pb.get("appearance"):
+                    if pa.get("appearance") is None:
+                        pa["appearance"] = {"desc": [], "ts": [], "src": []}
+                    for k in ("desc", "ts", "src"):
+                        pa["appearance"][k] = pa["appearance"][k] + pb["appearance"][k]
                 self._prune(pa, self.max_per_person)
         self._transaction(_fn)
+
+    # --- F6: reversibilidad (snapshot + journal + rollback) ---
+
+    def snapshot(self) -> dict:
+        """Copia profunda de TODO el diccionario (para backups pre-merge)."""
+        with FileLock(self.path + ".lock"):
+            return pickle.loads(pickle.dumps(self._read_raw()))
+
+    def merge_undoable(self, a: str, b: str) -> dict:
+        """Fusiona `b` en `a` (como merge()) y devuelve un journal de la operación.
+
+        El journal contiene lo necesario para el rollback: persona fuente, persona
+        destino, nº de encodings movidos y la copia exacta de la persona fuente.
+        El llamador debe persistir el snapshot y el journal (F6).
+        """
+        with FileLock(self.path + ".lock"):
+            data = self._read_raw()
+            src_person = pickle.loads(pickle.dumps(data["persons"].get(b)))
+            pa = data["persons"].setdefault(a, _new_person())
+            pb = data["persons"].pop(b, None)
+            if pb is not None:
+                for k in ("encodings", "quality", "poses", "added_at"):
+                    pa[k] = pa[k] + pb[k]
+                if pb.get("appearance"):
+                    if pa.get("appearance") is None:
+                        pa["appearance"] = {"desc": [], "ts": [], "src": []}
+                    for k in ("desc", "ts", "src"):
+                        pa["appearance"][k] = pa["appearance"][k] + pb["appearance"][k]
+                self._prune(pa, self.max_per_person)
+            self._write(data)
+        moved = 0
+        if src_person:
+            moved = len(src_person.get("encodings", []))
+        return {
+            "op": "merge", "src": b, "dst": a,
+            "encodings_moved": moved,
+            "src_person": src_person,       # copia exacta de la persona fuente
+            "ts": time.time(),
+        }
+
+    def restore_person(self, cod: str, person: dict | None) -> None:
+        """Re-inyecta una persona completa (rollback de merge/limpiar)."""
+        def _fn(data: dict) -> None:
+            if person is None:
+                data["persons"].pop(cod, None)
+            else:
+                data["persons"][cod] = pickle.loads(pickle.dumps(person))
+        self._transaction(_fn)
+
+    def save_snapshot_bytes(self, out_path: str) -> None:
+        """Persiste el snapshot del diccionario a un fichero pickle (backup)."""
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+        with open(out_path, "wb") as fh:
+            pickle.dump(self.snapshot(), fh)
+
+    def load_snapshot_bytes(self, path: str) -> dict:
+        with open(path, "rb") as fh:
+            return pickle.load(fh)
 
     def remove_closest(self, cod: str, embedding: np.ndarray, min_cosine: float = 0.5) -> int:
         """Elimina de `cod` el encoding más parecido a `embedding` (si supera min_cosine).

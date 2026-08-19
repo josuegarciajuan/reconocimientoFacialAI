@@ -17,8 +17,11 @@ Solución (lo más completo posible):
 Uso:
   # solo informe (no toca nada)
   motor/venv/bin/python motor/limpiar_catchall.py 1 --ruta /root/reconocimientoFacial
-  # aplicar
+  # aplicar (crea snapshot + journal en motor/backups/<ts>_catchall/)
   motor/venv/bin/python motor/limpiar_catchall.py 1 --ruta /root/reconocimientoFacial --apply
+  # deshacer (F6): restaura BD + face_enc_v2 al estado previo y verifica recuentos
+  motor/venv/bin/python motor/limpiar_catchall.py 1 --ruta /root/reconocimientoFacial \
+      --rollback motor/backups/<ts>_catchall
 
 Requiere el binario `mysql` en PATH y credenciales en <ruta>/.env (RF_DB_*).
 """
@@ -41,6 +44,9 @@ from motor.core.config import Config                 # noqa: E402
 from motor.core.model import analyze                 # noqa: E402
 from motor.core.quality import face_sharpness, pose_label  # noqa: E402
 from motor.core.store import FaceStore               # noqa: E402
+from motor.core.backup import (Journal, count_estancias, count_personas,
+                               new_backup_dir, restore_db, snapshot_db,
+                               verify_restore, write_manifest)  # noqa: E402
 
 ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 CATCHALLS = ["0EQGxYBl4d8LETS1uDDyzLZM0", "M4uYLqx021I0aywbwNk9moIPg",
@@ -171,8 +177,13 @@ def main() -> int:
     ap.add_argument("--thr", type=float, default=0.45, help="umbral coseno para separar personas")
     ap.add_argument("--cache", default=CACHE)
     ap.add_argument("--cod", action="append", default=[], help="código adicional a limpiar")
+    ap.add_argument("--rollback", metavar="DIR", default=None,
+                    help="F6: deshacer la limpieza de un directorio motor/backups/<ts>_catchall")
     args = ap.parse_args()
     cods = CATCHALLS + args.cod
+
+    if args.rollback:
+        return _rollback(args.ruta, args.rollback)
 
     cfg = Config()
     cache = load_cache(args.cache)
@@ -211,9 +222,19 @@ def main() -> int:
         print("\n[dry-run] no se aplicó nada. Usa --apply para ejecutar.")
         return 0
 
-    # 3. aplicar: crear personas + reasignar + limpiar
+    # 3. aplicar: crear personas + reasignar + limpiar (F6: snapshot + journal)
     store = FaceStore(os.path.join(args.ruta, "motor/bbdd_reconocimiento", args.local_id, "face_enc_v2"),
                       max_per_person=cfg.max_encodings_per_person)
+
+    before_counts = {"personas": count_personas(args.ruta),
+                     "estancias": count_estancias(args.ruta),
+                     "store_persons": len(store.persons())}
+    out_dir = new_backup_dir(args.ruta, "catchall")
+    store.save_snapshot_bytes(os.path.join(out_dir, "face_enc_v2.bak"))
+    snapshot_db(args.ruta, out_dir)
+    journal = Journal(os.path.join(out_dir, "journal.jsonl"))
+    write_manifest(out_dir, op="limpiar_catchall", local_id=args.local_id,
+                   thr=args.thr, cods=cods, before_counts=before_counts)
 
     asignaciones: dict[int, int] = {}   # estancia_id -> persona_id (nueva)
     nuevos_cods: list[str] = []
@@ -230,6 +251,9 @@ def main() -> int:
         pid = int(_mysql(args.ruta,
             "INSERT INTO personas (local_id, cod_interno) VALUES "
             f"({args.local_id}, '{cod}'); SELECT LAST_INSERT_ID();")[0])
+        journal.append({"op": "create", "cod": cod, "pid": pid,
+                        "estancia_ids": [items[j]["eid"] for j in cl],
+                        "snapshot": "face_enc_v2.bak", "db": "db_snapshot.sql"})
         for j in cl:
             asignaciones[items[j]["eid"]] = pid
 
@@ -241,6 +265,9 @@ def main() -> int:
             "INSERT INTO personas (local_id, cod_interno, nombre) VALUES "
             f"({args.local_id}, '{cod}', 'sinclasificar_{datetime.now():%Y%m%d_%H%M%S}'); "
             "SELECT LAST_INSERT_ID();")[0])
+        journal.append({"op": "create", "cod": cod, "pid": pid,
+                        "estancia_ids": [eid for _, eid in sin_cara],
+                        "snapshot": "face_enc_v2.bak", "db": "db_snapshot.sql"})
         for fid, eid in sin_cara:
             asignaciones[eid] = pid
 
@@ -252,9 +279,38 @@ def main() -> int:
     for cod in cods:
         store.remove(cod)
         _mysql(args.ruta, f"DELETE FROM personas WHERE cod_interno='{cod}'")
+        journal.append({"op": "remove", "cod": cod,
+                        "snapshot": "face_enc_v2.bak", "db": "db_snapshot.sql"})
 
     print(f"\n[apply] hechas {len(asignaciones)} reasignaciones, {len(nuevos_cods)} personas nuevas, "
           f"catch-all eliminadas ({len(cods)}).")
+    print(f"[apply] snapshot + journal en {out_dir}  (rollback: --rollback {out_dir})")
+    return 0
+
+
+def _rollback(ruta: str, backup_dir: str) -> int:
+    """F6: restaura BD + face_enc_v2 al estado previo de la limpieza y verifica."""
+    db_sql = os.path.join(backup_dir, "db_snapshot.sql")
+    store_bak = os.path.join(backup_dir, "face_enc_v2.bak")
+    if not os.path.exists(db_sql) or not os.path.exists(store_bak):
+        print(f"ERROR: faltan snapshots en {backup_dir} (necesito db_snapshot.sql y face_enc_v2.bak)")
+        return 1
+    journal_path = os.path.join(backup_dir, "journal.jsonl")
+    entries = Journal(journal_path).entries() if os.path.exists(journal_path) else []
+
+    cfg = Config()
+    local_id = "1"   # el dump restaura el estado completo; solo necesitamos el path del store
+    store = FaceStore(os.path.join(ruta, "motor/bbdd_reconocimiento", local_id, "face_enc_v2"),
+                      max_per_person=cfg.max_encodings_per_person)
+    before = {"personas": count_personas(ruta), "estancias": count_estancias(ruta),
+              "store_persons": len(store.persons())}
+    print(f"[rollback] {len(entries)} ops en journal | antes: {before}")
+    restore_db(ruta, db_sql)
+    store_data = store.load_snapshot_bytes(store_bak)
+    with open(os.path.join(ruta, "motor/bbdd_reconocimiento", local_id, "face_enc_v2"), "wb") as fh:
+        pickle.dump(store_data, fh)
+    print("[rollback] BD y face_enc_v2 restaurados desde snapshots")
+    verify_restore(ruta, store, before, len(entries))
     return 0
 
 

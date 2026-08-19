@@ -26,6 +26,12 @@ motor/alinear_caras/
 motor/laterales_test/
 motor/cosas_en_la_cara/
 motor/eval/data/
+# Datos runtime de la cascada de fusión (F0-F7)
+motor/feedback/
+motor/revision/
+motor/backups/
+motor/calib/
+motor/llm_cache/
 aux/
 admin/caras_procesadas/
 admin/fotos_camara/
