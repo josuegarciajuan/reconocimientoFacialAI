@@ -14,7 +14,7 @@ $tab_permitidos = ["camaras", "nodos", "lineas", "plano"];
 $sub_per_tab = [
     "camaras" => ["crear", "editar"],
     "nodos"   => ["crear", "editar", "eliminar"],
-    "lineas"  => ["trazar", "editar"],
+    "lineas"  => ["trazar", "editar", "plano"],
     "plano"   => [],
 ];
 // Fortalezas (locales): pestaña solo visible para administradores.

@@ -133,6 +133,58 @@ switch ($_GET["a"]) {
         echo "ok";
         break;
 
+    case "9": // crear línea del plano (JSON POST): {camara_id, nombre, x1,y1,x2,y2}
+        $body = json_decode((string)file_get_contents("php://input"), true);
+        $camara_id = (int)($body["camara_id"] ?? 0);
+        $nombre = trim((string)($body["nombre"] ?? ""));
+        $x1 = (int)($body["x1"] ?? 0);
+        $y1 = (int)($body["y1"] ?? 0);
+        $x2 = (int)($body["x2"] ?? 0);
+        $y2 = (int)($body["y2"] ?? 0);
+        $local = (int)($_SESSION["local_id"] ?? 0);
+        if ($local <= 0 || $camara_id <= 0 || $nombre === "" || $x1 <= 0 || $y1 <= 0 || $x2 <= 0 || $y2 <= 0) {
+            http_response_code(400);
+            echo "error: datos inválidos (cámara, nombre y dos clics en el plano)";
+            break;
+        }
+        $id = DB::insert(
+            "INSERT INTO lineas_plano (camara_id, nombre, x1, y1, x2, y2) VALUES (?, ?, ?, ?, ?, ?)",
+            [$camara_id, $nombre, $x1, $y1, $x2, $y2]
+        );
+        echo "ok:" . $id;
+        break;
+
+    case "10": // mover extremos de una línea del plano (JSON POST): {id, x1,y1,x2,y2}
+        $body = json_decode((string)file_get_contents("php://input"), true);
+        $id = (int)($body["id"] ?? 0);
+        $x1 = (int)($body["x1"] ?? 0);
+        $y1 = (int)($body["y1"] ?? 0);
+        $x2 = (int)($body["x2"] ?? 0);
+        $y2 = (int)($body["y2"] ?? 0);
+        if ($id <= 0) {
+            http_response_code(400);
+            echo "error: id de línea del plano inválido";
+            break;
+        }
+        DB::execute(
+            "UPDATE lineas_plano SET x1 = ?, y1 = ?, x2 = ?, y2 = ? WHERE id = ? AND eliminada = 0",
+            [$x1, $y1, $x2, $y2, $id]
+        );
+        echo "ok";
+        break;
+
+    case "11": // borrar una línea del plano (JSON POST): {id} (soft delete)
+        $body = json_decode((string)file_get_contents("php://input"), true);
+        $id = (int)($body["id"] ?? 0);
+        if ($id <= 0) {
+            http_response_code(400);
+            echo "error: id de línea del plano inválido";
+            break;
+        }
+        DB::execute("UPDATE lineas_plano SET eliminada = 1 WHERE id = ?", [$id]);
+        echo "ok";
+        break;
+
     default:
         break;
 }

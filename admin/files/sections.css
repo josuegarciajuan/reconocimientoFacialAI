@@ -698,6 +698,70 @@
   outline-offset: 2px;
 }
 
+/* --- La Forja: listado de líneas del plano ----------------------- */
+.forge-lineas-plano {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 16rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.forge-linea-plano {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.forge-linea-plano__boton {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(201, 162, 39, 0.22);
+  background: transparent;
+  color: var(--mordor-humo);
+  font-size: 0.82rem;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.forge-linea-plano__boton:hover {
+  color: var(--mordor-ceniza);
+  border-color: var(--mordor-oro);
+}
+
+.forge-linea-plano__boton.is-active {
+  color: var(--mordor-negro);
+  background: linear-gradient(180deg, var(--mordor-oro), #a8841d);
+  border-color: var(--mordor-oro);
+}
+
+.forge-linea-plano__nombre {
+  font-weight: 600;
+}
+
+.forge-linea-plano__camara {
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+.forge-linea-plano__borrar {
+  color: #ff6b6b;
+  font-size: 0.85rem;
+  text-decoration: none;
+  padding: 0.2rem 0.4rem;
+}
+
+.forge-linea-plano__borrar:hover {
+  text-decoration: underline;
+}
+
 /* --- La Forja: lienzo sticky + chip de modo --------------------- */
 .forge-canvas {
   position: sticky;
