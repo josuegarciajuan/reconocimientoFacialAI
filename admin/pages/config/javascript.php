@@ -78,6 +78,9 @@ var Forge = {
     lineas_nuevas: 0,
     editChain: null,            // cadena en edición: {cam1, cam2, camino, nodos:[{id,x,y,orden}]}
     drag: null,                 // nodo en arrastre: {index}
+    camDrag: null,              // cámara en arrastre en el plano: {index, x0, y0}
+    camHover: null,             // índice de cámara bajo el cursor (resaltado)
+    planoImg: null,             // Image del plano activo cacheada (redibujado síncrono)
 };
 
 /* ------------------------------------------------------------------ */
@@ -162,8 +165,15 @@ function ForgePintarCamarasNodos(ctx) {
     ctx.fillStyle = "#D22829";
     ctx.font = "10px Arial";
     for (var i = 0; i < FORGE_CAMS.length; i++) {
-        ctx.fillRect(FORGE_CAMS[i].x, FORGE_CAMS[i].y, 10, 10);
-        ctx.fillText(FORGE_CAMS[i].desc, FORGE_CAMS[i].x, FORGE_CAMS[i].y);
+        var c = FORGE_CAMS[i];
+        ctx.fillRect(c.x, c.y, 10, 10);
+        ctx.fillText(c.desc, c.x, c.y);
+        // Anillo de resaltado: cámara bajo el cursor o en arrastre.
+        if (Forge.camHover === i || (Forge.camDrag && Forge.camDrag.index === i)) {
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(c.x - 3, c.y - 3, 16, 16);
+        }
     }
     // cadenas de nodos: polilíneas entre cámaras (alternativos atenuados)
     var cadenas = ForgeAgruparNodos();
@@ -245,14 +255,22 @@ function ForgeDibujarPlano() {
         ForgePintarCamarasNodos(bctx);
         ForgeRender();
     };
-    if (PLANO_ACTIVO_URL) {
-        var img = new Image();
-        img.onload = function () { bctx.drawImage(img, 0, 0, W, H); dibujar(); };
-        img.onerror = function () { dibujar(); };
-        img.src = PLANO_ACTIVO_URL;
-    } else {
+    if (!PLANO_ACTIVO_URL) {
         dibujar();
+        return;
     }
+    // Imagen del plano cacheada: permite redibujar de forma síncrona durante
+    // el arrastre de cámaras (sin parpadeo ni recarga de la imagen en cada frame).
+    if (Forge.planoImg && Forge.planoImg.complete && Forge.planoImg.naturalWidth > 0) {
+        bctx.drawImage(Forge.planoImg, 0, 0, W, H);
+        dibujar();
+        return;
+    }
+    var img = new Image();
+    Forge.planoImg = img;
+    img.onload = function () { bctx.drawImage(img, 0, 0, W, H); dibujar(); };
+    img.onerror = function () { dibujar(); };
+    img.src = PLANO_ACTIVO_URL;
 }
 
 /* ------------------------------------------------------------------ */
@@ -567,6 +585,105 @@ function ForgeQuitarNodo(id) {
             FORGE_NODOS.splice(i, 1);
         }
     }
+}
+
+/* =========================================================================
+ * Arrastre de cámaras en el plano (tab=plano): mover la cámara arrastrándola.
+ * Se persiste al soltar (AJAX a=8). Radio de agarre generoso (14px) aunque
+ * el marcador mida 10x10; coordenadas acotadas al lienzo.
+ * ========================================================================= */
+
+/* Índice de la cámara bajo el cursor, o -1. */
+function ForgeCamHitTest(p) {
+    var R = 14;
+    for (var i = 0; i < FORGE_CAMS.length; i++) {
+        var c = FORGE_CAMS[i];
+        if (Math.abs(c.x - p.x) <= R && Math.abs(c.y - p.y) <= R) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+/* Acota la posición de la cámara al lienzo (no se puede sacar del plano). */
+function ForgeClampCamara(idx) {
+    var c = FORGE_CAMS[idx];
+    if (!c) return;
+    c.x = Math.max(0, Math.min(Forge.canvas.width - 10, c.x));
+    c.y = Math.max(0, Math.min(Forge.canvas.height - 10, c.y));
+}
+
+/* Persiste la nueva posición de la cámara (AJAX a=8). */
+function ForgeGuardarCamPos(id, x, y) {
+    fetch("pages/config/acciones_ajax.php?a=8", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, x: x, y: y })
+    })
+    .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.text();
+    })
+    .then(function (txt) {
+        if (txt.indexOf("error") !== -1) {
+            var m = "No se pudo mover la cámara: " + txt;
+            if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
+            return;
+        }
+        if (typeof rfToast === "function") rfToast("Cámara reposicionada en el plano.", "ok");
+    })
+    .catch(function (err) {
+        var m = "No se pudo mover la cámara: " + err.message;
+        if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
+    });
+}
+
+function ForgeCamDragStart(p) {
+    var idx = ForgeCamHitTest(p);
+    if (idx < 0) return;
+    var c = FORGE_CAMS[idx];
+    Forge.camDrag = { index: idx, x0: c.x, y0: c.y };
+    Forge.camHover = idx;
+    Forge.canvas.style.cursor = "grabbing";
+    c.x = Math.round(p.x);
+    c.y = Math.round(p.y);
+    ForgeClampCamara(idx);
+    ForgeDibujarPlano();
+}
+
+function ForgeCamDragMove(p) {
+    if (!Forge.camDrag) return;
+    var c = FORGE_CAMS[Forge.camDrag.index];
+    c.x = Math.round(p.x);
+    c.y = Math.round(p.y);
+    ForgeClampCamara(Forge.camDrag.index);
+    ForgeDibujarPlano();
+}
+
+function ForgeCamDragEnd() {
+    if (!Forge.camDrag) return;
+    var d = Forge.camDrag;
+    var c = FORGE_CAMS[d.index];
+    Forge.camDrag = null;
+    Forge.canvas.style.cursor = "";
+    if (c.x === d.x0 && c.y === d.y0) {
+        return; // no se movió: nada que guardar
+    }
+    ForgeGuardarCamPos(c.id, c.x, c.y);
+}
+
+/* Resaltado + cursor al pasar sobre una cámara (sin arrastre). */
+function ForgeCamHover(p) {
+    if (Forge.camDrag) {
+        Forge.canvas.style.cursor = "grabbing";
+        return;
+    }
+    var idx = ForgeCamHitTest(p);
+    if (idx !== Forge.camHover) {
+        Forge.camHover = idx;
+        ForgeDibujarPlano();
+    }
+    Forge.canvas.style.cursor = (idx >= 0 && Forge.mode === "plano") ? "grab" : "default";
 }
 
 function ForgeDibujaLinea(p) {
@@ -1137,6 +1254,33 @@ document.addEventListener("DOMContentLoaded", function () {
                 e.preventDefault();
                 ForgeEditarContext(ForgeCoord(e));
             }
+        });
+
+        // Arrastre de cámaras en el plano (Pointer Events: ratón + táctil + lápiz).
+        Forge.canvas.addEventListener("pointerdown", function (e) {
+            if (Forge.mode === "foto" || Forge.tab !== "plano") return;
+            try { Forge.canvas.setPointerCapture(e.pointerId); } catch (err) {}
+            ForgeCamDragStart(ForgeCoord(e));
+        });
+        Forge.canvas.addEventListener("pointermove", function (e) {
+            if (Forge.tab !== "plano" || Forge.mode === "foto") return;
+            if (Forge.camDrag) {
+                ForgeCamDragMove(ForgeCoord(e));
+            } else {
+                ForgeCamHover(ForgeCoord(e));
+            }
+        });
+        Forge.canvas.addEventListener("pointerup", function () {
+            if (Forge.tab === "plano") ForgeCamDragEnd();
+        });
+        Forge.canvas.addEventListener("pointercancel", function () {
+            if (Forge.tab === "plano") ForgeCamDragEnd();
+        });
+        Forge.canvas.addEventListener("pointerleave", function () {
+            if (Forge.tab !== "plano" || Forge.mode === "foto" || Forge.camDrag) return;
+            Forge.camHover = null;
+            Forge.canvas.style.cursor = "";
+            ForgeDibujarPlano();
         });
 
         if (FORGE_MOSTRAR_FOTO && FORGE_TAB === "lineas") {

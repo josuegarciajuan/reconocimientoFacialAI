@@ -115,6 +115,24 @@ switch ($_GET["a"]) {
         echo "ok";
         break;
 
+    case "8": // mover una cámara en el plano (JSON POST): {id, x, y}
+        $body = json_decode((string)file_get_contents("php://input"), true);
+        $id = (int)($body["id"] ?? 0);
+        $x = (int)($body["x"] ?? 0);
+        $y = (int)($body["y"] ?? 0);
+        $local = (int)($_SESSION["local_id"] ?? 0);
+        if ($id <= 0 || $local <= 0) {
+            http_response_code(400);
+            echo "error: id de cámara inválido";
+            break;
+        }
+        DB::execute(
+            "UPDATE camaras SET x = ?, y = ? WHERE id = ? AND local_id = ?",
+            [$x, $y, $id, $local]
+        );
+        echo "ok";
+        break;
+
     default:
         break;
 }
