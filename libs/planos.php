@@ -73,8 +73,8 @@ function plano_dibujo_existe($local_id)
 function plano_dibujo_url($local_id)
 {
     $local_id = (int)$local_id;
-    $rel = "pages/config/planos/plano_dibujo_" . $local_id . ".png";
-    return file_exists(plano_dir() . $rel) ? $rel : "";
+    $file = "plano_dibujo_" . $local_id . ".png";
+    return file_exists(plano_dir() . $file) ? "pages/config/planos/" . $file : "";
 }
 
 /** ¿Existe una imagen subida para este local? */
