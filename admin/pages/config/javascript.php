@@ -14,6 +14,7 @@ require_once __DIR__ . "/../../../libs/db.php";
 require_once __DIR__ . "/../../../libs/planos.php";
 $cams = DB::select("SELECT * FROM camaras WHERE local_id = ?", [(int)($_SESSION["local_id"] ?? 0)]);
 $plano_activo_url = plano_url((int)($_SESSION["local_id"] ?? 0));
+$plano_dibujo_url = plano_dibujo_url((int)($_SESSION["local_id"] ?? 0));
 
 /* Datos para el lienzo en modo plano (inyectados al JS). */
 $cams_json = [];
@@ -40,6 +41,7 @@ if ($ids_camaras) {
 <script>
 
 var PLANO_ACTIVO_URL = <?= json_encode($plano_activo_url ?? ""); ?>;
+var PLANO_DIBUJO_URL = <?= json_encode($plano_dibujo_url ?? ""); ?>;
 var LOCAL_ID = <?= (int)($_SESSION["local_id"] ?? 0); ?>;
 var FORGE_TAB = <?= json_encode($tab); ?>;
 var FORGE_SUB = <?= json_encode($sub); ?>;
@@ -1050,22 +1052,25 @@ function editar_linea1(){
  * Editor de croquis a mano alzada (tipo Paint) — plano_dibujo_<local>.png
  * El lienzo es fijo (CANVAS_WIDTH x CANVAS_HEIGHT) para que las coordenadas
  * coincidan con el sistema de píxeles que usan cámaras/nodos.
- * Los trazos se pintan en una capa aparte (off-screen) para poder usar
- * borrador con composición real y deshacer/limpiar sin perder el fondo.
+ * El trabajo vive en una capa off-screen (capa): si el local ya tiene un
+ * croquis guardado (PLANO_DIBUJO_URL) se carga como base editable dentro de
+ * esa capa, así el borrador (destination-out) también puede borrarlo.
+ * El deshacer es por snapshots de la capa (pila acotada).
  * ========================================================================= */
 var dibujo = {
     abierto: false,
     canvas: null,
     ctx: null,
-    capa: null,      // off-screen con los trazos (borrador = destination-out)
+    capa: null,      // off-screen de trabajo: base (croquis previo) + trazos
     capaCtx: null,
     fondo: null,     // Image con el plano actual (referencia para calcar)
+    base: null,      // Image del croquis ya guardado (si existe)
     dibujando: false,
     ultimo: null,
     color: "#1e1e1e",
     grosor: 3,
     borrador: false,
-    trazos: []       // [{pts:[{x,y}], color, grosor, borrador}]
+    undo: []         // pila de snapshots (ImageData de la capa) para deshacer
 };
 
 function dibujoCoord(e) {
@@ -1084,7 +1089,9 @@ function dibujoRedibujar() {
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, w, h);
 
-    // fondo de referencia (plano actual), al 45% para que el trazo se vea
+    // fondo de referencia (plano actual), al 45% para que el trazo se vea.
+    // Con croquis previo cargado la base es opaca y tapa el fondo: solo
+    // sirve como referencia al dibujar desde cero.
     if (dibujo.fondo && document.getElementById("dibujoFondo").checked) {
         ctx.save();
         ctx.globalAlpha = 0.45;
@@ -1092,36 +1099,35 @@ function dibujoRedibujar() {
         ctx.restore();
     }
 
-    // capa de trazos
-    var capaCtx = dibujo.capaCtx;
-    capaCtx.clearRect(0, 0, w, h);
-    for (var i = 0; i < dibujo.trazos.length; i++) {
-        dibujoPintarTrazo(capaCtx, dibujo.trazos[i]);
+    // capa de trabajo (base + trazos), se compone tal cual está
+    if (dibujo.capa) {
+        ctx.drawImage(dibujo.capa, 0, 0);
     }
-    ctx.drawImage(dibujo.capa, 0, 0);
 }
 
-function dibujoPintarTrazo(ctx, trazo) {
-    if (!trazo.pts.length) return;
+/** Guarda un snapshot de la capa para deshacer (pila acotada a 20). */
+function dibujoGuardarSnapshot() {
+    var w = dibujo.canvas.width, h = dibujo.canvas.height;
+    if (dibujo.undo.length >= 20) dibujo.undo.shift();
+    dibujo.undo.push(dibujo.capaCtx.getImageData(0, 0, w, h));
+}
+
+/** Pinta (o borra) un segmento de dibujo.ultimo a p sobre la capa. */
+function dibujoPincel(p) {
+    var ctx = dibujo.capaCtx;
     ctx.save();
-    ctx.strokeStyle = trazo.borrador ? "#ffffff" : trazo.color;
-    ctx.lineWidth = trazo.borrador ? trazo.grosor * 2 : trazo.grosor;
+    ctx.strokeStyle = dibujo.borrador ? "#ffffff" : dibujo.color;
+    ctx.lineWidth = dibujo.borrador ? dibujo.grosor * 2 : dibujo.grosor;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    if (trazo.borrador) {
+    if (dibujo.borrador) {
         ctx.globalCompositeOperation = "destination-out";
     }
     ctx.beginPath();
-    ctx.moveTo(trazo.pts[0].x, trazo.pts[0].y);
-    for (var i = 1; i < trazo.pts.length; i++) {
-        ctx.lineTo(trazo.pts[i].x, trazo.pts[i].y);
-    }
+    ctx.moveTo(dibujo.ultimo.x, dibujo.ultimo.y);
+    ctx.lineTo(p.x, p.y);
     ctx.stroke();
     ctx.restore();
-}
-
-function dibujoTrazoNuevo(p) {
-    return { pts: [p], color: dibujo.color, grosor: dibujo.grosor, borrador: dibujo.borrador };
 }
 
 function dibujoToggleBorrador() {
@@ -1130,13 +1136,17 @@ function dibujoToggleBorrador() {
 }
 
 function dibujoDeshacer() {
-    dibujo.trazos.pop();
+    if (!dibujo.undo.length) return;
+    var snap = dibujo.undo.pop();
+    dibujo.capaCtx.putImageData(snap, 0, 0);
     dibujoRedibujar();
 }
 
 function dibujoLimpiar() {
     if (!confirm("¿Borrar todo el croquis y empezar de nuevo?")) return;
-    dibujo.trazos = [];
+    dibujo.base = null;
+    dibujo.undo = [];
+    dibujo.capaCtx.clearRect(0, 0, dibujo.canvas.width, dibujo.canvas.height);
     dibujoRedibujar();
 }
 
@@ -1187,16 +1197,37 @@ function abrirDibujo() {
         dibujo.capaCtx = dibujo.capa.getContext("2d");
     }
 
-    dibujo.trazos = [];
+    // Reset del editor: capa en blanco + herramientas por defecto.
+    dibujo.base = null;
+    dibujo.undo = [];
     dibujo.borrador = false;
     document.getElementById("dibujoBorrador").classList.remove("is-activo");
     document.getElementById("dibujoGrosor").value = 3;
     document.getElementById("dibujoGrosorVal").textContent = 3;
     dibujo.grosor = 3;
     document.getElementById("dibujoFondo").checked = true;
+    dibujo.capaCtx.clearRect(0, 0, dibujo.canvas.width, dibujo.canvas.height);
 
     cargarDibujoFondo();
-    dibujoRedibujar();
+
+    // Si el local ya tiene croquis guardado, cargarlo como base editable
+    // (el borrador y el deshacer actúan también sobre él).
+    if (PLANO_DIBUJO_URL) {
+        var img = new Image();
+        img.onload = function () {
+            dibujo.base = img;
+            dibujo.capaCtx.drawImage(img, 0, 0, dibujo.canvas.width, dibujo.canvas.height);
+            dibujoGuardarSnapshot();
+            dibujoRedibujar();
+        };
+        img.onerror = function () {
+            dibujo.base = null;
+            dibujoRedibujar();
+        };
+        img.src = PLANO_DIBUJO_URL + "?v=" + Date.now();
+    } else {
+        dibujoRedibujar();
+    }
     dibujo.abierto = true;
 
     // Abrir el modal Midone sin depender del trigger de app.js: el .modal se
@@ -1319,46 +1350,19 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!dibujo.abierto) return;
         dibujo.dibujando = true;
         dibujo.ultimo = dibujoCoord(e);
-        dibujo.trazos.push(dibujoTrazoNuevo(dibujo.ultimo));
-        // repintar toda la capa (trazos anteriores + el nuevo punto inicial)
-        dibujo.capaCtx.clearRect(0, 0, dibujo.canvas.width, dibujo.canvas.height);
-        for (var i = 0; i < dibujo.trazos.length; i++) {
-            dibujoPintarTrazo(dibujo.capaCtx, dibujo.trazos[i]);
-        }
-        dibujo.ctx.drawImage(dibujo.capa, 0, 0);
+        // snapshot previo: el deshacer vuelve al estado antes de este trazo
+        dibujoGuardarSnapshot();
+        dibujoPincel(dibujo.ultimo);
+        dibujoRedibujar();
     });
 
     canvas.addEventListener("mousemove", function (e) {
         if (!dibujo.abierto || !dibujo.dibujando) return;
         var p = dibujoCoord(e);
-        var trazo = dibujo.trazos[dibujo.trazos.length - 1];
-        // el trazo se pinta incremental: línea desde el último punto al actual
-        dibujo.capaCtx.save();
-        dibujo.capaCtx.strokeStyle = trazo.borrador ? "#ffffff" : trazo.color;
-        dibujo.capaCtx.lineWidth = trazo.borrador ? trazo.grosor * 2 : trazo.grosor;
-        dibujo.capaCtx.lineCap = "round";
-        dibujo.capaCtx.lineJoin = "round";
-        if (trazo.borrador) {
-            dibujo.capaCtx.globalCompositeOperation = "destination-out";
-        }
-        dibujo.capaCtx.beginPath();
-        dibujo.capaCtx.moveTo(dibujo.ultimo.x, dibujo.ultimo.y);
-        dibujo.capaCtx.lineTo(p.x, p.y);
-        dibujo.capaCtx.stroke();
-        dibujo.capaCtx.restore();
-        trazo.pts.push(p);
+        // pintado incremental sobre la capa (color o borrador)
+        dibujoPincel(p);
         dibujo.ultimo = p;
-        // componer: fondo + capa
-        var ctx = dibujo.ctx;
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, dibujo.canvas.width, dibujo.canvas.height);
-        if (dibujo.fondo && document.getElementById("dibujoFondo").checked) {
-            ctx.save();
-            ctx.globalAlpha = 0.45;
-            ctx.drawImage(dibujo.fondo, 0, 0, dibujo.canvas.width, dibujo.canvas.height);
-            ctx.restore();
-        }
-        ctx.drawImage(dibujo.capa, 0, 0);
+        dibujoRedibujar();
     });
 
     canvas.addEventListener("mouseup", function () {
@@ -1379,8 +1383,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
 function guardarDibujo() {
     if (!dibujo.abierto) return;
-    // Salida limpia: fondo blanco + SOLO los trazos. No se hornea el plano de
-    // referencia (que se usa únicamente para calcar durante el dibujo).
+    // Salida limpia: fondo blanco + capa de trabajo (base del croquis previo
+    // si lo había + trazos nuevos). No se hornea el plano de referencia, que
+    // se usa únicamente para calcar durante el dibujo.
     var salida = document.createElement("canvas");
     salida.width = dibujo.canvas.width;
     salida.height = dibujo.canvas.height;
