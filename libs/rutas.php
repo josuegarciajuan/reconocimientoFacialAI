@@ -9,6 +9,7 @@ require_once __DIR__ . "/fechas.php";
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/nodos.php";
 require_once __DIR__ . "/avatars.php";
+require_once __DIR__ . "/senderos_rutas.php";
 
 /** Cámaras de entrada (puerta) y salida de un local. */
 function camaras_puerta_salida($local_id) {
@@ -77,7 +78,7 @@ function construye_ruta($entrada, $camaras_salida) {
     $puntos = [];
     $ids = [$inicio_id];
 
-    $cam = DB::selectOne("SELECT id, descripcion, x, y FROM camaras WHERE id = ?", [(int)$entrada["camara_id"]]);
+    $cam = DB::selectOne("SELECT id, descripcion, x, y, local_id FROM camaras WHERE id = ?", [(int)$entrada["camara_id"]]);
     if ($cam) {
         $puntos[] = [
             "fecha"      => $fecha_ini,
@@ -129,8 +130,20 @@ function construye_ruta($entrada, $camaras_salida) {
     unset($p);
 
     $segmentos = [];
+    // Grafo de senderos del local (para seguir los pasillos trazados, no rectas).
+    $local_id_ruta = (int)($cam["local_id"] ?? 0);
+    $grafo = $local_id_ruta > 0 ? senderos_grafo($local_id_ruta) : null;
     for ($i = 0; $i < count($puntos) - 1; $i++) {
-        $segmentos[] = nodos_caminos_entre((int)$puntos[$i]["camara_id"], (int)$puntos[$i + 1]["camara_id"]);
+        $camA = (int)$puntos[$i]["camara_id"];
+        $camB = (int)$puntos[$i + 1]["camara_id"];
+        // 1) Senderos (grafo) entre los nodos representativos de ambas cámaras.
+        $intermedios = $grafo ? senderos_puntos_entre_camaras($grafo, $camA, $camB) : [];
+        if ($intermedios) {
+            $segmentos[] = [["camino" => 0, "nodos" => $intermedios]];
+            continue;
+        }
+        // 2) Fallback: cadenas legacy cámara→cámara (nodos).
+        $segmentos[] = nodos_caminos_entre($camA, $camB);
     }
 
     if ($esta_dentro) {
