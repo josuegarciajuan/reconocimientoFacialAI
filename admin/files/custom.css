@@ -1011,13 +1011,19 @@ input:focus-visible {
 }
 
 /* ============================================================
-   ACCIONES EN PILA VERTICAL (tablas) — enlaces estilo Mordor
+   ACCIONES EN FILAS COMPACTAS (tablas) — enlaces estilo Mordor
+   Wrap centrado: caben los máximos posibles por fila (la columna
+   se limita a ~14rem para que 6-8 acciones ocupen a lo sumo
+   2 filas).
    ============================================================ */
 .acciones-stack {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.35rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  gap: 0.25rem 0.4rem;
+  max-width: 14rem;
+  margin-inline: auto;
 }
 
 .accion-item {
@@ -1028,10 +1034,10 @@ input:focus-visible {
 .accion-item a {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.18rem 0.6rem;
-  font-size: 0.78rem;
-  line-height: 1.2;
+  gap: 0.25rem;
+  padding: 0.14rem 0.5rem;
+  font-size: 0.72rem;
+  line-height: 1.25;
   color: var(--mordor-ceniza);
   background: rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(201, 162, 39, 0.28);
