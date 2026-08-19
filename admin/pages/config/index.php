@@ -15,7 +15,7 @@ $tab = (isset($_GET["tab"]) && in_array($_GET["tab"], $tab_permitidos, true)) ? 
 
 $sub_per_tab = [
     "camaras" => ["crear", "editar"],
-    "nodos"   => ["crear", "eliminar"],
+    "nodos"   => ["crear", "editar", "eliminar"],
     "lineas"  => ["trazar", "editar"],
     "plano"   => [],
 ];

@@ -31,7 +31,7 @@ if ($ids_camaras) {
     $in = implode(",", array_fill(0, count($ids_camaras), "?"));
     $params = array_merge($ids_camaras, $ids_camaras);
     $nodos_json = DB::select(
-        "SELECT camara_id1, camara_id2, camino, x, y, orden FROM nodos WHERE camara_id1 IN ($in) OR camara_id2 IN ($in)",
+        "SELECT id, camara_id1, camara_id2, camino, x, y, orden FROM nodos WHERE camara_id1 IN ($in) OR camara_id2 IN ($in)",
         $params
     );
 }
@@ -76,6 +76,8 @@ var Forge = {
     nodos_y: [],
     punto: 1,                   // 1er/2º clic de una línea
     lineas_nuevas: 0,
+    editChain: null,            // cadena en edición: {cam1, cam2, camino, nodos:[{id,x,y,orden}]}
+    drag: null,                 // nodo en arrastre: {index}
 };
 
 /* ------------------------------------------------------------------ */
@@ -121,24 +123,34 @@ function ForgeCamCoord(id) {
     return null;
 }
 
-/* Agrupa FORGE_NODOS en cadenas por par de cámaras (min-max) + camino. */
+/* Agrupa FORGE_NODOS en cadenas por par de cámaras (min-max) + camino,
+ * orientadas de cam1 → cam2 (corrige el zigzag si se guardó al revés). */
 function ForgeAgruparNodos() {
     var map = {};
     for (var i = 0; i < FORGE_NODOS.length; i++) {
         var n = FORGE_NODOS[i];
         var a = parseInt(n.camara_id1, 10), b = parseInt(n.camara_id2, 10);
-        var key = (a < b ? a : b) + "-" + (a < b ? b : a);
+        var lo = a < b ? a : b, hi = a < b ? b : a;
         var camino = parseInt(n.camino || 0, 10);
-        var k2 = key + "#" + camino;
+        var k2 = lo + "-" + hi + "#" + camino;
         if (!map[k2]) {
-            map[k2] = { cam1: a < b ? a : b, cam2: a < b ? b : a, camino: camino, nodos: [] };
+            map[k2] = { cam1: lo, cam2: hi, camino: camino, dir: a, nodos: [] };
         }
-        map[k2].nodos.push({ x: parseInt(n.x, 10), y: parseInt(n.y, 10), orden: parseInt(n.orden || 0, 10) });
+        map[k2].nodos.push({
+            id: parseInt(n.id, 10),
+            x: parseInt(n.x, 10),
+            y: parseInt(n.y, 10),
+            orden: parseInt(n.orden || 0, 10)
+        });
     }
     var out = [];
     for (var k in map) {
         var c = map[k];
         c.nodos.sort(function (p, q) { return p.orden - q.orden; });
+        // Si la cadena se guardó en sentido cam2 → cam1, se invierte.
+        if (c.dir !== c.cam1) {
+            c.nodos.reverse();
+        }
         out.push(c);
     }
     return out;
@@ -184,6 +196,9 @@ function ForgeRender() {
     ctx.clearRect(0, 0, W, H);
     if (Forge.baseCache) {
         ctx.drawImage(Forge.baseCache, 0, 0);
+    }
+    if (Forge.tab === "nodos" && Forge.sub === "editar" && Forge.editChain) {
+        ForgePintarEditar(ctx);
     }
     if (Forge.marcador) {
         ctx.fillStyle = "#D22829";
@@ -360,6 +375,200 @@ function ForgeMarcaNodo(p) {
     ForgeRender();
 }
 
+/* =========================================================================
+ * Modo editar nodos (sub=editar): arrastrar nodos para reposicionarlos,
+ * clic derecho para eliminarlos. La cadena se carga con ForgeCargarEditar().
+ * ========================================================================= */
+
+/* Pinta la cadena en edición resaltada (naranja) con asas arrastrables. */
+function ForgePintarEditar(ctx) {
+    var c = Forge.editChain;
+    if (!c) return;
+    var c1 = ForgeCamCoord(c.cam1), c2 = ForgeCamCoord(c.cam2);
+    ctx.save();
+    // camino resaltado
+    ctx.strokeStyle = "#ff9500";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    if (c1) { ctx.moveTo(c1.x, c1.y); } else if (c.nodos.length) { ctx.moveTo(c.nodos[0].x, c.nodos[0].y); }
+    for (var i = 0; i < c.nodos.length; i++) {
+        ctx.lineTo(c.nodos[i].x, c.nodos[i].y);
+    }
+    if (c2) { ctx.lineTo(c2.x, c2.y); }
+    ctx.stroke();
+    // asas arrastrables
+    for (var j = 0; j < c.nodos.length; j++) {
+        var n = c.nodos[j];
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, 7, 0, Math.PI * 2);
+        ctx.fillStyle = "#ff9500";
+        ctx.fill();
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        if (Forge.drag && Forge.drag.index === j) {
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, 3, 0, Math.PI * 2);
+            ctx.fillStyle = "#ffffff";
+            ctx.fill();
+        }
+    }
+    ctx.restore();
+}
+
+/* Índice del nodo bajo el cursor, o -1. */
+function ForgeEditarHitTest(p) {
+    if (!Forge.editChain) return -1;
+    var R = 12;
+    for (var i = 0; i < Forge.editChain.nodos.length; i++) {
+        var n = Forge.editChain.nodos[i];
+        if (Math.abs(n.x - p.x) <= R && Math.abs(n.y - p.y) <= R) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+/* Carga la cadena del par+camino seleccionados para editarla. */
+function ForgeCargarEditar() {
+    var c1 = parseInt(document.getElementById("camara1_ed").value, 10);
+    var c2 = parseInt(document.getElementById("camara2_ed").value, 10);
+    var caminoSel = document.getElementById("camino_ed");
+    var camino = caminoSel ? (parseInt(caminoSel.value, 10) || 0) : 0;
+
+    if (!c1 || !c2 || c1 === c2) {
+        if (typeof rfToast === "function") rfToast("Selecciona dos cámaras distintas.", "err");
+        return;
+    }
+    var lo = c1 < c2 ? c1 : c2, hi = c1 < c2 ? c2 : c1;
+    var cadenas = ForgeAgruparNodos();
+    Forge.editChain = null;
+    for (var i = 0; i < cadenas.length; i++) {
+        if (cadenas[i].cam1 === lo && cadenas[i].cam2 === hi && cadenas[i].camino === camino) {
+            Forge.editChain = {
+                cam1: lo, cam2: hi, camino: camino,
+                nodos: cadenas[i].nodos.slice()
+            };
+            break;
+        }
+    }
+    if (!Forge.editChain) {
+        if (typeof rfToast === "function") rfToast("No hay nodos en ese camino.", "err");
+        return;
+    }
+    ForgeRender();
+}
+
+function ForgeEditarMouseDown(p) {
+    var idx = ForgeEditarHitTest(p);
+    if (idx < 0) return;
+    Forge.drag = { index: idx };
+    // El nodo se "engancha" justo bajo el cursor.
+    Forge.editChain.nodos[idx].x = Math.round(p.x);
+    Forge.editChain.nodos[idx].y = Math.round(p.y);
+    ForgeRender();
+}
+
+function ForgeEditarMouseMove(p) {
+    if (!Forge.drag) return;
+    var n = Forge.editChain.nodos[Forge.drag.index];
+    n.x = Math.round(p.x);
+    n.y = Math.round(p.y);
+    ForgeRender();
+}
+
+function ForgeEditarMouseUp() {
+    if (!Forge.drag) return;
+    var idx = Forge.drag.index;
+    var n = Forge.editChain.nodos[idx];
+    Forge.drag = null;
+    ForgeGuardarNodoPos(n.id, n.x, n.y);
+}
+
+/* Clic derecho: eliminar el nodo bajo el cursor. */
+function ForgeEditarContext(p) {
+    var idx = ForgeEditarHitTest(p);
+    if (idx < 0) return;
+    var n = Forge.editChain.nodos[idx];
+    if (!confirm("¿Eliminar este nodo del camino?")) return;
+    ForgeBorrarNodo(n.id, idx);
+}
+
+/* Persiste la nueva posición del nodo (AJAX a=6). */
+function ForgeGuardarNodoPos(id, x, y) {
+    fetch("pages/config/acciones_ajax.php?a=6", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, x: x, y: y })
+    })
+    .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.text();
+    })
+    .then(function (txt) {
+        if (txt.indexOf("error") !== -1) {
+            var m = "No se pudo mover el nodo: " + txt;
+            if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
+            return;
+        }
+        ForgeActualizarNodoPos(id, x, y);
+        ForgeDibujarPlano();
+    })
+    .catch(function (err) {
+        var m = "No se pudo mover el nodo: " + err.message;
+        if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
+    });
+}
+
+/* Elimina un nodo individual (AJAX a=7). */
+function ForgeBorrarNodo(id, idx) {
+    fetch("pages/config/acciones_ajax.php?a=7", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id })
+    })
+    .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.text();
+    })
+    .then(function (txt) {
+        if (txt.indexOf("error") !== -1) {
+            var m = "No se pudo eliminar el nodo: " + txt;
+            if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
+            return;
+        }
+        ForgeQuitarNodo(id);
+        if (Forge.editChain) {
+            Forge.editChain.nodos.splice(idx, 1);
+        }
+        ForgeDibujarPlano();
+    })
+    .catch(function (err) {
+        var m = "No se pudo eliminar el nodo: " + err.message;
+        if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
+    });
+}
+
+/* Actualiza x/y de un nodo en FORGE_NODOS (raw) sin recargar. */
+function ForgeActualizarNodoPos(id, x, y) {
+    for (var i = 0; i < FORGE_NODOS.length; i++) {
+        if (parseInt(FORGE_NODOS[i].id, 10) === id) {
+            FORGE_NODOS[i].x = x;
+            FORGE_NODOS[i].y = y;
+            break;
+        }
+    }
+}
+
+/* Elimina un nodo de FORGE_NODOS (raw) sin recargar. */
+function ForgeQuitarNodo(id) {
+    for (var i = FORGE_NODOS.length - 1; i >= 0; i--) {
+        if (parseInt(FORGE_NODOS[i].id, 10) === id) {
+            FORGE_NODOS.splice(i, 1);
+        }
+    }
+}
+
 function ForgeDibujaLinea(p) {
     var ctx = Forge.ctx;
     var col = listado_colores[voypocolores % listado_colores.length];
@@ -398,6 +607,8 @@ function ForgeOnCanvasMouseDown(e) {
         ForgeMarcaPosicion(p);
     } else if (Forge.tab === "nodos" && Forge.sub === "crear") {
         ForgeMarcaNodo(p);
+    } else if (Forge.tab === "nodos" && Forge.sub === "editar") {
+        ForgeEditarMouseDown(p);
     }
     /* plano: solo inspección */
 }
@@ -886,6 +1097,30 @@ document.addEventListener("DOMContentLoaded", function () {
     if (Forge.canvas) {
         Forge.ctx = Forge.canvas.getContext("2d");
         Forge.canvas.addEventListener("mousedown", ForgeOnCanvasMouseDown);
+
+        // Arrastre de nodos en modo editar.
+        Forge.canvas.addEventListener("mousemove", function (e) {
+            if (Forge.tab === "nodos" && Forge.sub === "editar" && Forge.drag) {
+                ForgeEditarMouseMove(ForgeCoord(e));
+            }
+        });
+        Forge.canvas.addEventListener("mouseup", function () {
+            if (Forge.tab === "nodos" && Forge.sub === "editar" && Forge.drag) {
+                ForgeEditarMouseUp();
+            }
+        });
+        Forge.canvas.addEventListener("mouseleave", function () {
+            if (Forge.tab === "nodos" && Forge.sub === "editar" && Forge.drag) {
+                ForgeEditarMouseUp();
+            }
+        });
+        // Clic derecho: eliminar nodo en modo editar.
+        Forge.canvas.addEventListener("contextmenu", function (e) {
+            if (Forge.tab === "nodos" && Forge.sub === "editar") {
+                e.preventDefault();
+                ForgeEditarContext(ForgeCoord(e));
+            }
+        });
 
         if (FORGE_MOSTRAR_FOTO && FORGE_TAB === "lineas") {
             // Deep-link: ?page=config&tab=lineas&mostrar_foto=X[&editar_linea=X-Y]
