@@ -202,10 +202,5 @@ function obtener_ruta($local_id, $inicio_id) {
         return null;
     }
     list($camaras_puerta, $camaras_salida) = camaras_puerta_salida($local_id);
-    // Solo se reconstruyen rutas desde cámaras de entrada (puerta); si la
-    // estancia no es de puerta, se construye igualmente como camino parcial.
-    if (in_array((int)$entrada["camara_id"], $camaras_puerta)) {
-        return construye_ruta($entrada, $camaras_salida);
-    }
     return construye_ruta($entrada, $camaras_salida);
 }
