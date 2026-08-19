@@ -40,7 +40,7 @@ def main() -> int:
     ap.add_argument("--min-cosine", type=float, default=0.5)
     args = ap.parse_args()
 
-    cfg = Config()
+    cfg = Config.from_env(args.ruta)   # F3: carga .env (feedback_enabled y VLM consistentes)
     foto_path = os.path.join(args.ruta, "admin/caras_procesadas", args.foto_id + ".jpg")
     if not os.path.exists(foto_path):
         print("foto no encontrada")

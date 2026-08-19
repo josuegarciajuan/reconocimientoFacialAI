@@ -36,6 +36,10 @@ from filelock import FileLock
 VERSION = 3
 SCHEMA = "face_enc_v2"
 
+# F1.4: umbral de similitud media para considerar un encoding "outlier" dentro
+# de una persona (los genuinos de videovigilancia promedian >= 0.32).
+OUTLIER_COSINE = 0.25
+
 
 def _empty() -> dict:
     return {"version": VERSION, "schema": SCHEMA, "persons": {}}
@@ -98,15 +102,38 @@ class FaceStore:
 
     @staticmethod
     def _prune(p: dict, max_per_person: int) -> None:
-        if len(p["encodings"]) > max_per_person:
-            idx = sorted(range(len(p["quality"])), key=lambda i: p["quality"][i], reverse=True)[:max_per_person]
+        # F1.4 (refinamiento autoaprendizaje): con volumen suficiente, descartar
+        # ANTES outliers estructurales — encodings cuya similitud media con el
+        # resto es < OUTLIER_COSINE. Son típicamente impostores añadidos por
+        # contaminación histórica (perfiles mezclados); los genuinos (coseno
+        # interno >= 0.32) no se ven afectados. Nunca se vacía a la persona.
+        n = len(p["encodings"])
+        if n >= 8:
+            encs = np.stack(p["encodings"])
+            S = encs @ encs.T
+            mean_sim = (S.sum(axis=1) - 1.0) / np.maximum(1, n - 1)
+            keep = np.where(mean_sim >= OUTLIER_COSINE)[0]
+            if 0 < len(keep) < n:
+                for k in ("encodings", "quality", "poses", "added_at"):
+                    p[k] = [p[k][i] for i in keep]
+                if p.get("appearance"):
+                    n_app = len(p["appearance"]["desc"])
+                    if n_app:
+                        keep_app = [i for i in keep if i < n_app]
+                        for k in ("desc", "ts", "src"):
+                            p["appearance"][k] = [p["appearance"][k][i] for i in keep_app]
+                n = len(p["encodings"])
+
+        # si sigue sobrando: conservar los más nítidos (comportamiento previo)
+        if n > max_per_person:
+            idx = sorted(range(n), key=lambda i: p["quality"][i], reverse=True)[:max_per_person]
             for k in ("encodings", "quality", "poses", "added_at"):
                 p[k] = [p[k][i] for i in idx]
             if p.get("appearance"):
                 # apariencia alineada por índice (mismo crop); puede tener menos filas
-                n = len(p["appearance"]["desc"])
-                if n:
-                    keep = [i for i in idx if i < n]
+                n_app = len(p["appearance"]["desc"])
+                if n_app:
+                    keep = [i for i in idx if i < n_app]
                     for k in ("desc", "ts", "src"):
                         p["appearance"][k] = [p["appearance"][k][i] for i in keep]
 
