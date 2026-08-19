@@ -58,7 +58,7 @@ function rf_glosario() {
         ],
         "un-anillo" => [
             "termino"    => "Un Anillo",
-            "significado" => "Elemento decorativo (herencia del antiguo interruptor de tema oscuro). 'Un Anillo para gobernarlos a todos': solo adorno.",
+            "significado" => "Centro de mando del panel (abajo a la derecha): abre búsqueda global, accesos rápidos y el estado de los Seis Centinelas. 'Un Anillo para gobernarlos a todos'. Si arde en brasa, hay anomalías en Mordor.",
             "match"      => "auto",
         ],
         "inscripcion-anillo" => [

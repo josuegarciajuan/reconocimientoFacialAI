@@ -72,6 +72,7 @@ php tests/vinculos_test.php                           # lógica de vínculos ví
 | `docs/specs/08-fichajes-horarios.md` | Fichajes con horario habitual y conciliador |
 | `docs/specs/09-vinculos.md` | Vínculos automáticos vídeos ↔ personas ↔ cruces de línea |
 | `docs/specs/10-lore-tooltips.md` | Bocadillos de lore: explicación de la terminología temática (glosario + motor) |
+| `docs/specs/11-anillo-hub.md` | El Ojo del Anillo: hub maestro flotante (búsqueda + accesos rápidos + centinelas + semáforo) |
 
 ## Seguridad
 
