@@ -89,6 +89,32 @@ switch ($_GET["a"]) {
         echo "ok";
         break;
 
+    case "6": // mover un nodo individual (JSON POST): {id, x, y}
+        $body = json_decode((string)file_get_contents("php://input"), true);
+        $id = (int)($body["id"] ?? 0);
+        $x = (int)($body["x"] ?? 0);
+        $y = (int)($body["y"] ?? 0);
+        if ($id <= 0) {
+            http_response_code(400);
+            echo "error: id de nodo inválido";
+            break;
+        }
+        DB::execute("UPDATE nodos SET x = ?, y = ? WHERE id = ?", [$x, $y, $id]);
+        echo "ok";
+        break;
+
+    case "7": // eliminar un nodo individual (JSON POST): {id}
+        $body = json_decode((string)file_get_contents("php://input"), true);
+        $id = (int)($body["id"] ?? 0);
+        if ($id <= 0) {
+            http_response_code(400);
+            echo "error: id de nodo inválido";
+            break;
+        }
+        DB::execute("DELETE FROM nodos WHERE id = ?", [$id]);
+        echo "ok";
+        break;
+
     default:
         break;
 }

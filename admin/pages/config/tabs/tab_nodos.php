@@ -11,6 +11,9 @@
     <a role="tab" aria-selected="<?= $sub === "crear" ? "true" : "false"; ?>"
        class="forge-sub<?= $sub === "crear" ? " is-active" : ""; ?>"
        href="?page=config&tab=nodos&sub=crear" data-lore="unir-nodos">Unir</a>
+    <a role="tab" aria-selected="<?= $sub === "editar" ? "true" : "false"; ?>"
+       class="forge-sub<?= $sub === "editar" ? " is-active" : ""; ?>"
+       href="?page=config&tab=nodos&sub=editar" data-lore="mover-nodos">Mover</a>
     <a role="tab" aria-selected="<?= $sub === "eliminar" ? "true" : "false"; ?>"
        class="forge-sub<?= $sub === "eliminar" ? " is-active" : ""; ?>"
        href="?page=config&tab=nodos&sub=eliminar" data-lore="romper">Romper</a>
@@ -53,6 +56,52 @@
         </div>
         <div class="form-grid__full">
             <button type="button" class="button text-white bg-theme-6 shadow-md" onclick="eliminar_nodos()">Eliminar nodos</button>
+        </div>
+    </div>
+</div>
+
+<?php elseif ($sub === "editar"): ?>
+<!-- ---------- Mover (editar nodos individuales) ---------- -->
+<div class="form-section" data-panel-forge="editar">
+    <div class="form-section__title">
+        <span class="form-section__emoji" aria-hidden="true">✋</span>
+        Mover nodos
+    </div>
+
+    <div class="form-grid">
+        <div>
+            <label for="camara1_ed" class="field-label">Cámara (1)</label>
+            <select id="camara1_ed" name="camara1_ed" class="input border w-full">
+                <option value="-">Selecciona Cámara</option>
+                <?php foreach ($camaras as $c): ?>
+                    <option value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div>
+            <label for="camara2_ed" class="field-label">Cámara (2)</label>
+            <select id="camara2_ed" name="camara2_ed" class="input border w-full">
+                <option value="-">Selecciona Cámara</option>
+                <?php foreach ($camaras as $c): ?>
+                    <option value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div>
+            <label for="camino_ed" class="field-label">Camino</label>
+            <select id="camino_ed" name="camino_ed" class="input border w-full">
+                <option value="0">Principal (0)</option>
+                <option value="1">Alternativo 1</option>
+                <option value="2">Alternativo 2</option>
+            </select>
+        </div>
+        <div class="form-grid__full">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="ForgeCargarEditar()">Cargar camino</button>
+                <span class="text-xs text-gray-500 dark:text-gray-600">
+                    Carga el camino y arrastra sus nodos para recolocarlos. Clic derecho sobre un nodo para eliminarlo.
+                </span>
+            </div>
         </div>
     </div>
 </div>

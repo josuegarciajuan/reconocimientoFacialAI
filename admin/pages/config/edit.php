@@ -93,6 +93,7 @@ $hints = [
     "camaras/crear"    => "Haz clic sobre el lienzo para fijar la posición (X/Y) de la nueva cámara.",
     "camaras/editar"   => "Haz clic sobre el lienzo para reposicionar la cámara seleccionada (X/Y).",
     "nodos/crear"      => "Selecciona dos cámaras distintas y haz clic sobre el lienzo para marcar cada nodo del camino.",
+    "nodos/editar"     => "Carga un camino y arrastra sus nodos para recolocarlos. Clic derecho sobre un nodo para eliminarlo.",
     "nodos/eliminar"   => "Elige el par de cámaras cuya cadena de nodos quieres romper.",
     "lineas/trazar"    => "Elige una cámara: el lienzo mostrará su foto para trazar las líneas de vigilancia.",
     "lineas/editar"    => "Elige una línea: el lienzo mostrará la foto de su cámara para corregirla.",

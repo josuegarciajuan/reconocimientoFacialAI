@@ -403,6 +403,11 @@ function rf_glosario() {
             "significado" => "Crear nodos: marcar en el lienzo los puntos del camino que une dos cámaras.",
             "match"      => "explicito",
         ],
+        "mover-nodos" => [
+            "termino"    => "Mover",
+            "significado" => "Editar los nodos de un camino: arrastrar cada eslabón para recolocarlo sobre el plano real, o borrarlo con clic derecho.",
+            "match"      => "explicito",
+        ],
         "romper" => [
             "termino"    => "Romper",
             "significado" => "Eliminar la cadena de nodos que une dos cámaras.",
