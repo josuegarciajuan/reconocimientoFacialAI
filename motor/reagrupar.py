@@ -128,7 +128,17 @@ def evaluar_par(store: FaceStore, embs: dict[str, np.ndarray], resolver: RepReso
 
     NOTA: en el matching POR PARES no existe el concepto de "segundo candidato"
     para el margen (ambas galerías son el par); la confianza de la capa cara usa
-    nivel absoluto + nitidez de la foto representativa (s_other=0)."""
+    nivel absoluto + nitidez de la foto representativa (s_other=0).
+    Se activan las capas CARA+ZONAS (las que aplican aquí) manteniendo los
+    umbrales y pesos-prior CONFIGURADOS; torso/VLM/OpenAI quedan fuera."""
+    import copy
+    cfg = copy.copy(cfg)                 # no mutar el Config compartido
+    cfg.cascade_enabled = True
+    cfg.zones_enabled = True
+    cfg.torso_enabled = False
+    cfg.vlm_enabled = False
+    cfg.openai_enabled = False
+
     sharp_a = resolver.face_data(cod_a).get("sharpness", 0.0)
     c_face = face_confidence(s_face, 0.0, sharp_a, cfg)
     face_layer = LayerScore(score=float(s_face), confidence=c_face)
@@ -169,13 +179,17 @@ def coherencia_interna(embs: dict[str, np.ndarray], max_sample: int = 200) -> di
 
 
 def reporte(ruta: str, local_id: str, cfg: Config, store: FaceStore, floor: float,
-            out_dir: str) -> list[dict]:
+            out_dir: str, min_coherence: float = 0.20) -> list[dict]:
     os.makedirs(out_dir, exist_ok=True)
     embs = load_embeddings(store)
     resolver = RepResolver(ruta, local_id, cfg)
     cods = sorted(embs.keys())
     n = len(cods)
     print(f"personas con encodings: {n}")
+
+    # coherencia interna por persona (detección de galerías contaminadas)
+    coh = coherencia_interna(embs)
+    contaminadas = {c for c, m in coh.items() if m < min_coherence}
 
     # pares candidatos
     pares = []
@@ -190,6 +204,8 @@ def reporte(ruta: str, local_id: str, cfg: Config, store: FaceStore, floor: floa
     resultados = []
     for s, a, b in pares:
         r = evaluar_par(store, embs, resolver, cfg, a, b, s)
+        # guardia anti-catch-all: el merge exige que AMBAS galerías sean coherentes
+        r["contaminada"] = (a in contaminadas or b in contaminadas)
         resultados.append(r)
         # miniaturas del par para revisión visual
         pdir = os.path.join(out_dir, "pairs", f"{len(resultados):03d}_{a[:8]}_{b[:8]}")
@@ -205,48 +221,50 @@ def reporte(ruta: str, local_id: str, cfg: Config, store: FaceStore, floor: floa
     orden = {"match": 0, "uncertain": 1, "new": 2}
     resultados.sort(key=lambda r: (orden.get(r["verdict"], 3), -r["S"]))
 
-    # sección B: galerías contaminadas (solo aviso)
-    coh = coherencia_interna(embs)
-    sospechosas = [(c, m) for c, m in coh.items() if m < 0.20]
-    sospechosas.sort(key=lambda x: x[1])
-
     # volcado CSV
     csv_path = os.path.join(out_dir, f"reagrupar_{time.strftime('%Y%m%d_%H%M%S')}.csv")
     with open(csv_path, "w", newline="") as fh:
         w = csv.writer(fh)
-        w.writerow(["a", "b", "s_face", "c_face", "c_zona", "S_fusion", "conf", "verdict"])
+        w.writerow(["a", "b", "s_face", "c_face", "c_zona", "S_fusion", "conf",
+                    "verdict", "contaminada"])
         for r in resultados:
             w.writerow([r["a"], r["b"], f"{r['s_face']:.4f}", f"{r['c_face']:.3f}",
                         f"{r['c_zona']:.3f}", f"{r['S']:.4f}", f"{r['conf']:.3f}",
-                        r["verdict"]])
+                        r["verdict"], "S" if r["contaminada"] else "N"])
 
     print(f"\n{'PAR':<28} {'nA':>3} {'nB':>3} {'s_cara':>7} {'c_cara':>6} {'c_zona':>6} "
           f"{'S_fus':>6}  VEREDICTO")
-    print("-" * 78)
+    print("-" * 82)
     for r in resultados:
         nA = store.count(r["a"]); nB = store.count(r["b"])
+        marca = " *" if r["contaminada"] else ""
         print(f"{r['a'][:10]}~{r['b'][:10]:<17} {nA:>3} {nB:>3} {r['s_face']:>7.3f} "
-              f"{r['c_face']:>6.2f} {r['c_zona']:>6.2f} {r['S']:>6.3f}  {r['verdict']}")
+              f"{r['c_face']:>6.2f} {r['c_zona']:>6.2f} {r['S']:>6.3f}  {r['verdict']}{marca}")
 
-    m = sum(1 for r in resultados if r["verdict"] == "match")
+    m = sum(1 for r in resultados if r["verdict"] == "match" and not r["contaminada"])
+    m_cont = sum(1 for r in resultados if r["verdict"] == "match" and r["contaminada"])
     u = sum(1 for r in resultados if r["verdict"] == "uncertain")
-    k = sum(1 for r in resultados if r["verdict"] == "new")
-    print("-" * 78)
-    print(f"RESUMEN: {m} pares SUPERAN los umbrales (merge), {u} inciertos (revisión), "
-          f"{k} distintos (no merge)")
-    if sospechosas:
-        print(f"\nAVISO galerías con coherencia interna baja (posible contaminación, "
-              f"candidatas a limpiar_catchall):")
-        for c, m in sospechosas:
-            print(f"  {c[:12]}... media intra={m:.3f}")
+    print("-" * 82)
+    print(f"RESUMEN: {m} pares superan umbrales con galerías coherentes (merge seguro), "
+          f"{m_cont} match sobre galería contaminada (*, excluidos del auto-merge), "
+          f"{u} inciertos (revisión)")
+    if contaminadas:
+        print(f"\nGALERÍAS CONTAMINADAS (coherencia < {min_coherence}) — candidatas a "
+              f"limpiar_catchall, NO se fusionan:")
+        for c in sorted(contaminadas):
+            print(f"  {c}  media_intra={coh[c]:.3f}")
     print(f"\nminiaturas: {os.path.join(out_dir, 'pairs')}")
     print(f"CSV: {csv_path}")
     return resultados
 
 
 def aplicar(ruta: str, local_id: str, cfg: Config, store: FaceStore,
-            resultados: list[dict]) -> int:
-    """Merge SOLO de los pares `match`, con reversibilidad F6."""
+            resultados: list[dict], force_contaminadas: bool = False) -> int:
+    """Merge SOLO de los pares `match` con galerías coherentes (F6 reversible).
+
+    Los pares `match` que involucran una galería contaminada (catch-all) se
+    EXCLUYEN por defecto (van a limpiar_catchall); --force los incluye.
+    """
     rows = _mysql(ruta, f"SELECT id, cod_interno FROM personas WHERE local_id={local_id}")
     pid_of = {r.split("\t")[1]: int(r.split("\t")[0]) for r in rows}
 
@@ -268,8 +286,11 @@ def aplicar(ruta: str, local_id: str, cfg: Config, store: FaceStore,
     def union(a, b):
         parent[find(b)] = find(a)
 
-    merges = [r for r in resultados if r["verdict"] == "match"]
+    merges = [r for r in resultados
+              if r["verdict"] == "match" and (force_contaminadas or not r["contaminada"])]
     merges.sort(key=lambda r: -r["S"])
+    if force_contaminadas:
+        print("[apply] --force: se incluyen los pares sobre galerías contaminadas")
     hechas = 0
     for r in merges:
         a, b = r["a"], r["b"]
@@ -337,6 +358,10 @@ def main() -> int:
                     help="coseno mínimo para considerar un par candidato "
                          "(por defecto: match_threshold configurado)")
     ap.add_argument("--apply", action="store_true", help="fusionar SOLO los pares que superan los umbrales")
+    ap.add_argument("--force", action="store_true",
+                    help="con --apply: incluir también los pares sobre galerías contaminadas")
+    ap.add_argument("--min-coherence", type=float, default=0.20,
+                    help="media intra mínima para considerar una galería coherente")
     ap.add_argument("--rollback", metavar="DIR", default=None,
                     help="deshacer un apply previo (motor/backups/<ts>_reagrupar)")
     args = ap.parse_args()
@@ -353,10 +378,12 @@ def main() -> int:
     out_dir = os.path.join(args.ruta, "motor/reagrupar_out", f"run_{time.strftime('%Y%m%d_%H%M%S')}")
     os.makedirs(out_dir, exist_ok=True)
 
-    resultados = reporte(args.ruta, str(args.local), cfg, store, args.floor, out_dir)
+    resultados = reporte(args.ruta, str(args.local), cfg, store, args.floor, out_dir,
+                         min_coherence=args.min_coherence)
 
     if args.apply:
-        n = aplicar(args.ruta, str(args.local), cfg, store, resultados)
+        n = aplicar(args.ruta, str(args.local), cfg, store, resultados,
+                    force_contaminadas=args.force)
         print(f"\n[apply] total merges aplicados: {n}")
     else:
         print(f"\n[dry-run] no se aplicó nada. Usa --apply para fusionar los pares 'match'.")
