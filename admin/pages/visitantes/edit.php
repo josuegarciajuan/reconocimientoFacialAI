@@ -113,7 +113,7 @@ $num_cruces = $cruces_cnt ? (int)$cruces_cnt["n"] : 0;
 
     <div class="nav-tabs flex flex-col sm:flex-row justify-center lg:justify-start">
         <a href="?page=accesos&persona_id=<?= $persona_id; ?>" class="py-4 sm:mr-8 flex items-center active">Ver Movimientos</a>
-        <a href="?page=rutas&persona_id=<?= $persona_id; ?>" class="py-4 sm:mr-8 flex items-center">Ver rutas</a>
+        <a href="?page=rutas&persona_id=<?= $persona_id; ?>" class="py-4 sm:mr-8 flex items-center">Ver Caminos</a>
         <a href="#videos" class="py-4 sm:mr-8 flex items-center">Ver Vídeos (<?= count($videos_persona); ?>)</a>
         <a href="?page=lineas&persona_id=<?= $persona_id; ?>" class="py-4 sm:mr-8 flex items-center">Ver Cruces (<?= $num_cruces; ?>)</a>
     </div>
