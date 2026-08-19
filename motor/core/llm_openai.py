@@ -127,5 +127,25 @@ class OpenAICompare:
 
 
 def _b64(path: str) -> str:
-    with open(path, "rb") as fh:
-        return base64.b64encode(fh.read()).decode()
+    """Base64 de la imagen REDIMENSIONADA (misma política que el VLM local).
+
+    Reduce tokens de visión (coste y latencia) en gpt-4o-mini. Si no se puede
+    leer con cv2, se envía el fichero tal cual (fallback).
+    """
+    import cv2
+    from .vlm_local import VLM_IMG_JPEG_QUALITY, VLM_IMG_MAX_SIDE
+    img = cv2.imread(path)
+    if img is None:
+        with open(path, "rb") as fh:
+            return base64.b64encode(fh.read()).decode()
+    h, w = img.shape[:2]
+    m = max(h, w)
+    if m > VLM_IMG_MAX_SIDE:
+        sc = VLM_IMG_MAX_SIDE / m
+        img = cv2.resize(img, (max(1, int(w * sc)), max(1, int(h * sc))),
+                         interpolation=cv2.INTER_AREA)
+    ok, buf = cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, VLM_IMG_JPEG_QUALITY])
+    if not ok:
+        with open(path, "rb") as fh:
+            return base64.b64encode(fh.read()).decode()
+    return base64.b64encode(buf.tobytes()).decode()

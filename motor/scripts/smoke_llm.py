@@ -30,8 +30,9 @@ from motor.core.prompts import SYSTEM_PROMPT, USER_PROMPT  # noqa: E402
 
 
 def _b64(path: str) -> str:
-    with open(path, "rb") as fh:
-        return base64.b64encode(fh.read()).decode()
+    """Base64 con redimensionado (misma política que las capas L2/L3)."""
+    from motor.core.vlm_local import _b64 as _b64_resized
+    return _b64_resized(path)
 
 
 def _valid(result: dict) -> bool:

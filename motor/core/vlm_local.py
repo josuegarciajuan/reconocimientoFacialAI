@@ -11,6 +11,9 @@ MEDIDAS ANTI-DESBORDE:
   - mutex global (FileLock): solo UNA llamada VLM en curso entre todos los
     procesos (protege RAM y serializa el worker).
   - timeout por llamada (vlm_timeout_s); si se supera => c=0 para ese par.
+  - IMÁGENES REDIMENSIONADAS (max side VLM_IMG_MAX_SIDE): la codificación de
+    visión en CPU es cara; a tamaño completo 2 imágenes generan ~2100 tokens
+    (superaban num_ctx y tardaban minutos bajo carga). 384px -> ~500-900 tokens.
   - cache por hash-de-par: no reenviar lo ya preguntado.
   - si el lock no se consigue en ~5 s => degradar (available=False), no bloquear.
 """
@@ -22,6 +25,7 @@ import json
 import os
 import time
 
+import cv2
 import requests
 from filelock import FileLock
 
@@ -30,6 +34,8 @@ from .matching import LayerScore
 from .prompts import SYSTEM_PROMPT, USER_PROMPT, map_to_layer
 
 LOCK_TIMEOUT_S = 5.0
+VLM_IMG_MAX_SIDE = 384
+VLM_IMG_JPEG_QUALITY = 85
 
 
 def _mem_free_gb() -> float:
@@ -124,8 +130,22 @@ class VLMClient:
 
 
 def _b64(path: str) -> str:
-    with open(path, "rb") as fh:
-        return base64.b64encode(fh.read()).decode()
+    """Base64 de la imagen REDIMENSIONADA (máx. 384px) para reducir tokens de visión."""
+    img = cv2.imread(path)
+    if img is None:
+        with open(path, "rb") as fh:
+            return base64.b64encode(fh.read()).decode()
+    h, w = img.shape[:2]
+    m = max(h, w)
+    if m > VLM_IMG_MAX_SIDE:
+        sc = VLM_IMG_MAX_SIDE / m
+        img = cv2.resize(img, (max(1, int(w * sc)), max(1, int(h * sc))),
+                         interpolation=cv2.INTER_AREA)
+    ok, buf = cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, VLM_IMG_JPEG_QUALITY])
+    if not ok:
+        with open(path, "rb") as fh:
+            return base64.b64encode(fh.read()).decode()
+    return base64.b64encode(buf.tobytes()).decode()
 
 
 def _pair_key(img_a: str, img_b: str) -> str:
