@@ -17,6 +17,50 @@ require_once("libs/db.php");
 $threads = [];
 $ram = new Jos_Thread(0, "", true);
 
+/**
+ * Limpieza global de marcadores de archivado `aux/archiva_*.txt` huérfanos.
+ *
+ * Un marcador es huérfano cuando su proceso archiva_video.py ya no está vivo y
+ * (a) el vídeo fuente ya no existe o (b) el marcador es más antiguo que
+ * CONFIG_MARCADOR_HUERFANO_SEGS. Se barre TODOS los marcadores de las cámaras
+ * del local, no solo los de los vídeos del listado actual `$subidos`: un marcador
+ * cuyo origen ya fue borrado por procesa_video.py nunca volvería a aparecer en
+ * `$subidos`, y sin esta limpieza satura CONFIG_LIMITE_ARCHIVA permanentemente
+ * (los slots de archivado se cuentan precisamente con estos marcadores).
+ */
+function limpiar_marcadores_archiva_huerfanos(int $local_id, array $cams_local): void {
+    $cams = [];
+    foreach ($cams_local as $c) {
+        $cams[(int)$c["id"]] = true;
+    }
+    $dir_aux = RUTA_PROYECTO . "aux";
+    if (!is_dir($dir_aux)) {
+        return;
+    }
+    $d = opendir($dir_aux);
+    while (($el = readdir($d)) !== false) {
+        if ($el === "." || $el === "..") { continue; }
+        if (strpos($el, "archiva_") !== 0 || substr($el, -4) !== ".txt") { continue; }
+        $video = substr($el, strlen("archiva_"), -4);
+        if ($video === "") { continue; }
+        $cam_id = (int) explode("_", $video)[0];
+        if ($cam_id <= 0 || !isset($cams[$cam_id])) { continue; }
+        $marker = $dir_aux . "/" . $el;
+        $rc = [];
+        exec("pgrep -f \"[a]rchiva_video.py " . $local_id . " " . $cam_id . " '" . $video . "'\" > /dev/null 2>&1; echo $?", $rc);
+        $vivo = (isset($rc[0]) && trim($rc[0]) === "0");
+        if ($vivo) { continue; }
+        $fuente = RUTA_PROYECTO . "motor/videos/" . $local_id . "/" . $cam_id . "/" . $video;
+        $sin_fuente = !file_exists($fuente);
+        $viejo = (time() - @filemtime($marker)) > CONFIG_MARCADOR_HUERFANO_SEGS;
+        if ($sin_fuente || $viejo) {
+            @unlink($marker);
+            echo "Marker archiva huérfano limpiado (global): " . $el . "\n";
+        }
+    }
+    closedir($d);
+}
+
 while (true) {
 
     $locales = DB::select("SELECT id FROM locales WHERE id > 0 ORDER BY id ASC");
@@ -24,6 +68,8 @@ while (true) {
         $local_id = (int)$loc["id"];
 
         $cams = DB::select("SELECT id FROM camaras WHERE local_id = ? AND encendida = 1 ORDER BY id ASC", [$local_id]);
+        // limpia marcadores de archivado huérfanos ANTES de contar slots disponibles
+        limpiar_marcadores_archiva_huerfanos($local_id, $cams);
         foreach ($cams as $cam) {
             $cam_id = (int)$cam["id"];
 
@@ -75,33 +121,40 @@ while (true) {
 
             foreach ($subidos as $video) {
                 // ---- archivo comprimido: AVI -> MP4 H.264 (motor/archiva_video.py) ----
-                $marker_arch = RUTA_PROYECTO . "aux/archiva_" . $video . ".txt";
-                if (file_exists($marker_arch)) {
-                    // marker huérfano: proceso muerto y marker viejo -> limpiar para reintentar
-                    $rc_arch = [];
-                    exec("pgrep -f \"[a]rchiva_video.py " . $local_id . " " . $cam_id . " '" . $video . "'\" > /dev/null 2>&1; echo $?", $rc_arch);
-                    $vivo_arch = (isset($rc_arch[0]) && trim($rc_arch[0]) === "0");
-                    $video_arch_ya_no_existe = !file_exists($dir_videos . $video);
-                    if (!$vivo_arch && $video_arch_ya_no_existe) {
-                        // archiva terminó (el AVI ya lo borró procesa_video) o murió con el origen borrado
-                        @unlink($marker_arch);
-                        echo "Marker archiva limpiado (vídeo ya no existe): " . $video . "\n";
-                    } elseif (!$vivo_arch && (time() - @filemtime($marker_arch)) > CONFIG_MARCADOR_HUERFANO_SEGS) {
-                        @unlink($marker_arch);
-                        echo "Marker archiva huérfano limpiado: " . $video . "\n";
+                // Si el MP4 ya está archivado (existe en videos_archivo) no relanzamos archiva:
+                // el origen lo eliminará procesa_video al terminar su análisis. Sin esta guarda,
+                // el vídeo se re-archivaría en cada pasada mientras el origen siga en disco.
+                $destino_mp4 = RUTA_PROYECTO . "motor/videos_archivo/" . $local_id . "/" . $cam_id . "/"
+                    . preg_replace('/\.(avi|mp4)$/i', '.mp4', $video);
+                if (!file_exists($destino_mp4)) {
+                    $marker_arch = RUTA_PROYECTO . "aux/archiva_" . $video . ".txt";
+                    if (file_exists($marker_arch)) {
+                        // marker huérfano: proceso muerto y marker viejo -> limpiar para reintentar
+                        $rc_arch = [];
+                        exec("pgrep -f \"[a]rchiva_video.py " . $local_id . " " . $cam_id . " '" . $video . "'\" > /dev/null 2>&1; echo $?", $rc_arch);
+                        $vivo_arch = (isset($rc_arch[0]) && trim($rc_arch[0]) === "0");
+                        $video_arch_ya_no_existe = !file_exists($dir_videos . $video);
+                        if (!$vivo_arch && $video_arch_ya_no_existe) {
+                            // archiva terminó (el AVI ya lo borró procesa_video) o murió con el origen borrado
+                            @unlink($marker_arch);
+                            echo "Marker archiva limpiado (vídeo ya no existe): " . $video . "\n";
+                        } elseif (!$vivo_arch && (time() - @filemtime($marker_arch)) > CONFIG_MARCADOR_HUERFANO_SEGS) {
+                            @unlink($marker_arch);
+                            echo "Marker archiva huérfano limpiado: " . $video . "\n";
+                        }
+                    } elseif ($numero_archiva < (int)CONFIG_LIMITE_ARCHIVA) {
+                        exec("echo '" . date("Y-m-d H:i:s") . "' > " . $marker_arch);
+                        $log_arch = RUTA_PROYECTO . "motor/logs/archiva_video_" . $cam_id . ".log";
+                        $cmd_arch = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/archiva_video.py " . $local_id . " " . $cam_id
+                            . " '" . $video . "' --ruta " . RUTA_PROYECTO
+                            . " --crf " . CONFIG_VIDEO_CRF . " --fps " . CONFIG_VIDEO_FPS_ARCHIVO
+                            . " --preset " . CONFIG_VIDEO_PRESET
+                            . " >> " . $log_arch . " 2>&1 &";
+                        echo $cmd_arch . "\n";
+                        exec($cmd_arch);
+                        $numero_archiva++;
                     }
-                } elseif ($numero_archiva < (int)CONFIG_LIMITE_ARCHIVA) {
-                    exec("echo '" . date("Y-m-d H:i:s") . "' > " . $marker_arch);
-                    $log_arch = RUTA_PROYECTO . "motor/logs/archiva_video_" . $cam_id . ".log";
-                    $cmd_arch = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/archiva_video.py " . $local_id . " " . $cam_id
-                        . " '" . $video . "' --ruta " . RUTA_PROYECTO
-                        . " --crf " . CONFIG_VIDEO_CRF . " --fps " . CONFIG_VIDEO_FPS_ARCHIVO
-                        . " --preset " . CONFIG_VIDEO_PRESET
-                        . " >> " . $log_arch . " 2>&1 &";
-                    echo $cmd_arch . "\n";
-                    exec($cmd_arch);
-                    $numero_archiva++;
-                }
+                } // fin if !file_exists($destino_mp4)
 
                 $marker = RUTA_PROYECTO . "aux/" . $video . ".txt";
 

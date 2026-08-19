@@ -137,7 +137,9 @@ foreach ($videos as $v) {
         ?>
             <tr class="<?= $par; ?>">
                 <td class="text-center border-b"><?= htmlspecialchars($fecha_fmt); ?></td>
-                <td class="text-center border-b"><?= htmlspecialchars($nombre); ?></td>
+                <td class="text-center border-b">
+                    <a class="text-theme-1 font-medium hover:underline" href="?page=visitantes&mode=editar&id=<?= (int)$r["persona_id"]; ?>" title="Ver la ficha de la persona"><?= htmlspecialchars($nombre); ?></a>
+                </td>
                 <td class="text-center border-b"><?= htmlspecialchars($r["camara_nombre"]); ?></td>
                 <td class="text-center border-b">
                     <div class="flex sm:justify-center">
