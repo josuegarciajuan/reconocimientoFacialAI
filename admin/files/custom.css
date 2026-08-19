@@ -1169,27 +1169,6 @@ input:focus-visible {
   color: var(--mordor-ceniza);
 }
 
-.rf-lore__go {
-  margin-top: 0.45rem;
-  padding-top: 0.4rem;
-  border-top: 1px dashed rgba(201, 162, 39, 0.25);
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--mordor-oro);
-}
-
-.rf-lore__go a {
-  color: var(--mordor-oro);
-  text-decoration: underline;
-  text-decoration-color: rgba(201, 162, 39, 0.4);
-  text-underline-offset: 3px;
-}
-
-.rf-lore__go a:hover {
-  color: var(--mordor-brasa);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .rf-lore {
     transition: none;

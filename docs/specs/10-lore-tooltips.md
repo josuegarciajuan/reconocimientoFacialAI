@@ -4,14 +4,13 @@
 > El panel usa una temática Mordor / El Señor de los Anillos (Barad-dûr, El Ojo que
 > Todo lo Ve, La Puerta Negra…) con nomenclatura que un usuario que no siga la saga
 > no entiende. Esta spec fija el sistema que explica **cada término temático** al pasar
-> el ratón o enfocar: **qué significa y a dónde apunta**.
+> el ratón o enfocar: **qué significa**.
 
 ## 1. Objetivo
 
 Todo término de temática presente en el panel (menú, dashboard, notificaciones, config,
 login, ayudas) debe mostrar un bocadillo explicativo sin necesidad de indicador visual:
-basta con posarse encima. Un usuario sin contexto de la saga entiende qué es cada cosa
-y dónde encontrarla.
+basta con posarse encima. Un usuario sin contexto de la saga entiende qué es cada cosa.
 
 ## 2. Regla "por defecto" (obligatoria para futuras UIs)
 
@@ -45,8 +44,6 @@ y dónde encontrarla.
 "<clave-slug>" => [
     "termino"     => "Texto temático exacto tal y como aparece", // string
     "significado" => "Qué es en la realidad de la app",           // string
-    "destino"     => "A dónde apunta (humano, ej. 'Dashboard')",  // string|null
-    "href"        => "?page=..." | "login.php" | null,            // string|null (relativo al panel)
     "match"       => "auto" | "explicito",                        // string
 ],
 ```
@@ -56,8 +53,6 @@ Reglas:
   la referencian).
 - `termino` debe coincidir con el texto visible (el motor normaliza emojis/puntuación y
   minúsculas, pero **mantiene acentos**: `Líneas ≠ Lineas`).
-- `href` es relativo al panel (`admin/`). En `login.php` el motor lo suprime
-  automáticamente (detecta `body.login`) para no enlazar a rutas que no existen allí.
 - `match:"auto"` es el valor por defecto recomendado: máxima cobertura "gratis".
 - `match:"explicito"` solo para términos que colisionen con lenguaje normal.
 
@@ -85,45 +80,45 @@ Reglas:
 ## 6. Catálogo actual (2026-08-19)
 
 ### Marca global
-| Clave | Término | Significado | Apunta a |
-|---|---|---|---|
-| `mordor` | Mordor | El sistema completo de vigilancia y control de accesos | Toda la app |
-| `barad-dur` | Barad-dûr | El panel de administración (la Torre Oscura) | Panel |
-| `ojo-todo-lo-ve` | El Ojo que Todo lo Ve | La red de cámaras de vigilancia | Cámaras |
-| `puerta-negra` | La Puerta Negra | Pantalla de login | Login |
-| `entrar-mordor` | Entrar a Mordor | Iniciar sesión | Login |
-| `abandonar-mordor` | Abandonar Mordor | Cerrar sesión | — |
-| `el-ojo-observa` | El Ojo te observa | Espera del login | — |
-| `un-anillo` | Un Anillo | Decorativo (ex toggle de tema) | — |
-| `inscripcion-anillo` | Inscripción del Anillo | Frase en Lengua Negra del Anillo Único | — |
-| `buscar-mordor` | Buscar en Mordor | Buscador global | — |
+| Clave | Término | Significado |
+|---|---|---|
+| `mordor` | Mordor | El sistema completo de vigilancia y control de accesos |
+| `barad-dur` | Barad-dûr | El panel de administración (la Torre Oscura) |
+| `ojo-todo-lo-ve` | El Ojo que Todo lo Ve | La red de cámaras de vigilancia |
+| `puerta-negra` | La Puerta Negra | Pantalla de login |
+| `entrar-mordor` | Entrar a Mordor | Iniciar sesión |
+| `abandonar-mordor` | Abandonar Mordor | Cerrar sesión |
+| `el-ojo-observa` | El Ojo te observa | Espera del login |
+| `un-anillo` | Un Anillo | Decorativo (ex toggle de tema) |
+| `inscripcion-anillo` | Inscripción del Anillo | Frase en Lengua Negra del Anillo Único |
+| `buscar-mordor` | Buscar en Mordor | Buscador global |
 
 ### Menú
-| Clave | Término | Significado | Apunta a |
-|---|---|---|---|
-| `la-torre` | La Torre | Dashboard con KPIs y gráfico | `?page=dash` |
-| `fortalezas` | Fortalezas | Locales/sedes con cámaras, plano y aforo | `?page=locales` |
-| `pueblos` | Pueblos | Visitantes con identidad facial | `?page=visitantes` |
-| `movimientos` | Movimientos | Accesos: entradas y salidas | `?page=accesos` |
-| `lineas` | Líneas | Cruces de línea virtuales | `?page=lineas` |
-| `caminos` | Caminos | Rutas entre cámaras | `?page=rutas` |
-| `la-forja` | La Forja | Configuración | `?page=config` |
-| `ojo-en-vivo` | El Ojo en Vivo | Cámaras en directo | `?page=camaras` |
-| `fichajes` | Fichajes | Control horario de trabajadores | `?page=fichajes` |
-| `el-concilio` | El Concilio | Ayuda | `?page=ayuda` |
+| Clave | Término | Significado |
+|---|---|---|
+| `la-torre` | La Torre | Dashboard con KPIs y gráfico |
+| `fortalezas` | Fortalezas | Locales/sedes con cámaras, plano y aforo |
+| `pueblos` | Pueblos | Visitantes con identidad facial |
+| `movimientos` | Movimientos | Accesos: entradas y salidas |
+| `lineas` | Líneas | Cruces de línea virtuales |
+| `caminos` | Caminos | Rutas entre cámaras |
+| `la-forja` | La Forja | Configuración |
+| `ojo-en-vivo` | El Ojo en Vivo | Cámaras en directo |
+| `fichajes` | Fichajes | Control horario de trabajadores |
+| `el-concilio` | El Concilio | Ayuda |
 
 ### Dashboard
-| Clave | Término | Significado | Apunta a |
-|---|---|---|---|
-| `cronicas-guerra` | Crónicas de Guerra | Panel de KPIs | `?page=dash` |
-| `reinvocar-datos` | Reinvocar Datos | Refrescar datos | `?page=dash` |
-| `almas-fortaleza` | Almas en la Fortaleza | Aforo actual | `?page=dash` |
-| `cruzaron-puerta` | Cruzaron la Puerta Negra | Visitas de hoy | `?page=accesos` |
-| `huestes-dia` | Huestes al Día | Media diaria de visitas | `?page=dash` |
-| `leales-mordor` | Leales a Mordor | Visitantes recurrentes | `?page=visitantes` |
-| `mapa-asedio` | Mapa de Asedio | Gráfico actual vs anterior | `?page=dash` |
-| `elegir-era` | Elegir era | Selector de periodo | `?page=dash` |
-| `un-amanecer` / `una-luna` / `un-ciclo` / `una-era` | — | Filtros día/semana/mes/año | `?page=dash&filtro=…` |
+| Clave | Término | Significado |
+|---|---|---|
+| `cronicas-guerra` | Crónicas de Guerra | Panel de KPIs |
+| `reinvocar-datos` | Reinvocar Datos | Refrescar datos |
+| `almas-fortaleza` | Almas en la Fortaleza | Aforo actual |
+| `cruzaron-puerta` | Cruzaron la Puerta Negra | Visitas de hoy |
+| `huestes-dia` | Huestes al Día | Media diaria de visitas |
+| `leales-mordor` | Leales a Mordor | Visitantes recurrentes |
+| `mapa-asedio` | Mapa de Asedio | Gráfico actual vs anterior |
+| `elegir-era` | Elegir era | Selector de periodo |
+| `un-amanecer` / `una-luna` / `un-ciclo` / `una-era` | — | Filtros día/semana/mes/año |
 
 ### Notificaciones
 | Clave | Término | Significado |
@@ -139,16 +134,15 @@ Reglas:
 | `encendida` | Encendida | Cámara activa |
 
 ### El Concilio
-| Clave | Término | Significado | Apunta a |
-|---|---|---|---|
-| `guia-reino` | Guía del Reino | Resumen de secciones | `?page=ayuda` |
-| `preguntas-frecuentes` | Preguntas Frecuentes | FAQ | `?page=ayuda` |
-| `ultimo-recurso` | Último Recurso | Contacto / diagnóstico | `?page=ayuda` |
+| Clave | Término | Significado |
+|---|---|---|
+| `guia-reino` | Guía del Reino | Resumen de secciones |
+| `preguntas-frecuentes` | Preguntas Frecuentes | FAQ |
+| `ultimo-recurso` | Último Recurso | Contacto / diagnóstico |
 
 ## 7. Criterios de aceptación
 
-- [ ] Todo término del catálogo muestra bocadillo (hover y focus) con significado + destino.
+- [ ] Todo término del catálogo muestra bocadillo (hover y focus) con significado.
 - [ ] Texto no temático NO dispara bocadillos (cero falsos positivos verificados en listados).
 - [ ] Términos ambiguos solo se explican donde llevan `data-lore`.
-- [ ] En login no se generan enlaces a rutas del panel (`body.login`).
 - [ ] `php -l` verde en los PHP tocados.
