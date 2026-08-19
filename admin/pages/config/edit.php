@@ -470,10 +470,10 @@ function rf_cfg_select_rango($ini, $fin, $valor) {
 
 <!-- ============ Modal: editor de croquis a mano alzada (tipo Paint) ============ -->
 <div id="planoDibujoModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="planoDibujoTitulo">
-    <div class="modal__content box p-5">
+    <div class="modal__content modal__content--xl box p-5">
         <div class="flex items-center mb-4">
             <h3 id="planoDibujoTitulo" class="media-modal__title mr-auto truncate">✏️ Dibujar croquis del local</h3>
-            <a href="javascript:;" data-dismiss="modal" class="button button--sm text-white bg-theme-6 ml-3">Cerrar</a>
+            <a href="javascript:;" onclick="cerrarDibujo()" class="button button--sm text-white bg-theme-6 ml-3">Cerrar</a>
         </div>
 
         <div class="dibujo-toolbar">
@@ -503,7 +503,7 @@ function rf_cfg_select_rango($ini, $fin, $valor) {
 
         <div class="mt-4 flex flex-wrap gap-2 items-center">
             <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="guardarDibujo()">Guardar como plano</button>
-            <a href="javascript:;" data-dismiss="modal" class="button text-white bg-theme-6 shadow-md">Cancelar</a>
+            <a href="javascript:;" onclick="cerrarDibujo()" class="button text-white bg-theme-6 shadow-md">Cancelar</a>
         </div>
     </div>
 </div>

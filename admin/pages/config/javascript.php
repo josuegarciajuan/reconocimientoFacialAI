@@ -832,22 +832,30 @@ function abrirDibujo() {
     cargarDibujoFondo();
     dibujoRedibujar();
     dibujo.abierto = true;
-    if (typeof rfAbrirModal === "function") {
-        rfAbrirModal("planoDibujoModal");
-    } else {
-        document.getElementById("planoDibujoModal").style.display = "block";
+
+    // Abrir el modal Midone sin depender del trigger de app.js: el .modal se
+    // oculta con visibility/opacity y margin-top/left: -10000px (no con
+    // display:none), así que se muestra con la clase .show y reajustando márgenes.
+    var modal = document.getElementById("planoDibujoModal");
+    modal.classList.add("show");
+    modal.style.marginTop = "0";
+    modal.style.marginLeft = "0";
+    modal.style.zIndex = "99999";
+    if (modal.parentNode !== document.body) {
+        document.body.appendChild(modal);
     }
+    document.body.classList.add("overflow-y-hidden");
 }
 
 function cerrarDibujo() {
     dibujo.abierto = false;
     var modal = document.getElementById("planoDibujoModal");
-    var cerrar = modal.querySelector('[data-dismiss="modal"]');
-    if (cerrar) {
-        cerrar.click();
-    } else {
-        modal.style.display = "none";
-    }
+    if (!modal) return;
+    modal.classList.remove("show");
+    modal.style.marginTop = "";
+    modal.style.marginLeft = "";
+    modal.style.zIndex = "";
+    document.body.classList.remove("overflow-y-hidden");
 }
 
 document.addEventListener("DOMContentLoaded", function () {
