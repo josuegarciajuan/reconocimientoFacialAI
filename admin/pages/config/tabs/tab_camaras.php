@@ -1,82 +1,25 @@
 <?php
-/* La Forja · Tab Cámaras: crear cámara + editar cámara (con parámetros de análisis).
+/* La Forja · Tab Cámaras (sabor: Forjar): crear cámara + editar cámara.
  * El lienzo de trabajo (canvasID) vive en edit.php, siempre visible.
+ * Sub-acciones: Forjar (crear) / Templar (editar) — resueltas en $sub.
  * Variables disponibles: $camaras, $camara_sel, $cfg, $puerta_sel, $salida_sel,
  * $encendida_sel, $sistema_sel y la función rf_cfg_select_rango() (edit.php).
  */
 ?>
 
-<!-- ---------- Crear cámara ---------- -->
-<div class="form-section">
-    <div class="form-section__title">
-        <span class="form-section__emoji" aria-hidden="true">📷</span>
-        Crear cámara
-    </div>
-
-    <div class="form-grid">
-        <div>
-            <label for="nombre_nueva" class="field-label">Descripción</label>
-            <input type="text" name="nombre_nueva" id="nombre_nueva" class="input border w-full" placeholder="Descripción">
-        </div>
-        <div>
-            <label for="url_conexion_nueva" class="field-label">URL de conexión / ID cámara local</label>
-            <input type="text" name="url_conexion_nueva" id="url_conexion_nueva" class="input border w-full" placeholder="Url conexion / id camara local">
-        </div>
-        <div>
-            <label for="ipcamlive_alias" class="field-label">Alias IPCamlive</label>
-            <input type="text" name="ipcamlive_alias" id="ipcamlive_alias" class="input border w-full" placeholder="ipcamlive_alias">
-        </div>
-
-        <div>
-            <span class="field-label">Tipo de acceso</span>
-            <div class="flex flex-wrap gap-x-4 gap-y-2 items-center">
-                <label for="entrada1" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="puerta-camara">
-                    <input type="radio" name="eos1" id="entrada1" value="entrada" style="accent-color:var(--mordor-oro)"> Puerta
-                </label>
-                <label for="salida1" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="salida-camara">
-                    <input type="radio" name="eos1" id="salida1" value="salida" style="accent-color:var(--mordor-oro)"> Salida
-                </label>
-            </div>
-        </div>
-
-        <div>
-            <span class="field-label">Estado</span>
-            <label for="encendida_nueva" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="encendida">
-                <input type="checkbox" name="encendida_nueva" id="encendida_nueva" value="1" style="accent-color:var(--mordor-oro)"> Encendida
-            </label>
-        </div>
-
-        <div>
-            <span class="field-label">Origen de vídeo</span>
-            <div class="flex flex-wrap gap-x-4 gap-y-2 items-center">
-                <label for="tipo_camara_ip" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <input type="radio" name="tipo_camara" id="tipo_camara_ip" value="ip" style="accent-color:var(--mordor-oro)"> Cámara IP
-                </label>
-                <label for="tipo_camara_grabador" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <input type="radio" name="tipo_camara" id="tipo_camara_grabador" value="grabador" style="accent-color:var(--mordor-oro)"> Grabador
-                </label>
-            </div>
-        </div>
-
-        <div class="form-grid__full">
-            <span class="field-label">Posición en el plano</span>
-            <div class="flex flex-wrap gap-x-4 gap-y-2 items-center">
-                <div class="flex items-center gap-2">
-                    <label for="x_nueva" class="text-sm text-gray-600 dark:text-gray-400">X</label>
-                    <input type="text" name="x_nueva" id="x_nueva" class="input border w-24" readonly placeholder="X">
-                </div>
-                <div class="flex items-center gap-2">
-                    <label for="y_nueva" class="text-sm text-gray-600 dark:text-gray-400">Y</label>
-                    <input type="text" name="y_nueva" id="y_nueva" class="input border w-24" readonly placeholder="Y">
-                </div>
-                <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="crear()">Crear cámara</button>
-            </div>
-        </div>
-    </div>
+<!-- ---------- Submenú de la pestaña ---------- -->
+<div class="forge-submenu" role="tablist" aria-label="Acciones de cámaras">
+    <a role="tab" aria-selected="<?= $sub === "crear" ? "true" : "false"; ?>"
+       class="forge-sub<?= $sub === "crear" ? " is-active" : ""; ?>"
+       href="?page=config&tab=camaras&sub=crear" data-lore="forjar">Forjar</a>
+    <a role="tab" aria-selected="<?= $sub === "editar" ? "true" : "false"; ?>"
+       class="forge-sub<?= $sub === "editar" ? " is-active" : ""; ?>"
+       href="?page=config&tab=camaras&sub=editar" data-lore="templar">Templar</a>
 </div>
 
-<!-- ---------- Editar cámara ---------- -->
-<div class="form-section">
+<?php if ($sub === "editar"): ?>
+<!-- ---------- Templar (editar cámara) ---------- -->
+<div class="form-section" data-panel-forge="editar">
     <div class="form-section__title">
         <span class="form-section__emoji" aria-hidden="true">✏️</span>
         Editar cámara
@@ -114,12 +57,15 @@
             <span class="field-label">Tipo de acceso</span>
             <div class="flex flex-wrap gap-x-4 gap-y-2 items-center">
                 <label for="entrada2" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="puerta-camara">
-                    <input type="radio" name="eos2" id="entrada2" value="entrada" style="accent-color:var(--mordor-oro)" <?= $puerta_sel === 1 ? "checked" : ""; ?>> Puerta
+                    <input type="checkbox" name="eos2_puerta" id="entrada2" value="1" style="accent-color:var(--mordor-oro)" <?= $puerta_sel === 1 ? "checked" : ""; ?>> Puerta
                 </label>
                 <label for="salida2" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="salida-camara">
-                    <input type="radio" name="eos2" id="salida2" value="salida" style="accent-color:var(--mordor-oro)" <?= $salida_sel === 1 ? "checked" : ""; ?>> Salida
+                    <input type="checkbox" name="eos2_salida" id="salida2" value="1" style="accent-color:var(--mordor-oro)" <?= $salida_sel === 1 ? "checked" : ""; ?>> Salida
                 </label>
             </div>
+            <p class="text-xs text-gray-500 dark:text-gray-600 mt-1" data-lore="puerta-y-salida">
+                Puedes marcar ambas: la cámara será de entrada y salida a la vez.
+            </p>
         </div>
 
         <div>
@@ -208,3 +154,77 @@
         <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="guardar()">Guardar cámara</button>
     </div>
 </div>
+
+<?php else: ?>
+<!-- ---------- Forjar (crear cámara) ---------- -->
+<div class="form-section" data-panel-forge="crear">
+    <div class="form-section__title">
+        <span class="form-section__emoji" aria-hidden="true">📷</span>
+        Crear cámara
+    </div>
+
+    <div class="form-grid">
+        <div>
+            <label for="nombre_nueva" class="field-label">Descripción</label>
+            <input type="text" name="nombre_nueva" id="nombre_nueva" class="input border w-full" placeholder="Descripción">
+        </div>
+        <div>
+            <label for="url_conexion_nueva" class="field-label">URL de conexión / ID cámara local</label>
+            <input type="text" name="url_conexion_nueva" id="url_conexion_nueva" class="input border w-full" placeholder="Url conexion / id camara local">
+        </div>
+        <div>
+            <label for="ipcamlive_alias" class="field-label">Alias IPCamlive</label>
+            <input type="text" name="ipcamlive_alias" id="ipcamlive_alias" class="input border w-full" placeholder="ipcamlive_alias">
+        </div>
+
+        <div>
+            <span class="field-label">Tipo de acceso</span>
+            <div class="flex flex-wrap gap-x-4 gap-y-2 items-center">
+                <label for="entrada1" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="puerta-camara">
+                    <input type="checkbox" name="eos1_puerta" id="entrada1" value="1" style="accent-color:var(--mordor-oro)"> Puerta
+                </label>
+                <label for="salida1" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="salida-camara">
+                    <input type="checkbox" name="eos1_salida" id="salida1" value="1" style="accent-color:var(--mordor-oro)"> Salida
+                </label>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-600 mt-1" data-lore="puerta-y-salida">
+                Puedes marcar ambas: la cámara será de entrada y salida a la vez.
+            </p>
+        </div>
+
+        <div>
+            <span class="field-label">Estado</span>
+            <label for="encendida_nueva" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="encendida">
+                <input type="checkbox" name="encendida_nueva" id="encendida_nueva" value="1" style="accent-color:var(--mordor-oro)"> Encendida
+            </label>
+        </div>
+
+        <div>
+            <span class="field-label">Origen de vídeo</span>
+            <div class="flex flex-wrap gap-x-4 gap-y-2 items-center">
+                <label for="tipo_camara_ip" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <input type="radio" name="tipo_camara" id="tipo_camara_ip" value="ip" style="accent-color:var(--mordor-oro)"> Cámara IP
+                </label>
+                <label for="tipo_camara_grabador" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <input type="radio" name="tipo_camara" id="tipo_camara_grabador" value="grabador" style="accent-color:var(--mordor-oro)"> Grabador
+                </label>
+            </div>
+        </div>
+
+        <div class="form-grid__full">
+            <span class="field-label">Posición en el plano</span>
+            <div class="flex flex-wrap gap-x-4 gap-y-2 items-center">
+                <div class="flex items-center gap-2">
+                    <label for="x_nueva" class="text-sm text-gray-600 dark:text-gray-400">X</label>
+                    <input type="text" name="x_nueva" id="x_nueva" class="input border w-24" readonly placeholder="X">
+                </div>
+                <div class="flex items-center gap-2">
+                    <label for="y_nueva" class="text-sm text-gray-600 dark:text-gray-400">Y</label>
+                    <input type="text" name="y_nueva" id="y_nueva" class="input border w-24" readonly placeholder="Y">
+                </div>
+                <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="crear()">Crear cámara</button>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>

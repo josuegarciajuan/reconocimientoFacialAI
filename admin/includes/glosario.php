@@ -373,14 +373,69 @@ function rf_glosario() {
         ],
 
         /* ---------------- La Forja (Config) ---------------- */
+        "el-yunque" => [
+            "termino"    => "El Yunque",
+            "significado" => "El plano del local: el lienzo donde se colocan cámaras y nodos y se dibujan las líneas. Es la base sobre la que se trabaja en La Forja.",
+            "match"      => "explicito",
+        ],
+        "forjar" => [
+            "termino"    => "Forjar",
+            "significado" => "Crear una cámara nueva: dar forma al metal. Marca su posición en el lienzo y dale nombre.",
+            "match"      => "explicito",
+        ],
+        "forja-camaras" => [
+            "termino"    => "Forjar (Cámaras)",
+            "significado" => "La sección de cámaras de La Forja: aquí se crean y se templan (editan) las cámaras del local.",
+            "match"      => "explicito",
+        ],
+        "templar" => [
+            "termino"    => "Templar",
+            "significado" => "Editar una cámara existente y ajustar sus parámetros de análisis. El temple es el ajuste fino de la dureza del metal.",
+            "match"      => "explicito",
+        ],
+        "cadenas" => [
+            "termino"    => "Cadenas",
+            "significado" => "Los nodos: puntos que unen dos cámaras en el plano. Son los eslabones que permiten reconstruir los caminos de las personas entre cámaras.",
+            "match"      => "explicito",
+        ],
+        "unir-nodos" => [
+            "termino"    => "Unir",
+            "significado" => "Crear nodos: marcar en el lienzo los puntos del camino que une dos cámaras.",
+            "match"      => "explicito",
+        ],
+        "romper" => [
+            "termino"    => "Romper",
+            "significado" => "Eliminar la cadena de nodos que une dos cámaras.",
+            "match"      => "explicito",
+        ],
+        "trazos" => [
+            "termino"    => "Trazos",
+            "significado" => "Las líneas de vigilancia: líneas virtuales dibujadas sobre la foto de una cámara. Cuando alguien las cruza se registra un cruce con su dirección.",
+            "match"      => "explicito",
+        ],
+        "trazar" => [
+            "termino"    => "Trazar",
+            "significado" => "Dibujar una línea nueva sobre la foto de la cámara: dos clics, uno para el inicio y otro para el final.",
+            "match"      => "explicito",
+        ],
+        "corregir" => [
+            "termino"    => "Corregir",
+            "significado" => "Editar una línea existente: reposicionar sus extremos sobre la foto de la cámara.",
+            "match"      => "explicito",
+        ],
         "puerta-camara" => [
             "termino"    => "Puerta",
-            "significado" => "Cámara de entrada: marca el instante en que alguien cruza hacia dentro (genera el 'acceso' de entrada y los fichajes).",
+            "significado" => "Cámara de entrada: marca el instante en que alguien cruza hacia dentro (genera el 'acceso' de entrada y los fichajes). Puede ser también de salida si se marca ambas.",
             "match"      => "explicito",
         ],
         "salida-camara" => [
             "termino"    => "Salida",
-            "significado" => "Cámara de salida: marca el instante en que alguien cruza hacia fuera (genera el acceso de salida y cierra los fichajes del día).",
+            "significado" => "Cámara de salida: marca el instante en que alguien cruza hacia fuera (genera el acceso de salida y cierra los fichajes del día). Puede ser también de entrada si se marca ambas.",
+            "match"      => "explicito",
+        ],
+        "puerta-y-salida" => [
+            "termino"    => "Entrada y salida a la vez",
+            "significado" => "Una cámara puede ser de Puerta (entrada) y Salida a la vez si las personas entran y salen por el mismo sitio.",
             "match"      => "explicito",
         ],
         "encendida" => [
