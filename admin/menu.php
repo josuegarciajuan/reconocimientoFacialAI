@@ -6,12 +6,13 @@
  * 06/08/2020
  * 
  * MEJORA 2026-08-19 (reordenación del menú):
- *   - "La Forja" (⚒️ config) pasa a PRIMERA posición con tratamiento hero.
+ *   - "La Torre" (👁️ dash) abre el menú en PRIMERA posición; "La Forja"
+ *     (⚒️ config) le sigue en segunda con tratamiento hero.
  *   - Se retiran "El Ojo en Vivo" (camaras), "Fortalezas" (locales) y
  *     "Fichajes" (fichajes): siguen accesibles vía ring-hub, dashboard y
  *     la pestaña "Fortalezas" dentro de La Forja.
- *   - Orden final: Forja / Movimientos / Pueblos / Caminos / Líneas /
- *     La Torre / El Concilio.
+ *   - Orden final: La Torre / Forja / Movimientos / Pueblos / Caminos /
+ *     Líneas / El Concilio.
  */
 
 ?>
@@ -19,6 +20,13 @@
 <!-- BEGIN: Top Menu -->
 <nav class="top-nav">
     <ul>
+        <li>
+            <a href="?page=dash" class="top-menu top-menu<?php if(!isset($_GET["page"]) or $_GET["page"]=="" or $_GET["page"]=="dash"){ echo "--active"; } ?>">
+                <div class="menu__icon menu__emoji">👁️</div>
+                <div class="top-menu__title"> La Torre </div>
+            </a>
+        </li>
+
         <li>
             <a href="?page=config" class="top-menu top-menu--hero top-menu<?php if(isset($_GET["page"]) and $_GET["page"]=="config"){ echo "--active"; } ?>">
                 <div class="menu__icon menu__emoji">⚒️</div>
@@ -68,13 +76,6 @@
         </li>
 
         <li class="top-nav__sep" aria-hidden="true"></li>
-
-        <li>
-            <a href="?page=dash" class="top-menu top-menu<?php if(!isset($_GET["page"]) or $_GET["page"]=="" or $_GET["page"]=="dash"){ echo "--active"; } ?>">
-                <div class="menu__icon menu__emoji">👁️</div>
-                <div class="top-menu__title"> La Torre </div>
-            </a>
-        </li>
 
         <li>
             <a href="?page=ayuda" class="top-menu top-menu<?php if(isset($_GET["page"]) and $_GET["page"]=="ayuda"){ echo "--active"; } ?>">

@@ -10,7 +10,8 @@
  * (<768px). Solo existe en móvil (md:hidden).
  * 
  * MEJORA 2026-08-19 (reordenación del menú):
- *   - "La Forja" (⚒️ config) pasa a PRIMERA posición con tratamiento hero.
+ *   - "La Torre" (👁️ dash) abre el drawer en PRIMERA posición; "La Forja"
+ *     (⚒️ config) le sigue en segunda con tratamiento hero.
  *   - Se retiran "El Ojo en Vivo", "Fortalezas" y "Fichajes" (accesibles
  *     vía ring-hub, dashboard y la pestaña "Fortalezas" de La Forja).
  */
@@ -30,6 +31,15 @@
         </a>
     </div>
     <ul class="panel-drawer__menu">
+
+        <li>
+            <a href="?page=dash" class="menu menu<?php if(!isset($_GET["page"]) or $_GET["page"]=="" or $_GET["page"]=="dash"){ echo "--active"; } ?>">
+
+                <div class="menu__icon menu__emoji">👁️</div>
+
+                <div class="menu__title"> La Torre </div>
+            </a>
+        </li>
 
         <li>
             <a href="?page=config" class="menu menu--hero menu<?php if(isset($_GET["page"]) and $_GET["page"]=="config"){ echo "--active"; } ?>">
@@ -84,15 +94,6 @@
         </li>
 
         <li class="panel-drawer__sep" aria-hidden="true"></li>
-
-        <li>
-            <a href="?" class="menu menu<?php if(!isset($_GET["page"]) or $_GET["page"]=="" or $_GET["page"]=="dash"){ echo "--active"; } ?>">
-
-                <div class="menu__icon menu__emoji">👁️</div>
-
-                <div class="menu__title"> La Torre </div>
-            </a>
-        </li>
 
         <li>
             <a href="?page=ayuda" class="menu menu<?php if(isset($_GET["page"]) and $_GET["page"]=="ayuda"){ echo "--active"; } ?>">
