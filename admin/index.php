@@ -1716,10 +1716,52 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
         
         
 
-        <!-- BEGIN: Un Anillo para gobernarlos a todos -->
-        <div class="ring-widget" role="img" aria-label="Un Anillo para gobernarlos a todos">
-            <span class="ring-widget__emoji">💍</span>
-            <span class="ring-widget__label">Un Anillo</span>
+        <!-- BEGIN: El Ojo del Anillo — centro de mando flotante -->
+        <div class="ring-hub-root">
+            <button type="button" class="ring-widget" id="ring-widget"
+                    aria-haspopup="dialog" aria-expanded="false" aria-controls="ring-hub"
+                    aria-label="Un Anillo para gobernarlos a todos — abre el centro de mando">
+                <span class="ring-widget__emoji" aria-hidden="true">💍</span>
+                <span class="ring-widget__label">Un Anillo</span>
+                <span class="ring-widget__badge" id="ring-hub-badge" aria-hidden="true"></span>
+            </button>
+
+            <div class="ring-hub" id="ring-hub" role="dialog" aria-label="Centro de mando del Anillo" aria-hidden="true">
+                <div class="ring-hub__head">
+                    <div class="ring-hub__title">💍 Un Anillo para gobernarlos</div>
+                    <div class="ring-hub__estado" id="ring-hub-estado">El Ojo vigila</div>
+                    <button type="button" class="ring-hub__close" id="ring-hub-cerrar" aria-label="Cerrar el centro de mando">✕</button>
+                </div>
+
+                <form class="ring-hub__search" id="ring-hub-form" role="search">
+                    <label class="ring-hub__search-label" for="ring-hub-buscar">🔍 Buscar en Mordor</label>
+                    <div class="ring-hub__search-row">
+                        <input type="text" id="ring-hub-buscar" class="ring-hub__search-input"
+                               placeholder="Persona, código, cámara…" autocomplete="off">
+                        <button type="submit" class="ring-hub__search-btn">Ir</button>
+                    </div>
+                </form>
+
+                <nav class="ring-hub__nav" aria-label="Accesos rápidos del panel">
+                    <a class="ring-hub__nav-link" href="?page=dash"><span aria-hidden="true">👁️</span> La Torre</a>
+                    <a class="ring-hub__nav-link" href="?page=camaras"><span aria-hidden="true">📡</span> El Ojo en Vivo</a>
+                    <?php if (($_SESSION["admin"] ?? 0) == 1): ?>
+                    <a class="ring-hub__nav-link" href="?page=locales"><span aria-hidden="true">🏰</span> Fortalezas</a>
+                    <?php endif; ?>
+                    <a class="ring-hub__nav-link" href="?page=visitantes"><span aria-hidden="true">👹</span> Pueblos</a>
+                    <a class="ring-hub__nav-link" href="?page=accesos"><span aria-hidden="true">⚔️</span> Movimientos</a>
+                    <a class="ring-hub__nav-link" href="?page=lineas"><span aria-hidden="true">📐</span> Líneas</a>
+                    <a class="ring-hub__nav-link" href="?page=rutas"><span aria-hidden="true">🗺️</span> Caminos</a>
+                    <a class="ring-hub__nav-link" href="?page=config"><span aria-hidden="true">⚒️</span> La Forja</a>
+                    <a class="ring-hub__nav-link" href="?page=fichajes"><span aria-hidden="true">⏳</span> Fichajes</a>
+                    <a class="ring-hub__nav-link" href="?page=ayuda"><span aria-hidden="true">📜</span> El Concilio</a>
+                </nav>
+
+                <div class="ring-hub__daemons">
+                    <div class="ring-hub__section-title">Los Seis Centinelas <span class="ring-hub__hint">· en vivo</span></div>
+                    <div class="ring-hub__daemons-grid" id="ring-hub-daemons"><div class="ring-hub__daemons-hint">Revisando los centinelas…</div></div>
+                </div>
+            </div>
         </div>
         <!-- END: Anillo -->
         <!-- Cenizas del Monte del Destino -->
@@ -1730,6 +1772,7 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
         <script src="./files/app.js"></script>
         <script src="./files/sauron-eye.js"></script>
         <script src="./files/ui-common.js"></script>
+        <script src="./files/ring-hub.js?v=20260819"></script>
         <!-- Lore: glosario temático + motor de bocadillos -->
         <script>window.RF_GLOSARIO = <?= rf_glosario_json(); ?>;</script>
         <script src="./files/lore.js"></script>

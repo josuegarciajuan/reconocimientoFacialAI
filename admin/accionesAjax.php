@@ -55,6 +55,33 @@ switch ($_GET["a"]) {
         ], JSON_UNESCAPED_UNICODE);
         break;
 
+    case "7": // anillo: resumen de anomalías (semáforo "El Anillo arde") + cabecera del hub
+        header("Content-Type: application/json; charset=utf-8");
+        $daemons = dash_daemons();
+        $en_pie = 0; $caidos = [];
+        foreach ($daemons as $d) {
+            if ($d["estado"] === "active") { $en_pie++; } else { $caidos[] = $d["nombre"]; }
+        }
+        $cam = DB::selectOne(
+            "SELECT COUNT(*) AS total, SUM(CASE WHEN encendida = 0 THEN 1 ELSE 0 END) AS apagadas
+             FROM camaras WHERE local_id = ?",
+            [$local_id]
+        );
+        $aforo = dash_aforo($local_id);
+        $anomalias = 0; $detalle = [];
+        if ((int)($cam["apagadas"] ?? 0) > 0) { $anomalias++; $detalle[] = (int)$cam["apagadas"] . " cámara(s) apagada(s)"; }
+        if (count($caidos) > 0)               { $anomalias++; $detalle[] = count($caidos) . " centinela(s) caído(s)"; }
+        if ((int)$aforo["pct"] >= 85)         { $anomalias++; $detalle[] = "aforo al " . $aforo["pct"] . "%"; }
+        echo json_encode([
+            "ok"        => true,
+            "daemons"   => ["en_pie" => $en_pie, "total" => count($daemons), "caidos" => $caidos],
+            "camaras"   => ["total" => (int)($cam["total"] ?? 0), "apagadas" => (int)($cam["apagadas"] ?? 0)],
+            "aforo"     => ["actual" => $aforo["actual"], "max" => $aforo["max"], "pct" => $aforo["pct"], "estado" => $aforo["estado"]],
+            "anomalias" => $anomalias,
+            "detalle"   => $detalle,
+        ], JSON_UNESCAPED_UNICODE);
+        break;
+
     case "1": // notificaciones sin ver
         $return = "false";
         $rows = DB::select(

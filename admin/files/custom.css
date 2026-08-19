@@ -683,7 +683,55 @@ html.dark {
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8), 0 0 18px -4px rgba(201, 162, 39, 0.35);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  cursor: default;
+  cursor: pointer;
+  font-family: inherit;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.ring-widget:hover,
+.ring-widget:focus-visible {
+  border-color: rgba(201, 162, 39, 0.75);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8), 0 0 26px -6px rgba(201, 162, 39, 0.65);
+}
+
+/* El Anillo arde: hay anomalías en Mordor (centinelas/cámaras/aforo) */
+.ring-widget--arde {
+  border-color: rgba(255, 90, 31, 0.85);
+  background: rgba(30, 14, 8, 0.92);
+  animation: ring-widget-arde 1.6s ease-in-out infinite;
+}
+
+@keyframes ring-widget-arde {
+  0%, 100% { box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.85), 0 0 22px -4px rgba(255, 90, 31, 0.55); }
+  50%      { box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.85), 0 0 42px -2px rgba(255, 90, 31, 0.95); }
+}
+
+.ring-widget__badge {
+  position: absolute;
+  top: -0.4rem;
+  right: -0.4rem;
+  min-width: 1.3rem;
+  height: 1.3rem;
+  padding: 0 0.3rem;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #ff5a1f, #e03c00);
+  border: 2px solid #0d0a0e;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.ring-widget__badge--show {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .ring-widget__emoji {
@@ -703,6 +751,295 @@ html.dark {
 @keyframes ring-widget-float {
   0%, 100% { transform: translateY(0) rotate(0deg); }
   50% { transform: translateY(-3px) rotate(-8deg); }
+}
+
+/* ============================================================
+   EL OJO DEL ANILLO — centro de mando flotante
+   Popover anclado al widget "Un Anillo" (abajo a la derecha).
+   ============================================================ */
+.ring-hub {
+  position: fixed;
+  bottom: 5.4rem;
+  right: 1.25rem;
+  z-index: 80;
+  width: min(380px, calc(100vw - 2.5rem));
+  max-height: min(620px, calc(100vh - 7.5rem));
+  overflow-y: auto;
+  border-radius: 1rem;
+  background: rgba(13, 10, 14, 0.97);
+  border: 1px solid rgba(201, 162, 39, 0.4);
+  box-shadow: 0 24px 60px -18px rgba(0, 0, 0, 0.9), 0 0 30px -8px rgba(201, 162, 39, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(10px) scale(0.98);
+  transform-origin: bottom right;
+  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s;
+  pointer-events: none;
+}
+
+.ring-hub--open {
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.ring-hub__head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid rgba(201, 162, 39, 0.18);
+}
+
+.ring-hub__title {
+  font-family: "Cinzel", serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #f0d78c;
+}
+
+.ring-hub__estado {
+  margin-left: auto;
+  font-size: 0.66rem;
+  color: var(--mordor-humo);
+  letter-spacing: 0.03em;
+}
+
+.ring-hub__close {
+  flex: none;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(201, 162, 39, 0.3);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--mordor-ceniza);
+  font-size: 0.75rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.ring-hub__close:hover,
+.ring-hub__close:focus-visible {
+  color: #f6e6ae;
+  border-color: rgba(255, 90, 31, 0.65);
+  background: rgba(255, 90, 31, 0.12);
+}
+
+.ring-hub__search {
+  padding: 0.75rem 1rem 0.5rem;
+}
+
+.ring-hub__search-label {
+  display: block;
+  font-family: "Cinzel", serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mordor-oro);
+  margin-bottom: 0.4rem;
+}
+
+.ring-hub__search-row {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.ring-hub__search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.5rem;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(201, 162, 39, 0.28);
+  color: var(--mordor-ceniza);
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ring-hub__search-input::placeholder {
+  color: rgba(138, 128, 120, 0.7);
+}
+
+.ring-hub__search-input:focus {
+  border-color: rgba(255, 90, 31, 0.7);
+  box-shadow: 0 0 0 3px rgba(255, 90, 31, 0.15);
+}
+
+.ring-hub__search-btn {
+  flex: none;
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(201, 162, 39, 0.4);
+  background: linear-gradient(180deg, rgba(255, 90, 31, 0.25), rgba(224, 60, 0, 0.12));
+  color: #f6e6ae;
+  font-family: "Cinzel", serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ring-hub__search-btn:hover,
+.ring-hub__search-btn:focus-visible {
+  border-color: rgba(255, 90, 31, 0.8);
+  box-shadow: 0 0 12px -3px rgba(255, 90, 31, 0.6);
+}
+
+.ring-hub__nav {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.4rem;
+  padding: 0.4rem 1rem 0.7rem;
+}
+
+.ring-hub__nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.42rem 0.6rem;
+  border-radius: 0.55rem;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(201, 162, 39, 0.18);
+  color: var(--mordor-ceniza);
+  font-size: 0.8rem;
+  text-decoration: none;
+  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ring-hub__nav-link span {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.ring-hub__nav-link:hover,
+.ring-hub__nav-link:focus-visible {
+  color: #f6e6ae;
+  background: rgba(255, 90, 31, 0.12);
+  border-color: rgba(201, 162, 39, 0.6);
+  box-shadow: 0 0 10px -3px rgba(255, 90, 31, 0.5);
+}
+
+.ring-hub__daemons {
+  padding: 0.3rem 1rem 1rem;
+  border-top: 1px solid rgba(201, 162, 39, 0.14);
+}
+
+.ring-hub__section-title {
+  font-family: "Cinzel", serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mordor-oro);
+  margin: 0.6rem 0 0.55rem;
+}
+
+.ring-hub__hint {
+  color: var(--mordor-humo);
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+}
+
+.ring-hub__daemons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.55rem;
+}
+
+.ring-hub__daemons-hint {
+  grid-column: 1 / -1;
+  font-size: 0.7rem;
+  color: var(--mordor-humo);
+  font-style: italic;
+  padding: 0.25rem 0;
+}
+
+/* Tiles de centinelas compactos (dashboard.css no se carga fuera del dashboard) */
+.ring-hub .daemon-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.7rem 0.5rem;
+  border-radius: 0.8rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(201, 162, 39, 0.16);
+  text-align: center;
+}
+
+.ring-hub .daemon-tile__led {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.5rem;
+  width: 9px;
+  height: 9px;
+  border-radius: 9999px;
+}
+
+.ring-hub .daemon-tile--active .daemon-tile__led {
+  background: #7fa86b;
+  animation: ring-hub-live-pulse 1.8s ease-in-out infinite;
+}
+
+.ring-hub .daemon-tile--failed .daemon-tile__led {
+  background: #e5484d;
+  animation: ring-hub-alerta-pulso 1.4s ease-in-out infinite;
+}
+
+.ring-hub .daemon-tile--idle .daemon-tile__led    { background: #8a8078; }
+.ring-hub .daemon-tile--unknown .daemon-tile__led { background: rgba(201, 162, 39, 0.4); }
+
+.ring-hub .daemon-tile__emoji {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.ring-hub .daemon-tile__name {
+  font-family: "Cinzel", serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--mordor-ceniza);
+}
+
+.ring-hub .daemon-tile__svc {
+  font-size: 0.55rem;
+  color: var(--mordor-humo);
+}
+
+.ring-hub .daemon-tile__estado {
+  margin-top: 0.25rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.ring-hub .daemon-tile--active .daemon-tile__estado { background: rgba(125, 168, 107, 0.16); color: #a8c99a; border: 1px solid rgba(125, 168, 107, 0.4); }
+.ring-hub .daemon-tile--failed .daemon-tile__estado { background: rgba(229, 72, 77, 0.16); color: #ff8f93; border: 1px solid rgba(229, 72, 77, 0.45); }
+.ring-hub .daemon-tile--idle .daemon-tile__estado    { background: rgba(138, 128, 120, 0.14); color: var(--mordor-humo); border: 1px solid rgba(138, 128, 120, 0.35); }
+.ring-hub .daemon-tile--unknown .daemon-tile__estado { background: rgba(201, 162, 39, 0.12); color: var(--mordor-humo); border: 1px dashed rgba(201, 162, 39, 0.35); }
+
+.ring-hub .daemon-tile--failed {
+  border-color: rgba(229, 72, 77, 0.5);
+  box-shadow: 0 0 18px -6px rgba(229, 72, 77, 0.45);
+}
+
+@keyframes ring-hub-live-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+
+@keyframes ring-hub-alerta-pulso {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(229, 72, 77, 0.5); }
+  50%      { box-shadow: 0 0 6px 2px rgba(229, 72, 77, 0.55); }
 }
 
 /* --- Cenizas y brasas del Monte del Destino -------------------- */
@@ -849,10 +1186,15 @@ input:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .sauron-eye,
   .ring-widget__emoji,
+  .ring-widget--arde,
+  .ring-hub .daemon-tile__led,
   .mordor-ashes span,
   .live-dot,
   .sauron-eye__iris {
     animation: none;
+  }
+  .ring-hub {
+    transition: none;
   }
 }
 
