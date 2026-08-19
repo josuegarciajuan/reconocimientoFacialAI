@@ -6,13 +6,14 @@
  * 06/08/2020
  * 
  * MEJORA 2026-08-19 (reordenación del menú):
- *   - "La Torre" (👁️ dash) abre el menú en PRIMERA posición; "La Forja"
- *     (⚒️ config) le sigue en segunda con tratamiento hero.
- *   - Se retiran "El Ojo en Vivo" (camaras), "Fortalezas" (locales) y
- *     "Fichajes" (fichajes): siguen accesibles vía ring-hub, dashboard y
- *     la pestaña "Fortalezas" dentro de La Forja.
- *   - Orden final: La Torre / Forja / Movimientos / Pueblos / Caminos /
- *     Líneas / El Concilio.
+ *   - "La Torre" (👁️ dash) abre el menú en PRIMERA posición; "El Ojo en
+ *     Vivo" (camaras) le sigue en segunda con el ojo de Sauron destacado
+ *     y "La Forja" (⚒️ config) en tercera con tratamiento hero.
+ *   - Se retiran "Fortalezas" (locales) y "Fichajes" (fichajes): siguen
+ *     accesibles vía la pestaña "Fortalezas" dentro de La Forja y el
+ *     dashboard respectivamente.
+ *   - Orden final: La Torre / El Ojo en Vivo / Forja / Movimientos /
+ *     Pueblos / Caminos / Líneas / El Concilio.
  */
 
 ?>
@@ -24,6 +25,35 @@
             <a href="?page=dash" class="top-menu top-menu<?php if(!isset($_GET["page"]) or $_GET["page"]=="" or $_GET["page"]=="dash"){ echo "--active"; } ?>">
                 <div class="menu__icon menu__emoji">👁️</div>
                 <div class="top-menu__title"> La Torre </div>
+            </a>
+        </li>
+
+        <li>
+            <a href="?page=camaras" class="top-menu top-menu--featured top-menu<?php if(isset($_GET["page"]) and $_GET["page"]=="camaras"){ echo "--active"; } ?>">
+                <div class="menu__icon">
+                    <svg class="sauron-eye sauron-eye--menu" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+                        <defs>
+                            <radialGradient id="sauron-iris-menu" cx="50%" cy="38%" r="75%">
+                                <stop offset="0%" stop-color="#ffd9a0"/>
+                                <stop offset="45%" stop-color="#ff5a1f"/>
+                                <stop offset="100%" stop-color="#8c1f00"/>
+                            </radialGradient>
+                        </defs>
+                        <!-- anillo exterior orco -->
+                        <circle cx="24" cy="24" r="22" fill="none" stroke="rgba(201,162,39,0.6)" stroke-width="1.6"/>
+                        <!-- contorno superior (ceño de Sauron) -->
+                        <path d="M9 16 C 14 10, 20 7.5, 24 7.5 C 28 7.5, 34 10, 39 16" fill="none" stroke="rgba(255,90,31,0.8)" stroke-width="1.8" stroke-linecap="round"/>
+                        <!-- forma del ojo (rendija) -->
+                        <path d="M4.5 24 C 8 16.5, 15 12.5, 24 12.5 C 33 12.5, 40 16.5, 43.5 24 C 40 31.5, 33 35.5, 24 35.5 C 15 35.5, 8 31.5, 4.5 24 Z" fill="rgba(255,90,31,0.12)" stroke="#ff5a1f" stroke-width="1.4"/>
+                        <!-- iris -->
+                        <ellipse class="sauron-eye__iris" cx="24" cy="24" rx="11.5" ry="8.5" fill="url(#sauron-iris-menu)"/>
+                        <!-- pupila vertical (se mueve con el cursor) -->
+                        <path class="sauron-eye__pupil" d="M24 16.5 C 26.6 16.5 27.4 22 27.4 24 C 27.4 26 26.6 31.5 24 31.5 C 21.4 31.5 20.6 26 20.6 24 C 20.6 22 21.4 16.5 24 16.5 Z" fill="#0d0503"/>
+                        <!-- brillo -->
+                        <circle class="sauron-eye__shine" cx="27.4" cy="20.5" r="1.5" fill="rgba(255,235,205,0.95)"/>
+                    </svg>
+                </div>
+                <div class="top-menu__title"> El Ojo en Vivo <span class="live-dot live-dot--menu" aria-hidden="true"></span></div>
             </a>
         </li>
 
