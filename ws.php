@@ -92,6 +92,17 @@ switch ($accion) {
 
     case "guardar_video":
         // argv: local_id, camara_id, nombre, ruta, fecha_ini, fecha_fin, duracion, peso, fps, ancho, alto [, poster]
+        // Idempotente: si el MP4 ya está registrado (misma cámara + nombre) se devuelve su id
+        // sin insertar de nuevo. Evita duplicados en `videos` cuando archiva_video.py se
+        // reintenta (marcador limpiado como huérfano y relanzado con el mismo origen).
+        $ya = DB::selectOne(
+            "SELECT id FROM videos WHERE camara_id = ? AND nombre = ?",
+            [(int) arg(3), (string) arg(4)]
+        );
+        if ($ya) {
+            echo (string) (int) $ya["id"];
+            exit;
+        }
         $video_id = DB::insert(
             "INSERT INTO videos (local_id, camara_id, nombre, ruta, fecha_ini, fecha_fin, duracion, peso, fps, ancho, alto, poster)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",

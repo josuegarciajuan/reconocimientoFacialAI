@@ -17,6 +17,50 @@ require_once("libs/db.php");
 $threads = [];
 $ram = new Jos_Thread(0, "", true);
 
+/**
+ * Limpieza global de marcadores de archivado `aux/archiva_*.txt` huérfanos.
+ *
+ * Un marcador es huérfano cuando su proceso archiva_video.py ya no está vivo y
+ * (a) el vídeo fuente ya no existe o (b) el marcador es más antiguo que
+ * CONFIG_MARCADOR_HUERFANO_SEGS. Se barre TODOS los marcadores de las cámaras
+ * del local, no solo los de los vídeos del listado actual `$subidos`: un marcador
+ * cuyo origen ya fue borrado por procesa_video.py nunca volvería a aparecer en
+ * `$subidos`, y sin esta limpieza satura CONFIG_LIMITE_ARCHIVA permanentemente
+ * (los slots de archivado se cuentan precisamente con estos marcadores).
+ */
+function limpiar_marcadores_archiva_huerfanos(int $local_id, array $cams_local): void {
+    $cams = [];
+    foreach ($cams_local as $c) {
+        $cams[(int)$c["id"]] = true;
+    }
+    $dir_aux = RUTA_PROYECTO . "aux";
+    if (!is_dir($dir_aux)) {
+        return;
+    }
+    $d = opendir($dir_aux);
+    while (($el = readdir($d)) !== false) {
+        if ($el === "." || $el === "..") { continue; }
+        if (strpos($el, "archiva_") !== 0 || substr($el, -4) !== ".txt") { continue; }
+        $video = substr($el, strlen("archiva_"), -4);
+        if ($video === "") { continue; }
+        $cam_id = (int) explode("_", $video)[0];
+        if ($cam_id <= 0 || !isset($cams[$cam_id])) { continue; }
+        $marker = $dir_aux . "/" . $el;
+        $rc = [];
+        exec("pgrep -f \"[a]rchiva_video.py " . $local_id . " " . $cam_id . " '" . $video . "'\" > /dev/null 2>&1; echo $?", $rc);
+        $vivo = (isset($rc[0]) && trim($rc[0]) === "0");
+        if ($vivo) { continue; }
+        $fuente = RUTA_PROYECTO . "motor/videos/" . $local_id . "/" . $cam_id . "/" . $video;
+        $sin_fuente = !file_exists($fuente);
+        $viejo = (time() - @filemtime($marker)) > CONFIG_MARCADOR_HUERFANO_SEGS;
+        if ($sin_fuente || $viejo) {
+            @unlink($marker);
+            echo "Marker archiva huérfano limpiado (global): " . $el . "\n";
+        }
+    }
+    closedir($d);
+}
+
 while (true) {
 
     $locales = DB::select("SELECT id FROM locales WHERE id > 0 ORDER BY id ASC");
@@ -24,6 +68,8 @@ while (true) {
         $local_id = (int)$loc["id"];
 
         $cams = DB::select("SELECT id FROM camaras WHERE local_id = ? AND encendida = 1 ORDER BY id ASC", [$local_id]);
+        // limpia marcadores de archivado huérfanos ANTES de contar slots disponibles
+        limpiar_marcadores_archiva_huerfanos($local_id, $cams);
         foreach ($cams as $cam) {
             $cam_id = (int)$cam["id"];
 
