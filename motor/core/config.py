@@ -62,6 +62,12 @@ class Config:
     # --- procesa_video.py ---
     dedup_cosine: float = 0.97       # salta caras casi idénticas a las ya guardadas
 
+    # --- RAM-gate (clasificador.py) ---
+    # Si la memoria disponible (MemAvailable) baja de este umbral, el clasificador
+    # duerme y no procesa: evita que 12 instancias de insightface pidan RAM a la vez
+    # (p. ej. mientras autotube renderiza en la misma máquina) y dispare el OOM killer.
+    ram_min_free_gb: float = 2.0
+
     # --- store (face_enc_v2) ---
     max_encodings_per_person: int = 500
 
@@ -202,4 +208,5 @@ class Config:
         cfg.crop_det_size = get_int(ruta, "RF_CROP_DET_SIZE", cfg.crop_det_size)
         cfg.face_fill = get_float(ruta, "RF_FACE_FILL", cfg.face_fill)
         cfg.face_min_pad = get_int(ruta, "RF_FACE_MIN_PAD", cfg.face_min_pad)
+        cfg.ram_min_free_gb = get_float(ruta, "RF_RAM_MIN_FREE_GB", cfg.ram_min_free_gb)
         return cfg
