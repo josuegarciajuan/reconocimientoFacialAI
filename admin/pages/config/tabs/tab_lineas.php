@@ -1,8 +1,12 @@
 <?php
 /* La Forja · Tab Líneas (sabor: Trazos): trazar líneas (sobre la foto de una cámara) + corregir líneas.
- * Al elegir cámara, el lienzo (canvasID) se sustituye por la foto capturada sin recargar la página.
- * Sub-acciones: Trazar (crear) / Corregir (editar) / Plano (líneas dibujadas sobre el plano) — resueltas en $sub.
- * Variables disponibles: $camaras, $lineas_edit, $lineas_plano.
+ * 2026-08-19:
+ *  - "Trazar" muestra una rejilla de miniaturas de cámaras; al clicar una se abre
+ *    un lienzo con su snapshot para dibujar las líneas por encima (sin recargar).
+ *  - Se elimina "Representar en el plano" y el sub "plano": la representación se
+ *    hace en El Yunque arrastrando las líneas al plano.
+ * Sub-acciones: Trazar (crear) / Corregir (editar) — resueltas en $sub.
+ * Variables disponibles: $camaras, $lineas_edit.
  */
 ?>
 
@@ -14,9 +18,6 @@
     <a role="tab" aria-selected="<?= $sub === "editar" ? "true" : "false"; ?>"
        class="forge-sub<?= $sub === "editar" ? " is-active" : ""; ?>"
        href="?page=config&tab=lineas&sub=editar" data-lore="corregir">Corregir</a>
-    <a role="tab" aria-selected="<?= $sub === "plano" ? "true" : "false"; ?>"
-       class="forge-sub<?= $sub === "plano" ? " is-active" : ""; ?>"
-       href="?page=config&tab=lineas&sub=plano" data-lore="trazos-plano">Plano</a>
 </div>
 
 <?php if ($sub === "editar"): ?>
@@ -30,110 +31,19 @@
     <div class="form-grid">
         <div class="form-grid__full">
             <label for="editar_linea" class="field-label">Línea a editar</label>
-            <select id="editar_linea" name="editar_linea" class="input border w-full" onchange="ForgeCargarFotoLinea(this.value)">
+            <select id="editar_linea" name="editar_linea" class="input border w-full" onchange="TrazadorAbrirCorregir(this.value)">
                 <option value="-">Selecciona Línea</option>
                 <?php foreach ($lineas_edit as $l): ?>
                     <option <?php if (isset($_GET["editar_linea"]) && $_GET["editar_linea"] == $l["id"] . "-" . $l["camara_id"]) { echo "selected='selected'"; } ?> value="<?= (int)$l["id"]; ?>-<?= (int)$l["camara_id"]; ?>"><?= htmlspecialchars($l["nombre"] . " - " . $l["descripcion"]); ?></option>
                 <?php endforeach; ?>
             </select>
             <p class="text-xs text-gray-500 dark:text-gray-600 mt-2">
-                Al elegir la línea, el lienzo muestra la foto de su cámara. Haz clic para reposicionar y guarda los cambios.
+                Al elegir la línea se abre el lienzo con la foto de su cámara para corregirla.
             </p>
-        </div>
-        <div class="form-grid__full">
-            <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="editar_linea1()">Guardar cambios</button>
-            <a href="?page=config&tab=lineas&sub=plano" class="button text-white bg-theme-2 shadow-md">Representar en el plano →</a>
         </div>
         <div class="form-grid__full">
             <p class="text-xs text-gray-500 dark:text-gray-600">
-                Tras corregir la línea, puedes representar la MISMA línea sobre el plano 2D desde la pestaña «Plano».
-            </p>
-        </div>
-    </div>
-</div>
-
-<?php elseif ($sub === "plano"): ?>
-<!-- ---------- Líneas del plano (independientes de los triples de foto) ---------- -->
-<div class="form-section" data-panel-forge="plano">
-    <div class="form-section__title">
-        <span class="form-section__emoji" aria-hidden="true">📐</span>
-        Líneas del plano
-    </div>
-
-    <div class="form-grid">
-        <div class="form-grid__full">
-            <label for="filtro_camara_plano" class="field-label">Filtrar por cámara</label>
-            <select id="filtro_camara_plano" name="filtro_camara_plano" class="input border w-full" onchange="ForgeLineasPlanoFiltro()">
-                <option value="-">Todas</option>
-                <?php foreach ($camaras as $c): ?>
-                    <option value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <div class="form-grid__full">
-            <span class="field-label">Líneas creadas</span>
-            <div id="lineas_plano_lista" class="forge-lineas-plano">
-                <?php if (!$lineas_plano): ?>
-                    <p class="text-xs text-gray-500 dark:text-gray-600">Aún no hay líneas en el plano. Crea la primera abajo.</p>
-                <?php else: ?>
-                    <?php foreach ($lineas_plano as $lp): ?>
-                        <div class="forge-linea-plano" data-id="<?= (int)$lp["id"]; ?>">
-                            <button type="button" class="forge-linea-plano__boton" data-lp-id="<?= (int)$lp["id"]; ?>"
-                                    onclick="ForgeLineaPlanoSeleccionar(<?= (int)$lp["id"]; ?>)">
-                                <span class="forge-linea-plano__nombre"><?= htmlspecialchars($lp["nombre"]); ?></span>
-                                <span class="forge-linea-plano__camara"><?= htmlspecialchars($lp["camara_nombre"] ?? "—"); ?></span>
-                            </button>
-                            <a href="javascript:;" class="forge-linea-plano__borrar" title="Borrar línea del plano"
-                               onclick="ForgeLineaPlanoBorrar(<?= (int)$lp["id"]; ?>)">(X)</a>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
-            <p class="text-xs text-gray-500 dark:text-gray-600 mt-2">
-                Al pulsar una línea, aparece marcada en el plano junto a su cámara. Puedes redibujarla o borrarla.
-            </p>
-        </div>
-    </div>
-
-    <div class="form-section__title mt-6">
-        <span class="form-section__emoji" aria-hidden="true">✏️</span>
-        Dibujar línea en el plano
-    </div>
-
-    <div class="form-grid">
-        <div>
-            <label for="nombre_linea_plano" class="field-label">Nombre</label>
-            <input type="text" name="nombre_linea_plano" id="nombre_linea_plano" class="input border w-full" placeholder="Nombre de la línea">
-        </div>
-        <div>
-            <label for="camara_linea_plano" class="field-label">Cámara</label>
-            <select name="camara_linea_plano" id="camara_linea_plano" class="input border w-full"
-                    onchange="ForgeLineaPlanoCargarLineasCamara(this.value)">
-                <option value="-">Selecciona Cámara</option>
-                <?php foreach ($camaras as $c): ?>
-                    <option value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <div>
-            <label for="linea_camara_plano" class="field-label">Línea de cámara a representar</label>
-            <select name="linea_camara_plano" id="linea_camara_plano" class="input border w-full">
-                <option value="0">— (solo en el plano)</option>
-            </select>
-            <p class="text-xs text-gray-500 dark:text-gray-600 mt-1">
-                La MISMA línea dibujada sobre la foto de la cámara, representada en el plano (1:1). Aparece un rayo de enfoque desde la cámara.
-            </p>
-        </div>
-        <div class="form-grid__full">
-            <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="ForgeLineaPlanoNueva()">Dibujar en el plano</button>
-            <button type="button" class="button text-white bg-theme-2 shadow-md" id="btn_linea_plano_redibujar" onclick="ForgeLineaPlanoRedibujar()">Redibujar seleccionada</button>
-            <button type="button" class="button text-white bg-theme-2 shadow-md" onclick="ForgeLineaPlanoVincular(Forge.lineaPlanoSel)">Vincular seleccionada</button>
-            <button type="button" class="button text-white bg-theme-6 shadow-md" onclick="ForgeLineaPlanoDesvincular(Forge.lineaPlanoSel)">Desvincular</button>
-        </div>
-        <div class="form-grid__full">
-            <p class="text-xs text-gray-500 dark:text-gray-600" id="hint_linea_plano">
-                Escribe el nombre, elige la cámara y pulsa «Dibujar en el plano»: dos clics en el lienzo (inicio y fin) crean la línea. Luego arrastra sus extremos para ajustarla. Para representar una línea de cámara, elígela en el desplegable y dibuja la línea sobre el plano.
+                La posición de la línea en el plano 2D se ajusta en «El Yunque» arrastrándola sobre el plano.
             </p>
         </div>
     </div>
@@ -147,32 +57,51 @@
         Líneas
     </div>
 
-    <div class="form-grid">
-        <div class="form-grid__full">
-            <label for="camara1_linea" class="field-label">Cámara</label>
-            <select id="camara1_linea" name="camara1_linea" class="input border w-full" onchange="ForgeCargarFotoCamara(this.value)">
-                <option value="-">Selecciona Cámara</option>
-                <?php foreach ($camaras as $c): ?>
-                    <option <?php if (isset($_GET["mostrar_foto"]) && $_GET["mostrar_foto"] == $c["id"]) { echo "selected='selected'"; } ?> value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
-                <?php endforeach; ?>
-            </select>
-            <p class="text-xs text-gray-500 dark:text-gray-600 mt-2">
-                Selecciona la cámara para capturar su foto y trazar líneas sobre el lienzo. Dos clics por línea: inicio y fin.
-            </p>
-        </div>
+    <p class="text-xs text-gray-500 dark:text-gray-600 mb-3">
+        Elige una cámara: se abrirá su imagen en directo y podrás trazar las líneas de vigilancia por encima (dos clics por línea: inicio y fin).
+    </p>
 
-        <div id="nombres_lineas_capa" class="form-grid__full">
-        </div>
-
-        <div class="form-grid__full">
-            <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="guardar_lineas()">Guardar líneas</button>
-            <a href="?page=config&tab=lineas&sub=plano" class="button text-white bg-theme-2 shadow-md">Representar en el plano →</a>
-        </div>
-        <div class="form-grid__full">
-            <p class="text-xs text-gray-500 dark:text-gray-600">
-                Tras guardar, ve a «Plano» y elige la línea en el desplegable «Línea de cámara a representar» para dibujarla sobre el plano.
-            </p>
-        </div>
+    <div class="forge-cam-grid">
+        <?php foreach ($camaras as $c): ?>
+            <button type="button" class="forge-cam-card" onclick="TrazadorAbrir(<?= (int)$c["id"]; ?>)">
+                <span class="forge-cam-card__media">
+                    <img src="fotos_camara/<?= (int)$c["id"]; ?>.png"
+                         onerror="this.onerror=null;this.src=''"
+                         alt="Snapshot de <?= htmlspecialchars($c["descripcion"], ENT_QUOTES); ?>" loading="lazy">
+                </span>
+                <span class="forge-cam-card__name"><?= htmlspecialchars($c["descripcion"], ENT_QUOTES); ?></span>
+            </button>
+        <?php endforeach; ?>
+        <?php if (!$camaras): ?>
+            <p class="text-xs text-gray-500 dark:text-gray-600">No hay cámaras dadas de alta todavía.</p>
+        <?php endif; ?>
     </div>
 </div>
 <?php endif; ?>
+
+<!-- ============ Modal: trazador de líneas sobre el snapshot de la cámara ============ -->
+<div id="lineaModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="lineaTitulo">
+    <div class="modal__content box p-5 modal__content--xl">
+        <div class="flex items-center mb-4">
+            <h3 id="lineaTitulo" class="media-modal__title mr-auto truncate">Trazar líneas</h3>
+            <span class="text-xs text-gray-500 dark:text-gray-600 mr-3" id="lineaSub">—</span>
+            <a href="javascript:;" data-dismiss="modal" onclick="TrazadorCerrar()" class="button button--sm text-white bg-theme-6 ml-3">Cerrar</a>
+        </div>
+
+        <div class="trazador-hint text-xs text-gray-500 dark:text-gray-600 mb-2" id="lineaHint">
+            Dos clics por línea: primer clic = inicio, segundo clic = fin. Escribe el nombre de cada línea en su recuadro.
+        </div>
+
+        <div class="plan-wrap">
+            <canvas id="canvasLineas" width="<?= CANVAS_WIDTH; ?>" height="<?= CANVAS_HEIGHT; ?>"
+                    style="border-style:solid;border-width:1px;border-color:var(--mordor-humo);"></canvas>
+        </div>
+
+        <div id="nombres_lineas_capa" class="mt-3 flex flex-col gap-1"></div>
+
+        <div class="mt-4 flex flex-wrap gap-2 items-center">
+            <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="TrazadorGuardar()">Guardar líneas</button>
+            <a href="javascript:;" data-dismiss="modal" onclick="TrazadorCerrar()" class="button text-white bg-theme-6 shadow-md">Cancelar</a>
+        </div>
+    </div>
+</div>

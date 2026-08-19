@@ -8,10 +8,13 @@
  * UI: Barad-dûr (Mordor). Solo presentación responsive: la lógica
  * (ids, names, onclicks, XHR) la consume admin/pages/config/javascript.php.
  *
- * REFACTOR: secciones agrupadas en pestañas (Plano / Cámaras / Líneas / Nodos,
- * con Locales primero para administradores) con un lienzo de trabajo persistente. Cada pestaña vive en tabs/tab_*.php y
- * puede tener sub-acciones (sub) que se resuelven en index.php.
- * $tab y $sub vienen resueltos desde index.php.
+ * REFACTOR 2026-08-19:
+ *  - Secciones agrupadas en pestañas: Fortalezas (admin) / Cámaras / Líneas /
+ *    El Yunque (plano). Cada pestaña vive en tabs/tab_*.php con sus
+ *    sub-acciones (sub) resueltas en index.php.
+ *  - Se ELIMINA el lienzo persistente de la derecha: El Yunque y el trazador
+ *    de líneas renderizan su propio canvas dentro de su pestaña.
+ *  - $tab y $sub vienen resueltos desde index.php; $es_admin también.
  */
 
 require_once __DIR__ . "/../../../libs/db.php";
@@ -22,14 +25,7 @@ $plano_subida_cfg = plano_subida_existe($local_id_cfg);
 $plano_dibujo_cfg = plano_dibujo_existe($local_id_cfg);
 $camaras = DB::select("SELECT * FROM camaras WHERE local_id = ?", [(int)($_SESSION["local_id"] ?? 0)]);
 $lineas_edit = DB::select(
-    "SELECT l.*, c.descripcion FROM lineas l JOIN camaras c ON c.id = l.camara_id WHERE c.local_id = ?",
-    [(int)($_SESSION["local_id"] ?? 0)]
-);
-$lineas_plano = DB::select(
-    "SELECT lp.*, c.descripcion AS camara_nombre FROM lineas_plano lp
-     LEFT JOIN camaras c ON c.id = lp.camara_id
-     WHERE c.local_id = ? AND lp.eliminada = 0
-     ORDER BY lp.id DESC",
+    "SELECT l.*, c.descripcion FROM lineas l JOIN camaras c ON c.id = l.camara_id WHERE c.local_id = ? AND l.eliminada = 0",
     [(int)($_SESSION["local_id"] ?? 0)]
 );
 
@@ -88,41 +84,22 @@ function rf_cfg_select_rango($ini, $fin, $valor) {
 }
 
 /* --- Pestañas de sección: [clave] => [emoji, sabor(Cinzel), entidad, lore] --- */
+/* El Yunque (plano) va en última posición. */
 $tabs_ui = [
-    "plano"   => ["🗺️", "El Yunque", "Plano", "el-yunque"],
     "camaras" => ["📷", "Forjar", "Cámaras", "forja-camaras"],
     "lineas"  => ["📏", "Trazos", "Líneas", "trazos"],
-    "nodos"   => ["🔗", "Cadenas", "Nodos", "cadenas"],
+    "plano"   => ["🗺️", "El Yunque", "Plano", "el-yunque"],
 ];
 // Fortalezas (locales): pestaña solo para administradores, siempre la primera.
-if (($_SESSION["admin"] ?? 0) == 1) {
+if ($es_admin) {
     $tabs_ui = ["locales" => ["🏰", "Fortalezas", "Locales", "fortalezas"]] + $tabs_ui;
 }
-
-/* En la pestaña "locales" no hay trabajo de plano: oculta el lienzo y
-   deja que el listado ocupe todo el ancho (sin romper los demás tabs). */
-$es_tab_locales = ($tab === "locales");
-
-/* --- Ayuda contextual del lienzo por pestaña + sub-acción --- */
-$hints = [
-    "camaras/crear"    => "Haz clic sobre el lienzo para fijar la posición (X/Y) de la nueva cámara.",
-    "camaras/editar"   => "Haz clic sobre el lienzo para reposicionar la cámara seleccionada (X/Y).",
-    "nodos/crear"      => "Haz clic sobre dos cámaras del plano y arrastra entre ellas para dibujar el camino real.",
-    "nodos/editar"     => "Carga un camino y arrastra sus nodos para recolocarlos. Clic derecho sobre un nodo para eliminarlo.",
-    "nodos/eliminar"   => "Elige el par de cámaras cuya cadena de nodos quieres romper.",
-    "lineas/trazar"    => "Elige una cámara: el lienzo mostrará su foto para trazar las líneas de vigilancia.",
-    "lineas/editar"    => "Elige una línea: el lienzo mostrará la foto de su cámara para corregirla.",
-    "lineas/plano"     => "Líneas dibujadas sobre el plano del local. Elige una cámara (y opcionalmente la línea de cámara a representar), pulsa «Dibujar en el plano» y haz dos clics (inicio y fin); luego arrastra los extremos para ajustarla. Las vinculadas muestran un rayo de enfoque desde su cámara.",
-    "plano/"           => "Así se ve el plano activo. Arrastra una cámara para moverla sobre el plano. Usa el panel para subir una imagen o dibujar un croquis.",
-];
-$hint_key = ($sub !== "") ? $tab . "/" . $sub : $tab . "/";
-$hint = $hints[$hint_key] ?? $hints[$tab . "/crear"] ?? "Usa el panel de la izquierda para configurar el local.";
 ?>
 
 <div class="intro-y flex flex-col sm:flex-row items-center mt-8">
     <h2 class="text-lg font-medium mr-auto">La Forja</h2>
     <div class="w-full sm:w-auto flex mt-4 sm:mt-0 text-xs text-gray-500 dark:text-gray-600">
-        Plano, cámaras, nodos y líneas del local
+        Plano, cámaras y líneas del local
     </div>
 </div>
 
@@ -144,42 +121,9 @@ $hint = $hints[$hint_key] ?? $hints[$tab . "/crear"] ?? "Usa el panel de la izqu
         <?php endforeach; ?>
     </nav>
 
-    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start mt-5">
-
-        <?php if (!$es_tab_locales): ?>
-        <!-- ================= Lienzo de trabajo (persistente en todos los tabs) ================= -->
-        <div class="order-1 xl:order-2 xl:col-span-5 min-w-0">
-            <div class="form-section forge-canvas">
-                <div class="form-section__title">
-                    <span class="form-section__emoji" aria-hidden="true">🖼️</span>
-                    <span data-lore="el-yunque" id="forgeLienzoTitulo">El Yunque — Plano del local</span>
-                </div>
-
-                <div class="forge-canvas__meta">
-                    <span class="forge-mode-chip forge-mode-chip--plano" id="forgeModoChip">MODO · PLANO</span>
-                    <span class="text-xs text-gray-500 dark:text-gray-600">Lienzo del local</span>
-                </div>
-
-                <p class="text-xs text-gray-500 dark:text-gray-600 mb-3" id="forgeHint">
-                    <?= htmlspecialchars($hint); ?>
-                </p>
-
-                <div class="plan-wrap">
-                    <canvas id="canvasID" width="<?= CANVAS_WIDTH; ?>" height="<?= CANVAS_HEIGHT; ?>"
-                            class="border border-gray-700"
-                            style="position:relative;left:0px;z-index:999999;touch-action:none;user-select:none"></canvas>
-                </div>
-                <input type="hidden" name="x_hidden" id="x_hidden" value="">
-                <input type="hidden" name="y_hidden" id="y_hidden" value="">
-            </div>
-        </div>
-
-        <?php endif; ?>
-
-        <!-- ================= Panel de la pestaña activa ================= -->
-        <div class="order-2 xl:order-1 <?= $es_tab_locales ? "xl:col-span-12" : "xl:col-span-7"; ?> min-w-0">
-            <?php include __DIR__ . "/tabs/tab_" . $tab . ".php"; ?>
-        </div>
+    <!-- ================= Panel de la pestaña activa ================= -->
+    <div class="mt-5">
+        <?php include __DIR__ . "/tabs/tab_" . $tab . ".php"; ?>
     </div>
 </div>
 

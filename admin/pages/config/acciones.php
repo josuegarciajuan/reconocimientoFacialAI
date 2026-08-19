@@ -2,7 +2,11 @@
 
 /* 
  * Config — acciones (REFACTOR Fase 4b): PDO (B9).
- * Crear/editar cámaras, plano, nodos y líneas.
+ * Crear/editar cámaras, plano, fortalezas (locales) y líneas.
+ *
+ * 2026-08-19: se retiran "Alias IPCamlive" y "Origen de vídeo" del alta/edición
+ * de cámara (sistema=0, ipcamlive_alias='-'). Se añaden local_crear/local_guardar
+ * (fortalezas inline dentro de La Forja).
  */
 
 require_once __DIR__ . "/../../../libs/db.php";
@@ -13,28 +17,27 @@ $extensiones = plano_extensiones();
 /* Local de la sesión (con fallback defensivo). */
 $local_id = (int)($_SESSION["local_id"] ?? 0);
 
-switch ($_GET["accion"]) {
+switch ($_GET["accion"] ?? "") {
     case "crear":
         $url_conexion = str_replace("--jos--", "&", $_GET["url_conexion"] ?? "");
         $id = DB::insert(
             "INSERT INTO camaras (local_id, descripcion, url_conexion, sistema, puerta, salida, encendida, ipcamlive_alias, segundos_analizar, porcentaje_mov, dontCare, fps, maximo_videos, redimesionframe, sensibilidad)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [
-                (int)$_SESSION["local_id"], $_GET["nombre_nueva"], $url_conexion, (int)($_GET["sistema"] ?? 0),
+                (int)$_SESSION["local_id"], $_GET["nombre_nueva"], $url_conexion, 0,
                 (int)($_GET["puerta"] ?? 0), (int)($_GET["salida"] ?? 0), (int)($_GET["encendida_nueva"] ?? 0),
-                $_GET["ipcamlive_alias"] ?? "-",
+                "-",
                 CONFIG_segundos_analizar, CONFIG_porcentaje_mov, CONFIG_dontCare, CONFIG_fps,
                 CONFIG_maximo_videos, CONFIG_redimesionframe, CONFIG_sensibilidad,
             ]
         );
 
-        $cmds = [];
-        if (($_GET["sistema"] ?? 0) == 0) {
-            $cmds[] = "mkdir -p " . URL_FTP_BASE . "motor/videos/" . $_SESSION["local_id"] . "/" . $id;
-            $cmds[] = "mkdir -p " . URL_FTP_BASE . "motor/videos_lineas/" . $_SESSION["local_id"] . "/" . $id;
-        }
-        $cmds[] = "mkdir -p " . RUTA_PROYECTO . "motor/caras/" . $_SESSION["local_id"] . "/" . $id;
-        $cmds[] = "mkdir -p " . RUTA_PROYECTO . "motor/caras/sinclasificar/" . $_SESSION["local_id"] . "/" . $id;
+        $cmds = [
+            "mkdir -p " . URL_FTP_BASE . "motor/videos/" . $_SESSION["local_id"] . "/" . $id,
+            "mkdir -p " . URL_FTP_BASE . "motor/videos_lineas/" . $_SESSION["local_id"] . "/" . $id,
+            "mkdir -p " . RUTA_PROYECTO . "motor/caras/" . $_SESSION["local_id"] . "/" . $id,
+            "mkdir -p " . RUTA_PROYECTO . "motor/caras/sinclasificar/" . $_SESSION["local_id"] . "/" . $id,
+        ];
 
         foreach ($cmds as $cmd) {
             exec($cmd);
@@ -45,11 +48,11 @@ switch ($_GET["accion"]) {
         $url_conexion = str_replace("--jos--", "&", $_GET["url_conexion"] ?? "");
         $url_desdeserver = str_replace("--jos--", "&", $_GET["url_desdeserver"] ?? "");
         DB::execute(
-            "UPDATE camaras SET local_id=?, descripcion=?, url_conexion=?, sistema=?, puerta=?, salida=?, encendida=?, x=?, y=?, ipcamlive_alias=?, url_desdeserver=?, segundos_analizar=?, porcentaje_mov=?, dontCare=?, fps=?, maximo_videos=?, redimesionframe=?, sensibilidad=? WHERE id=?",
+            "UPDATE camaras SET local_id=?, descripcion=?, url_conexion=?, sistema=?, puerta=?, salida=?, encendida=?, ipcamlive_alias=?, url_desdeserver=?, segundos_analizar=?, porcentaje_mov=?, dontCare=?, fps=?, maximo_videos=?, redimesionframe=?, sensibilidad=? WHERE id=?",
             [
-                (int)$_SESSION["local_id"], $_GET["nombre"], $url_conexion, (int)($_GET["sistema"] ?? 0),
+                (int)$_SESSION["local_id"], $_GET["nombre"], $url_conexion, 0,
                 (int)($_GET["puerta"] ?? 0), (int)($_GET["salida"] ?? 0), (int)($_GET["encendida"] ?? 0),
-                (int)($_GET["x"] ?? 0), (int)($_GET["y"] ?? 0), $_GET["ipcamlive_alias"] ?? "-", $url_desdeserver,
+                "-", $url_desdeserver,
                 (int)($_GET["segundos_analizar"] ?? 0), (int)($_GET["porcentaje_mov"] ?? 0), (int)($_GET["dontCare"] ?? 0),
                 (int)($_GET["fps"] ?? 0), (int)($_GET["maximo_videos"] ?? 0), (int)($_GET["redimesionframe"] ?? 0),
                 (int)($_GET["sensibilidad"] ?? 0), (int)$_GET["camara"],
@@ -87,9 +90,6 @@ switch ($_GET["accion"]) {
                 if (!is_dir("pages/config/planos")) {
                     @mkdir("pages/config/planos", 0777, true);
                 }
-                /* Respaldo del croquis anterior antes de sobrescribir: copia
-                 * histórica con marca de tiempo en planos/historial/ por si hay
-                 * que recuperar una versión previa. */
                 if (file_exists($dibujo)) {
                     $hist = "pages/config/planos/historial";
                     if (!is_dir($hist)) {
@@ -110,7 +110,6 @@ switch ($_GET["accion"]) {
     /* Cambiar qué plano se usa como fondo (imagen subida o croquis dibujado). */
     case "plano_activo":
         $tipo = ($_GET["tipo"] ?? "") === "dibujo" ? "dibujo" : "subida";
-        // Solo permitimos marcar como activo un plano que realmente existe.
         $existe = ($tipo === "dibujo")
             ? plano_dibujo_existe($local_id)
             : (bool)plano_subida_existe($local_id);
@@ -121,11 +120,79 @@ switch ($_GET["accion"]) {
         exit;
         break;
 
-    case "eliminar_nodos":
-        DB::execute(
-            "DELETE FROM nodos WHERE camara_id1 = ? AND camara_id2 = ? AND camino = ?",
-            [(int)$_GET["camara1"], (int)$_GET["camara2"], (int)($_GET["camino"] ?? 0)]
+    /* ---------- Fortalezas (locales) inline ---------- */
+
+    case "local_crear":
+        $nombre = trim($_POST["nombre"] ?? "");
+        $url_logo = trim($_POST["url_logo"] ?? "");
+        $usuario = trim($_POST["usuario"] ?? "");
+        $aforo_max = (int)($_POST["aforo_max"] ?? 0);
+        $passw = (string)($_POST["passw"] ?? "");
+
+        $jornada_partida = (isset($_POST["jornada_partida"]) && (int)$_POST["jornada_partida"] === 1) ? 1 : 0;
+        $hora_entrada1 = ($_POST["hora_entrada1"] ?? "") !== "" ? $_POST["hora_entrada1"] : null;
+        $hora_salida1  = ($_POST["hora_salida1"] ?? "") !== "" ? $_POST["hora_salida1"] : null;
+        $hora_entrada2 = ($_POST["hora_entrada2"] ?? "") !== "" ? $_POST["hora_entrada2"] : null;
+        $hora_salida2  = ($_POST["hora_salida2"] ?? "") !== "" ? $_POST["hora_salida2"] : null;
+        $margen_fichaje_min = max(0, (int)($_POST["margen_fichaje_min"] ?? 30));
+
+        $id = DB::insert(
+            "INSERT INTO locales (nombre, url_logo, usuario, aforo_max, aforo_actual, jornada_partida, hora_entrada1, hora_salida1, hora_entrada2, hora_salida2, margen_fichaje_min)
+             VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)",
+            [$nombre, $url_logo, $usuario, $aforo_max, $jornada_partida, $hora_entrada1, $hora_salida1, $hora_entrada2, $hora_salida2, $margen_fichaje_min]
         );
+        if ($passw !== "") {
+            DB::execute("UPDATE locales SET passw = ? WHERE id = ?", [password_hash($passw, PASSWORD_DEFAULT), $id]);
+        }
+
+        $cmds = [
+            "mkdir -p " . URL_FTP_BASE . "motor/videos/" . $id,
+            "mkdir -p " . URL_FTP_BASE . "motor/videos_lineas/" . $id,
+            "mkdir -p " . RUTA_PROYECTO . "motor/caras/" . $id . "/C0",
+            "mkdir -p " . RUTA_PROYECTO . "motor/caras/sinclasificar/" . $id,
+            "mkdir -p " . RUTA_PROYECTO . "motor/bbdd_reconocimiento/" . $id,
+            "mkdir -p " . RUTA_PROYECTO . "motor/videos/" . $id,
+            "mkdir -p " . RUTA_PROYECTO . "motor/fotos_lineas/" . $id,
+        ];
+        foreach ($cmds as $cmd) {
+            exec($cmd);
+        }
+
+        header("Location: ?page=config&tab=locales&sub=listar");
+        exit;
+        break;
+
+    case "local_guardar":
+        $id = (int)($_GET["id"] ?? 0);
+        if ($id <= 0) {
+            header("Location: ?page=config&tab=locales&sub=listar");
+            exit;
+        }
+        $nombre = trim($_POST["nombre"] ?? "");
+        $url_logo = trim($_POST["url_logo"] ?? "");
+        $usuario = trim($_POST["usuario"] ?? "");
+        $aforo_max = (int)($_POST["aforo_max"] ?? 0);
+        $passw = (string)($_POST["passw"] ?? "");
+
+        $jornada_partida = (isset($_POST["jornada_partida"]) && (int)$_POST["jornada_partida"] === 1) ? 1 : 0;
+        $hora_entrada1 = ($_POST["hora_entrada1"] ?? "") !== "" ? $_POST["hora_entrada1"] : null;
+        $hora_salida1  = ($_POST["hora_salida1"] ?? "") !== "" ? $_POST["hora_salida1"] : null;
+        $hora_entrada2 = ($_POST["hora_entrada2"] ?? "") !== "" ? $_POST["hora_entrada2"] : null;
+        $hora_salida2  = ($_POST["hora_salida2"] ?? "") !== "" ? $_POST["hora_salida2"] : null;
+        $margen_fichaje_min = max(0, (int)($_POST["margen_fichaje_min"] ?? 30));
+
+        DB::execute(
+            "UPDATE locales SET nombre=?, url_logo=?, usuario=?, aforo_max=?,
+                    jornada_partida=?, hora_entrada1=?, hora_salida1=?, hora_entrada2=?, hora_salida2=?, margen_fichaje_min=?
+             WHERE id=?",
+            [$nombre, $url_logo, $usuario, $aforo_max, $jornada_partida, $hora_entrada1, $hora_salida1, $hora_entrada2, $hora_salida2, $margen_fichaje_min, $id]
+        );
+        if ($passw !== "") {
+            DB::execute("UPDATE locales SET passw = ? WHERE id = ?", [password_hash($passw, PASSWORD_DEFAULT), $id]);
+        }
+
+        header("Location: ?page=config&tab=locales&sub=listar");
+        exit;
         break;
 
     case "guardar_lineas":

@@ -1,9 +1,11 @@
 <?php
 /* La Forja · Tab Cámaras (sabor: Forjar): crear cámara + editar cámara.
- * El lienzo de trabajo (canvasID) vive en edit.php, siempre visible.
  * Sub-acciones: Forjar (crear) / Templar (editar) — resueltas en $sub.
  * Variables disponibles: $camaras, $camara_sel, $cfg, $puerta_sel, $salida_sel,
- * $encendida_sel, $sistema_sel y la función rf_cfg_select_rango() (edit.php).
+ * $encendida_sel y la función rf_cfg_select_rango() (edit.php).
+ *
+ * 2026-08-19: se retiran "Alias IPCamlive" y "Origen de vídeo" (no aportan).
+ * La posición X/Y ya no se edita aquí: se fija arrastrando la cámara en El Yunque.
  */
 ?>
 
@@ -41,16 +43,12 @@
             <input type="text" name="nombre" id="nombre" class="input border w-full" placeholder="Descripción" value="<?= htmlspecialchars($camara_sel["descripcion"] ?? ""); ?>">
         </div>
         <div>
-            <label for="url_conexion" class="field-label">URL de conexión</label>
+            <label for="url_conexion" class="field-label" data-lore="url-conexion">URL de conexión</label>
             <input type="text" name="url_conexion" id="url_conexion" class="input border w-full" placeholder="url_conexion" value="<?= htmlspecialchars($camara_sel["url_conexion"] ?? ""); ?>">
         </div>
         <div>
             <label for="url_desdeserver" class="field-label">URL desde servidor</label>
             <input type="text" name="url_desdeserver" id="url_desdeserver" class="input border w-full" placeholder="url_desdeserver" value="<?= htmlspecialchars($camara_sel["url_desdeserver"] ?? ""); ?>">
-        </div>
-        <div>
-            <label for="ipcamlive_alias1" class="field-label">Alias IPCamlive</label>
-            <input type="text" name="ipcamlive_alias1" id="ipcamlive_alias1" class="input border w-full" placeholder="ipcamlive_alias" value="<?= htmlspecialchars($camara_sel["ipcamlive_alias"] ?? ""); ?>">
         </div>
 
         <div>
@@ -73,18 +71,6 @@
             <label for="encendida" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="encendida">
                 <input type="checkbox" name="encendida" id="encendida" value="1" style="accent-color:var(--mordor-oro)" <?= $encendida_sel === 1 ? "checked" : ""; ?>> Encendida
             </label>
-        </div>
-
-        <div>
-            <span class="field-label">Origen de vídeo</span>
-            <div class="flex flex-wrap gap-x-4 gap-y-2 items-center">
-                <label for="tipo_camara_ip_ed" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <input type="radio" name="tipo_camara_ed" id="tipo_camara_ip_ed" value="ip" style="accent-color:var(--mordor-oro)" <?= $sistema_sel === 0 ? "checked" : ""; ?>> Cámara IP
-                </label>
-                <label for="tipo_camara_grabador_ed" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <input type="radio" name="tipo_camara_ed" id="tipo_camara_grabador_ed" value="grabador" style="accent-color:var(--mordor-oro)" <?= $sistema_sel === 1 ? "checked" : ""; ?>> Grabador
-                </label>
-            </div>
         </div>
     </div>
 
@@ -143,15 +129,10 @@
     </div>
 
     <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 items-center">
-        <div class="flex items-center gap-2">
-            <label for="x_camara" class="text-sm text-gray-600 dark:text-gray-400">X</label>
-            <input type="text" name="x_camara" id="x_camara" class="input border w-24" readonly placeholder="X" value="<?= htmlspecialchars($camara_sel["x"] ?? ""); ?>">
-        </div>
-        <div class="flex items-center gap-2">
-            <label for="y_camara" class="text-sm text-gray-600 dark:text-gray-400">Y</label>
-            <input type="text" name="y_camara" id="y_camara" class="input border w-24" readonly placeholder="Y" value="<?= htmlspecialchars($camara_sel["y"] ?? ""); ?>">
-        </div>
         <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="guardar()">Guardar cámara</button>
+        <span class="text-xs text-gray-500 dark:text-gray-600" data-lore="posicion-yunque">
+            La posición (X/Y) se ajusta arrastrando la cámara en «El Yunque».
+        </span>
     </div>
 </div>
 
@@ -169,12 +150,8 @@
             <input type="text" name="nombre_nueva" id="nombre_nueva" class="input border w-full" placeholder="Descripción">
         </div>
         <div>
-            <label for="url_conexion_nueva" class="field-label">URL de conexión / ID cámara local</label>
+            <label for="url_conexion_nueva" class="field-label" data-lore="url-conexion">URL de conexión / ID cámara local</label>
             <input type="text" name="url_conexion_nueva" id="url_conexion_nueva" class="input border w-full" placeholder="Url conexion / id camara local">
-        </div>
-        <div>
-            <label for="ipcamlive_alias" class="field-label">Alias IPCamlive</label>
-            <input type="text" name="ipcamlive_alias" id="ipcamlive_alias" class="input border w-full" placeholder="ipcamlive_alias">
         </div>
 
         <div>
@@ -199,31 +176,11 @@
             </label>
         </div>
 
-        <div>
-            <span class="field-label">Origen de vídeo</span>
-            <div class="flex flex-wrap gap-x-4 gap-y-2 items-center">
-                <label for="tipo_camara_ip" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <input type="radio" name="tipo_camara" id="tipo_camara_ip" value="ip" style="accent-color:var(--mordor-oro)"> Cámara IP
-                </label>
-                <label for="tipo_camara_grabador" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <input type="radio" name="tipo_camara" id="tipo_camara_grabador" value="grabador" style="accent-color:var(--mordor-oro)"> Grabador
-                </label>
-            </div>
-        </div>
-
         <div class="form-grid__full">
-            <span class="field-label">Posición en el plano</span>
-            <div class="flex flex-wrap gap-x-4 gap-y-2 items-center">
-                <div class="flex items-center gap-2">
-                    <label for="x_nueva" class="text-sm text-gray-600 dark:text-gray-400">X</label>
-                    <input type="text" name="x_nueva" id="x_nueva" class="input border w-24" readonly placeholder="X">
-                </div>
-                <div class="flex items-center gap-2">
-                    <label for="y_nueva" class="text-sm text-gray-600 dark:text-gray-400">Y</label>
-                    <input type="text" name="y_nueva" id="y_nueva" class="input border w-24" readonly placeholder="Y">
-                </div>
-                <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="crear()">Crear cámara</button>
-            </div>
+            <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="crear()">Crear cámara</button>
+            <span class="text-xs text-gray-500 dark:text-gray-600 ml-2" data-lore="posicion-yunque">
+                Al crearla quedará sin posición; arrástrala al plano en «El Yunque».
+            </span>
         </div>
     </div>
 </div>

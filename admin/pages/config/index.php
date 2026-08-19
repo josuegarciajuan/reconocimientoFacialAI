@@ -5,24 +5,32 @@
  * Author: Josué García Juan
  * 07/08/2020
  *
- * La Forja: pestañas de sección (Cámaras / Nodos / Líneas / Plano) y, dentro
- * de cada pestaña, sub-acciones (sub). El tab y el sub se resuelven aquí para
- * que acciones.php, javascript.php y edit.php compartan el mismo estado.
+ * La Forja: pestañas de sección (Fortalezas / Cámaras / Líneas / El Yunque) y,
+ * dentro de cada pestaña, sub-acciones (sub). El tab y el sub se resuelven aquí
+ * para que acciones.php, javascript.php y edit.php compartan el mismo estado.
+ *
+ * REFACTOR 2026-08-19:
+ *  - Se elimina la pestaña Nodos (el grafo de senderos vive en El Yunque).
+ *  - El Yunque pasa a la última posición.
+ *  - Fortalezas es la pestaña por defecto para administradores; Cámaras para el resto.
  */
 
-$tab_permitidos = ["camaras", "nodos", "lineas", "plano"];
+$es_admin = (($_SESSION["admin"] ?? 0) == 1);
+
+$tab_permitidos = ["camaras", "lineas", "plano"];
 $sub_per_tab = [
     "camaras" => ["crear", "editar"],
-    "nodos"   => ["crear", "editar", "eliminar"],
-    "lineas"  => ["trazar", "editar", "plano"],
+    "lineas"  => ["trazar", "editar"],
     "plano"   => [],
 ];
-// Fortalezas (locales): pestaña solo visible para administradores.
-if (($_SESSION["admin"] ?? 0) == 1) {
-    $tab_permitidos[] = "locales";
-    $sub_per_tab["locales"] = ["listar"];
+// Fortalezas (locales): pestaña solo para administradores, primera y por defecto.
+if ($es_admin) {
+    array_unshift($tab_permitidos, "locales");
+    $sub_per_tab["locales"] = ["listar", "crear", "editar"];
 }
-$tab = (isset($_GET["tab"]) && in_array($_GET["tab"], $tab_permitidos, true)) ? $_GET["tab"] : "camaras";
+
+$tab_default = $es_admin ? "locales" : "camaras";
+$tab = (isset($_GET["tab"]) && in_array($_GET["tab"], $tab_permitidos, true)) ? $_GET["tab"] : $tab_default;
 $sub = (isset($_GET["sub"]) && in_array($_GET["sub"], $sub_per_tab[$tab] ?? [], true))
     ? $_GET["sub"]
     : ($sub_per_tab[$tab][0] ?? "");
@@ -30,11 +38,4 @@ $sub = (isset($_GET["sub"]) && in_array($_GET["sub"], $sub_per_tab[$tab] ?? [], 
 include "acciones.php";
 include "javascript.php";
 
-switch ($_GET["mode"]) {
-    case "editar":
-        include "edit.php";
-        break;
-    default:
-        include "edit.php";
-        break;
-}
+include "edit.php";

@@ -453,6 +453,21 @@ function rf_glosario() {
             "significado" => "Cámara activa: está capturando y analizando vídeo. Apagada, el Ojo no vigila por esa cámara.",
             "match"      => "explicito",
         ],
+        "url-conexion" => [
+            "termino"    => "URL de conexión / ID cámara local",
+            "significado" => "Dirección de la cámara para capturar su vídeo. Cámara IP: rtsp://usuario:contraseña@IP:puerto/stream (consulta ONVIF o el fabricante). Grabador (DVR/NVR): el ID/canal local de la cámara en el grabador. Si contiene '&', escríbelo como '--jos--'.",
+            "match"      => "explicito",
+        ],
+        "posicion-yunque" => [
+            "termino"    => "Posición en el plano",
+            "significado" => "La posición X/Y de la cámara se fija automáticamente al arrastrarla sobre el plano en «El Yunque». No se edita a mano.",
+            "match"      => "explicito",
+        ],
+        "senderos" => [
+            "termino"    => "Senderos",
+            "significado" => "Caminos que unen nodos en el plano (rectos, con ángulos rectos o curvos) para reconstruir por dónde se mueve la gente. Los nodos son cámaras sin líneas o las líneas de las cámaras con líneas.",
+            "match"      => "explicito",
+        ],
 
         /* ---------------- El Concilio (Ayuda) ---------------- */
         "guia-reino" => [

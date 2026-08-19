@@ -5,1379 +5,477 @@
  * Author: Josué García Juan
  * 11/08/2020
  *
- * REFACTOR (La Forja en pestañas): un único listener delegado sobre el canvas
- * que despacha según el estado Forge (tab + sub + modo plano/foto). La foto de
- * cámara para líneas se carga SIN recargar la página (acciones_ajax a=3/a=4).
+ * REFACTOR 2026-08-19 (La Forja):
+ *  - El Yunque (tab=plano) tiene su PROPIO lienzo (canvasID): plano grande,
+ *    cámaras arrastrables desde la barra lateral, líneas colocables y grafo
+ *    de senderos (recto/ortogonal/curvo).
+ *  - El trazador de líneas (tab=lineas) usa un modal con canvasLineas sobre el
+ *    snapshot de la cámara (miniaturas en vez de desplegable).
+ *  - Se elimina la lógica de nodos cámara→cámara y el lienzo persistente.
  */
 
 require_once __DIR__ . "/../../../libs/db.php";
 require_once __DIR__ . "/../../../libs/planos.php";
-$cams = DB::select("SELECT * FROM camaras WHERE local_id = ?", [(int)($_SESSION["local_id"] ?? 0)]);
-$plano_activo_url = plano_url((int)($_SESSION["local_id"] ?? 0));
-$plano_dibujo_url = plano_dibujo_url((int)($_SESSION["local_id"] ?? 0));
+require_once __DIR__ . "/../../../libs/lineas_plano.php";
+require_once __DIR__ . "/../../../libs/plano_estado.php";
 
-/* Datos para el lienzo en modo plano (inyectados al JS). */
-$cams_json = [];
-foreach ($cams as $cam) {
-    $cams_json[] = [
-        "id"   => (int)$cam["id"],
-        "x"    => (int)$cam["x"],
-        "y"    => (int)$cam["y"],
-        "desc" => (string)$cam["descripcion"],
-    ];
-}
-$nodos_json = [];
-$ids_camaras = array_column($cams, "id");
-if ($ids_camaras) {
-    $in = implode(",", array_fill(0, count($ids_camaras), "?"));
-    $params = array_merge($ids_camaras, $ids_camaras);
-    $nodos_json = DB::select(
-        "SELECT id, camara_id1, camara_id2, camino, x, y, orden FROM nodos WHERE camara_id1 IN ($in) OR camara_id2 IN ($in)",
-        $params
-    );
-}
+$local_id_js = (int)($_SESSION["local_id"] ?? 0);
+$plano_activo_url = plano_url($local_id_js);
+$plano_dibujo_url = plano_dibujo_url($local_id_js);
 
-/* Líneas del plano (La Forja → Trazos → Plano): independientes de los triples de foto. */
-$lineas_plano_json = [];
-if ($ids_camaras) {
-    $in2 = implode(",", array_fill(0, count($ids_camaras), "?"));
-    $lineas_plano_json = DB::select(
-        "SELECT lp.*, c.descripcion AS camara_nombre FROM lineas_plano lp
-         LEFT JOIN camaras c ON c.id = lp.camara_id
-         WHERE lp.camara_id IN ($in2) AND lp.eliminada = 0
-         ORDER BY lp.id DESC",
-        $ids_camaras
-    );
-}
-/* La BD es latin1: json_encode necesita UTF-8 válido (si no, devuelve false y el JS se rompe). */
-$lineas_plano_to_utf8 = function ($v) {
+/* Normalizador latin1→UTF-8 para json_encode (la BD es latin1). */
+$rf_utf8 = function ($v) {
     $v = (string)$v;
     return ($v !== "" && function_exists("mb_check_encoding") && !mb_check_encoding($v, "UTF-8"))
         ? mb_convert_encoding($v, "UTF-8", "latin1")
         : $v;
 };
-$lineas_plano_json = array_map(function ($lp) use ($lineas_plano_to_utf8) {
+
+/* Cámaras enriquecidas con estado de completado. */
+$cams_estado = camaras_con_estado($local_id_js);
+$cams_json = [];
+foreach ($cams_estado as $c) {
+    $cams_json[] = [
+        "id"              => (int)$c["id"],
+        "x"               => (int)$c["x"],
+        "y"               => (int)$c["y"],
+        "desc"            => $rf_utf8($c["descripcion"]),
+        "colocada"        => (int)($c["colocada"] ?? 0),
+        "num_lineas"      => (int)$c["num_lineas"],
+        "num_lineas_plano"=> (int)$c["num_lineas_plano"],
+        "completa"        => (bool)$c["completa"],
+        "puerta"          => (int)$c["puerta"],
+        "salida"          => (int)$c["salida"],
+    ];
+}
+
+/* Líneas de cámara (triples sobre foto) del local. */
+$lineas_json = DB::select(
+    "SELECT l.id, l.camara_id, l.nombre, l.x1, l.y1, l.x2, l.y2
+     FROM lineas l
+     JOIN camaras c ON c.id = l.camara_id
+     WHERE c.local_id = ? AND l.eliminada = 0
+     ORDER BY l.id ASC",
+    [$local_id_js]
+);
+$lineas_json = array_map(function ($l) use ($rf_utf8) {
     return [
-        "id"           => (int)$lp["id"],
-        "camara_id"    => (int)$lp["camara_id"],
-        "linea_id"     => (int)($lp["linea_id"] ?? 0),
-        "camara_nombre"=> $lineas_plano_to_utf8($lp["camara_nombre"] ?? ""),
-        "nombre"       => $lineas_plano_to_utf8($lp["nombre"]),
-        "x1"           => (int)$lp["x1"],
-        "y1"           => (int)$lp["y1"],
-        "x2"           => (int)$lp["x2"],
-        "y2"           => (int)$lp["y2"],
+        "id"        => (int)$l["id"],
+        "camara_id" => (int)$l["camara_id"],
+        "nombre"    => $rf_utf8($l["nombre"]),
+        "x1"        => (int)$l["x1"], "y1" => (int)$l["y1"],
+        "x2"        => (int)$l["x2"], "y2" => (int)$l["y2"],
+    ];
+}, $lineas_json);
+
+/* Líneas del plano (con su vínculo a línea de cámara). */
+$lineas_plano_json = lineas_plano_del_local($local_id_js);
+$lineas_plano_json = array_map(function ($lp) use ($rf_utf8) {
+    return [
+        "id"        => (int)$lp["id"],
+        "camara_id" => (int)$lp["camara_id"],
+        "linea_id"  => (int)($lp["linea_id"] ?? 0),
+        "nombre"    => $rf_utf8($lp["nombre"]),
+        "x1"        => (int)$lp["x1"], "y1" => (int)$lp["y1"],
+        "x2"        => (int)$lp["x2"], "y2" => (int)$lp["y2"],
     ];
 }, $lineas_plano_json);
-?>
 
+/* Nodos y senderos del grafo. */
+$nodos_json = nodos_del_local($local_id_js);
+$nodos_json = array_map(function ($n) use ($rf_utf8) {
+    $n["nombre"] = $rf_utf8($n["nombre"]);
+    return $n;
+}, $nodos_json);
+
+$senderos_json = senderos_del_local($local_id_js);
+$senderos_json = array_map(function ($s) use ($rf_utf8) {
+    $s["nombre"] = $rf_utf8($s["nombre"]);
+    return $s;
+}, $senderos_json);
+
+$plano_completo = plano_completo($local_id_js);
+?>
 <script>
 
 var PLANO_ACTIVO_URL = <?= json_encode($plano_activo_url ?? ""); ?>;
 var PLANO_DIBUJO_URL = <?= json_encode($plano_dibujo_url ?? ""); ?>;
-var LOCAL_ID = <?= (int)($_SESSION["local_id"] ?? 0); ?>;
+var LOCAL_ID = <?= $local_id_js; ?>;
 var FORGE_TAB = <?= json_encode($tab); ?>;
 var FORGE_SUB = <?= json_encode($sub); ?>;
 var FORGE_CAMS = <?= json_encode($cams_json, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
-var FORGE_NODOS = <?= json_encode($nodos_json, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+var FORGE_LINEAS = <?= json_encode($lineas_json, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
 var FORGE_LINEAS_PLANO = <?= json_encode($lineas_plano_json, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
-var FORGE_MOSTRAR_FOTO = <?= json_encode(($_GET["mostrar_foto"] ?? "")); ?>;
-var FORGE_EDITAR_LINEA = <?= json_encode(($_GET["editar_linea"] ?? "")); ?>;
+var FORGE_NODOS = <?= json_encode($nodos_json, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+var FORGE_SENDEROS = <?= json_encode($senderos_json, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+var FORGE_PLANO_COMPLETO = <?= $plano_completo ? "true" : "false"; ?>;
 
-/* Colores de las líneas del plano (rallitas finas continuas). */
+var COLOR_CAM_OK = "#2e9e44";
+var COLOR_CAM_KO = "#e0563c";
 var COLOR_LINEA_PLANO = "#ffed00";
-var COLOR_LINEA_PLANO_SEL = "#ffffff";
+var COLOR_NODO_CAMARA = "#d22829";
+var COLOR_NODO_LINEA = "#2596be";
+var COLOR_SENDERO = "#9a6bff";
 
-/* --- Estado de las líneas (lo usan guardar_lineas / editar_linea1) --- */
-var x_lineas=[];
-var y_lineas=[];
-var nombres_lineas=[];
-var id_lineas=[];
-
-var listado_colores=[
-    "#e69c8c","#c58f21", "#7987ff","#000b6d","#ffed00","#5c7a04","#59ff00","#215306","#8bd7ff","#617c8a","#0060ff",
-    "#beffb7","#4e5c4d","#00ffb9","#006d75","#00eeff","#af381e","#004163","#af381e","#09347b","#7a7104",
-   "#6800ff","#1f004c","#beff00","#d800ff","#710385","#ff0074","#ff0000","#a54747","#ffbebe",
-];
-var voypocolores=0;
-
-/* --- Estado central del lienzo (La Forja) --- */
-var Forge = {
-    tab: FORGE_TAB,
-    sub: FORGE_SUB,
-    mode: "plano",              // 'plano' | 'foto'
-    fotoCamaraId: 0,
-    fotoLineaEditId: null,
-    canvas: null,
-    ctx: null,
-    baseCache: null,            // off-screen con plano + cámaras + nodos
-    marcador: null,             // {x,y} posición marcada (cámaras)
-    nodos_x: [],                // nodos pendientes de guardar
-    nodos_y: [],
-    punto: 1,                   // 1er/2º clic de una línea
-    lineas_nuevas: 0,
-    editChain: null,            // cadena en edición: {cam1, cam2, camino, nodos:[{id,x,y,orden}]}
-    drag: null,                 // nodo en arrastre: {index}
-    camDrag: null,              // cámara en arrastre en el plano: {index, x0, y0}
-    camHover: null,             // índice de cámara bajo el cursor (resaltado)
-    planoImg: null,             // Image del plano activo cacheada (redibujado síncrono)
-    crear: {                    // flujo visual de creación de caminos (nodos/crear)
-        cam1: null,             // cámara 1 seleccionada (objeto de FORGE_CAMS) o null
-        cam2: null,             // cámara 2 seleccionada o null
-        trazando: false,        // true mientras se arrastra el trazo a mano alzada
-        trazo: [],              // puntos [{x,y}] del trazo en curso
-        ultimo: null,           // {camara1, camara2, camino} del último guardado (para Deshacer)
-    },
-    /* Estado de las líneas del plano (tab=lineas, sub=plano) */
-    lineaPlanoSel: null,        // id de la línea del plano seleccionada (resaltada)
-    lpModo: null,               // null | "nueva" | "editar": modo de dibujo en el plano
-    lpTarget: null,             // id de línea a redibujar (modo "editar")
-    lpPunto: 1,                 // 1er/2º clic de la línea del plano
-    lpX1: 0, lpY1: 0, lpX2: 0, lpY2: 0,
-    lpDrag: null,               // extremo en arrastre: {i, ext}
-};
-
-/* ------------------------------------------------------------------ */
-/* Coordenadas del clic normalizadas al tamaño real del canvas         */
-/* ------------------------------------------------------------------ */
-function ForgeCoord(e) {
-    var r = Forge.canvas.getBoundingClientRect();
+/* =========================================================================
+ * Utilidades
+ * ========================================================================= */
+function ForgeCoord(canvas, e) {
+    var r = canvas.getBoundingClientRect();
     return {
-        x: (e.clientX - r.left) * Forge.canvas.width / r.width,
-        y: (e.clientY - r.top) * Forge.canvas.height / r.height
+        x: (e.clientX - r.left) * canvas.width / r.width,
+        y: (e.clientY - r.top) * canvas.height / r.height
     };
 }
-
-/* ------------------------------------------------------------------ */
-/* Chip de modo (plano/foto) y título del lienzo                       */
-/* ------------------------------------------------------------------ */
-function ForgeModoActualizarChip() {
-    var chip = document.getElementById("forgeModoChip");
-    if (chip) {
-        if (Forge.mode === "foto") {
-            chip.textContent = "MODO · FOTO";
-            chip.className = "forge-mode-chip forge-mode-chip--foto";
-        } else {
-            chip.textContent = "MODO · PLANO";
-            chip.className = "forge-mode-chip forge-mode-chip--plano";
-        }
-    }
-    var titulo = document.getElementById("forgeLienzoTitulo");
-    if (titulo) {
-        titulo.textContent = Forge.mode === "foto" ? "El Yunque — Foto de cámara" : "El Yunque — Plano del local";
-    }
-}
-
-/* ------------------------------------------------------------------ */
-/* Modo plano: dibuja plano + cámaras + nodos (una sola vez en cache)  */
-/* ------------------------------------------------------------------ */
-function ForgeCamCoord(id) {
-    for (var i = 0; i < FORGE_CAMS.length; i++) {
-        if (String(FORGE_CAMS[i].id) === String(id)) {
-            return { x: FORGE_CAMS[i].x, y: FORGE_CAMS[i].y };
-        }
-    }
+function ForgeCamById(id) {
+    for (var i = 0; i < FORGE_CAMS.length; i++) if (FORGE_CAMS[i].id === id) return FORGE_CAMS[i];
     return null;
 }
-
-/* Agrupa FORGE_NODOS en cadenas por par de cámaras (min-max) + camino,
- * orientadas de cam1 → cam2 (corrige el zigzag si se guardó al revés). */
-function ForgeAgruparNodos() {
-    var map = {};
+function ForgeLineaPlanoById(id) {
+    for (var i = 0; i < FORGE_LINEAS_PLANO.length; i++) if (FORGE_LINEAS_PLANO[i].id === id) return FORGE_LINEAS_PLANO[i];
+    return null;
+}
+function ForgeNodoByRef(tipo, ref_id) {
     for (var i = 0; i < FORGE_NODOS.length; i++) {
         var n = FORGE_NODOS[i];
-        var a = parseInt(n.camara_id1, 10), b = parseInt(n.camara_id2, 10);
-        var lo = a < b ? a : b, hi = a < b ? b : a;
-        var camino = parseInt(n.camino || 0, 10);
-        var k2 = lo + "-" + hi + "#" + camino;
-        if (!map[k2]) {
-            map[k2] = { cam1: lo, cam2: hi, camino: camino, dir: a, nodos: [] };
-        }
-        map[k2].nodos.push({
-            id: parseInt(n.id, 10),
-            x: parseInt(n.x, 10),
-            y: parseInt(n.y, 10),
-            orden: parseInt(n.orden || 0, 10)
-        });
-    }
-    var out = [];
-    for (var k in map) {
-        var c = map[k];
-        c.nodos.sort(function (p, q) { return p.orden - q.orden; });
-        // Si la cadena se guardó en sentido cam2 → cam1, se invierte.
-        if (c.dir !== c.cam1) {
-            c.nodos.reverse();
-        }
-        out.push(c);
-    }
-    return out;
-}
-
-/* Modo plano: dibuja plano + cámaras + cadenas de nodos (una sola vez en cache)  */
-function ForgePintarCamarasNodos(ctx) {
-    // cámaras (marcadores rojos)
-    ctx.fillStyle = "#D22829";
-    ctx.font = "10px Arial";
-    for (var i = 0; i < FORGE_CAMS.length; i++) {
-        var c = FORGE_CAMS[i];
-        ctx.fillRect(c.x, c.y, 10, 10);
-        ctx.fillText(c.desc, c.x, c.y);
-        // Anillo de resaltado: cámara bajo el cursor o en arrastre.
-        if (Forge.camHover === i || (Forge.camDrag && Forge.camDrag.index === i)) {
-            ctx.strokeStyle = "#ffffff";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(c.x - 3, c.y - 3, 16, 16);
-        }
-    }
-    // cadenas de nodos: polilíneas entre cámaras (alternativos atenuados)
-    var cadenas = ForgeAgruparNodos();
-    for (var c = 0; c < cadenas.length; c++) {
-        var cad = cadenas[c];
-        var c1 = ForgeCamCoord(cad.cam1), c2 = ForgeCamCoord(cad.cam2);
-        if (!c1 || !c2) continue;
-        ctx.save();
-        ctx.strokeStyle = "#2596be";
-        ctx.globalAlpha = cad.camino > 0 ? 0.4 : 1;
-        ctx.setLineDash(cad.camino > 0 ? [4, 4] : []);
-        ctx.beginPath();
-        ctx.moveTo(c1.x, c1.y);
-        for (var n = 0; n < cad.nodos.length; n++) {
-            ctx.lineTo(cad.nodos[n].x, cad.nodos[n].y);
-        }
-        ctx.lineTo(c2.x, c2.y);
-        ctx.stroke();
-        ctx.restore();
-    }
-    // nodos (puntos azules)
-    ctx.fillStyle = "#2596be";
-    for (var j = 0; j < FORGE_NODOS.length; j++) {
-        ctx.fillRect(parseInt(FORGE_NODOS[j].x, 10), parseInt(FORGE_NODOS[j].y, 10), 10, 10);
-    }
-    // líneas del plano: rallitas finas continuas + extremos + nombre
-    for (var li = 0; li < FORGE_LINEAS_PLANO.length; li++) {
-        var L = FORGE_LINEAS_PLANO[li];
-        ctx.strokeStyle = COLOR_LINEA_PLANO;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(L.x1, L.y1);
-        ctx.lineTo(L.x2, L.y2);
-        ctx.stroke();
-        ctx.fillStyle = COLOR_LINEA_PLANO;
-        ctx.fillRect(L.x1 - 3, L.y1 - 3, 6, 6);
-        ctx.fillRect(L.x2 - 3, L.y2 - 3, 6, 6);
-        ctx.fillText(L.nombre, L.x1, L.y1 - 6);
-        // Rayo de enfoque: cámara -> línea del plano (solo las vinculadas a una línea de cámara)
-        if (L.linea_id) {
-            var ccL = ForgeCamCoord(L.camara_id);
-            if (ccL) {
-                ctx.save();
-                ctx.strokeStyle = "#ff9500";
-                ctx.lineWidth = 1;
-                ctx.setLineDash([4, 4]);
-                ctx.beginPath();
-                ctx.moveTo(ccL.x + 5, ccL.y + 5);
-                ctx.lineTo((L.x1 + L.x2) / 2, (L.y1 + L.y2) / 2);
-                ctx.stroke();
-                ctx.restore();
-            }
-        }
-    }
-}
-
-function ForgeRender() {
-    var ctx = Forge.ctx, W = Forge.canvas.width, H = Forge.canvas.height;
-    ctx.clearRect(0, 0, W, H);
-    if (Forge.baseCache) {
-        ctx.drawImage(Forge.baseCache, 0, 0);
-    }
-    if (Forge.tab === "nodos" && Forge.sub === "editar" && Forge.editChain) {
-        ForgePintarEditar(ctx);
-    }
-    /* Líneas del plano (tab=lineas, sub=plano): preview de dibujo + resaltado de selección */
-    if (Forge.tab === "lineas" && Forge.sub === "plano" && Forge.mode === "plano") {
-        if (Forge.lpModo) {
-            ctx.save();
-            ctx.strokeStyle = COLOR_LINEA_PLANO;
-            ctx.lineWidth = 2;
-            ctx.fillStyle = COLOR_LINEA_PLANO;
-            if (Forge.lpPunto === 2) {
-                ctx.beginPath();
-                ctx.moveTo(Forge.lpX1, Forge.lpY1);
-                ctx.lineTo(Forge.lpX2, Forge.lpY2);
-                ctx.stroke();
-                ctx.fillRect(Forge.lpX1 - 4, Forge.lpY1 - 4, 8, 8);
-            } else {
-                ctx.fillRect(Forge.lpX1 - 4, Forge.lpY1 - 4, 8, 8);
-            }
-            ctx.restore();
-        }
-        if (Forge.lineaPlanoSel) {
-            var Ls = ForgeLineaPlanoPorId(Forge.lineaPlanoSel);
-            if (Ls) {
-                ctx.save();
-                ctx.strokeStyle = COLOR_LINEA_PLANO_SEL;
-                ctx.lineWidth = 4;
-                ctx.beginPath();
-                ctx.moveTo(Ls.x1, Ls.y1);
-                ctx.lineTo(Ls.x2, Ls.y2);
-                ctx.stroke();
-                ctx.fillStyle = COLOR_LINEA_PLANO_SEL;
-                ctx.fillRect(Ls.x1 - 4, Ls.y1 - 4, 8, 8);
-                ctx.fillRect(Ls.x2 - 4, Ls.y2 - 4, 8, 8);
-                var ccLp = ForgeCamCoord(Ls.camara_id);
-                if (ccLp) {
-                    ctx.strokeStyle = "#ffffff";
-                    ctx.lineWidth = 2;
-                    ctx.strokeRect(ccLp.x - 3, ccLp.y - 3, 16, 16);
-                }
-                ctx.restore();
-            }
-        }
-    }
-    if (Forge.marcador) {
-        ctx.fillStyle = "#D22829";
-        ctx.fillRect(Forge.marcador.x - 5, Forge.marcador.y - 5, 10, 10);
-    }
-    if (Forge.tab === "nodos" && Forge.sub === "crear") {
-        ForgePintarCrear(ctx);
-    }
-}
-
-/* Modo crear (nodos/crear): resalta las cámaras seleccionadas y dibuja la
- * vista previa en vivo del trazo a mano alzada (verde, discontinua). */
-function ForgePintarCrear(ctx) {
-    var s = Forge.crear;
-    // Resaltado verde de la(s) cámara(s) seleccionada(s).
-    ctx.save();
-    ctx.strokeStyle = "#2e9e44";
-    ctx.lineWidth = 3;
-    if (s.cam1) { ctx.strokeRect(s.cam1.x - 3, s.cam1.y - 3, 16, 16); }
-    if (s.cam2) { ctx.strokeRect(s.cam2.x - 3, s.cam2.y - 3, 16, 16); }
-    ctx.restore();
-    // Trazo en vivo mientras se arrastra.
-    if (s.trazo.length >= 2) {
-        ctx.save();
-        ctx.strokeStyle = "#2e9e44";
-        ctx.lineWidth = 2;
-        ctx.setLineDash([6, 4]);
-        ctx.beginPath();
-        ctx.moveTo(s.trazo[0].x, s.trazo[0].y);
-        for (var i = 1; i < s.trazo.length; i++) {
-            ctx.lineTo(s.trazo[i].x, s.trazo[i].y);
-        }
-        ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.fillStyle = "#2e9e44";
-        for (var j = 0; j < s.trazo.length; j++) {
-            ctx.fillRect(s.trazo[j].x - 2, s.trazo[j].y - 2, 4, 4);
-        }
-        ctx.restore();
-    }
-}
-
-function ForgeDibujarPlano() {
-    var W = Forge.canvas.width, H = Forge.canvas.height;
-    if (!Forge.baseCache) {
-        Forge.baseCache = document.createElement("canvas");
-        Forge.baseCache.width = W;
-        Forge.baseCache.height = H;
-    }
-    var bctx = Forge.baseCache.getContext("2d");
-    bctx.clearRect(0, 0, W, H);
-
-    var dibujar = function () {
-        ForgePintarCamarasNodos(bctx);
-        ForgeRender();
-    };
-    if (!PLANO_ACTIVO_URL) {
-        dibujar();
-        return;
-    }
-    // Imagen del plano cacheada: permite redibujar de forma síncrona durante
-    // el arrastre de cámaras (sin parpadeo ni recarga de la imagen en cada frame).
-    if (Forge.planoImg && Forge.planoImg.complete && Forge.planoImg.naturalWidth > 0) {
-        bctx.drawImage(Forge.planoImg, 0, 0, W, H);
-        dibujar();
-        return;
-    }
-    var img = new Image();
-    Forge.planoImg = img;
-    img.onload = function () { bctx.drawImage(img, 0, 0, W, H); dibujar(); };
-    img.onerror = function () { dibujar(); };
-    img.src = PLANO_ACTIVO_URL;
-}
-
-/* ------------------------------------------------------------------ */
-/* Modo foto: snapshot de cámara + líneas guardadas, sin recargar      */
-/* ------------------------------------------------------------------ */
-function ForgeLimpiarListas() {
-    x_lineas = []; y_lineas = []; nombres_lineas = []; id_lineas = [];
-    Forge.punto = 1;
-    Forge.lineas_nuevas = 0;
-    Forge.nodos_x = []; Forge.nodos_y = [];
-    var capa = document.getElementById("nombres_lineas_capa");
-    if (capa) capa.innerHTML = "";
-}
-
-function ForgeFotoCargar(camId, lineaEditId) {
-    if (!camId || camId <= 0) return;
-    Forge.mode = "foto";
-    Forge.fotoCamaraId = camId;
-    Forge.fotoLineaEditId = lineaEditId || null;
-    ForgeLimpiarListas();
-    ForgeModoActualizarChip();
-
-    // 1) Pedir snapshot fresco en segundo plano (dofoto solo si está viejo).
-    var ajax = nuevoAjax();
-    ajax.open("GET", "pages/config/acciones_ajax.php?a=3&camara=" + camId, true);
-    ajax.send(null);
-
-    // 2) Cargar la imagen con reintentos (la 1ª captura tarda ~5s).
-    var ctx = Forge.ctx, W = Forge.canvas.width, H = Forge.canvas.height;
-    var tries = 0;
-    var img = new Image();
-    (function intenta() {
-        img.onload = function () {
-            ctx.clearRect(0, 0, W, H);
-            ctx.drawImage(img, 0, 0, W, H);
-            ForgeFotoLineas(Forge.fotoCamaraId);
-        };
-        img.onerror = function () {
-            if (++tries < 12) {
-                setTimeout(intenta, 1500);
-            } else {
-                ctx.fillStyle = "#16121a";
-                ctx.fillRect(0, 0, W, H);
-                if (typeof rfToast === "function") {
-                    rfToast("No se pudo capturar la foto de la cámara.", "err");
-                }
-            }
-        };
-        img.src = "fotos_camara/" + camId + ".png?t=" + Math.floor(Date.now() / 1000);
-    })();
-}
-
-function ForgeFotoLineas(camId) {
-    var ajax = nuevoAjax();
-    ajax.open("GET", "pages/config/acciones_ajax.php?a=4&camara=" + camId, true);
-    ajax.onreadystatechange = function () {
-        if (ajax.readyState != 4) return;
-        var lineas = [];
-        try { lineas = JSON.parse(ajax.responseText) || []; } catch (e) { lineas = []; }
-        var ctx = Forge.ctx;
-        var capa = document.getElementById("nombres_lineas_capa");
-        voypocolores = 0;
-        for (var i = 0; i < lineas.length; i++) {
-            var l = lineas[i];
-            var col = listado_colores[voypocolores % listado_colores.length];
-            ctx.fillStyle = col;
-            ctx.fillRect(l.x1, l.y1, 10, 10);
-            ctx.fillRect(l.x2, l.y2, 10, 10);
-            ctx.fillText(l.nombre, l.x1, l.y1);
-            ctx.beginPath();
-            ctx.moveTo(l.x1, l.y1);
-            ctx.lineTo(l.x2, l.y2);
-            ctx.stroke();
-            x_lineas.push(l.x1); x_lineas.push(l.x2);
-            y_lineas.push(l.y1); y_lineas.push(l.y2);
-            nombres_lineas.push(l.nombre);
-            id_lineas.push(String(l.id));
-            if (capa) {
-                capa.innerHTML += '<input type="text" name="nombre_linea_' + l.id
-                    + '" id="nombre_linea_' + l.id + '" value="'
-                    + String(l.nombre).replace(/"/g, "&quot;")
-                    + '" style="border-width:1px;border-style:solid;border-color:' + col + '">&nbsp;'
-                    + '<a href="?page=config&tab=lineas&sub=editar&accion=eliminar_linea&id_linea=' + l.id + '">(X)</a><br />';
-            }
-            voypocolores++;
-        }
-    };
-    ajax.send(null);
-}
-
-/* ------------------------------------------------------------------ */
-/* Acciones del clic sobre el lienzo (despacho por estado)             */
-/* ------------------------------------------------------------------ */
-function ForgeMarcaPosicion(p) {
-    var x = Math.round(p.x), y = Math.round(p.y);
-    Forge.marcador = { x: x, y: y };
-    ForgeRender();
-    document.getElementById("x_hidden").value = x;
-    document.getElementById("y_hidden").value = y;
-    if (Forge.sub === "editar" && document.getElementById("x_camara")) {
-        document.getElementById("x_camara").value = x;
-        document.getElementById("y_camara").value = y;
-    } else if (document.getElementById("x_nueva")) {
-        document.getElementById("x_nueva").value = x;
-        document.getElementById("y_nueva").value = y;
-    }
-}
-
-/* =========================================================================
- * Modo crear nodos (sub=crear): flujo 100% visual sobre el lienzo.
- * 1) Clic sobre una cámara → cámara 1 (resaltada en verde).
- * 2) Clic sobre otra cámara → cámara 2 (resaltada).
- * 3) Arrastrar desde la cámara 1 hasta la cámara 2 dibujando el camino real.
- * 4) Al soltar: el trazo se muestrea a nodos, se ancla a ambas cámaras y se
- *    guarda con camino automático (AJAX a=9). Deshacer: AJAX a=10.
- * ========================================================================= */
-
-/* Refresca el panel de estado (indicadores de cámara y botón Deshacer). */
-function ForgeCrearActualizarPanel() {
-    var el1 = document.getElementById("forgeSelCam1");
-    var el2 = document.getElementById("forgeSelCam2");
-    var btn = document.getElementById("forgeDeshacerBtn");
-    if (el1) { el1.textContent = Forge.crear.cam1 ? Forge.crear.cam1.desc : "—"; }
-    if (el2) { el2.textContent = Forge.crear.cam2 ? Forge.crear.cam2.desc : "—"; }
-    if (btn) { btn.disabled = !Forge.crear.ultimo; }
-}
-
-/* Despacho del clic en nodos/crear: selección de cámaras y comienzo del trazo. */
-function ForgeCrearClic(p) {
-    var idx = ForgeCamHitTest(p);
-    if (Forge.crear.cam1 && Forge.crear.cam2) {
-        // Ambos seleccionados: el clic comienza el trazo a mano alzada.
-        Forge.crear.trazando = true;
-        Forge.crear.trazo = [{ x: Math.round(p.x), y: Math.round(p.y) }];
-        ForgeRender();
-        return;
-    }
-    if (idx < 0) {
-        if (!Forge.crear.cam1 && typeof rfToast === "function") {
-            rfToast("Haz clic sobre una cámara del plano.", "err");
-        }
-        return;
-    }
-    var cam = FORGE_CAMS[idx];
-    if (!Forge.crear.cam1) {
-        Forge.crear.cam1 = cam;
-    } else if (Forge.crear.cam1.id === cam.id) {
-        if (typeof rfToast === "function") {
-            rfToast("Elige otra cámara distinta.", "err");
-        }
-        return;
-    } else {
-        Forge.crear.cam2 = cam;
-    }
-    ForgeCrearActualizarPanel();
-    ForgeRender();
-}
-
-/* Empuja puntos al trazo mientras se arrastra (desde el listener de mousemove). */
-function ForgeCrearMouseMove(p) {
-    if (!Forge.crear.trazando) return;
-    Forge.crear.trazo.push({ x: Math.round(p.x), y: Math.round(p.y) });
-    ForgeRender();
-}
-
-/* Fin del arrastre: ancla los extremos a las cámaras y guarda la cadena. */
-function ForgeCrearSoltar() {
-    if (!Forge.crear.trazando) return;
-    Forge.crear.trazando = false;
-    if (Forge.crear.trazo.length < 2) {
-        Forge.crear.trazo = [];
-        if (typeof rfToast === "function") {
-            rfToast("Arrastra entre las dos cámaras para dibujar el camino real.", "err");
-        }
-        return;
-    }
-    var c1 = ForgeCamCoord(Forge.crear.cam1.id);
-    var c2 = ForgeCamCoord(Forge.crear.cam2.id);
-    // Anclar el primer punto a la cámara 1 y el último a la cámara 2.
-    Forge.crear.trazo[0] = { x: c1.x, y: c1.y };
-    Forge.crear.trazo[Forge.crear.trazo.length - 1] = { x: c2.x, y: c2.y };
-    var nodos = ForgeMuestrearTrazo(Forge.crear.trazo);
-    Forge.crear.trazo = [];
-    ForgeCrearGuardar(nodos);
-}
-
-/* Remuestrea el trazo por distancia acumulada: conserva un punto cada vez
- * que se superan 18px desde el último conservado, y siempre el último.
- * Garantiza al menos un nodo interior (punto medio) para no guardar cadenas
- * vacías. Devuelve nodos [{x,y}] ordenados cam1 → cam2. */
-function ForgeMuestrearTrazo(puntos) {
-    var umbral = 18;
-    var out = [{ x: puntos[0].x, y: puntos[0].y }];
-    var acum = 0;
-    var ultimo = out[0];
-    for (var i = 1; i < puntos.length; i++) {
-        var dx = puntos[i].x - ultimo.x;
-        var dy = puntos[i].y - ultimo.y;
-        acum += Math.sqrt(dx * dx + dy * dy);
-        if (acum >= umbral && i < puntos.length - 1) {
-            out.push({ x: puntos[i].x, y: puntos[i].y });
-            acum = 0;
-            ultimo = out[out.length - 1];
-        }
-    }
-    // El último punto siempre se conserva (está anclado a la cámara 2).
-    var fin = puntos[puntos.length - 1];
-    if (out[out.length - 1].x !== fin.x || out[out.length - 1].y !== fin.y) {
-        out.push({ x: fin.x, y: fin.y });
-    }
-    // Sin nodos interiores (p. ej. trazo casi recto y corto): punto medio.
-    if (out.length < 3) {
-        var medio = {
-            x: Math.round((out[0].x + out[out.length - 1].x) / 2),
-            y: Math.round((out[0].y + out[out.length - 1].y) / 2)
-        };
-        out.splice(1, 0, medio);
-    }
-    return out;
-}
-
-/* Guarda la cadena con camino automático (AJAX a=9) y refresca el lienzo. */
-function ForgeCrearGuardar(nodos) {
-    if (!Forge.crear.cam1 || !Forge.crear.cam2) return;
-    var c1 = Forge.crear.cam1, c2 = Forge.crear.cam2;
-    fetch("pages/config/acciones_ajax.php?a=9", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ camara1: c1.id, camara2: c2.id, nodos: nodos })
-    })
-    .then(function (res) {
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        return res.json();
-    })
-    .then(function (data) {
-        if (!data || !data.ok) {
-            var m = (data && data.error) ? data.error : "respuesta inválida";
-            if (typeof rfToast === "function") {
-                rfToast("No se pudo guardar el camino: " + m, "err");
-            }
-            return;
-        }
-        for (var i = 0; i < (data.nodos || []).length; i++) {
-            FORGE_NODOS.push(data.nodos[i]);
-        }
-        Forge.crear.ultimo = { camara1: c1.id, camara2: c2.id, camino: data.camino };
-        ForgeDibujarPlano();
-        ForgeCrearReset();
-        if (typeof rfToast === "function") {
-            rfToast("Camino " + data.camino + " guardado entre " + c1.desc + " y " + c2.desc + ".", "ok");
-        }
-    })
-    .catch(function (err) {
-        var m = "No se pudo guardar el camino: " + err.message;
-        if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
-    });
-}
-
-/* Deshace el último camino guardado (AJAX a=10) y resetea la selección. */
-function ForgeCrearDeshacer() {
-    var u = Forge.crear.ultimo;
-    if (!u) return;
-    fetch("pages/config/acciones_ajax.php?a=10", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ camara1: u.camara1, camara2: u.camara2, camino: u.camino })
-    })
-    .then(function (res) {
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        return res.json();
-    })
-    .then(function (data) {
-        if (!data || !data.ok) {
-            var m = (data && data.error) ? data.error : "respuesta inválida";
-            if (typeof rfToast === "function") {
-                rfToast("No se pudo eliminar el camino: " + m, "err");
-            }
-            return;
-        }
-        var a = u.camara1, b = u.camara2, c = u.camino;
-        FORGE_NODOS = FORGE_NODOS.filter(function (n) {
-            var n1 = parseInt(n.camara_id1, 10), n2 = parseInt(n.camara_id2, 10);
-            var nc = parseInt(n.camino || 0, 10);
-            var esPar = (n1 === a && n2 === b) || (n1 === b && n2 === a);
-            return !(esPar && nc === c);
-        });
-        Forge.crear.ultimo = null;
-        ForgeDibujarPlano();
-        ForgeCrearReset();
-        if (typeof rfToast === "function") rfToast("Camino eliminado.", "ok");
-    })
-    .catch(function (err) {
-        var m = "No se pudo eliminar el camino: " + err.message;
-        if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
-    });
-}
-
-/* Limpia la selección y el trazo del modo crear (mantiene `ultimo`). */
-function ForgeCrearReset() {
-    Forge.crear.cam1 = null;
-    Forge.crear.cam2 = null;
-    Forge.crear.trazando = false;
-    Forge.crear.trazo = [];
-    ForgeCrearActualizarPanel();
-    ForgeRender();
-}
-
-/* =========================================================================
- * Modo editar nodos (sub=editar): arrastrar nodos para reposicionarlos,
- * clic derecho para eliminarlos. La cadena se carga con ForgeCargarEditar().
- * ========================================================================= */
-
-/* Pinta la cadena en edición resaltada (naranja) con asas arrastrables. */
-function ForgePintarEditar(ctx) {
-    var c = Forge.editChain;
-    if (!c) return;
-    var c1 = ForgeCamCoord(c.cam1), c2 = ForgeCamCoord(c.cam2);
-    ctx.save();
-    // camino resaltado
-    ctx.strokeStyle = "#ff9500";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    if (c1) { ctx.moveTo(c1.x, c1.y); } else if (c.nodos.length) { ctx.moveTo(c.nodos[0].x, c.nodos[0].y); }
-    for (var i = 0; i < c.nodos.length; i++) {
-        ctx.lineTo(c.nodos[i].x, c.nodos[i].y);
-    }
-    if (c2) { ctx.lineTo(c2.x, c2.y); }
-    ctx.stroke();
-    // asas arrastrables
-    for (var j = 0; j < c.nodos.length; j++) {
-        var n = c.nodos[j];
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, 7, 0, Math.PI * 2);
-        ctx.fillStyle = "#ff9500";
-        ctx.fill();
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        if (Forge.drag && Forge.drag.index === j) {
-            ctx.beginPath();
-            ctx.arc(n.x, n.y, 3, 0, Math.PI * 2);
-            ctx.fillStyle = "#ffffff";
-            ctx.fill();
-        }
-    }
-    ctx.restore();
-}
-
-/* Índice del nodo bajo el cursor, o -1. */
-function ForgeEditarHitTest(p) {
-    if (!Forge.editChain) return -1;
-    var R = 12;
-    for (var i = 0; i < Forge.editChain.nodos.length; i++) {
-        var n = Forge.editChain.nodos[i];
-        if (Math.abs(n.x - p.x) <= R && Math.abs(n.y - p.y) <= R) {
-            return i;
-        }
-    }
-    return -1;
-}
-
-/* Carga la cadena del par+camino seleccionados para editarla. */
-function ForgeCargarEditar() {
-    var c1 = parseInt(document.getElementById("camara1_ed").value, 10);
-    var c2 = parseInt(document.getElementById("camara2_ed").value, 10);
-    var caminoSel = document.getElementById("camino_ed");
-    var camino = caminoSel ? (parseInt(caminoSel.value, 10) || 0) : 0;
-
-    if (!c1 || !c2 || c1 === c2) {
-        if (typeof rfToast === "function") rfToast("Selecciona dos cámaras distintas.", "err");
-        return;
-    }
-    var lo = c1 < c2 ? c1 : c2, hi = c1 < c2 ? c2 : c1;
-    var cadenas = ForgeAgruparNodos();
-    Forge.editChain = null;
-    for (var i = 0; i < cadenas.length; i++) {
-        if (cadenas[i].cam1 === lo && cadenas[i].cam2 === hi && cadenas[i].camino === camino) {
-            Forge.editChain = {
-                cam1: lo, cam2: hi, camino: camino,
-                nodos: cadenas[i].nodos.slice()
-            };
-            break;
-        }
-    }
-    if (!Forge.editChain) {
-        if (typeof rfToast === "function") rfToast("No hay nodos en ese camino.", "err");
-        return;
-    }
-    ForgeRender();
-}
-
-function ForgeEditarMouseDown(p) {
-    var idx = ForgeEditarHitTest(p);
-    if (idx < 0) return;
-    Forge.drag = { index: idx };
-    // El nodo se "engancha" justo bajo el cursor.
-    Forge.editChain.nodos[idx].x = Math.round(p.x);
-    Forge.editChain.nodos[idx].y = Math.round(p.y);
-    ForgeRender();
-}
-
-function ForgeEditarMouseMove(p) {
-    if (!Forge.drag) return;
-    var n = Forge.editChain.nodos[Forge.drag.index];
-    n.x = Math.round(p.x);
-    n.y = Math.round(p.y);
-    ForgeRender();
-}
-
-function ForgeEditarMouseUp() {
-    if (!Forge.drag) return;
-    var idx = Forge.drag.index;
-    var n = Forge.editChain.nodos[idx];
-    Forge.drag = null;
-    ForgeGuardarNodoPos(n.id, n.x, n.y);
-}
-
-/* Clic derecho: eliminar el nodo bajo el cursor. */
-function ForgeEditarContext(p) {
-    var idx = ForgeEditarHitTest(p);
-    if (idx < 0) return;
-    var n = Forge.editChain.nodos[idx];
-    if (!confirm("¿Eliminar este nodo del camino?")) return;
-    ForgeBorrarNodo(n.id, idx);
-}
-
-/* Persiste la nueva posición del nodo (AJAX a=6). */
-function ForgeGuardarNodoPos(id, x, y) {
-    fetch("pages/config/acciones_ajax.php?a=6", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: id, x: x, y: y })
-    })
-    .then(function (res) {
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        return res.text();
-    })
-    .then(function (txt) {
-        if (txt.indexOf("error") !== -1) {
-            var m = "No se pudo mover el nodo: " + txt;
-            if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
-            return;
-        }
-        ForgeActualizarNodoPos(id, x, y);
-        ForgeDibujarPlano();
-    })
-    .catch(function (err) {
-        var m = "No se pudo mover el nodo: " + err.message;
-        if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
-    });
-}
-
-/* Elimina un nodo individual (AJAX a=7). */
-function ForgeBorrarNodo(id, idx) {
-    fetch("pages/config/acciones_ajax.php?a=7", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: id })
-    })
-    .then(function (res) {
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        return res.text();
-    })
-    .then(function (txt) {
-        if (txt.indexOf("error") !== -1) {
-            var m = "No se pudo eliminar el nodo: " + txt;
-            if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
-            return;
-        }
-        ForgeQuitarNodo(id);
-        if (Forge.editChain) {
-            Forge.editChain.nodos.splice(idx, 1);
-        }
-        ForgeDibujarPlano();
-    })
-    .catch(function (err) {
-        var m = "No se pudo eliminar el nodo: " + err.message;
-        if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
-    });
-}
-
-/* Actualiza x/y de un nodo en FORGE_NODOS (raw) sin recargar. */
-function ForgeActualizarNodoPos(id, x, y) {
-    for (var i = 0; i < FORGE_NODOS.length; i++) {
-        if (parseInt(FORGE_NODOS[i].id, 10) === id) {
-            FORGE_NODOS[i].x = x;
-            FORGE_NODOS[i].y = y;
-            break;
-        }
-    }
-}
-
-/* Elimina un nodo de FORGE_NODOS (raw) sin recargar. */
-function ForgeQuitarNodo(id) {
-    for (var i = FORGE_NODOS.length - 1; i >= 0; i--) {
-        if (parseInt(FORGE_NODOS[i].id, 10) === id) {
-            FORGE_NODOS.splice(i, 1);
-        }
-    }
-}
-
-/* =========================================================================
- * Arrastre de cámaras en el plano (tab=plano): mover la cámara arrastrándola.
- * Se persiste al soltar (AJAX a=8). Radio de agarre generoso (14px) aunque
- * el marcador mida 10x10; coordenadas acotadas al lienzo.
- * ========================================================================= */
-
-/* Índice de la cámara bajo el cursor, o -1. Distancia al centro del marcador
- * (cuadrado 10x10 en x,y) <= 12px. Lo usan el arrastre de cámaras en el plano
- * y la selección visual de cámaras en nodos/crear. */
-function ForgeCamHitTest(p) {
-    var R = 12;
-    for (var i = 0; i < FORGE_CAMS.length; i++) {
-        var c = FORGE_CAMS[i];
-        var cx = c.x + 5, cy = c.y + 5;
-        var dx = cx - p.x, dy = cy - p.y;
-        if (Math.sqrt(dx * dx + dy * dy) <= R) {
-            return i;
-        }
-    }
-    return -1;
-}
-
-/* Acota la posición de la cámara al lienzo (no se puede sacar del plano). */
-function ForgeClampCamara(idx) {
-    var c = FORGE_CAMS[idx];
-    if (!c) return;
-    c.x = Math.max(0, Math.min(Forge.canvas.width - 10, c.x));
-    c.y = Math.max(0, Math.min(Forge.canvas.height - 10, c.y));
-}
-
-/* Persiste la nueva posición de la cámara (AJAX a=8). */
-function ForgeGuardarCamPos(id, x, y) {
-    fetch("pages/config/acciones_ajax.php?a=8", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: id, x: x, y: y })
-    })
-    .then(function (res) {
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        return res.text();
-    })
-    .then(function (txt) {
-        if (txt.indexOf("error") !== -1) {
-            var m = "No se pudo mover la cámara: " + txt;
-            if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
-            return;
-        }
-        if (typeof rfToast === "function") rfToast("Cámara reposicionada en el plano.", "ok");
-    })
-    .catch(function (err) {
-        var m = "No se pudo mover la cámara: " + err.message;
-        if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
-    });
-}
-
-function ForgeCamDragStart(p) {
-    var idx = ForgeCamHitTest(p);
-    if (idx < 0) return;
-    var c = FORGE_CAMS[idx];
-    Forge.camDrag = { index: idx, x0: c.x, y0: c.y };
-    Forge.camHover = idx;
-    Forge.canvas.style.cursor = "grabbing";
-    c.x = Math.round(p.x);
-    c.y = Math.round(p.y);
-    ForgeClampCamara(idx);
-    ForgeDibujarPlano();
-}
-
-function ForgeCamDragMove(p) {
-    if (!Forge.camDrag) return;
-    var c = FORGE_CAMS[Forge.camDrag.index];
-    c.x = Math.round(p.x);
-    c.y = Math.round(p.y);
-    ForgeClampCamara(Forge.camDrag.index);
-    ForgeDibujarPlano();
-}
-
-function ForgeCamDragEnd() {
-    if (!Forge.camDrag) return;
-    var d = Forge.camDrag;
-    var c = FORGE_CAMS[d.index];
-    Forge.camDrag = null;
-    Forge.canvas.style.cursor = "";
-    if (c.x === d.x0 && c.y === d.y0) {
-        return; // no se movió: nada que guardar
-    }
-    ForgeGuardarCamPos(c.id, c.x, c.y);
-}
-
-/* Resaltado + cursor al pasar sobre una cámara (sin arrastre). */
-function ForgeCamHover(p) {
-    if (Forge.camDrag) {
-        Forge.canvas.style.cursor = "grabbing";
-        return;
-    }
-    var idx = ForgeCamHitTest(p);
-    if (idx !== Forge.camHover) {
-        Forge.camHover = idx;
-        ForgeDibujarPlano();
-    }
-    Forge.canvas.style.cursor = (idx >= 0 && Forge.mode === "plano") ? "grab" : "default";
-}
-
-function ForgeDibujaLinea(p) {
-    var ctx = Forge.ctx;
-    var col = listado_colores[voypocolores % listado_colores.length];
-    var x = Math.round(p.x), y = Math.round(p.y);
-    ctx.fillStyle = col;
-    ctx.fillRect(x - 5, y - 5, 10, 10);
-
-    if (Forge.punto === 2) {
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x_lineas[x_lineas.length - 1], y_lineas[y_lineas.length - 1]);
-        ctx.stroke();
-        var capa = document.getElementById("nombres_lineas_capa");
-        if (capa) {
-            capa.innerHTML += '<input type="text" name="nombre_linea_nueva_' + Forge.lineas_nuevas
-                + '" id="nombre_linea_nueva_' + Forge.lineas_nuevas + '" value=""'
-                + ' style="border-width:1px;border-style:solid;border-color:' + col + '"><br />';
-        }
-        voypocolores++;
-        Forge.lineas_nuevas++;
-    }
-
-    x_lineas.push(x);
-    y_lineas.push(y);
-    Forge.punto = (Forge.punto === 1) ? 2 : 1;
-}
-
-/* =========================================================================
- * Líneas del plano (tab=lineas, sub=plano): listado + dibujo a dos clics +
- * arrastre de extremos. Se pintan como rallitas finas continuas.
- * ========================================================================= */
-
-function ForgeEsc(s) {
-    return String(s == null ? "" : s)
-        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-}
-
-function ForgeLineaPlanoPorId(id) {
-    for (var i = 0; i < FORGE_LINEAS_PLANO.length; i++) {
-        if (FORGE_LINEAS_PLANO[i].id === id) return FORGE_LINEAS_PLANO[i];
+        if (n.tipo === tipo && n.ref_id === ref_id) return n;
     }
     return null;
 }
+function ForgeSenderoById(id) {
+    for (var i = 0; i < FORGE_SENDEROS.length; i++) if (FORGE_SENDEROS[i].id === id) return FORGE_SENDEROS[i];
+    return null;
+}
+function ForgeEsc(s) {
+    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+function ForgeLineasDeCamara(camId) {
+    var out = [];
+    for (var i = 0; i < FORGE_LINEAS.length; i++) if (FORGE_LINEAS[i].camara_id === camId) out.push(FORGE_LINEAS[i]);
+    return out;
+}
+function ForgeLineaPlanoDeLinea(lineaId) {
+    for (var i = 0; i < FORGE_LINEAS_PLANO.length; i++) if (FORGE_LINEAS_PLANO[i].linea_id === lineaId) return FORGE_LINEAS_PLANO[i];
+    return null;
+}
 
-function ForgeLineaPlanoCamaraNombre(camId) {
+/* =========================================================================
+ * El Yunque — lienzo de disposición del plano
+ * ========================================================================= */
+var Yunque = {
+    canvas: null, ctx: null, planoImg: null, baseCache: null,
+    camDrag: null,            // cámara colocada en arrastre: {index}
+    camSeleccionada: null,    // id de cámara seleccionada (panel de líneas)
+    lineDrag: null,           // arrastre de extremo de línea del plano: {i, ext}
+    nodoSel1: null,           // {tipo, ref_id} primer nodo (senderos)
+    senderoDrag: null,        // arrastre de punto intermedio de sendero: {sid, pi}
+    modoSenderos: false,
+    estilo: "recto",
+};
+
+/* Dibuja el plano base + cámaras + líneas + nodos + senderos en cache. */
+function YunquePintarBase(bctx) {
+    bctx.clearRect(0, 0, Yunque.canvas.width, Yunque.canvas.height);
+
+    // cámaras colocadas (2 estados: completa vs no completada)
     for (var i = 0; i < FORGE_CAMS.length; i++) {
-        if (String(FORGE_CAMS[i].id) === String(camId)) return FORGE_CAMS[i].desc;
+        var c = FORGE_CAMS[i];
+        if (!c.colocada) continue;
+        var col = c.completa ? COLOR_CAM_OK : COLOR_CAM_KO;
+        bctx.fillStyle = col;
+        bctx.fillRect(c.x, c.y, 12, 12);
+        bctx.strokeStyle = c.completa ? "#0e5c1f" : "#7a1f0e";
+        bctx.lineWidth = 2;
+        bctx.strokeRect(c.x - 3, c.y - 3, 18, 18);
+        if (!c.completa) {
+            bctx.save();
+            bctx.strokeStyle = "#ffffff";
+            bctx.setLineDash([3, 3]);
+            bctx.strokeRect(c.x - 5, c.y - 5, 22, 22);
+            bctx.restore();
+        }
+        bctx.font = "11px Arial";
+        bctx.fillText(c.desc, c.x, c.y - 8);
     }
-    return "—";
+
+    // líneas del plano (rallitas + nombre + rayo de enfoque)
+    for (var li = 0; li < FORGE_LINEAS_PLANO.length; li++) {
+        var L = FORGE_LINEAS_PLANO[li];
+        bctx.strokeStyle = COLOR_LINEA_PLANO;
+        bctx.lineWidth = 2;
+        bctx.beginPath();
+        bctx.moveTo(L.x1, L.y1);
+        bctx.lineTo(L.x2, L.y2);
+        bctx.stroke();
+        bctx.fillStyle = COLOR_LINEA_PLANO;
+        bctx.fillRect(L.x1 - 3, L.y1 - 3, 6, 6);
+        bctx.fillRect(L.x2 - 3, L.y2 - 3, 6, 6);
+        bctx.fillText(L.nombre, L.x1, L.y1 - 6);
+        var cam = ForgeCamById(L.camara_id);
+        if (cam && cam.colocada) {
+            bctx.save();
+            bctx.strokeStyle = "#ff9500";
+            bctx.lineWidth = 1;
+            bctx.setLineDash([4, 4]);
+            bctx.beginPath();
+            bctx.moveTo(cam.x + 6, cam.y + 6);
+            bctx.lineTo((L.x1 + L.x2) / 2, (L.y1 + L.y2) / 2);
+            bctx.stroke();
+            bctx.restore();
+        }
+    }
+
+    // nodos (cámara = rojo cuadrado, línea = azul círculo en punto medio)
+    for (var ni = 0; ni < FORGE_NODOS.length; ni++) {
+        var n = FORGE_NODOS[ni];
+        if (n.tipo === "camara") {
+            bctx.fillStyle = COLOR_NODO_CAMARA;
+            bctx.fillRect(n.x - 4, n.y - 4, 8, 8);
+        } else {
+            bctx.fillStyle = COLOR_NODO_LINEA;
+            bctx.beginPath();
+            bctx.arc(n.x, n.y, 5, 0, Math.PI * 2);
+            bctx.fill();
+        }
+        bctx.fillStyle = "#bbbbbb";
+        bctx.font = "10px Arial";
+        bctx.fillText(n.nombre, n.x + 7, n.y + 3);
+    }
+
+    // senderos
+    for (var si = 0; si < FORGE_SENDEROS.length; si++) {
+        YunquePintarSendero(bctx, FORGE_SENDEROS[si]);
+    }
 }
 
-/* Reconstruye el listado (aplica el filtro por cámara) desde FORGE_LINEAS_PLANO. */
-function ForgeLineasPlanoRenderLista() {
-    var cont = document.getElementById("lineas_plano_lista");
-    if (!cont) return;
-    var sel = document.getElementById("filtro_camara_plano");
-    var f = sel ? sel.value : "-";
-    var html = [];
-    for (var i = 0; i < FORGE_LINEAS_PLANO.length; i++) {
-        var L = FORGE_LINEAS_PLANO[i];
-        if (f !== "-" && String(L.camara_id) !== String(f)) continue;
-        html.push('<div class="forge-linea-plano" data-id="' + L.id + '">'
-            + '<button type="button" class="forge-linea-plano__boton' + (Forge.lineaPlanoSel === L.id ? ' is-active' : '') + '"'
-            + ' data-lp-id="' + L.id + '" onclick="ForgeLineaPlanoSeleccionar(' + L.id + ')">'
-            + '<span class="forge-linea-plano__nombre">' + ForgeEsc(L.nombre) + '</span>'
-            + '<span class="forge-linea-plano__camara">' + ForgeEsc(L.camara_nombre || "—") + '</span>'
-            + '</button>'
-            + '<a href="javascript:;" class="forge-linea-plano__borrar" title="Borrar línea del plano"'
-            + ' onclick="ForgeLineaPlanoBorrar(' + L.id + ')">(X)</a>'
-            + '</div>');
-    }
-    if (!html.length) {
-        cont.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-600">'
-            + (f !== "-" ? "Sin líneas para esta cámara." : "Aún no hay líneas en el plano. Crea la primera abajo.")
-            + '</p>';
+function YunquePintarSendero(bctx, s) {
+    var a = ForgeNodoByRef(s.origen_tipo, s.origen_id);
+    var b = ForgeNodoByRef(s.destino_tipo, s.destino_id);
+    if (!a || !b) return;
+    var pts = [{ x: a.x, y: a.y }];
+    for (var i = 0; i < s.puntos.length; i++) pts.push({ x: s.puntos[i][0], y: s.puntos[i][1] });
+    pts.push({ x: b.x, y: b.y });
+
+    bctx.save();
+    bctx.strokeStyle = COLOR_SENDERO;
+    bctx.lineWidth = 3;
+    bctx.beginPath();
+    bctx.moveTo(pts[0].x, pts[0].y);
+    if (s.estilo === "curvo" && pts.length > 2) {
+        for (var j = 1; j < pts.length - 1; j++) {
+            var mx = (pts[j].x + pts[j + 1].x) / 2, my = (pts[j].y + pts[j + 1].y) / 2;
+            bctx.quadraticCurveTo(pts[j].x, pts[j].y, mx, my);
+        }
+        bctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
     } else {
-        cont.innerHTML = html.join("");
+        for (var k = 1; k < pts.length; k++) bctx.lineTo(pts[k].x, pts[k].y);
+    }
+    bctx.stroke();
+    bctx.restore();
+
+    // asas de los puntos intermedios
+    bctx.fillStyle = COLOR_SENDERO;
+    for (var h = 0; h < s.puntos.length; h++) {
+        bctx.fillRect(s.puntos[h][0] - 4, s.puntos[h][1] - 4, 8, 8);
     }
 }
 
-function ForgeLineaPlanoFiltro() {
-    ForgeLineasPlanoRenderLista();
-}
-
-/* Selecciona una línea del listado: se resalta en el plano junto a su cámara
- * y se precargan nombre/cámara para poder redibujarla. */
-function ForgeLineaPlanoSeleccionar(id) {
-    var L = ForgeLineaPlanoPorId(id);
-    if (!L) return;
-    Forge.lineaPlanoSel = id;
-    ForgeLineaPlanoResetDibujo();
-    Forge.mode = "plano";
-    ForgeModoActualizarChip();
-    var nombre = document.getElementById("nombre_linea_plano");
-    if (nombre) nombre.value = L.nombre;
-    var camara = document.getElementById("camara_linea_plano");
-    if (camara) camara.value = String(L.camara_id);
-    ForgeLineaPlanoCargarLineasCamara(L.camara_id);
-    var hint = document.getElementById("hint_linea_plano");
-    if (hint) {
-        hint.textContent = "Línea «" + L.nombre + "» marcada en el plano. Arrastra sus extremos para ajustarla, pulsa «Redibujar seleccionada» para volver a trazarla o borra con (X).";
+function YunqueDibujar() {
+    if (!Yunque.canvas) return;
+    var ctx = Yunque.ctx, W = Yunque.canvas.width, H = Yunque.canvas.height;
+    if (!Yunque.baseCache) {
+        Yunque.baseCache = document.createElement("canvas");
+        Yunque.baseCache.width = W; Yunque.baseCache.height = H;
     }
-    ForgeLineasPlanoRenderLista();
-    ForgeDibujarPlano();
+    var bctx = Yunque.baseCache.getContext("2d");
+    bctx.clearRect(0, 0, W, H);
+    if (Yunque.planoImg && Yunque.planoImg.complete && Yunque.planoImg.naturalWidth > 0) {
+        bctx.drawImage(Yunque.planoImg, 0, 0, W, H);
+    }
+    YunquePintarBase(bctx);
+    YunqueRender();
 }
 
-/* Limpia el estado de dibujo de línea del plano. */
-function ForgeLineaPlanoResetDibujo() {
-    Forge.lpModo = null;
-    Forge.lpTarget = null;
-    Forge.lpPunto = 1;
-    Forge.lpX1 = 0; Forge.lpY1 = 0; Forge.lpX2 = 0; Forge.lpY2 = 0;
+function YunqueRender() {
+    var ctx = Yunque.ctx;
+    ctx.clearRect(0, 0, Yunque.canvas.width, Yunque.canvas.height);
+    if (Yunque.baseCache) ctx.drawImage(Yunque.baseCache, 0, 0);
+
+    // resaltado de nodo seleccionado (senderos)
+    if (Yunque.nodoSel1) {
+        var n = ForgeNodoByRef(Yunque.nodoSel1.tipo, Yunque.nodoSel1.ref_id);
+        if (n) {
+            ctx.save();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 3;
+            if (n.tipo === "camara") ctx.strokeRect(n.x - 8, n.y - 8, 16, 16);
+            else { ctx.beginPath(); ctx.arc(n.x, n.y, 10, 0, Math.PI * 2); ctx.stroke(); }
+            ctx.restore();
+        }
+    }
+    // resaltado de cámara seleccionada (panel de líneas)
+    if (Yunque.camSeleccionada) {
+        var c = ForgeCamById(Yunque.camSeleccionada);
+        if (c && c.colocada) {
+            ctx.save();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 3;
+            ctx.strokeRect(c.x - 6, c.y - 6, 24, 24);
+            ctx.restore();
+        }
+    }
 }
 
-/* Inicia el modo de dibujo de una línea NUEVA en el plano (dos clics). */
-function ForgeLineaPlanoNueva() {
-    var nombre = document.getElementById("nombre_linea_plano");
-    var camara = document.getElementById("camara_linea_plano");
-    if (!nombre || !camara) return;
-    if (nombre.value.trim() === "") {
-        if (typeof rfToast === "function") rfToast("Escribe un nombre para la línea.", "err"); else alert("Escribe un nombre para la línea.");
+/* Barra lateral: cámaras fuera del plano (colocada=0), arrastrables. */
+function YunqueRenderSidebar() {
+    var cont = document.getElementById("yunqueCamsFuera");
+    if (!cont) return;
+    var html = [];
+    for (var i = 0; i < FORGE_CAMS.length; i++) {
+        var c = FORGE_CAMS[i];
+        if (c.colocada) continue;
+        html.push('<div class="yunque-cam-fuera" draggable="true" data-cam-id="' + c.id + '">'
+            + '<img src="fotos_camara/' + c.id + '.png" onerror="this.onerror=null;this.style.opacity=0.2" alt="">'
+            + '<span>' + ForgeEsc(c.desc) + '</span></div>');
+    }
+    cont.innerHTML = html.length ? html.join("") : '<p class="text-xs text-gray-500 dark:text-gray-600">Todas las cámaras están en el plano.</p>';
+}
+
+function YunqueRenderEstado() {
+    var el = document.getElementById("yunqueEstado");
+    if (!el) return;
+    var pendCams = 0, pendLineas = 0;
+    for (var i = 0; i < FORGE_CAMS.length; i++) {
+        if (!FORGE_CAMS[i].colocada) pendCams++;
+        if (!FORGE_CAMS[i].completa) pendLineas++;
+    }
+    if (FORGE_PLANO_COMPLETO) {
+        el.className = "yunque-estado yunque-estado--ok";
+        el.innerHTML = "✔ Plano completado";
+    } else {
+        el.className = "yunque-estado yunque-estado--pend";
+        el.innerHTML = "Pendiente · " + pendCams + " cámara(s) sin colocar · " + pendLineas + " cámara(s) con líneas pendientes";
+    }
+}
+
+/* Panel de líneas de la cámara seleccionada. */
+function YunqueRenderLineasPanel() {
+    var cont = document.getElementById("yunqueLineasPanel");
+    if (!cont) return;
+    if (!Yunque.camSeleccionada) { cont.innerHTML = ""; return; }
+    var c = ForgeCamById(Yunque.camSeleccionada);
+    if (!c) { cont.innerHTML = ""; return; }
+    var lineas = ForgeLineasDeCamara(c.id);
+    var titulo = document.getElementById("yunqueLineasTitulo");
+    if (titulo) titulo.textContent = "Líneas de «" + c.desc + "»";
+    if (!lineas.length) {
+        cont.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-600">Esta cámara no tiene líneas configuradas (es un nodo).</p>';
         return;
     }
-    if (camara.value === "-" || camara.value === "") {
-        if (typeof rfToast === "function") rfToast("Elige la cámara a la que pertenece la línea.", "err"); else alert("Elige la cámara.");
-        return;
+    var html = [];
+    for (var i = 0; i < lineas.length; i++) {
+        var L = lineas[i];
+        var lp = ForgeLineaPlanoDeLinea(L.id);
+        if (lp) {
+            html.push('<div class="yunque-linea yunque-linea--ok">'
+                + '<span class="yunque-linea__nombre">' + ForgeEsc(L.nombre) + '</span>'
+                + '<span class="yunque-linea__estado">✔ en plano</span></div>');
+        } else {
+            html.push('<div class="yunque-linea yunque-linea--pend" draggable="true" data-linea-id="' + L.id + '">'
+                + '<span class="yunque-linea__nombre">' + ForgeEsc(L.nombre) + '</span>'
+                + '<span class="yunque-linea__estado">arrastra al plano</span></div>');
+        }
     }
-    Forge.lineaPlanoSel = null;
-    Forge.lpModo = "nueva";
-    Forge.lpTarget = null;
-    Forge.lpPunto = 1;
-    Forge.mode = "plano";
-    ForgeModoActualizarChip();
-    var hint = document.getElementById("hint_linea_plano");
-    if (hint) hint.textContent = "Haz clic en el plano para fijar el INICIO de la línea. El segundo clic fija el FIN y la guarda.";
-    ForgeLineasPlanoRenderLista();
-    ForgeDibujarPlano();
+    cont.innerHTML = html.join("");
 }
 
-/* Redibuja la línea seleccionada: vuelve a trazarla a dos clics sobre la misma. */
-function ForgeLineaPlanoRedibujar() {
-    if (!Forge.lineaPlanoSel) {
-        if (typeof rfToast === "function") rfToast("Selecciona primero una línea del listado.", "err"); else alert("Selecciona primero una línea.");
-        return;
+/* Arrastre de cámara colocada sobre el lienzo. */
+function YunqueCamHitTest(p) {
+    var R = 14;
+    for (var i = 0; i < FORGE_CAMS.length; i++) {
+        var c = FORGE_CAMS[i];
+        if (!c.colocada) continue;
+        var dx = (c.x + 6) - p.x, dy = (c.y + 6) - p.y;
+        if (Math.sqrt(dx * dx + dy * dy) <= R) return i;
     }
-    Forge.lpModo = "editar";
-    Forge.lpTarget = Forge.lineaPlanoSel;
-    Forge.lpPunto = 1;
-    Forge.mode = "plano";
-    ForgeModoActualizarChip();
-    var hint = document.getElementById("hint_linea_plano");
-    if (hint) hint.textContent = "Redibujando la línea seleccionada: primer clic = inicio, segundo clic = fin (se guarda sobre la misma).";
-    ForgeDibujarPlano();
+    return -1;
+}
+function YunqueClampCam(c) {
+    c.x = Math.max(0, Math.min(Yunque.canvas.width - 12, c.x));
+    c.y = Math.max(0, Math.min(Yunque.canvas.height - 12, c.y));
+}
+function YunqueGuardarCamPos(id, x, y) {
+    fetch("pages/config/acciones_ajax.php?a=8", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, x: x, y: y })
+    }).then(function (r) { return r.text(); }).then(function (t) {
+        if (t.indexOf("error") !== -1 && typeof rfToast === "function") rfToast("No se pudo mover la cámara.", "err");
+    }).catch(function () {});
 }
 
-/* Despacho del clic en el lienzo para sub=plano. */
-function ForgeLineaPlanoClick(p) {
-    if (!Forge.lpModo) return;
-    var x = Math.max(0, Math.min(Forge.canvas.width - 1, Math.round(p.x)));
-    var y = Math.max(0, Math.min(Forge.canvas.height - 1, Math.round(p.y)));
-    if (Forge.lpPunto === 1) {
-        Forge.lpX1 = x; Forge.lpY1 = y; Forge.lpPunto = 2;
-        ForgeRender();
-        return;
-    }
-    Forge.lpX2 = x; Forge.lpY2 = y;
-    ForgeLineaPlanoGuardar();
+/* Suelta de una cámara arrastrada desde la barra lateral (HTML5 DnD). */
+function YunqueColocarCamara(camId, p) {
+    var c = ForgeCamById(camId);
+    if (!c) return;
+    var x = Math.max(0, Math.min(Yunque.canvas.width - 12, Math.round(p.x - 6)));
+    var y = Math.max(0, Math.min(Yunque.canvas.height - 12, Math.round(p.y - 6)));
+    fetch("pages/config/acciones_ajax.php?a=8", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: camId, x: x, y: y })
+    }).then(function (r) { return r.text(); }).then(function (t) {
+        if (t.indexOf("error") !== -1) { if (typeof rfToast === "function") rfToast("No se pudo colocar la cámara.", "err"); return; }
+        c.x = x; c.y = y; c.colocada = 1;
+        FORGE_PLANO_COMPLETO = false;
+        YunqueDibujar(); YunqueRenderSidebar(); YunqueRenderEstado();
+        if (typeof rfToast === "function") rfToast("Cámara colocada en el plano.", "ok");
+    }).catch(function () {});
 }
 
-/* Persiste la línea dibujada (nueva → a=9, redibujo → a=10). */
-function ForgeLineaPlanoGuardar() {
-    if (Forge.lpModo === "editar") {
-        var body = { id: Forge.lpTarget, x1: Forge.lpX1, y1: Forge.lpY1, x2: Forge.lpX2, y2: Forge.lpY2 };
-        fetch("pages/config/acciones_ajax.php?a=12", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body)
-        })
-        .then(function (res) { return res.text(); })
-        .then(function (txt) {
-            if (txt.indexOf("error") !== -1) {
-                var m = "No se pudo redibujar la línea: " + txt;
-                if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
-                return;
-            }
-            var L = ForgeLineaPlanoPorId(Forge.lpTarget);
-            if (L) { L.x1 = body.x1; L.y1 = body.y1; L.x2 = body.x2; L.y2 = body.y2; }
-            ForgeLineaPlanoResetDibujo();
-            if (typeof rfToast === "function") rfToast("Línea redibujada en el plano.", "ok");
-            var hint = document.getElementById("hint_linea_plano");
-            if (hint) hint.textContent = "Línea actualizada. Arrastra sus extremos para ajustarla o dibuja otra.";
-            ForgeLineasPlanoRenderLista();
-            ForgeDibujarPlano();
-        })
-        .catch(function (err) {
-            var m = "No se pudo redibujar la línea: " + err.message;
-            if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
-        });
-        return;
-    }
-
-    var nombreEl = document.getElementById("nombre_linea_plano");
-    var camaraEl = document.getElementById("camara_linea_plano");
-    var lineaCamEl = document.getElementById("linea_camara_plano");
-    var lineaId = lineaCamEl ? (parseInt(lineaCamEl.value, 10) || 0) : 0;
-    var body2 = {
-        camara_id: parseInt(camaraEl.value, 10) || 0,
-        nombre: nombreEl.value,
-        x1: Forge.lpX1, y1: Forge.lpY1, x2: Forge.lpX2, y2: Forge.lpY2,
+/* Coloca una línea de cámara en el plano (arrastrada desde el panel). */
+function YunqueColocarLinea(lineaId, p) {
+    var linea = null;
+    for (var i = 0; i < FORGE_LINEAS.length; i++) if (FORGE_LINEAS[i].id === lineaId) { linea = FORGE_LINEAS[i]; break; }
+    if (!linea) return;
+    var x = Math.round(p.x), y = Math.round(p.y);
+    var body = {
+        camara_id: linea.camara_id, nombre: linea.nombre,
+        x1: Math.max(0, x - 30), y1: y, x2: Math.min(Yunque.canvas.width - 1, x + 30), y2: y,
         linea_id: lineaId
     };
     fetch("pages/config/acciones_ajax.php?a=11", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body2)
-    })
-    .then(function (res) { return res.text(); })
-    .then(function (txt) {
-        if (txt.indexOf("error") !== -1 || txt.indexOf("ok:") !== 0) {
-            var m = "No se pudo guardar la línea: " + txt;
-            if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
-            return;
-        }
-        var id = parseInt(txt.slice(3), 10) || 0;
-        FORGE_LINEAS_PLANO.unshift({
-            id: id, camara_id: body2.camara_id, linea_id: lineaId,
-            camara_nombre: ForgeLineaPlanoCamaraNombre(body2.camara_id),
-            nombre: body2.nombre,
-            x1: body2.x1, y1: body2.y1, x2: body2.x2, y2: body2.y2
-        });
-        Forge.lineaPlanoSel = id;
-        ForgeLineaPlanoResetDibujo();
-        if (typeof rfToast === "function") rfToast("Línea guardada en el plano.", "ok");
-        var hint = document.getElementById("hint_linea_plano");
-        if (hint) hint.textContent = "Línea guardada. Arrastra sus extremos para ajustarla o dibuja otra.";
-        ForgeLineasPlanoRenderLista();
-        ForgeDibujarPlano();
-    })
-    .catch(function (err) {
-        var m = "No se pudo guardar la línea: " + err.message;
-        if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
-    });
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body)
+    }).then(function (r) { return r.text(); }).then(function (t) {
+        if (t.indexOf("ok:") !== 0) { if (typeof rfToast === "function") rfToast("No se pudo colocar la línea.", "err"); return; }
+        var id = parseInt(t.slice(3), 10) || 0;
+        FORGE_LINEAS_PLANO.push({ id: id, camara_id: linea.camara_id, linea_id: lineaId, nombre: linea.nombre, x1: body.x1, y1: body.y1, x2: body.x2, y2: body.y2 });
+        // actualizar completado de la cámara
+        var cam = ForgeCamById(linea.camara_id);
+        if (cam) { cam.num_lineas_plano++; cam.completa = (cam.num_lineas === cam.num_lineas_plano); }
+        FORGE_PLANO_COMPLETO = false;
+        YunqueRenderNodos();
+        YunqueDibujar(); YunqueRenderLineasPanel(); YunqueRenderEstado();
+        if (typeof rfToast === "function") rfToast("Línea colocada. Arrastra sus extremos para ajustarla.", "ok");
+    }).catch(function () {});
 }
 
-/* Borra (soft delete) una línea del plano y la retira del lienzo. */
-function ForgeLineaPlanoBorrar(id) {
-    if (!confirm("¿Borrar esta línea del plano?")) return;
-    fetch("pages/config/acciones_ajax.php?a=13", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: id })
-    })
-    .then(function (res) { return res.text(); })
-    .then(function (txt) {
-        if (txt.indexOf("error") !== -1) {
-            var m = "No se pudo borrar la línea: " + txt;
-            if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
-            return;
+/* Recalcula FORGE_NODOS desde cámaras y líneas del plano (sin recargar). */
+function YunqueRenderNodos() {
+    var out = [];
+    for (var i = 0; i < FORGE_CAMS.length; i++) {
+        var c = FORGE_CAMS[i];
+        if (c.colocada && c.num_lineas === 0) {
+            out.push({ tipo: "camara", ref_id: c.id, x: c.x, y: c.y, nombre: c.desc });
         }
-        for (var i = FORGE_LINEAS_PLANO.length - 1; i >= 0; i--) {
-            if (FORGE_LINEAS_PLANO[i].id === id) FORGE_LINEAS_PLANO.splice(i, 1);
-        }
-        if (Forge.lineaPlanoSel === id) {
-            Forge.lineaPlanoSel = null;
-            ForgeLineaPlanoResetDibujo();
-        }
-        if (typeof rfToast === "function") rfToast("Línea borrada del plano.", "ok");
-        ForgeLineasPlanoRenderLista();
-        ForgeDibujarPlano();
-    })
-    .catch(function (err) {
-        var m = "No se pudo borrar la línea: " + err.message;
-        if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
-    });
+    }
+    for (var j = 0; j < FORGE_LINEAS_PLANO.length; j++) {
+        var L = FORGE_LINEAS_PLANO[j];
+        out.push({ tipo: "linea_plano", ref_id: L.id, x: Math.round((L.x1 + L.x2) / 2), y: Math.round((L.y1 + L.y2) / 2), nombre: L.nombre });
+    }
+    FORGE_NODOS = out;
 }
 
-/* =========================================================================
- * Vínculo línea del plano ↔ línea de cámara (1:1, la MISMA línea en foto y plano).
- * ========================================================================= */
-
-/* Carga en el selector #linea_camara_plano las líneas de cámara de la cámara
- * elegida que aún no tienen representación en el plano (AJAX a=14). */
-function ForgeLineaPlanoCargarLineasCamara(camId) {
-    var sel = document.getElementById("linea_camara_plano");
-    if (!sel) return;
-    sel.innerHTML = '<option value="0">— (solo en el plano)</option>';
-    if (!camId || camId === "-") return;
-    fetch("pages/config/acciones_ajax.php?a=14&camara=" + camId)
-        .then(function (res) { return res.json(); })
-        .then(function (data) {
-            if (!data || !data.ok) return;
-            (data.sin_plano || []).forEach(function (l) {
-                var opt = document.createElement("option");
-                opt.value = l.id;
-                opt.textContent = "↔ " + l.nombre + " (línea de cámara)";
-                sel.appendChild(opt);
-            });
-            (data.mapeadas || []).forEach(function (m) {
-                var opt = document.createElement("option");
-                opt.value = m.linea_id;
-                opt.textContent = "↔ " + m.linea_nombre + " (ya en «" + m.plano_nombre + "», se reasignará)";
-                sel.appendChild(opt);
-            });
-        })
-        .catch(function () {});
-}
-
-/* Vincula la línea del plano seleccionada con una línea de cámara (AJAX a=15). */
-function ForgeLineaPlanoVincular(planoId) {
-    if (!planoId) return;
-    var sel = document.getElementById("linea_camara_plano");
-    if (!sel) return;
-    var lineaId = parseInt(sel.value, 10) || 0;
-    fetch("pages/config/acciones_ajax.php?a=15", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plano_id: planoId, linea_id: lineaId })
-    })
-    .then(function (res) { return res.json(); })
-    .then(function (data) {
-        if (!data || !data.ok) {
-            if (typeof rfToast === "function") rfToast("No se pudo vincular la línea.", "err");
-            return;
-        }
-        var L = ForgeLineaPlanoPorId(planoId);
-        if (L) {
-            L.linea_id = lineaId;
-        }
-        if (typeof rfToast === "function") {
-            rfToast(lineaId > 0 ? "Línea vinculada a su línea de cámara." : "Línea desvinculada.", "ok");
-        }
-        ForgeDibujarPlano();
-    })
-    .catch(function (err) {
-        var m = "No se pudo vincular la línea: " + err.message;
-        if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
-    });
-}
-
-/* Desvincula la línea del plano de su línea de cámara. */
-function ForgeLineaPlanoDesvincular(planoId) {
-    if (!planoId) return;
-    fetch("pages/config/acciones_ajax.php?a=15", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plano_id: planoId, linea_id: 0 })
-    })
-    .then(function (res) { return res.json(); })
-    .then(function (data) {
-        if (!data || !data.ok) {
-            if (typeof rfToast === "function") rfToast("No se pudo desvincular la línea.", "err");
-            return;
-        }
-        var L = ForgeLineaPlanoPorId(planoId);
-        if (L) L.linea_id = 0;
-        if (typeof rfToast === "function") rfToast("Línea desvinculada.", "ok");
-        ForgeDibujarPlano();
-    })
-    .catch(function (err) {
-        var m = "No se pudo desvincular la línea: " + err.message;
-        if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
-    });
-}
-
-/* --- Arrastre de extremos de una línea del plano (como las cámaras) --- */
-
-/* Índice y extremo bajo el cursor, o null. */
-function ForgeLineaPlanoHitTest(p) {
+/* Arrastre de extremos de línea del plano. */
+function YunqueLineaHitTest(p) {
     var R = 12;
     for (var i = 0; i < FORGE_LINEAS_PLANO.length; i++) {
         var L = FORGE_LINEAS_PLANO[i];
@@ -1386,513 +484,533 @@ function ForgeLineaPlanoHitTest(p) {
     }
     return null;
 }
-
-/* Acota el extremo al lienzo (no se puede sacar del plano). */
-function ForgeLineaPlanoClamp(i, ext) {
-    var L = FORGE_LINEAS_PLANO[i];
-    if (!L) return;
-    var maxX = Forge.canvas.width - 1, maxY = Forge.canvas.height - 1;
-    if (ext === 1) { L.x1 = Math.max(0, Math.min(maxX, L.x1)); L.y1 = Math.max(0, Math.min(maxY, L.y1)); }
-    else           { L.x2 = Math.max(0, Math.min(maxX, L.x2)); L.y2 = Math.max(0, Math.min(maxY, L.y2)); }
+function YunqueLineaClamp(L, ext) {
+    var mx = Yunque.canvas.width - 1, my = Yunque.canvas.height - 1;
+    if (ext === 1) { L.x1 = Math.max(0, Math.min(mx, L.x1)); L.y1 = Math.max(0, Math.min(my, L.y1)); }
+    else { L.x2 = Math.max(0, Math.min(mx, L.x2)); L.y2 = Math.max(0, Math.min(my, L.y2)); }
 }
-
-function ForgeLineaPlanoDragStart(hit, p) {
-    var L = FORGE_LINEAS_PLANO[hit.i];
-    if (!L) return;
-    Forge.lineaPlanoSel = L.id;
-    Forge.lpDrag = { i: hit.i, ext: hit.ext };
-    Forge.canvas.style.cursor = "grabbing";
-    if (hit.ext === 1) { L.x1 = Math.round(p.x); L.y1 = Math.round(p.y); }
-    else               { L.x2 = Math.round(p.x); L.y2 = Math.round(p.y); }
-    ForgeLineaPlanoClamp(hit.i, hit.ext);
-    ForgeLineasPlanoRenderLista();
-    ForgeDibujarPlano();
-}
-
-function ForgeLineaPlanoDragMove(p) {
-    if (!Forge.lpDrag) return;
-    var L = FORGE_LINEAS_PLANO[Forge.lpDrag.i];
-    if (!L) return;
-    if (Forge.lpDrag.ext === 1) { L.x1 = Math.round(p.x); L.y1 = Math.round(p.y); }
-    else                        { L.x2 = Math.round(p.x); L.y2 = Math.round(p.y); }
-    ForgeLineaPlanoClamp(Forge.lpDrag.i, Forge.lpDrag.ext);
-    ForgeDibujarPlano();
-}
-
-function ForgeLineaPlanoDragEnd() {
-    if (!Forge.lpDrag) return;
-    var d = Forge.lpDrag;
-    var L = FORGE_LINEAS_PLANO[d.i];
-    Forge.lpDrag = null;
-    Forge.canvas.style.cursor = "";
-    if (!L) return;
+function YunqueLineaGuardar(id, x1, y1, x2, y2) {
     fetch("pages/config/acciones_ajax.php?a=12", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: L.id, x1: L.x1, y1: L.y1, x2: L.x2, y2: L.y2 })
-    })
-    .then(function (res) { return res.text(); })
-    .then(function (txt) {
-        if (txt.indexOf("error") !== -1) {
-            var m = "No se pudo mover la línea: " + txt;
-            if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, x1: x1, y1: y1, x2: x2, y2: y2 })
+    }).then(function (r) { return r.text(); }).then(function (t) {
+        if (t.indexOf("error") !== -1 && typeof rfToast === "function") rfToast("No se pudo mover la línea.", "err");
+    }).catch(function () {});
+}
+
+/* Senderos: selección de nodos. */
+function YunqueNodoHitTest(p) {
+    var R = 14;
+    for (var i = 0; i < FORGE_NODOS.length; i++) {
+        var n = FORGE_NODOS[i];
+        if (Math.abs(n.x - p.x) <= R && Math.abs(n.y - p.y) <= R) return n;
+    }
+    return null;
+}
+function YunqueCrearSendero(nodoA, nodoB) {
+    var estilo = Yunque.estilo;
+    var puntos = [];
+    if (estilo === "ortogonal") {
+        puntos.push([nodoA.x, nodoB.y]);
+    } else if (estilo === "curvo") {
+        var mx = Math.round((nodoA.x + nodoB.x) / 2), my = Math.round((nodoA.y + nodoB.y) / 2);
+        var dx = nodoB.x - nodoA.x, dy = nodoB.y - nodoA.y;
+        puntos.push([mx + Math.round(-dy * 0.2), my + Math.round(dx * 0.2)]);
+    }
+    fetch("pages/config/acciones_ajax.php?a=16", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            origen_tipo: nodoA.tipo, origen_id: nodoA.ref_id,
+            destino_tipo: nodoB.tipo, destino_id: nodoB.ref_id,
+            estilo: estilo, puntos: puntos
+        })
+    }).then(function (r) { return r.json(); }).then(function (d) {
+        if (!d || !d.ok) { if (typeof rfToast === "function") rfToast("No se pudo guardar el sendero.", "err"); return; }
+        FORGE_SENDEROS.push({ id: d.id, origen_tipo: nodoA.tipo, origen_id: nodoA.ref_id, destino_tipo: nodoB.tipo, destino_id: nodoB.ref_id, estilo: estilo, nombre: "", puntos: puntos });
+        Yunque.nodoSel1 = null;
+        YunqueDibujar();
+        if (typeof rfToast === "function") rfToast("Sendero creado.", "ok");
+    }).catch(function () {});
+}
+function YunqueGuardarSendero(s) {
+    fetch("pages/config/acciones_ajax.php?a=17", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: s.id, estilo: s.estilo, puntos: s.puntos })
+    }).then(function (r) { return r.text(); }).then(function (t) {
+        if (t.indexOf("error") !== -1 && typeof rfToast === "function") rfToast("No se pudo actualizar el sendero.", "err");
+    }).catch(function () {});
+}
+function YunqueBorrarSendero(id) {
+    if (!confirm("¿Eliminar este sendero?")) return;
+    fetch("pages/config/acciones_ajax.php?a=18", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: id })
+    }).then(function (r) { return r.text(); }).then(function (t) {
+        if (t.indexOf("error") !== -1) { if (typeof rfToast === "function") rfToast("No se pudo eliminar el sendero.", "err"); return; }
+        FORGE_SENDEROS = FORGE_SENDEROS.filter(function (s) { return s.id !== id; });
+        YunqueDibujar();
+    }).catch(function () {});
+}
+function YunqueSenderoHitTest(p) {
+    var R = 12;
+    for (var i = 0; i < FORGE_SENDEROS.length; i++) {
+        var s = FORGE_SENDEROS[i];
+        for (var j = 0; j < s.puntos.length; j++) {
+            if (Math.abs(s.puntos[j][0] - p.x) <= R && Math.abs(s.puntos[j][1] - p.y) <= R) return { sid: i, pi: j };
+        }
+    }
+    return null;
+}
+
+/* Despacho de clic sobre el lienzo de El Yunque. */
+function YunqueOnMouseDown(e) {
+    var p = ForgeCoord(Yunque.canvas, e);
+    if (Yunque.modoSenderos) {
+        var n = YunqueNodoHitTest(p);
+        if (n) {
+            if (!Yunque.nodoSel1) {
+                Yunque.nodoSel1 = n;
+            } else {
+                if (Yunque.nodoSel1.tipo === n.tipo && Yunque.nodoSel1.ref_id === n.ref_id) {
+                    Yunque.nodoSel1 = null;
+                } else {
+                    YunqueCrearSendero(Yunque.nodoSel1, n);
+                }
+            }
+            YunqueRender();
             return;
         }
-        if (typeof rfToast === "function") rfToast("Línea reposicionada en el plano.", "ok");
-    })
-    .catch(function (err) {
-        var m = "No se pudo mover la línea: " + err.message;
-        if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
-    });
-}
-
-/* Un único listener delegado: todo el clic del lienzo pasa por aquí. */
-function ForgeOnCanvasMouseDown(e) {
-    if (Forge.mode === "foto") {
-        ForgeDibujaLinea(ForgeCoord(e));
+        // clic sobre punto intermedio de un sendero → borrarlo (shift) o arrastrar
+        var hit = YunqueSenderoHitTest(p);
+        if (hit) {
+            if (e.shiftKey) {
+                YunqueBorrarSendero(FORGE_SENDEROS[hit.sid].id);
+            } else {
+                Yunque.senderoDrag = hit;
+                Yunque.canvas.style.cursor = "grabbing";
+            }
+            return;
+        }
+        Yunque.nodoSel1 = null;
+        YunqueRender();
         return;
     }
-    var p = ForgeCoord(e);
-    if (Forge.tab === "camaras") {
-        ForgeMarcaPosicion(p);
-    } else if (Forge.tab === "nodos" && Forge.sub === "crear") {
-        ForgeCrearClic(p);
-    } else if (Forge.tab === "nodos" && Forge.sub === "editar") {
-        ForgeEditarMouseDown(p);
-    } else if (Forge.tab === "lineas" && Forge.sub === "plano") {
-        ForgeLineaPlanoClick(p);
+
+    // modo plano normal: clic en cámara → seleccionar (panel líneas); clic en línea → arrastrar extremo
+    var ci = YunqueCamHitTest(p);
+    if (ci >= 0) {
+        Yunque.camSeleccionada = FORGE_CAMS[ci].id;
+        YunqueRenderLineasPanel();
+        YunqueRender();
+        return;
     }
-    /* plano: solo inspección */
+    var lh = YunqueLineaHitTest(p);
+    if (lh) {
+        Yunque.lineDrag = lh;
+        Yunque.canvas.style.cursor = "grabbing";
+        return;
+    }
+    Yunque.camSeleccionada = null;
+    YunqueRenderLineasPanel();
+    YunqueRender();
 }
 
-/* ------------------------------------------------------------------ */
-/* Selección de cámara/línea para el modo foto (sin recargar)          */
-/* ------------------------------------------------------------------ */
-function ForgeCargarFotoCamara(id) {
-    if (!id || id === "-") return;
-    ForgeFotoCargar(parseInt(id, 10), null);
+function YunqueOnMouseMove(e) {
+    var p = ForgeCoord(Yunque.canvas, e);
+    if (Yunque.camDrag) {
+        var c = FORGE_CAMS[Yunque.camDrag];
+        c.x = Math.round(p.x - 6); c.y = Math.round(p.y - 6);
+        YunqueClampCam(c);
+        YunqueDibujar();
+        return;
+    }
+    if (Yunque.lineDrag) {
+        var L = FORGE_LINEAS_PLANO[Yunque.lineDrag.i];
+        if (Yunque.lineDrag.ext === 1) { L.x1 = Math.round(p.x); L.y1 = Math.round(p.y); }
+        else { L.x2 = Math.round(p.x); L.y2 = Math.round(p.y); }
+        YunqueLineaClamp(L, Yunque.lineDrag.ext);
+        YunqueRenderNodos();
+        YunqueDibujar();
+        return;
+    }
+    if (Yunque.senderoDrag) {
+        var s = FORGE_SENDEROS[Yunque.senderoDrag.sid];
+        s.puntos[Yunque.senderoDrag.pi] = [Math.round(p.x), Math.round(p.y)];
+        YunqueDibujar();
+        return;
+    }
+    // hover
+    if (!Yunque.modoSenderos) {
+        var ci = YunqueCamHitTest(p);
+        Yunque.canvas.style.cursor = (ci >= 0) ? "pointer" : "default";
+    } else {
+        Yunque.canvas.style.cursor = YunqueNodoHitTest(p) ? "crosshair" : "default";
+    }
 }
 
-function ForgeCargarFotoLinea(val) {
-    var porciones = String(val).split("-");
-    if (porciones.length < 2 || !porciones[0] || !porciones[1]) return;
-    ForgeFotoCargar(parseInt(porciones[1], 10), porciones[0]);
+function YunqueOnMouseUp() {
+    if (Yunque.camDrag) {
+        var c = FORGE_CAMS[Yunque.camDrag];
+        YunqueGuardarCamPos(c.id, c.x, c.y);
+        Yunque.camDrag = null;
+        Yunque.canvas.style.cursor = "";
+    }
+    if (Yunque.lineDrag) {
+        var L = FORGE_LINEAS_PLANO[Yunque.lineDrag.i];
+        YunqueLineaGuardar(L.id, L.x1, L.y1, L.x2, L.y2);
+        Yunque.lineDrag = null;
+        Yunque.canvas.style.cursor = "";
+        YunqueRenderNodos();
+        YunqueDibujar();
+    }
+    if (Yunque.senderoDrag) {
+        var s = FORGE_SENDEROS[Yunque.senderoDrag.sid];
+        YunqueGuardarSendero(s);
+        Yunque.senderoDrag = null;
+        Yunque.canvas.style.cursor = "";
+    }
 }
 
-/* ------------------------------------------------------------------ */
-/* Acciones de formulario (mecánica legacy, solo URLs con tab/sub)     */
-/* ------------------------------------------------------------------ */
-function crear(){
-    nombre_nueva=document.getElementById("nombre_nueva").value;
-    url_conexion=document.getElementById("url_conexion_nueva").value;
-    ipcamlive_alias=document.getElementById("ipcamlive_alias").value;
-    x_nueva=document.getElementById("x_nueva").value;
-    y_nueva=document.getElementById("y_nueva").value;
+/* =========================================================================
+ * Trazador de líneas (modal con snapshot de cámara)
+ * ========================================================================= */
+var Trazador = {
+    camId: 0, lineaEditId: null,
+    canvas: null, ctx: null,
+    punto: 1,
+    x_lineas: [], y_lineas: [], nombres_lineas: [], id_lineas: [],
+    lineas_nuevas: 0,
+    voypocolores: 0,
+};
+var listado_colores = [
+    "#e69c8c","#c58f21","#7987ff","#000b6d","#ffed00","#5c7a04","#59ff00","#215306","#8bd7ff","#617c8a","#0060ff",
+    "#beffb7","#4e5c4d","#00ffb9","#006d75","#00eeff","#af381e","#004163","#7a7104",
+    "#6800ff","#1f004c","#beff00","#d800ff","#710385","#ff0074","#ff0000","#a54747","#ffbebe"
+];
 
-    puerta_nueva=document.getElementById("entrada1");
-    puerta=0;
-    if(puerta_nueva.checked){ puerta=1; }
-    salida_nueva=document.getElementById("salida1");
-    salida=0;
-    if(salida_nueva.checked){ salida=1; }
-
-    tipo_camara="";
-    tipo_camara_ip=document.getElementById("tipo_camara_ip");
-    if(tipo_camara_ip.checked){ tipo_camara=0; }
-    tipo_camara_grabador=document.getElementById("tipo_camara_grabador");
-    if(tipo_camara_grabador.checked){ tipo_camara=1; }
-
-    encendida_nueva1=document.getElementById("encendida_nueva");
-    encendida_nueva=0;
-    if(encendida_nueva1.checked){ encendida_nueva=1; }
-
-    url_conexion=url_conexion.replace('&', '--jos--');
-
-    uri="?page=config&tab=camaras&sub=crear&accion=crear&nombre_nueva="+nombre_nueva+"&x_nueva="+x_nueva+"&y_nueva="+y_nueva+"&puerta="+puerta+"&salida="+salida+"&encendida_nueva="+encendida_nueva+'&url_conexion='+url_conexion+"&sistema="+tipo_camara+"&ipcamlive_alias="+ipcamlive_alias;
-
-    var res = encodeURI(uri);
-    location.href=res;
+function TrazadorLimpiar() {
+    Trazador.punto = 1; Trazador.lineas_nuevas = 0; Trazador.voypocolores = 0;
+    Trazador.x_lineas = []; Trazador.y_lineas = []; Trazador.nombres_lineas = []; Trazador.id_lineas = [];
+    var capa = document.getElementById("nombres_lineas_capa");
+    if (capa) capa.innerHTML = "";
 }
 
-function guardar(){
-    camara=document.getElementById("camara").value;
-    nombre=document.getElementById("nombre").value;
-    ipcamlive_alias=document.getElementById("ipcamlive_alias1").value;
-    url_conexion=document.getElementById("url_conexion").value;
-    url_desdeserver=document.getElementById("url_desdeserver").value;
-    x_camara=document.getElementById("x_camara").value;
-    y_camara=document.getElementById("y_camara").value;
-
-    segundos_analizar=document.getElementById("segundos_analizar").value;
-    porcentaje_mov=document.getElementById("porcentaje_mov").value;
-    dontCare=document.getElementById("dontCare").value;
-    fps=document.getElementById("fps").value;
-    maximo_videos=document.getElementById("maximo_videos").value;
-    redimesionframe=document.getElementById("redimesionframe").value;
-    sensibilidad=document.getElementById("sensibilidad").value;
-
-    puerta_nueva=document.getElementById("entrada2");
-    puerta=0;
-    if(puerta_nueva.checked){ puerta=1; }
-
-    salida_nueva=document.getElementById("salida2");
-    salida=0;
-    if(salida_nueva.checked){ salida=1; }
-
-    tipo_camara="";
-    tipo_camara_ip=document.getElementById("tipo_camara_ip_ed");
-    if(tipo_camara_ip.checked){ tipo_camara=0; }
-    tipo_camara_grabador=document.getElementById("tipo_camara_grabador_ed");
-    if(tipo_camara_grabador.checked){ tipo_camara=1; }
-
-    encendida_nueva=document.getElementById("encendida");
-    encendida=0;
-    if(encendida_nueva.checked){ encendida=1; }
-
-    url_conexion=url_conexion.replace('&', '--jos--');
-    url_desdeserver=url_desdeserver.replace('&', '--jos--');
-
-    uri="?page=config&tab=camaras&sub=editar&accion=guardar&camara="+camara+"&nombre="+nombre+"&encendida="+encendida+"&x="+x_camara+"&y="+y_camara+"&puerta="+puerta+"&salida="+salida+"&url_conexion="+url_conexion+"&url_desdeserver="+url_desdeserver+"&sistema="+tipo_camara+"&ipcamlive_alias="+ipcamlive_alias;
-
-    uri+="&segundos_analizar="+segundos_analizar;
-    uri+="&porcentaje_mov="+porcentaje_mov;
-    uri+="&dontCare="+dontCare;
-    uri+="&fps="+fps;
-    uri+="&maximo_videos="+maximo_videos;
-    uri+="&redimesionframe="+redimesionframe;
-    uri+="&sensibilidad="+sensibilidad;
-
-    var res = encodeURI(uri);
-    location.href=res;
+function TrazadorAbrirModal() {
+    var m = document.getElementById("lineaModal");
+    m.classList.add("show");
+    m.style.marginTop = "0"; m.style.marginLeft = "0"; m.style.zIndex = "99999";
+    if (m.parentNode !== document.body) document.body.appendChild(m);
+    document.body.classList.add("overflow-y-hidden");
 }
 
-function seleccionar_camara(){
-    camara=document.getElementById("camara").value;
-    if (!camara || camara === "-") return;
+function TrazadorCerrar() {
+    var m = document.getElementById("lineaModal");
+    if (!m) return;
+    m.classList.remove("show");
+    m.style.marginTop = ""; m.style.marginLeft = ""; m.style.zIndex = "";
+    document.body.classList.remove("overflow-y-hidden");
+}
 
-    ajax = nuevoAjax();
-    urlllamada="pages/config/acciones_ajax.php?a=1&camara="+camara;
-    ajax.open("GET", urlllamada, true);
+function TrazadorAbrir(camId) {
+    Trazador.camId = camId; Trazador.lineaEditId = null;
+    TrazadorAbrirModal();
+    TrazadorCargarFoto(camId, null);
+}
+
+function TrazadorAbrirCorregir(val) {
+    var p = String(val).split("-");
+    if (p.length < 2 || !p[0] || !p[1]) return;
+    Trazador.camId = parseInt(p[1], 10);
+    Trazador.lineaEditId = p[0];
+    TrazadorAbrirModal();
+    TrazadorCargarFoto(Trazador.camId, p[0]);
+}
+
+function TrazadorCargarFoto(camId, lineaEditId) {
+    Trazador.camId = camId;
+    Trazador.lineaEditId = lineaEditId || null;
+    TrazadorLimpiar();
+    var titulo = document.getElementById("lineaTitulo");
+    var sub = document.getElementById("lineaSub");
+    var cam = ForgeCamById(camId);
+    if (titulo) titulo.textContent = lineaEditId ? "Corregir línea" : "Trazar líneas";
+    if (sub) sub.textContent = cam ? cam.desc : "";
+
+    var ajax = nuevoAjax();
+    ajax.open("GET", "pages/config/acciones_ajax.php?a=3&camara=" + camId, true);
+    ajax.send(null);
+
+    var ctx = Trazador.ctx, W = Trazador.canvas.width, H = Trazador.canvas.height;
+    var tries = 0;
+    var img = new Image();
+    (function intenta() {
+        img.onload = function () {
+            ctx.clearRect(0, 0, W, H);
+            ctx.drawImage(img, 0, 0, W, H);
+            TrazadorCargarLineas(camId, lineaEditId);
+        };
+        img.onerror = function () {
+            if (++tries < 12) setTimeout(intenta, 1500);
+            else { ctx.fillStyle = "#16121a"; ctx.fillRect(0, 0, W, H); }
+        };
+        img.src = "fotos_camara/" + camId + ".png?t=" + Math.floor(Date.now() / 1000);
+    })();
+}
+
+function TrazadorCargarLineas(camId, lineaEditId) {
+    var ajax = nuevoAjax();
+    ajax.open("GET", "pages/config/acciones_ajax.php?a=4&camara=" + camId, true);
     ajax.onreadystatechange = function () {
-        if (ajax.readyState == 4) {
-            str=ajax.responseText;
-            var res = str.split(";;;");
-
-            document.getElementById("nombre").value=res[0];
-            document.getElementById("x_camara").value=res[2];
-            document.getElementById("y_camara").value=res[3];
-            document.getElementById("ipcamlive_alias1").value=res[9];
-
-            if(res[4]==1){
-                document.getElementById("entrada2").checked = true;
-            }else{
-                document.getElementById("entrada2").checked = false;
+        if (ajax.readyState != 4) return;
+        var lineas = [];
+        try { lineas = JSON.parse(ajax.responseText) || []; } catch (e) { lineas = []; }
+        var ctx = Trazador.ctx;
+        var capa = document.getElementById("nombres_lineas_capa");
+        Trazador.voypocolores = 0;
+        for (var i = 0; i < lineas.length; i++) {
+            var l = lineas[i];
+            var col = listado_colores[Trazador.voypocolores % listado_colores.length];
+            ctx.strokeStyle = col; ctx.fillStyle = col;
+            ctx.fillRect(l.x1, l.y1, 10, 10);
+            ctx.fillRect(l.x2, l.y2, 10, 10);
+            ctx.fillText(l.nombre, l.x1, l.y1);
+            ctx.beginPath(); ctx.moveTo(l.x1, l.y1); ctx.lineTo(l.x2, l.y2); ctx.stroke();
+            Trazador.x_lineas.push(l.x1); Trazador.x_lineas.push(l.x2);
+            Trazador.y_lineas.push(l.y1); Trazador.y_lineas.push(l.y2);
+            Trazador.nombres_lineas.push(l.nombre);
+            Trazador.id_lineas.push(String(l.id));
+            if (capa) {
+                capa.innerHTML += '<div class="flex items-center gap-2">'
+                    + '<span style="display:inline-block;width:10px;height:10px;background:' + col + '"></span>'
+                    + '<input type="text" name="nombre_linea_' + l.id + '" id="nombre_linea_' + l.id + '" value="'
+                    + String(l.nombre).replace(/"/g, "&quot;") + '" class="input border" style="border-color:' + col + '">'
+                    + '<a href="?page=config&tab=lineas&sub=editar&accion=eliminar_linea&id_linea=' + l.id + '" class="text-red-400">(X)</a></div>';
             }
-
-            if(res[5]==1){
-                document.getElementById("salida2").checked = true;
-            }else{
-                document.getElementById("salida2").checked = false;
-            }
-
-             if(res[6]==1){
-                document.getElementById("encendida").checked = true;
-            }else{
-                document.getElementById("encendida").checked = false;
-             }
-
-             url_conexion=res[7];
-             url_conexion=url_conexion.replace('--jos--','&');
-             document.getElementById("url_conexion").value=res[7];
-
-             url_desdeserver=res[10];
-             url_desdeserver=url_desdeserver.replace('--jos--','&');
-             document.getElementById("url_desdeserver").value=res[10];
-
-            if(res[8]==0){
-                document.getElementById("tipo_camara_ip_ed").checked = true;
-            }else{
-                document.getElementById("tipo_camara_grabador_ed").checked = true;
-            }
-
-            segundos_analizar=res[11];
-            document.getElementById("segundos_analizar").value=segundos_analizar;
-            porcentaje_mov=res[12];
-            document.getElementById("porcentaje_mov").value=porcentaje_mov;
-            dontCare=res[13];
-            document.getElementById("dontCare").value=dontCare;
-            fps=res[14];
-            document.getElementById("fps").value=fps;
-            maximo_videos=res[15];
-            document.getElementById("maximo_videos").value=maximo_videos;
-            redimesionframe=res[16];
-            document.getElementById("redimesionframe").value=redimesionframe;
-            sensibilidad=res[17];
-            document.getElementById("sensibilidad").value=sensibilidad;
+            Trazador.voypocolores++;
         }
-    }
+        if (lineaEditId) {
+            // en corregir solo se edita la línea seleccionada: marcar sus extremos
+        }
+    };
     ajax.send(null);
 }
 
-function cargarplano(){
-    formplano=document.getElementById("formplano");
-    formplano.submit();
+function TrazadorDibujaLinea(p) {
+    var ctx = Trazador.ctx;
+    var col = listado_colores[Trazador.voypocolores % listado_colores.length];
+    var x = Math.round(p.x), y = Math.round(p.y);
+    ctx.strokeStyle = col; ctx.fillStyle = col;
+    ctx.fillRect(x - 5, y - 5, 10, 10);
+    if (Trazador.punto === 2) {
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(Trazador.x_lineas[Trazador.x_lineas.length - 1], Trazador.y_lineas[Trazador.y_lineas.length - 1]);
+        ctx.stroke();
+        var capa = document.getElementById("nombres_lineas_capa");
+        if (capa) {
+            capa.innerHTML += '<div class="flex items-center gap-2"><span style="display:inline-block;width:10px;height:10px;background:' + col + '"></span>'
+                + '<input type="text" name="nombre_linea_nueva_' + Trazador.lineas_nuevas + '" id="nombre_linea_nueva_' + Trazador.lineas_nuevas + '" value="" class="input border" placeholder="nombre de la línea"></div>';
+        }
+        Trazador.voypocolores++;
+        Trazador.lineas_nuevas++;
+    }
+    Trazador.x_lineas.push(x);
+    Trazador.y_lineas.push(y);
+    Trazador.punto = (Trazador.punto === 1) ? 2 : 1;
 }
 
-function eliminar_nodos(){
-    var camara1 = document.getElementById("camara1_el").value;
-    var camara2 = document.getElementById("camara2_el").value;
-    var caminoSel = document.getElementById("camino_el");
-    var camino = caminoSel ? (parseInt(caminoSel.value, 10) || 0) : 0;
-
-    location.href="?page=config&tab=nodos&sub=eliminar&accion=eliminar_nodos&camara1="+camara1+"&camara2="+camara2+"&camino="+camino;
-}
-
-function guardar_lineas(){
-
-   lasx="";
-   lasy="";
-   losnombres="";
-   losids="";
-
-   for(i=0;i<id_lineas.length;i++){
-       lasx+=x_lineas[i*2];
-       lasx+=",,,";
-       lasx+=x_lineas[(i*2)+1];
-
-       lasy+=y_lineas[i*2];
-       lasy+=",,,";
-       lasy+=y_lineas[(i*2)+1];
-
-       losids+=id_lineas[i];
-       losnombres+=document.getElementById("nombre_linea_"+id_lineas[i]).value;
-       if(i!=id_lineas.length-1){
-           lasx+=",,,";
-           lasy+=",,,";
-           losids+=",,,";
-           losnombres+=",,,";
-       }
-   }
-
-   i=id_lineas.length;
-   for(j=0;j<Forge.lineas_nuevas;j++){
-
-       if(lasx!=""){
-           lasx+=",,,";
-           lasy+=",,,";
-           losids+=",,,";
-           losnombres+=",,,";
-       }
-       lasx+=x_lineas[i*2];
-       lasx+=",,,";
-       lasx+=x_lineas[(i*2)+1];
-
-       lasy+=y_lineas[i*2];
-       lasy+=",,,";
-       lasy+=y_lineas[(i*2)+1];
-
-       losids+="0";
-       losnombres+=document.getElementById("nombre_linea_nueva_"+j).value;
-
-       i++;
-   }
-
-   url="?page=config&tab=lineas&sub=trazar&accion=guardar_lineas&lasx="+lasx+"&lasy="+lasy+"&losnombres="+losnombres+"&losids="+losids+"&camara_id="+document.getElementById("camara1_linea").value+"&mostrar_foto="+document.getElementById("camara1_linea").value;
-
-   location.href=url;
-}
-
-function editar_linea1(){
-
-    lasx="";
-    lasy="";
-    losnombres="";
-    losids="";
-
-    editar_linea=document.getElementById("editar_linea").value
-    var porciones = editar_linea.split('-');
-    camara_id=porciones[1];
-    linea_id=porciones[0];
-
-    // B16: localizar la línea seleccionada (antes leía x_lineas[id_lineas.length*2] -> fuera de rango)
-    var idx = id_lineas.indexOf(String(linea_id));
-    if(idx == -1){
-        alert("Línea no encontrada en el lienzo. Selecciona la línea para cargar su foto.");
+function TrazadorGuardar() {
+    if (Trazador.lineaEditId) {
+        // corregir una línea existente
+        var idx = Trazador.id_lineas.indexOf(String(Trazador.lineaEditId));
+        if (idx === -1) { alert("Línea no encontrada. Vuelve a cargarla."); return; }
+        var lasx = Trazador.x_lineas[idx * 2] + ",,," + Trazador.x_lineas[(idx * 2) + 1];
+        var lasy = Trazador.y_lineas[idx * 2] + ",,," + Trazador.y_lineas[(idx * 2) + 1];
+        var url = "?page=config&tab=lineas&sub=editar&accion=editar_lineas&linea_id=" + Trazador.lineaEditId
+            + "&lasx=" + encodeURIComponent(lasx) + "&lasy=" + encodeURIComponent(lasy)
+            + "&losnombres=0&losids=0&camara_id=" + Trazador.camId + "&mostrar_foto=" + Trazador.camId + "&editar_linea=" + Trazador.lineaEditId + "-" + Trazador.camId;
+        location.href = url;
         return;
     }
 
-    lasx+=x_lineas[idx*2];
-    lasx+=",,,";
-    lasx+=x_lineas[(idx*2)+1];
-
-    lasy+=y_lineas[idx*2];
-    lasy+=",,,";
-    lasy+=y_lineas[(idx*2)+1];
-
-    losids+="0";
-    losnombres+="0";
-
-   url="?page=config&tab=lineas&sub=editar&accion=editar_lineas&linea_id="+linea_id+"&lasx="+encodeURIComponent(lasx)+"&lasy="+encodeURIComponent(lasy)+"&losnombres="+losnombres+"&losids="+losids+"&camara_id="+camara_id+"&mostrar_foto="+camara_id+"&editar_linea="+editar_linea;
-
-   location.href=url;
+    // guardar líneas nuevas
+    var lasx = "", lasy = "", losnombres = "", losids = "";
+    for (var i = 0; i < Trazador.id_lineas.length; i++) {
+        if (lasx !== "") { lasx += ",,,"; lasy += ",,,"; losids += ",,,"; losnombres += ",,,"; }
+        lasx += Trazador.x_lineas[i * 2] + ",,," + Trazador.x_lineas[(i * 2) + 1];
+        lasy += Trazador.y_lineas[i * 2] + ",,," + Trazador.y_lineas[(i * 2) + 1];
+        losids += Trazador.id_lineas[i];
+        var nel = document.getElementById("nombre_linea_" + Trazador.id_lineas[i]);
+        losnombres += nel ? nel.value : "";
+    }
+    for (var j = 0; j < Trazador.lineas_nuevas; j++) {
+        if (lasx !== "") { lasx += ",,,"; lasy += ",,,"; losids += ",,,"; losnombres += ",,,"; }
+        lasx += Trazador.x_lineas[(Trazador.id_lineas.length + j) * 2] + ",,," + Trazador.x_lineas[(Trazador.id_lineas.length + j) * 2 + 1];
+        lasy += Trazador.y_lineas[(Trazador.id_lineas.length + j) * 2] + ",,," + Trazador.y_lineas[(Trazador.id_lineas.length + j) * 2 + 1];
+        losids += "0";
+        var nnel = document.getElementById("nombre_linea_nueva_" + j);
+        losnombres += nnel ? nnel.value : "";
+    }
+    var url = "?page=config&tab=lineas&sub=trazar&accion=guardar_lineas&lasx=" + encodeURIComponent(lasx)
+        + "&lasy=" + encodeURIComponent(lasy) + "&losnombres=" + encodeURIComponent(losnombres)
+        + "&losids=" + encodeURIComponent(losids) + "&camara_id=" + Trazador.camId + "&mostrar_foto=" + Trazador.camId;
+    location.href = url;
 }
 
+/* =========================================================================
+ * Acciones de formulario legacy (cámaras, plano)
+ * ========================================================================= */
+function crear() {
+    var nombre_nueva = document.getElementById("nombre_nueva").value;
+    var url_conexion = document.getElementById("url_conexion_nueva").value;
+
+    var puerta = document.getElementById("entrada1").checked ? 1 : 0;
+    var salida = document.getElementById("salida1").checked ? 1 : 0;
+    var encendida_nueva = document.getElementById("encendida_nueva").checked ? 1 : 0;
+
+    url_conexion = url_conexion.replace(/&/g, "--jos--");
+
+    var uri = "?page=config&tab=camaras&sub=crear&accion=crear&nombre_nueva=" + encodeURIComponent(nombre_nueva)
+        + "&puerta=" + puerta + "&salida=" + salida + "&encendida_nueva=" + encendida_nueva
+        + "&url_conexion=" + encodeURIComponent(url_conexion) + "&sistema=0";
+    location.href = uri;
+}
+
+function guardar() {
+    var camara = document.getElementById("camara").value;
+    var nombre = document.getElementById("nombre").value;
+    var url_conexion = document.getElementById("url_conexion").value;
+    var url_desdeserver = document.getElementById("url_desdeserver").value;
+
+    var segundos_analizar = document.getElementById("segundos_analizar").value;
+    var porcentaje_mov = document.getElementById("porcentaje_mov").value;
+    var dontCare = document.getElementById("dontCare").value;
+    var fps = document.getElementById("fps").value;
+    var maximo_videos = document.getElementById("maximo_videos").value;
+    var redimesionframe = document.getElementById("redimesionframe").value;
+    var sensibilidad = document.getElementById("sensibilidad").value;
+
+    var puerta = document.getElementById("entrada2").checked ? 1 : 0;
+    var salida = document.getElementById("salida2").checked ? 1 : 0;
+    var encendida = document.getElementById("encendida").checked ? 1 : 0;
+
+    url_conexion = url_conexion.replace(/&/g, "--jos--");
+    url_desdeserver = url_desdeserver.replace(/&/g, "--jos--");
+
+    var uri = "?page=config&tab=camaras&sub=editar&accion=guardar&camara=" + camara
+        + "&nombre=" + encodeURIComponent(nombre) + "&encendida=" + encendida
+        + "&puerta=" + puerta + "&salida=" + salida
+        + "&url_conexion=" + encodeURIComponent(url_conexion)
+        + "&url_desdeserver=" + encodeURIComponent(url_desdeserver) + "&sistema=0"
+        + "&segundos_analizar=" + segundos_analizar + "&porcentaje_mov=" + porcentaje_mov
+        + "&dontCare=" + dontCare + "&fps=" + fps + "&maximo_videos=" + maximo_videos
+        + "&redimesionframe=" + redimesionframe + "&sensibilidad=" + sensibilidad;
+    location.href = uri;
+}
+
+function seleccionar_camara() {
+    var camara = document.getElementById("camara").value;
+    if (!camara || camara === "-") return;
+    var ajax = nuevoAjax();
+    ajax.open("GET", "pages/config/acciones_ajax.php?a=1&camara=" + camara, true);
+    ajax.onreadystatechange = function () {
+        if (ajax.readyState == 4) {
+            var res = ajax.responseText.split(";;;");
+            document.getElementById("nombre").value = res[0];
+            if (res[4] == 1) document.getElementById("entrada2").checked = true; else document.getElementById("entrada2").checked = false;
+            if (res[5] == 1) document.getElementById("salida2").checked = true; else document.getElementById("salida2").checked = false;
+            if (res[6] == 1) document.getElementById("encendida").checked = true; else document.getElementById("encendida").checked = false;
+            document.getElementById("url_conexion").value = String(res[7]).replace(/--jos--/g, "&");
+            document.getElementById("url_desdeserver").value = String(res[10]).replace(/--jos--/g, "&");
+            document.getElementById("segundos_analizar").value = res[11];
+            document.getElementById("porcentaje_mov").value = res[12];
+            document.getElementById("dontCare").value = res[13];
+            document.getElementById("fps").value = res[14];
+            document.getElementById("maximo_videos").value = res[15];
+            document.getElementById("redimesionframe").value = res[16];
+            document.getElementById("sensibilidad").value = res[17];
+        }
+    };
+    ajax.send(null);
+}
+
+function cargarplano() {
+    document.getElementById("formplano").submit();
+}
 
 /* =========================================================================
  * Editor de croquis a mano alzada (tipo Paint) — plano_dibujo_<local>.png
- * El lienzo es fijo (CANVAS_WIDTH x CANVAS_HEIGHT) para que las coordenadas
- * coincidan con el sistema de píxeles que usan cámaras/nodos.
- * El trabajo vive en una capa off-screen (capa): si el local ya tiene un
- * croquis guardado (PLANO_DIBUJO_URL) se carga como base editable dentro de
- * esa capa, así el borrador (destination-out) también puede borrarlo.
- * El deshacer es por snapshots de la capa (pila acotada).
  * ========================================================================= */
 var dibujo = {
-    abierto: false,
-    canvas: null,
-    ctx: null,
-    capa: null,      // off-screen de trabajo: base (croquis previo) + trazos
-    capaCtx: null,
-    fondo: null,     // Image con el plano actual (referencia para calcar)
-    base: null,      // Image del croquis ya guardado (si existe)
-    dibujando: false,
-    cargando: false, // true mientras se carga la base (croquis previo): bloquea el pincel
-    ultimo: null,
-    color: "#1e1e1e",
-    grosor: 3,
-    borrador: false,
-    undo: []         // pila de snapshots (ImageData de la capa) para deshacer
+    abierto: false, canvas: null, ctx: null, capa: null, capaCtx: null,
+    fondo: null, base: null, dibujando: false, cargando: false, ultimo: null,
+    color: "#1e1e1e", grosor: 3, borrador: false, undo: []
 };
 
 function dibujoCoord(e) {
     var rect = dibujo.canvas.getBoundingClientRect();
-    return {
-        x: (e.clientX - rect.left) * dibujo.canvas.width / rect.width,
-        y: (e.clientY - rect.top) * dibujo.canvas.height / rect.height
-    };
+    return { x: (e.clientX - rect.left) * dibujo.canvas.width / rect.width, y: (e.clientY - rect.top) * dibujo.canvas.height / rect.height };
 }
-
 function dibujoRedibujar() {
-    var ctx = dibujo.ctx;
-    var w = dibujo.canvas.width, h = dibujo.canvas.height;
-
-    // lienzo base blanco
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, w, h);
-
-    // fondo de referencia (plano actual), al 45% para que el trazo se vea.
-    // Con croquis previo cargado la base es opaca y tapa el fondo: solo
-    // sirve como referencia al dibujar desde cero.
+    var ctx = dibujo.ctx, w = dibujo.canvas.width, h = dibujo.canvas.height;
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, w, h);
     if (dibujo.fondo && document.getElementById("dibujoFondo").checked) {
-        ctx.save();
-        ctx.globalAlpha = 0.45;
-        ctx.drawImage(dibujo.fondo, 0, 0, w, h);
-        ctx.restore();
+        ctx.save(); ctx.globalAlpha = 0.45; ctx.drawImage(dibujo.fondo, 0, 0, w, h); ctx.restore();
     }
-
-    // capa de trabajo (base + trazos), se compone tal cual está
-    if (dibujo.capa) {
-        ctx.drawImage(dibujo.capa, 0, 0);
-    }
+    if (dibujo.capa) ctx.drawImage(dibujo.capa, 0, 0);
 }
-
-/** Guarda un snapshot de la capa para deshacer (pila acotada a 20). */
 function dibujoGuardarSnapshot() {
     var w = dibujo.canvas.width, h = dibujo.canvas.height;
     if (dibujo.undo.length >= 20) dibujo.undo.shift();
     dibujo.undo.push(dibujo.capaCtx.getImageData(0, 0, w, h));
 }
-
-/** Pinta (o borra) un segmento de dibujo.ultimo a p sobre la capa. */
 function dibujoPincel(p) {
     var ctx = dibujo.capaCtx;
     ctx.save();
     ctx.strokeStyle = dibujo.borrador ? "#ffffff" : dibujo.color;
     ctx.lineWidth = dibujo.borrador ? dibujo.grosor * 2 : dibujo.grosor;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    if (dibujo.borrador) {
-        ctx.globalCompositeOperation = "destination-out";
-    }
-    ctx.beginPath();
-    ctx.moveTo(dibujo.ultimo.x, dibujo.ultimo.y);
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    if (dibujo.borrador) ctx.globalCompositeOperation = "destination-out";
+    ctx.beginPath(); ctx.moveTo(dibujo.ultimo.x, dibujo.ultimo.y); ctx.lineTo(p.x, p.y); ctx.stroke();
     ctx.restore();
 }
-
 function dibujoToggleBorrador() {
     dibujo.borrador = !dibujo.borrador;
     document.getElementById("dibujoBorrador").classList.toggle("is-activo", dibujo.borrador);
 }
-
 function dibujoDeshacer() {
     if (!dibujo.undo.length) return;
-    var snap = dibujo.undo.pop();
-    dibujo.capaCtx.putImageData(snap, 0, 0);
+    dibujo.capaCtx.putImageData(dibujo.undo.pop(), 0, 0);
     dibujoRedibujar();
 }
-
 function dibujoLimpiar() {
     if (!confirm("¿Borrar todo el croquis y empezar de nuevo?")) return;
-    dibujo.base = null;
-    dibujo.undo = [];
+    dibujo.base = null; dibujo.undo = [];
     dibujo.capaCtx.clearRect(0, 0, dibujo.canvas.width, dibujo.canvas.height);
     dibujoRedibujar();
 }
-
 function cargarDibujoFondo() {
     var usaFondo = document.getElementById("dibujoFondo").checked;
     if (usaFondo && PLANO_ACTIVO_URL) {
         var img = new Image();
-        img.onload = function () {
-            dibujo.fondo = img;
-            dibujoRedibujar();
-        };
-        img.onerror = function () {
-            dibujo.fondo = null;
-            dibujoRedibujar();
-        };
+        img.onload = function () { dibujo.fondo = img; dibujoRedibujar(); };
+        img.onerror = function () { dibujo.fondo = null; dibujoRedibujar(); };
         img.src = PLANO_ACTIVO_URL;
-    } else {
-        dibujo.fondo = null;
-        dibujoRedibujar();
-    }
+    } else { dibujo.fondo = null; dibujoRedibujar(); }
 }
-
 function abrirDibujo() {
     dibujo.canvas = document.getElementById("canvasDibujo");
     dibujo.ctx = dibujo.canvas.getContext("2d");
-
-    /* Igualar el tamaño VISUAL del lienzo de dibujo al del plano que se
-     * muestra a la derecha (canvasID): así lo que se dibuja se ve a la
-     * misma escala. Se fija SOLO el ancho y se deja el alto automático
-     * (height:auto del CSS) para que la proporción intrínseca 750:562
-     * (horizontal) se mantenga siempre: si el modal fuese más estrecho que
-     * el plano de la derecha, max-width:100% encogería también el alto y
-     * el lienzo nunca se deforma a vertical. Las coordenadas ya se
-     * normalizan en dibujoCoord por getBoundingClientRect(). */
     var plan = document.getElementById("canvasID");
     if (plan) {
         var r = plan.getBoundingClientRect();
-        if (r.width > 0 && r.height > 0) {
-            dibujo.canvas.style.width = r.width + "px";
-            dibujo.canvas.style.height = "auto";
-        }
+        if (r.width > 0 && r.height > 0) { dibujo.canvas.style.width = r.width + "px"; dibujo.canvas.style.height = "auto"; }
     }
-
     if (!dibujo.capa) {
         dibujo.capa = document.createElement("canvas");
-        dibujo.capa.width = dibujo.canvas.width;
-        dibujo.capa.height = dibujo.canvas.height;
+        dibujo.capa.width = dibujo.canvas.width; dibujo.capa.height = dibujo.canvas.height;
         dibujo.capaCtx = dibujo.capa.getContext("2d");
     }
-
-    // Reset del editor: capa en blanco + herramientas por defecto.
-    dibujo.base = null;
-    dibujo.fondo = null;   // el fondo de referencia solo se carga si se dibuja desde cero
-    dibujo.undo = [];
-    dibujo.borrador = false;
+    dibujo.base = null; dibujo.fondo = null; dibujo.undo = []; dibujo.borrador = false;
     document.getElementById("dibujoBorrador").classList.remove("is-activo");
     document.getElementById("dibujoGrosor").value = 3;
     document.getElementById("dibujoGrosorVal").textContent = 3;
@@ -1900,266 +1018,165 @@ function abrirDibujo() {
     document.getElementById("dibujoFondo").checked = true;
     dibujo.capaCtx.clearRect(0, 0, dibujo.canvas.width, dibujo.canvas.height);
 
-    // Si el local ya tiene croquis guardado, cargarlo como base editable: se
-    // muestra a color real, sin el fondo de referencia tenue (que confunde).
-    // El borrador y el deshacer actúan también sobre el dibujo previo.
     if (PLANO_DIBUJO_URL) {
         document.getElementById("dibujoFondoWrap").classList.add("dibujo-fondo--oculto");
-        dibujo.cargando = true;   // el pincel se desbloquea al terminar de cargar la base
+        dibujo.cargando = true;
         var img = new Image();
         img.onload = function () {
             dibujo.base = img;
             dibujo.capaCtx.drawImage(img, 0, 0, dibujo.canvas.width, dibujo.canvas.height);
-            dibujoGuardarSnapshot();
-            dibujo.cargando = false;
-            dibujoRedibujar();
+            dibujoGuardarSnapshot(); dibujo.cargando = false; dibujoRedibujar();
         };
-        img.onerror = function () {
-            dibujo.base = null;
-            dibujo.cargando = false;
-            dibujoRedibujar();
-            alert("No se pudo cargar el croquis existente. Vuelve a intentarlo.");
-        };
+        img.onerror = function () { dibujo.base = null; dibujo.cargando = false; dibujoRedibujar(); alert("No se pudo cargar el croquis existente."); };
         img.src = PLANO_DIBUJO_URL + "?v=" + Date.now();
     } else {
-        // Sin croquis: fondo de referencia al 45% para poder calcar.
         document.getElementById("dibujoFondoWrap").classList.remove("dibujo-fondo--oculto");
         cargarDibujoFondo();
         dibujoRedibujar();
     }
     dibujo.abierto = true;
-
-    // Abrir el modal Midone sin depender del trigger de app.js: el .modal se
-    // oculta con visibility/opacity y margin-top/left: -10000px (no con
-    // display:none), así que se muestra con la clase .show y reajustando márgenes.
     var modal = document.getElementById("planoDibujoModal");
     modal.classList.add("show");
-    modal.style.marginTop = "0";
-    modal.style.marginLeft = "0";
-    modal.style.zIndex = "99999";
-    if (modal.parentNode !== document.body) {
-        document.body.appendChild(modal);
-    }
+    modal.style.marginTop = "0"; modal.style.marginLeft = "0"; modal.style.zIndex = "99999";
+    if (modal.parentNode !== document.body) document.body.appendChild(modal);
     document.body.classList.add("overflow-y-hidden");
 }
-
 function cerrarDibujo() {
     dibujo.abierto = false;
     var modal = document.getElementById("planoDibujoModal");
     if (!modal) return;
     modal.classList.remove("show");
-    modal.style.marginTop = "";
-    modal.style.marginLeft = "";
-    modal.style.zIndex = "";
+    modal.style.marginTop = ""; modal.style.marginLeft = ""; modal.style.zIndex = "";
     document.body.classList.remove("overflow-y-hidden");
 }
+function guardarDibujo() {
+    if (!dibujo.abierto) return;
+    var salida = document.createElement("canvas");
+    salida.width = dibujo.canvas.width; salida.height = dibujo.canvas.height;
+    var sctx = salida.getContext("2d");
+    sctx.fillStyle = "#ffffff"; sctx.fillRect(0, 0, salida.width, salida.height);
+    if (dibujo.capa) sctx.drawImage(dibujo.capa, 0, 0);
+    var dataURL = salida.toDataURL("image/png");
+    var fd = new FormData();
+    fd.append("plano_dibujo", dataURL);
+    fetch("?page=config&tab=plano&accion=plano_dibujo", { method: "POST", body: fd })
+        .then(function (res) {
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            if (res.redirected) { location.href = "?page=config&tab=plano"; return null; }
+            return res.text();
+        })
+        .then(function (txt) {
+            if (txt === null) return;
+            if (txt.indexOf("Error") !== -1) { alert(txt); return; }
+            location.href = "?page=config&tab=plano";
+        })
+        .catch(function (err) { alert("No se pudo guardar el croquis: " + err.message); });
+}
 
+/* =========================================================================
+ * Init
+ * ========================================================================= */
 document.addEventListener("DOMContentLoaded", function () {
+    /* ---------- El Yunque (tab=plano) ---------- */
+    if (FORGE_TAB === "plano") {
+        Yunque.canvas = document.getElementById("canvasID");
+        if (Yunque.canvas) {
+            Yunque.ctx = Yunque.canvas.getContext("2d");
+            Yunque.canvas.addEventListener("mousedown", YunqueOnMouseDown);
+            Yunque.canvas.addEventListener("mousemove", YunqueOnMouseMove);
+            Yunque.canvas.addEventListener("mouseup", YunqueOnMouseUp);
+            Yunque.canvas.addEventListener("mouseleave", YunqueOnMouseUp);
 
-    /* ---------- Lienzo principal (La Forja) ---------- */
-    Forge.canvas = document.getElementById("canvasID");
-    if (Forge.canvas) {
-        Forge.ctx = Forge.canvas.getContext("2d");
-        Forge.canvas.addEventListener("mousedown", ForgeOnCanvasMouseDown);
-
-        // Arrastre de nodos en modo editar y trazo en vivo en modo crear.
-        Forge.canvas.addEventListener("mousemove", function (e) {
-            if (Forge.tab === "nodos" && Forge.sub === "editar" && Forge.drag) {
-                ForgeEditarMouseMove(ForgeCoord(e));
-            } else if (Forge.tab === "nodos" && Forge.sub === "crear") {
-                ForgeCrearMouseMove(ForgeCoord(e));
+            // cargar plano activo
+            if (PLANO_ACTIVO_URL) {
+                Yunque.planoImg = new Image();
+                Yunque.planoImg.onload = function () { YunqueDibujar(); };
+                Yunque.planoImg.onerror = function () { YunqueDibujar(); };
+                Yunque.planoImg.src = PLANO_ACTIVO_URL;
+            } else {
+                YunqueDibujar();
             }
-        });
-        Forge.canvas.addEventListener("mouseup", function () {
-            if (Forge.tab === "nodos" && Forge.sub === "editar" && Forge.drag) {
-                ForgeEditarMouseUp();
-            } else if (Forge.tab === "nodos" && Forge.sub === "crear") {
-                ForgeCrearSoltar();
-            }
-        });
-        Forge.canvas.addEventListener("mouseleave", function () {
-            if (Forge.tab === "nodos" && Forge.sub === "editar" && Forge.drag) {
-                ForgeEditarMouseUp();
-            } else if (Forge.tab === "nodos" && Forge.sub === "crear") {
-                ForgeCrearSoltar();
-            }
-        });
-        // Clic derecho: eliminar nodo en modo editar.
-        Forge.canvas.addEventListener("contextmenu", function (e) {
-            if (Forge.tab === "nodos" && Forge.sub === "editar") {
-                e.preventDefault();
-                ForgeEditarContext(ForgeCoord(e));
-            }
-        });
-
-        // Arrastre de cámaras en el plano (Pointer Events: ratón + táctil + lápiz).
-        Forge.canvas.addEventListener("pointerdown", function (e) {
-            if (Forge.mode === "foto") return;
-            if (Forge.tab === "plano") {
-                try { Forge.canvas.setPointerCapture(e.pointerId); } catch (err) {}
-                ForgeCamDragStart(ForgeCoord(e));
-                return;
-            }
-            if (Forge.tab === "lineas" && Forge.sub === "plano" && !Forge.lpModo) {
-                var h = ForgeLineaPlanoHitTest(ForgeCoord(e));
-                if (h) {
-                    try { Forge.canvas.setPointerCapture(e.pointerId); } catch (err) {}
-                    ForgeLineaPlanoDragStart(h, ForgeCoord(e));
-                }
-            }
-        });
-        Forge.canvas.addEventListener("pointermove", function (e) {
-            if (Forge.mode === "foto") return;
-            if (Forge.tab === "plano") {
-                if (Forge.camDrag) {
-                    ForgeCamDragMove(ForgeCoord(e));
-                } else {
-                    ForgeCamHover(ForgeCoord(e));
-                }
-                return;
-            }
-            if (Forge.tab === "lineas" && Forge.sub === "plano" && Forge.lpDrag) {
-                ForgeLineaPlanoDragMove(ForgeCoord(e));
-            }
-        });
-        Forge.canvas.addEventListener("pointerup", function () {
-            if (Forge.tab === "plano") ForgeCamDragEnd();
-            if (Forge.tab === "lineas" && Forge.sub === "plano" && Forge.lpDrag) ForgeLineaPlanoDragEnd();
-        });
-        Forge.canvas.addEventListener("pointercancel", function () {
-            if (Forge.tab === "plano") ForgeCamDragEnd();
-            if (Forge.tab === "lineas" && Forge.sub === "plano" && Forge.lpDrag) ForgeLineaPlanoDragEnd();
-        });
-        Forge.canvas.addEventListener("pointerleave", function () {
-            if (Forge.mode === "foto") return;
-            if (Forge.tab === "plano") {
-                if (Forge.camDrag) return; // sigue arrastrando aunque salga (capture)
-                Forge.camHover = null;
-                Forge.canvas.style.cursor = "";
-                ForgeDibujarPlano();
-                return;
-            }
-            if (Forge.tab === "lineas" && Forge.sub === "plano" && Forge.lpDrag) {
-                ForgeLineaPlanoDragEnd();
-            }
-        });
-
-        if (FORGE_MOSTRAR_FOTO && FORGE_TAB === "lineas") {
-            // Deep-link: ?page=config&tab=lineas&mostrar_foto=X[&editar_linea=X-Y]
-            ForgeFotoCargar(parseInt(FORGE_MOSTRAR_FOTO, 10) || 0, FORGE_EDITAR_LINEA || null);
-        } else {
-            ForgeDibujarPlano();
+            YunqueRenderSidebar();
+            YunqueRenderEstado();
         }
-        ForgeModoActualizarChip();
 
-        // Líneas del plano: el lienzo siempre en modo plano + listado reconstruido en JS.
-        if (FORGE_TAB === "lineas" && FORGE_SUB === "plano") {
-            Forge.mode = "plano";
-            ForgeLineasPlanoRenderLista();
+        // toggle modo senderos + estilo
+        var toggle = document.getElementById("yunqueModoSenderos");
+        if (toggle) toggle.addEventListener("change", function () {
+            Yunque.modoSenderos = toggle.checked;
+            Yunque.nodoSel1 = null;
+            Yunque.camSeleccionada = null;
+            YunqueRenderLineasPanel();
+            YunqueRender();
+        });
+        var estilo = document.getElementById("yunqueEstilo");
+        if (estilo) estilo.addEventListener("change", function () { Yunque.estilo = estilo.value; });
+
+        // HTML5 DnD: cámaras desde la barra lateral + líneas desde el panel
+        var canvasEl = Yunque.canvas;
+        if (canvasEl) {
+            canvasEl.addEventListener("dragover", function (e) { e.preventDefault(); });
+            canvasEl.addEventListener("drop", function (e) {
+                e.preventDefault();
+                var p = ForgeCoord(Yunque.canvas, e);
+                var camId = e.dataTransfer.getData("text/camara");
+                var lineaId = e.dataTransfer.getData("text/linea");
+                if (camId) YunqueColocarCamara(parseInt(camId, 10), p);
+                if (lineaId) YunqueColocarLinea(parseInt(lineaId, 10), p);
+            });
+        }
+        document.addEventListener("dragstart", function (e) {
+            var camCard = e.target.closest ? e.target.closest(".yunque-cam-fuera") : null;
+            if (camCard) { e.dataTransfer.setData("text/camara", camCard.getAttribute("data-cam-id")); return; }
+            var lineaChip = e.target.closest ? e.target.closest(".yunque-linea--pend") : null;
+            if (lineaChip) { e.dataTransfer.setData("text/linea", lineaChip.getAttribute("data-linea-id")); }
+        });
+    }
+
+    /* ---------- Trazador de líneas (tab=lineas) ---------- */
+    if (FORGE_TAB === "lineas") {
+        Trazador.canvas = document.getElementById("canvasLineas");
+        if (Trazador.canvas) {
+            Trazador.ctx = Trazador.canvas.getContext("2d");
+            Trazador.canvas.addEventListener("mousedown", function (e) {
+                TrazadorDibujaLinea(ForgeCoord(Trazador.canvas, e));
+            });
+        }
+        // deep-link de corregir
+        if (FORGE_SUB === "editar" && <?= json_encode($_GET["editar_linea"] ?? ""); ?>) {
+            TrazadorAbrirCorregir(<?= json_encode($_GET["editar_linea"] ?? ""); ?>);
         }
     }
 
     /* ---------- Editor de croquis (modal) ---------- */
     var canvas = document.getElementById("canvasDibujo");
-    if (!canvas) return;
+    if (canvas) {
+        var color = document.getElementById("dibujoColor");
+        var grosor = document.getElementById("dibujoGrosor");
+        color.addEventListener("input", function () { dibujo.color = color.value; dibujo.borrador = false; document.getElementById("dibujoBorrador").classList.remove("is-activo"); });
+        grosor.addEventListener("input", function () { dibujo.grosor = parseInt(grosor.value, 10) || 3; document.getElementById("dibujoGrosorVal").textContent = dibujo.grosor; });
+        document.getElementById("dibujoFondo").addEventListener("change", cargarDibujoFondo);
+        document.addEventListener("keydown", function (e) { if (e.key === "Escape" && dibujo.abierto) cerrarDibujo(); });
 
-    var color = document.getElementById("dibujoColor");
-    var grosor = document.getElementById("dibujoGrosor");
-
-    color.addEventListener("input", function () {
-        dibujo.color = color.value;
-        dibujo.borrador = false;
-        document.getElementById("dibujoBorrador").classList.remove("is-activo");
-    });
-    grosor.addEventListener("input", function () {
-        dibujo.grosor = parseInt(grosor.value, 10) || 3;
-        document.getElementById("dibujoGrosorVal").textContent = dibujo.grosor;
-    });
-    document.getElementById("dibujoFondo").addEventListener("change", cargarDibujoFondo);
-    document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape" && dibujo.abierto) {
-            cerrarDibujo();
-        }
-    });
-
-    canvas.addEventListener("mousedown", function (e) {
-        if (!dibujo.abierto || dibujo.cargando) return;
-        dibujo.dibujando = true;
-        dibujo.ultimo = dibujoCoord(e);
-        // snapshot previo: el deshacer vuelve al estado antes de este trazo
-        dibujoGuardarSnapshot();
-        dibujoPincel(dibujo.ultimo);
-        dibujoRedibujar();
-    });
-
-    canvas.addEventListener("mousemove", function (e) {
-        if (!dibujo.abierto || !dibujo.dibujando) return;
-        var p = dibujoCoord(e);
-        // pintado incremental sobre la capa (color o borrador)
-        dibujoPincel(p);
-        dibujo.ultimo = p;
-        dibujoRedibujar();
-    });
-
-    canvas.addEventListener("mouseup", function () {
-        dibujo.dibujando = false;
-    });
-    canvas.addEventListener("mouseleave", function () {
-        dibujo.dibujando = false;
-    });
-
-    // Pestañas de plano: si el destino no tiene archivo, no navegar.
-    document.querySelectorAll(".rf-tab.is-empty").forEach(function (tab) {
-        tab.addEventListener("click", function (e) {
-            e.preventDefault();
-            alert("Ese plano todavía no existe. Súbelo o dibújalo primero.");
+        canvas.addEventListener("mousedown", function (e) {
+            if (!dibujo.abierto || dibujo.cargando) return;
+            dibujo.dibujando = true;
+            dibujo.ultimo = dibujoCoord(e);
+            dibujoGuardarSnapshot();
+            dibujoPincel(dibujo.ultimo);
+            dibujoRedibujar();
         });
-    });
-});
+        canvas.addEventListener("mousemove", function (e) {
+            if (!dibujo.abierto || !dibujo.dibujando) return;
+            var p = dibujoCoord(e);
+            dibujoPincel(p); dibujo.ultimo = p; dibujoRedibujar();
+        });
+        canvas.addEventListener("mouseup", function () { dibujo.dibujando = false; });
+        canvas.addEventListener("mouseleave", function () { dibujo.dibujando = false; });
 
-function guardarDibujo() {
-    if (!dibujo.abierto) return;
-    // Salida limpia: fondo blanco + capa de trabajo (base del croquis previo
-    // si lo había + trazos nuevos). No se hornea el plano de referencia, que
-    // se usa únicamente para calcar durante el dibujo.
-    var salida = document.createElement("canvas");
-    salida.width = dibujo.canvas.width;
-    salida.height = dibujo.canvas.height;
-    var sctx = salida.getContext("2d");
-    sctx.fillStyle = "#ffffff";
-    sctx.fillRect(0, 0, salida.width, salida.height);
-    if (dibujo.capa) {
-        sctx.drawImage(dibujo.capa, 0, 0);
+        document.querySelectorAll(".rf-tab.is-empty").forEach(function (tab) {
+            tab.addEventListener("click", function (e) { e.preventDefault(); alert("Ese plano todavía no existe. Súbelo o dibújalo primero."); });
+        });
     }
-    var dataURL = salida.toDataURL("image/png");
-
-    var fd = new FormData();
-    fd.append("plano_dibujo", dataURL);
-
-    fetch("?page=config&tab=plano&accion=plano_dibujo", {
-        method: "POST",
-        body: fd
-    })
-    .then(function (res) {
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        if (res.redirected) {
-            // El servidor redirige a ?page=config tras guardar: éxito.
-            location.href = "?page=config&tab=plano";
-            return null;
-        }
-        return res.text();
-    })
-    .then(function (txt) {
-        if (txt === null) return;
-        if (txt.indexOf("Error") !== -1) {
-            alert(txt);
-            return;
-        }
-        location.href = "?page=config&tab=plano";
-    })
-    .catch(function (err) {
-        alert("No se pudo guardar el croquis: " + err.message);
-    });
-}
-
+});
 </script>

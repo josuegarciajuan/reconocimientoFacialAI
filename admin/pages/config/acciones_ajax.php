@@ -134,7 +134,7 @@ switch ($_GET["a"]) {
             break;
         }
         DB::execute(
-            "UPDATE camaras SET x = ?, y = ? WHERE id = ? AND local_id = ?",
+            "UPDATE camaras SET x = ?, y = ?, colocada = 1 WHERE id = ? AND local_id = ?",
             [$x, $y, $id, $local]
         );
         echo "ok";
@@ -226,9 +226,15 @@ switch ($_GET["a"]) {
         $y2 = (int)($body["y2"] ?? 0);
         $linea_id = (int)($body["linea_id"] ?? 0);
         $local = (int)($_SESSION["local_id"] ?? 0);
-        if ($local <= 0 || $camara_id <= 0 || $nombre === "" || $x1 <= 0 || $y1 <= 0 || $x2 <= 0 || $y2 <= 0) {
+        if ($local <= 0 || $camara_id <= 0 || $nombre === "") {
             http_response_code(400);
             echo "error: datos inválidos (cámara, nombre y dos clics en el plano)";
+            break;
+        }
+        // Segmento válido: al menos una coordenada distinta (longitud no nula).
+        if ($x1 === $x2 && $y1 === $y2) {
+            http_response_code(400);
+            echo "error: la línea necesita inicio y fin distintos";
             break;
         }
         DB::beginTransaction();
@@ -324,6 +330,101 @@ switch ($_GET["a"]) {
             ? lineas_plano_vincular($plano_id, $linea_id)
             : lineas_plano_desvincular($plano_id);
         echo json_encode(["ok" => $ok]);
+        break;
+
+    case "16": // crear sendero (JSON POST): {origen_tipo, origen_id, destino_tipo, destino_id, estilo, puntos:[[x,y],...]}
+        $body = json_decode((string)file_get_contents("php://input"), true);
+        $local = (int)($_SESSION["local_id"] ?? 0);
+        $origen_tipo  = ($body["origen_tipo"] ?? "") === "linea_plano" ? "linea_plano" : "camara";
+        $origen_id    = (int)($body["origen_id"] ?? 0);
+        $destino_tipo = ($body["destino_tipo"] ?? "") === "linea_plano" ? "linea_plano" : "camara";
+        $destino_id   = (int)($body["destino_id"] ?? 0);
+        $estilo = in_array($body["estilo"] ?? "", ["recto", "ortogonal", "curvo"], true) ? $body["estilo"] : "recto";
+        $puntos = is_array($body["puntos"] ?? null) ? $body["puntos"] : [];
+
+        if ($local <= 0 || $origen_id <= 0 || $destino_id <= 0
+            || ($origen_tipo === $destino_tipo && $origen_id === $destino_id)) {
+            http_response_code(400);
+            echo json_encode(["ok" => false, "error" => "datos inválidos"]);
+            break;
+        }
+
+        DB::beginTransaction();
+        try {
+            $id = DB::insert(
+                "INSERT INTO senderos (local_id, origen_tipo, origen_id, destino_tipo, destino_id, estilo) VALUES (?, ?, ?, ?, ?, ?)",
+                [$local, $origen_tipo, $origen_id, $destino_tipo, $destino_id, $estilo]
+            );
+            $orden = 1;
+            foreach ($puntos as $p) {
+                if (!is_array($p) || !isset($p[0], $p[1])) continue;
+                DB::execute(
+                    "INSERT INTO senderos_puntos (sendero_id, x, y, orden) VALUES (?, ?, ?, ?)",
+                    [$id, (int)$p[0], (int)$p[1], $orden++]
+                );
+            }
+            DB::commit();
+        } catch (Throwable $e) {
+            DB::rollBack();
+            http_response_code(500);
+            echo json_encode(["ok" => false, "error" => $e->getMessage()]);
+            break;
+        }
+        echo json_encode(["ok" => true, "id" => $id]);
+        break;
+
+    case "17": // actualizar sendero (JSON POST): {id, estilo, puntos:[[x,y],...]}
+        $body = json_decode((string)file_get_contents("php://input"), true);
+        $id = (int)($body["id"] ?? 0);
+        $estilo = in_array($body["estilo"] ?? "", ["recto", "ortogonal", "curvo"], true) ? $body["estilo"] : "recto";
+        $puntos = is_array($body["puntos"] ?? null) ? $body["puntos"] : [];
+        if ($id <= 0) {
+            http_response_code(400);
+            echo json_encode(["ok" => false, "error" => "id de sendero inválido"]);
+            break;
+        }
+        DB::beginTransaction();
+        try {
+            DB::execute("UPDATE senderos SET estilo = ? WHERE id = ?", [$estilo, $id]);
+            DB::execute("DELETE FROM senderos_puntos WHERE sendero_id = ?", [$id]);
+            $orden = 1;
+            foreach ($puntos as $p) {
+                if (!is_array($p) || !isset($p[0], $p[1])) continue;
+                DB::execute(
+                    "INSERT INTO senderos_puntos (sendero_id, x, y, orden) VALUES (?, ?, ?, ?)",
+                    [$id, (int)$p[0], (int)$p[1], $orden++]
+                );
+            }
+            DB::commit();
+        } catch (Throwable $e) {
+            DB::rollBack();
+            http_response_code(500);
+            echo json_encode(["ok" => false, "error" => $e->getMessage()]);
+            break;
+        }
+        echo json_encode(["ok" => true]);
+        break;
+
+    case "18": // eliminar sendero (JSON POST): {id}
+        $body = json_decode((string)file_get_contents("php://input"), true);
+        $id = (int)($body["id"] ?? 0);
+        if ($id <= 0) {
+            http_response_code(400);
+            echo json_encode(["ok" => false, "error" => "id de sendero inválido"]);
+            break;
+        }
+        DB::beginTransaction();
+        try {
+            DB::execute("DELETE FROM senderos_puntos WHERE sendero_id = ?", [$id]);
+            DB::execute("DELETE FROM senderos WHERE id = ?", [$id]);
+            DB::commit();
+        } catch (Throwable $e) {
+            DB::rollBack();
+            http_response_code(500);
+            echo json_encode(["ok" => false, "error" => $e->getMessage()]);
+            break;
+        }
+        echo json_encode(["ok" => true]);
         break;
 
     default:

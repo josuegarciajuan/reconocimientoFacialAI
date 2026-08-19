@@ -1,26 +1,71 @@
 <?php
 /* La Forja · Tab Fortalezas (locales)
- * Listado de locales/sedes adaptado de admin/pages/locales/list.php.
- * Solo se renderiza para administradores (el gate vive en index.php/edit.php).
- * Requiere libs/db.php. El lienzo "El Yunque" se oculta en este tab (edit.php).
+ * Listado + crear/editar inline (sin salir de La Forja). Solo admin.
+ * Sub-acciones: listar / crear / editar — resueltas en $sub.
  */
 
 require_once __DIR__ . "/../../../../libs/db.php";
 
 $fortalezas = DB::select("SELECT * FROM locales ORDER BY id ASC");
+
+/* Local a editar (sub=editar). */
+$local_edit = null;
+if ($sub === "editar") {
+    $lid = (int)($_GET["id"] ?? 0);
+    if ($lid > 0) {
+        $local_edit = DB::selectOne("SELECT * FROM locales WHERE id = ?", [$lid]);
+    }
+}
 ?>
 
+<?php if ($sub === "crear"): ?>
+<!-- ---------- Crear fortaleza ---------- -->
+<div class="form-section" data-panel-forge="crear">
+    <div class="form-section__title">
+        <span class="form-section__emoji" aria-hidden="true">🏰</span>
+        <span data-lore="fortalezas">Nueva fortaleza</span>
+        <a href="?page=config&tab=locales&sub=listar" class="button button--sm text-white bg-theme-6 shadow-md ml-auto">Volver al listado</a>
+    </div>
+
+    <form action="?page=config&tab=locales&sub=crear&accion=local_crear" method="POST" class="w-full">
+        <?php include __DIR__ . "/_local_form.php"; ?>
+    </form>
+</div>
+
+<?php elseif ($sub === "editar" && $local_edit): ?>
+<!-- ---------- Editar fortaleza ---------- -->
+<div class="form-section" data-panel-forge="editar">
+    <div class="form-section__title">
+        <span class="form-section__emoji" aria-hidden="true">🏰</span>
+        <span data-lore="fortalezas">Editar fortaleza: <?= htmlspecialchars($local_edit["nombre"] ?? ""); ?></span>
+        <a href="?page=config&tab=locales&sub=listar" class="button button--sm text-white bg-theme-6 shadow-md ml-auto">Volver al listado</a>
+    </div>
+
+    <form action="?page=config&tab=locales&sub=editar&accion=local_guardar&id=<?= (int)$local_edit["id"]; ?>" method="POST" class="w-full">
+        <?php include __DIR__ . "/_local_form.php"; ?>
+    </form>
+</div>
+
+<?php elseif ($sub === "editar"): ?>
+<div class="form-section">
+    <div class="form-section__title">
+        <span class="form-section__emoji" aria-hidden="true">⚠️</span>
+        Fortaleza no encontrada
+    </div>
+    <a href="?page=config&tab=locales&sub=listar" class="button text-white bg-theme-2 shadow-md">Volver al listado</a>
+</div>
+
+<?php else: ?>
+<!-- ---------- Listado de fortalezas ---------- -->
 <div class="form-section">
     <div class="form-section__title">
         <span class="form-section__emoji" aria-hidden="true">🏰</span>
         <span data-lore="fortalezas">Fortalezas</span>
-        <button class="button button--sm text-white bg-theme-1 shadow-md ml-auto"
-                onclick="location.href='?page=locales&mode=editar'">Nuevo</button>
+        <a href="?page=config&tab=locales&sub=crear" class="button button--sm text-white bg-theme-1 shadow-md ml-auto">Nuevo</a>
     </div>
 
     <p class="text-xs text-gray-500 dark:text-gray-600 mb-3">
-        Cada fortaleza es un local con sus cámaras, su plano, su aforo y su legión. La edición se hace en
-        <em>?page=locales</em> (sigue funcionando, solo que ya no está en el menú superior).
+        Cada fortaleza es un local con sus cámaras, su plano, su aforo y su legión. Crea y edita desde aquí sin salir de La Forja.
     </p>
 
     <div class="table-wrap">
@@ -58,7 +103,7 @@ $fortalezas = DB::select("SELECT * FROM locales ORDER BY id ASC");
                     <td class="border-b" align="center"><?= $personas ? (int)$personas["n"] : 0; ?></td>
                     <td class="border-b w-5">
                         <div class="flex sm:justify-center items-center">
-                            <a class="flex items-center mr-3" href="?page=locales&mode=editar&id=<?= (int)$l["id"]; ?>">Editar</a>
+                            <a class="flex items-center mr-3" href="?page=config&tab=locales&sub=editar&id=<?= (int)$l["id"]; ?>">Editar</a>
                         </div>
                     </td>
                 </tr>
@@ -73,3 +118,4 @@ $fortalezas = DB::select("SELECT * FROM locales ORDER BY id ASC");
         </table>
     </div>
 </div>
+<?php endif; ?>
