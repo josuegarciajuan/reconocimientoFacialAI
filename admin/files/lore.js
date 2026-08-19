@@ -18,7 +18,6 @@
   "use strict";
 
   var GLOSARIO = win.RF_GLOSARIO || {};
-  var EN_LOGIN = doc.body && doc.body.classList.contains("login");
 
   /* Normalización de texto: minúsculas, sin emojis/puntuación,
      espacios colapsados. Mantiene acentos (á é í ó ú ñ ü). */
@@ -108,8 +107,7 @@
     div.setAttribute("role", "tooltip");
     div.innerHTML =
       '<div class="rf-lore__term"></div>' +
-      '<div class="rf-lore__mean"></div>' +
-      '<div class="rf-lore__go"></div>';
+      '<div class="rf-lore__mean"></div>';
     doc.body.appendChild(div);
     return div;
   }
@@ -118,25 +116,6 @@
     if (!tooltip) tooltip = construirTooltip();
     tooltip.querySelector(".rf-lore__term").textContent = entrada.termino;
     tooltip.querySelector(".rf-lore__mean").textContent = entrada.significado;
-
-    var go = tooltip.querySelector(".rf-lore__go");
-    var destino = entrada.destino || "";
-    var href = entrada.href;
-    if (EN_LOGIN) href = null; // en login los enlaces del panel no existen
-    if (destino) {
-      if (href) {
-        go.innerHTML = "";
-        var a = doc.createElement("a");
-        a.href = href;
-        a.textContent = "Apunta a → " + destino;
-        go.appendChild(a);
-      } else {
-        go.textContent = "Apunta a → " + destino;
-      }
-      go.style.display = "";
-    } else {
-      go.style.display = "none";
-    }
 
     posicionar(ancla);
     tooltip.classList.add("rf-lore--show");
