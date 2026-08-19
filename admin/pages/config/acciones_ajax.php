@@ -7,6 +7,7 @@
 require_once __DIR__ . "/../../../config/rutas.php";
 require_once __DIR__ . "/../../../libs/db.php";
 require_once __DIR__ . "/../../../libs/nodos.php";
+require_once __DIR__ . "/../../../libs/lineas_plano.php";
 
 /* La sesión debe estar iniciada para leer $_SESSION["local_id"] (caso 8: mover cámara).
  * Este fichero se llama por fetch directo (no pasa por index.php), así que hay que
@@ -215,7 +216,7 @@ switch ($_GET["a"]) {
         echo json_encode(["ok" => true]);
         break;
 
-    case "11": // crear línea del plano (JSON POST): {camara_id, nombre, x1,y1,x2,y2}
+    case "11": // crear línea del plano (JSON POST): {camara_id, nombre, x1,y1,x2,y2, linea_id?}
         $body = json_decode((string)file_get_contents("php://input"), true);
         $camara_id = (int)($body["camara_id"] ?? 0);
         $nombre = trim((string)($body["nombre"] ?? ""));
@@ -223,20 +224,34 @@ switch ($_GET["a"]) {
         $y1 = (int)($body["y1"] ?? 0);
         $x2 = (int)($body["x2"] ?? 0);
         $y2 = (int)($body["y2"] ?? 0);
+        $linea_id = (int)($body["linea_id"] ?? 0);
         $local = (int)($_SESSION["local_id"] ?? 0);
         if ($local <= 0 || $camara_id <= 0 || $nombre === "" || $x1 <= 0 || $y1 <= 0 || $x2 <= 0 || $y2 <= 0) {
             http_response_code(400);
             echo "error: datos inválidos (cámara, nombre y dos clics en el plano)";
             break;
         }
-        $id = DB::insert(
-            "INSERT INTO lineas_plano (camara_id, nombre, x1, y1, x2, y2) VALUES (?, ?, ?, ?, ?, ?)",
-            [$camara_id, $nombre, $x1, $y1, $x2, $y2]
-        );
+        DB::beginTransaction();
+        try {
+            // 1:1: si la línea de cámara ya estaba representada, se desvincula de la anterior.
+            if ($linea_id > 0) {
+                DB::execute("UPDATE lineas_plano SET linea_id = NULL WHERE linea_id = ?", [$linea_id]);
+            }
+            $id = DB::insert(
+                "INSERT INTO lineas_plano (camara_id, linea_id, nombre, x1, y1, x2, y2) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                [$camara_id, $linea_id > 0 ? $linea_id : null, $nombre, $x1, $y1, $x2, $y2]
+            );
+            DB::commit();
+        } catch (Throwable $e) {
+            DB::rollBack();
+            http_response_code(500);
+            echo "error: " . $e->getMessage();
+            break;
+        }
         echo "ok:" . $id;
         break;
 
-    case "12": // mover extremos de una línea del plano (JSON POST): {id, x1,y1,x2,y2}
+    case "12": // mover extremos de una línea del plano (JSON POST): {id, x1,y1,x2,y2, linea_id?}
         $body = json_decode((string)file_get_contents("php://input"), true);
         $id = (int)($body["id"] ?? 0);
         $x1 = (int)($body["x1"] ?? 0);
@@ -248,10 +263,15 @@ switch ($_GET["a"]) {
             echo "error: id de línea del plano inválido";
             break;
         }
-        DB::execute(
-            "UPDATE lineas_plano SET x1 = ?, y1 = ?, x2 = ?, y2 = ? WHERE id = ? AND eliminada = 0",
-            [$x1, $y1, $x2, $y2, $id]
-        );
+        $set = "x1 = ?, y1 = ?, x2 = ?, y2 = ?";
+        $params = [$x1, $y1, $x2, $y2];
+        if (array_key_exists("linea_id", $body)) {
+            $linea_id = (int)($body["linea_id"] ?? 0);
+            $set .= ", linea_id = ?";
+            $params[] = $linea_id > 0 ? $linea_id : null;
+        }
+        $params[] = $id;
+        DB::execute("UPDATE lineas_plano SET $set WHERE id = ? AND eliminada = 0", $params);
         echo "ok";
         break;
 
@@ -266,6 +286,44 @@ switch ($_GET["a"]) {
         DB::execute("UPDATE lineas_plano SET eliminada = 1 WHERE id = ?", [$id]);
         echo "ok";
         break;
+
+    case "14": // líneas de cámara de una cámara: sin plano + ya mapeadas (GET: ?a=14&camara=N)
+        header("Content-Type: application/json; charset=utf-8");
+        $cam_id = (int)($_GET["camara"] ?? 0);
+        if ($cam_id <= 0) {
+            http_response_code(400);
+            echo json_encode(["ok" => false, "error" => "cámara inválida"]);
+            break;
+        }
+        $sin_plano = array_map("lineas_plano_utf8", lineas_sin_plano($cam_id));
+        $mapeadas = DB::select(
+            "SELECT l.id AS linea_id, l.nombre AS linea_nombre, lp.id AS plano_id, lp.nombre AS plano_nombre
+             FROM lineas l
+             JOIN lineas_plano lp ON lp.linea_id = l.id
+             WHERE l.camara_id = ? AND l.eliminada = 0 AND lp.eliminada = 0
+             ORDER BY l.id ASC",
+            [$cam_id]
+        );
+        echo json_encode([
+            "ok"       => true,
+            "sin_plano"=> array_map("lineas_plano_utf8", $sin_plano),
+            "mapeadas" => array_map("lineas_plano_utf8", $mapeadas),
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        break;
+
+    case "15": // vincular/desvincular línea del plano con línea de cámara (JSON POST): {plano_id, linea_id}
+        $body = json_decode((string)file_get_contents("php://input"), true);
+        $plano_id = (int)($body["plano_id"] ?? 0);
+        $linea_id = (int)($body["linea_id"] ?? 0);
+        if ($plano_id <= 0) {
+            http_response_code(400);
+            echo json_encode(["ok" => false, "error" => "línea del plano inválida"]);
+            break;
+        }
+        $ok = ($linea_id > 0)
+            ? lineas_plano_vincular($plano_id, $linea_id)
+            : lineas_plano_desvincular($plano_id);
+        echo json_encode(["ok" => $ok]);
         break;
 
     default:
