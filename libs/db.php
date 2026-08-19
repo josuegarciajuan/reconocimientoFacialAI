@@ -55,4 +55,22 @@ final class DB
         $st->execute($params);
         return $st->rowCount();
     }
+
+    /** Inicia una transacción (para escrituras atómicas en lote). */
+    public static function beginTransaction(): void
+    {
+        self::conn()->beginTransaction();
+    }
+
+    /** Confirma la transacción en curso. */
+    public static function commit(): void
+    {
+        self::conn()->commit();
+    }
+
+    /** Revierte la transacción en curso. */
+    public static function rollBack(): void
+    {
+        self::conn()->rollBack();
+    }
 }

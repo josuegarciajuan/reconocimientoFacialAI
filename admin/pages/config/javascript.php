@@ -19,6 +19,7 @@ $plano_activo_url = plano_url((int)($_SESSION["local_id"] ?? 0));
 $cams_json = [];
 foreach ($cams as $cam) {
     $cams_json[] = [
+        "id"   => (int)$cam["id"],
         "x"    => (int)$cam["x"],
         "y"    => (int)$cam["y"],
         "desc" => (string)$cam["descripcion"],
@@ -29,7 +30,10 @@ $ids_camaras = array_column($cams, "id");
 if ($ids_camaras) {
     $in = implode(",", array_fill(0, count($ids_camaras), "?"));
     $params = array_merge($ids_camaras, $ids_camaras);
-    $nodos_json = DB::select("SELECT x, y FROM nodos WHERE camara_id1 IN ($in) OR camara_id2 IN ($in)", $params);
+    $nodos_json = DB::select(
+        "SELECT camara_id1, camara_id2, camino, x, y, orden FROM nodos WHERE camara_id1 IN ($in) OR camara_id2 IN ($in)",
+        $params
+    );
 }
 ?>
 
@@ -108,16 +112,70 @@ function ForgeModoActualizarChip() {
 /* ------------------------------------------------------------------ */
 /* Modo plano: dibuja plano + cámaras + nodos (una sola vez en cache)  */
 /* ------------------------------------------------------------------ */
+function ForgeCamCoord(id) {
+    for (var i = 0; i < FORGE_CAMS.length; i++) {
+        if (String(FORGE_CAMS[i].id) === String(id)) {
+            return { x: FORGE_CAMS[i].x, y: FORGE_CAMS[i].y };
+        }
+    }
+    return null;
+}
+
+/* Agrupa FORGE_NODOS en cadenas por par de cámaras (min-max) + camino. */
+function ForgeAgruparNodos() {
+    var map = {};
+    for (var i = 0; i < FORGE_NODOS.length; i++) {
+        var n = FORGE_NODOS[i];
+        var a = parseInt(n.camara_id1, 10), b = parseInt(n.camara_id2, 10);
+        var key = (a < b ? a : b) + "-" + (a < b ? b : a);
+        var camino = parseInt(n.camino || 0, 10);
+        var k2 = key + "#" + camino;
+        if (!map[k2]) {
+            map[k2] = { cam1: a < b ? a : b, cam2: a < b ? b : a, camino: camino, nodos: [] };
+        }
+        map[k2].nodos.push({ x: parseInt(n.x, 10), y: parseInt(n.y, 10), orden: parseInt(n.orden || 0, 10) });
+    }
+    var out = [];
+    for (var k in map) {
+        var c = map[k];
+        c.nodos.sort(function (p, q) { return p.orden - q.orden; });
+        out.push(c);
+    }
+    return out;
+}
+
+/* Modo plano: dibuja plano + cámaras + cadenas de nodos (una sola vez en cache)  */
 function ForgePintarCamarasNodos(ctx) {
+    // cámaras (marcadores rojos)
     ctx.fillStyle = "#D22829";
     ctx.font = "10px Arial";
     for (var i = 0; i < FORGE_CAMS.length; i++) {
         ctx.fillRect(FORGE_CAMS[i].x, FORGE_CAMS[i].y, 10, 10);
         ctx.fillText(FORGE_CAMS[i].desc, FORGE_CAMS[i].x, FORGE_CAMS[i].y);
     }
+    // cadenas de nodos: polilíneas entre cámaras (alternativos atenuados)
+    var cadenas = ForgeAgruparNodos();
+    for (var c = 0; c < cadenas.length; c++) {
+        var cad = cadenas[c];
+        var c1 = ForgeCamCoord(cad.cam1), c2 = ForgeCamCoord(cad.cam2);
+        if (!c1 || !c2) continue;
+        ctx.save();
+        ctx.strokeStyle = "#2596be";
+        ctx.globalAlpha = cad.camino > 0 ? 0.4 : 1;
+        ctx.setLineDash(cad.camino > 0 ? [4, 4] : []);
+        ctx.beginPath();
+        ctx.moveTo(c1.x, c1.y);
+        for (var n = 0; n < cad.nodos.length; n++) {
+            ctx.lineTo(cad.nodos[n].x, cad.nodos[n].y);
+        }
+        ctx.lineTo(c2.x, c2.y);
+        ctx.stroke();
+        ctx.restore();
+    }
+    // nodos (puntos azules)
     ctx.fillStyle = "#2596be";
     for (var j = 0; j < FORGE_NODOS.length; j++) {
-        ctx.fillRect(FORGE_NODOS[j].x, FORGE_NODOS[j].y, 10, 10);
+        ctx.fillRect(parseInt(FORGE_NODOS[j].x, 10), parseInt(FORGE_NODOS[j].y, 10), 10, 10);
     }
 }
 
@@ -132,6 +190,25 @@ function ForgeRender() {
         ctx.fillRect(Forge.marcador.x - 5, Forge.marcador.y - 5, 10, 10);
     }
     if (Forge.nodos_x.length) {
+        // Vista previa en vivo: cámara1 → nodos marcados → cámara2.
+        if (Forge.tab === "nodos" && Forge.sub === "crear") {
+            var sel1 = document.getElementById("camara1");
+            var sel2 = document.getElementById("camara2");
+            var c1 = sel1 ? ForgeCamCoord(sel1.value) : null;
+            var c2 = sel2 ? ForgeCamCoord(sel2.value) : null;
+            ctx.save();
+            ctx.strokeStyle = "#718E06";
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 4]);
+            ctx.beginPath();
+            if (c1) { ctx.moveTo(c1.x, c1.y); } else { ctx.moveTo(Forge.nodos_x[0], Forge.nodos_y[0]); }
+            for (var i = 0; i < Forge.nodos_x.length; i++) {
+                ctx.lineTo(Forge.nodos_x[i], Forge.nodos_y[i]);
+            }
+            if (c2) { ctx.lineTo(c2.x, c2.y); }
+            ctx.stroke();
+            ctx.restore();
+        }
         ctx.fillStyle = "#718E06";
         for (var i = 0; i < Forge.nodos_x.length; i++) {
             ctx.fillRect(Forge.nodos_x[i] - 5, Forge.nodos_y[i] - 5, 10, 10);
@@ -500,35 +577,55 @@ function cargarplano(){
 }
 
 function guardar_nodos(){
-    camara1=document.getElementById("camara1").value;
-    camara2=document.getElementById("camara2").value;
+    var camara1 = parseInt(document.getElementById("camara1").value, 10);
+    var camara2 = parseInt(document.getElementById("camara2").value, 10);
+    var caminoSel = document.getElementById("camino");
+    var camino = caminoSel ? (parseInt(caminoSel.value, 10) || 0) : 0;
 
     if(Forge.nodos_x.length === 0){
         if (typeof rfToast === "function") rfToast("Marca al menos un nodo en el lienzo.", "err");
         return;
     }
-
-    for(i=0;i<Forge.nodos_x.length;i++){
-        ajax = nuevoAjax();
-        urlllamada="pages/config/acciones_ajax.php?a=2&numero_nodos="+Forge.nodos_x.length+"&camara1="+camara1+"&camara2="+camara2+"&actual="+i+"&x="+Forge.nodos_x[i]+"&y="+Forge.nodos_y[i];
-        ajax.open("GET", urlllamada, true);
-
-        if(i==(Forge.nodos_x.length-1)){
-            ajax.onreadystatechange = function () {
-                if (ajax.readyState == 4) {
-                    location.href="?page=config&tab=nodos&sub=crear";
-                }
-            }
-        }
-        ajax.send(null);
+    if(!camara1 || !camara2 || camara1 === camara2){
+        if (typeof rfToast === "function") rfToast("Selecciona dos cámaras distintas antes de guardar.", "err");
+        return;
     }
+
+    var nodos = [];
+    for (var i = 0; i < Forge.nodos_x.length; i++) {
+        nodos.push({ x: Forge.nodos_x[i], y: Forge.nodos_y[i] });
+    }
+
+    fetch("pages/config/acciones_ajax.php?a=5", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ camara1: camara1, camara2: camara2, camino: camino, nodos: nodos })
+    })
+    .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.text();
+    })
+    .then(function (txt) {
+        if (txt.indexOf("error") !== -1) {
+            var msg = "No se pudo guardar: " + txt;
+            if (typeof rfToast === "function") rfToast(msg, "err"); else alert(msg);
+            return;
+        }
+        location.href = "?page=config&tab=nodos&sub=crear";
+    })
+    .catch(function (err) {
+        var msg = "No se pudo guardar: " + err.message;
+        if (typeof rfToast === "function") rfToast(msg, "err"); else alert(msg);
+    });
 }
 
 function eliminar_nodos(){
-    camara1=document.getElementById("camara1_el").value;
-    camara2=document.getElementById("camara2_el").value;
+    var camara1 = document.getElementById("camara1_el").value;
+    var camara2 = document.getElementById("camara2_el").value;
+    var caminoSel = document.getElementById("camino_el");
+    var camino = caminoSel ? (parseInt(caminoSel.value, 10) || 0) : 0;
 
-    location.href="?page=config&tab=nodos&sub=eliminar&accion=eliminar_nodos&camara1="+camara1+"&camara2="+camara2;
+    location.href="?page=config&tab=nodos&sub=eliminar&accion=eliminar_nodos&camara1="+camara1+"&camara2="+camara2+"&camino="+camino;
 }
 
 function guardar_lineas(){
@@ -886,8 +983,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
 function guardarDibujo() {
     if (!dibujo.abierto) return;
-    // El contenido visible (fondo + trazos) es exactamente lo que se guarda.
-    var dataURL = dibujo.canvas.toDataURL("image/png");
+    // Salida limpia: fondo blanco + SOLO los trazos. No se hornea el plano de
+    // referencia (que se usa únicamente para calcar durante el dibujo).
+    var salida = document.createElement("canvas");
+    salida.width = dibujo.canvas.width;
+    salida.height = dibujo.canvas.height;
+    var sctx = salida.getContext("2d");
+    sctx.fillStyle = "#ffffff";
+    sctx.fillRect(0, 0, salida.width, salida.height);
+    if (dibujo.capa) {
+        sctx.drawImage(dibujo.capa, 0, 0);
+    }
+    var dataURL = salida.toDataURL("image/png");
 
     var fd = new FormData();
     fd.append("plano_dibujo", dataURL);

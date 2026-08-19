@@ -7,6 +7,7 @@
 
 require_once __DIR__ . "/fechas.php";
 require_once __DIR__ . "/db.php";
+require_once __DIR__ . "/nodos.php";
 
 /** Cámaras de entrada (puerta) y salida de un local. */
 function camaras_puerta_salida($local_id) {
@@ -15,13 +16,25 @@ function camaras_puerta_salida($local_id) {
     return [$puerta, $salida];
 }
 
-/** Nodos ordenados entre dos cámaras (array de [x, y]); [] si no hay. */
-function nodos_entre($cam_a, $cam_b) {
+/**
+ * Cadenas de nodos entre dos cámaras, agrupadas por camino y orientadas en el
+ * sentido del recorrido (corrige el zigzag al recorrer el par al revés).
+ * Devuelve [ ["camino" => int, "nodos" => [[x,y],...]], ... ]; [] si no hay.
+ */
+function nodos_caminos_entre($cam_a, $cam_b) {
     $rows = DB::select(
-        "SELECT x, y FROM nodos WHERE (camara_id1 = ? AND camara_id2 = ?) OR (camara_id1 = ? AND camara_id2 = ?) ORDER BY orden ASC",
+        "SELECT camara_id1, camino, x, y FROM nodos
+         WHERE (camara_id1 = ? AND camara_id2 = ?) OR (camara_id1 = ? AND camara_id2 = ?)
+         ORDER BY camino ASC, orden ASC",
         [$cam_a, $cam_b, $cam_b, $cam_a]
     );
-    return array_map(fn($r) => [(int)$r["x"], (int)$r["y"]], $rows);
+    return ordenar_cadenas_nodos($rows, (int)$cam_a);
+}
+
+/** Nodos del camino principal entre dos cámaras (array de [x, y]); [] si no hay. */
+function nodos_entre($cam_a, $cam_b) {
+    $cadenas = nodos_caminos_entre($cam_a, $cam_b);
+    return $cadenas ? $cadenas[0]["nodos"] : [];
 }
 
 /** Construye la cadena de estancias (ruta) a partir de una estancia de entrada. */
@@ -67,7 +80,7 @@ function construye_ruta($entrada, $camaras_salida) {
 
     $segmentos = [];
     for ($i = 0; $i < count($puntos) - 1; $i++) {
-        $segmentos[] = nodos_entre((int)$puntos[$i]["camara_id"], (int)$puntos[$i + 1]["camara_id"]);
+        $segmentos[] = nodos_caminos_entre((int)$puntos[$i]["camara_id"], (int)$puntos[$i + 1]["camara_id"]);
     }
 
     if ($esta_dentro) {

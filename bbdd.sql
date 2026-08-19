@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS nodos(
   x int(11) default 0,
   y int(11) default 0,
   orden int(11) default 0,
+  camino tinyint(4) NOT NULL default 0,
   created timestamp DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id)
 );

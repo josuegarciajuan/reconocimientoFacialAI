@@ -52,6 +52,43 @@ switch ($_GET["a"]) {
         echo json_encode($lineas, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         break;
 
+    case "5": // guardar cadena de nodos en lote (JSON POST): {camara1, camara2, camino, nodos:[{x,y},...]}
+        $body = json_decode((string)file_get_contents("php://input"), true);
+        $camara1 = (int)($body["camara1"] ?? 0);
+        $camara2 = (int)($body["camara2"] ?? 0);
+        $camino  = (int)($body["camino"] ?? 0);
+        $nodos   = $body["nodos"] ?? [];
+
+        if ($camara1 <= 0 || $camara2 <= 0 || $camara1 === $camara2 || !is_array($nodos) || count($nodos) === 0) {
+            http_response_code(400);
+            echo "error: datos inválidos";
+            break;
+        }
+
+        DB::beginTransaction();
+        try {
+            // Reemplazo idempotente de la cadena de este par+camino (evita nodos duplicados).
+            DB::execute(
+                "DELETE FROM nodos WHERE camara_id1 = ? AND camara_id2 = ? AND camino = ?",
+                [$camara1, $camara2, $camino]
+            );
+            $orden = 1;
+            foreach ($nodos as $n) {
+                DB::execute(
+                    "INSERT INTO nodos (camara_id1, camara_id2, x, y, orden, camino) VALUES (?, ?, ?, ?, ?, ?)",
+                    [$camara1, $camara2, (int)$n["x"], (int)$n["y"], $orden++, $camino]
+                );
+            }
+            DB::commit();
+        } catch (Throwable $e) {
+            DB::rollBack();
+            http_response_code(500);
+            echo "error: " . $e->getMessage();
+            break;
+        }
+        echo "ok";
+        break;
+
     default:
         break;
 }
