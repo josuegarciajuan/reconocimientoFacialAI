@@ -124,17 +124,34 @@ def write_manifest(out_dir: str, **meta) -> None:
         json.dump({"ts": time.time(), **meta}, fh, indent=2, default=str)
 
 
-def verify_restore(ruta: str, store, before_counts: dict, journal_entries: int) -> None:
-    """Verifica recuentos BD/diccionario tras el rollback."""
+def verify_restore(ruta: str, store, expected: dict, journal_entries: int) -> None:
+    """Verifica recuentos BD/diccionario tras el rollback contra `expected`.
+
+    `expected` debe ser el estado PRE-op (manifest['antes']), no el estado
+    actual en el momento del rollback.
+    """
     now = {"personas": count_personas(ruta),
            "estancias": count_estancias(ruta),
            "store_persons": len(store.persons())}
-    ok = (now["personas"] == before_counts.get("personas")
-          and now["estancias"] == before_counts.get("estancias")
-          and now["store_persons"] == before_counts.get("store_persons"))
+    ok = (now["personas"] == expected.get("personas")
+          and now["estancias"] == expected.get("estancias")
+          and now["store_persons"] == expected.get("store_persons"))
     print(f"verificación rollback: {'OK' if ok else 'DIVERGENCIA'}")
-    print(f"  antes : {before_counts}")
-    print(f"  ahora : {now}")
-    print(f"  ops en journal: {journal_entries}")
+    print(f"  esperado (pre-op): {expected}")
+    print(f"  ahora            : {now}")
+    print(f"  ops en journal   : {journal_entries}")
     if not ok:
         raise RuntimeError("rollback incompleto: los recuentos no coinciden")
+
+
+def load_manifest(out_dir: str) -> dict:
+    """Lee manifest.json del backup (metadatos + `antes`)."""
+    import json
+    p = os.path.join(out_dir, "manifest.json")
+    if not os.path.exists(p):
+        return {}
+    try:
+        with open(p) as fh:
+            return json.load(fh)
+    except (OSError, json.JSONDecodeError):
+        return {}

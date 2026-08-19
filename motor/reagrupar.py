@@ -41,7 +41,7 @@ import numpy as np
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from motor.core.backup import (Journal, _mysql, count_estancias, count_personas,  # noqa: E402
-                               new_backup_dir, restore_db, snapshot_db,
+                               load_manifest, new_backup_dir, restore_db, snapshot_db,
                                verify_restore, write_manifest)
 from motor.core.config import Config  # noqa: E402
 from motor.core.fusion import CascadeContext, run_cascade  # noqa: E402
@@ -296,14 +296,18 @@ def aplicar(ruta: str, local_id: str, cfg: Config, store: FaceStore,
         a, b = r["a"], r["b"]
         if find(a) == find(b):
             continue                      # ya unidas en esta pasada (evitar cadenas)
+        if store.person(a) is None or store.person(b) is None:
+            continue                      # una de las dos ya fue absorbida (enlace indirecto)
         # se queda la persona con más encodings
         if store.count(b) > store.count(a):
             a, b = b, a
         estancia_ids: list[int] = []
         if a in pid_of and b in pid_of:
             rows_e = _mysql(ruta, f"SELECT GROUP_CONCAT(id) FROM estancias WHERE persona_id={pid_of[b]}")
-            if rows_e and rows_e[0].strip():
-                estancia_ids = [int(x) for x in rows_e[0].split(",")]
+            val = rows_e[0].strip() if rows_e else ""
+            # GROUP_CONCAT sin filas devuelve 'NULL' (no vacío): hay que ignorarlo
+            if val and val != "NULL":
+                estancia_ids = [int(x) for x in val.split(",")]
             _mysql(ruta, f"UPDATE estancias SET persona_id={pid_of[a]} WHERE persona_id={pid_of[b]}")
             _mysql(ruta, f"DELETE FROM personas WHERE id={pid_of[b]}")
             pid_of.pop(b)
@@ -337,16 +341,16 @@ def _rollback(ruta: str, backup_dir: str, local_id: str) -> int:
     cfg = Config()
     store = FaceStore(os.path.join(ruta, "motor/bbdd_reconocimiento", local_id, "face_enc_v2"),
                       max_per_person=cfg.max_encodings_per_person)
-    before = {"personas": count_personas(ruta), "estancias": count_estancias(ruta),
-              "store_persons": len(store.persons())}
-    print(f"[rollback] {len(entries)} ops | antes: {before}")
+    manifest = load_manifest(backup_dir)
+    esperado = manifest.get("antes") or {"personas": None, "estancias": None, "store_persons": None}
+    print(f"[rollback] {len(entries)} ops | estado esperado (pre-op): {esperado}")
     restore_db(ruta, db_sql)
     data = store.load_snapshot_bytes(store_bak)
     import pickle
     with open(os.path.join(ruta, "motor/bbdd_reconocimiento", local_id, "face_enc_v2"), "wb") as fh:
         pickle.dump(data, fh)
     print("[rollback] BD y face_enc_v2 restaurados")
-    verify_restore(ruta, store, before, len(entries))
+    verify_restore(ruta, store, esperado, len(entries))
     return 0
 
 
