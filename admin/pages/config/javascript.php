@@ -60,6 +60,7 @@ $lineas_plano_json = array_map(function ($lp) use ($lineas_plano_to_utf8) {
     return [
         "id"           => (int)$lp["id"],
         "camara_id"    => (int)$lp["camara_id"],
+        "linea_id"     => (int)($lp["linea_id"] ?? 0),
         "camara_nombre"=> $lineas_plano_to_utf8($lp["camara_nombre"] ?? ""),
         "nombre"       => $lineas_plano_to_utf8($lp["nombre"]),
         "x1"           => (int)$lp["x1"],
@@ -265,6 +266,21 @@ function ForgePintarCamarasNodos(ctx) {
         ctx.fillRect(L.x1 - 3, L.y1 - 3, 6, 6);
         ctx.fillRect(L.x2 - 3, L.y2 - 3, 6, 6);
         ctx.fillText(L.nombre, L.x1, L.y1 - 6);
+        // Rayo de enfoque: cámara -> línea del plano (solo las vinculadas a una línea de cámara)
+        if (L.linea_id) {
+            var ccL = ForgeCamCoord(L.camara_id);
+            if (ccL) {
+                ctx.save();
+                ctx.strokeStyle = "#ff9500";
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(ccL.x + 5, ccL.y + 5);
+                ctx.lineTo((L.x1 + L.x2) / 2, (L.y1 + L.y2) / 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
     }
 }
 
@@ -1091,6 +1107,7 @@ function ForgeLineaPlanoSeleccionar(id) {
     if (nombre) nombre.value = L.nombre;
     var camara = document.getElementById("camara_linea_plano");
     if (camara) camara.value = String(L.camara_id);
+    ForgeLineaPlanoCargarLineasCamara(L.camara_id);
     var hint = document.getElementById("hint_linea_plano");
     if (hint) {
         hint.textContent = "Línea «" + L.nombre + "» marcada en el plano. Arrastra sus extremos para ajustarla, pulsa «Redibujar seleccionada» para volver a trazarla o borra con (X).";
@@ -1196,10 +1213,13 @@ function ForgeLineaPlanoGuardar() {
 
     var nombreEl = document.getElementById("nombre_linea_plano");
     var camaraEl = document.getElementById("camara_linea_plano");
+    var lineaCamEl = document.getElementById("linea_camara_plano");
+    var lineaId = lineaCamEl ? (parseInt(lineaCamEl.value, 10) || 0) : 0;
     var body2 = {
         camara_id: parseInt(camaraEl.value, 10) || 0,
         nombre: nombreEl.value,
-        x1: Forge.lpX1, y1: Forge.lpY1, x2: Forge.lpX2, y2: Forge.lpY2
+        x1: Forge.lpX1, y1: Forge.lpY1, x2: Forge.lpX2, y2: Forge.lpY2,
+        linea_id: lineaId
     };
     fetch("pages/config/acciones_ajax.php?a=11", {
         method: "POST",
@@ -1215,7 +1235,7 @@ function ForgeLineaPlanoGuardar() {
         }
         var id = parseInt(txt.slice(3), 10) || 0;
         FORGE_LINEAS_PLANO.unshift({
-            id: id, camara_id: body2.camara_id,
+            id: id, camara_id: body2.camara_id, linea_id: lineaId,
             camara_nombre: ForgeLineaPlanoCamaraNombre(body2.camara_id),
             nombre: body2.nombre,
             x1: body2.x1, y1: body2.y1, x2: body2.x2, y2: body2.y2
@@ -1262,6 +1282,94 @@ function ForgeLineaPlanoBorrar(id) {
     })
     .catch(function (err) {
         var m = "No se pudo borrar la línea: " + err.message;
+        if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
+    });
+}
+
+/* =========================================================================
+ * Vínculo línea del plano ↔ línea de cámara (1:1, la MISMA línea en foto y plano).
+ * ========================================================================= */
+
+/* Carga en el selector #linea_camara_plano las líneas de cámara de la cámara
+ * elegida que aún no tienen representación en el plano (AJAX a=14). */
+function ForgeLineaPlanoCargarLineasCamara(camId) {
+    var sel = document.getElementById("linea_camara_plano");
+    if (!sel) return;
+    sel.innerHTML = '<option value="0">— (solo en el plano)</option>';
+    if (!camId || camId === "-") return;
+    fetch("pages/config/acciones_ajax.php?a=14&camara=" + camId)
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+            if (!data || !data.ok) return;
+            (data.sin_plano || []).forEach(function (l) {
+                var opt = document.createElement("option");
+                opt.value = l.id;
+                opt.textContent = "↔ " + l.nombre + " (línea de cámara)";
+                sel.appendChild(opt);
+            });
+            (data.mapeadas || []).forEach(function (m) {
+                var opt = document.createElement("option");
+                opt.value = m.linea_id;
+                opt.textContent = "↔ " + m.linea_nombre + " (ya en «" + m.plano_nombre + "», se reasignará)";
+                sel.appendChild(opt);
+            });
+        })
+        .catch(function () {});
+}
+
+/* Vincula la línea del plano seleccionada con una línea de cámara (AJAX a=15). */
+function ForgeLineaPlanoVincular(planoId) {
+    if (!planoId) return;
+    var sel = document.getElementById("linea_camara_plano");
+    if (!sel) return;
+    var lineaId = parseInt(sel.value, 10) || 0;
+    fetch("pages/config/acciones_ajax.php?a=15", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plano_id: planoId, linea_id: lineaId })
+    })
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+        if (!data || !data.ok) {
+            if (typeof rfToast === "function") rfToast("No se pudo vincular la línea.", "err");
+            return;
+        }
+        var L = ForgeLineaPlanoPorId(planoId);
+        if (L) {
+            L.linea_id = lineaId;
+        }
+        if (typeof rfToast === "function") {
+            rfToast(lineaId > 0 ? "Línea vinculada a su línea de cámara." : "Línea desvinculada.", "ok");
+        }
+        ForgeDibujarPlano();
+    })
+    .catch(function (err) {
+        var m = "No se pudo vincular la línea: " + err.message;
+        if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
+    });
+}
+
+/* Desvincula la línea del plano de su línea de cámara. */
+function ForgeLineaPlanoDesvincular(planoId) {
+    if (!planoId) return;
+    fetch("pages/config/acciones_ajax.php?a=15", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plano_id: planoId, linea_id: 0 })
+    })
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+        if (!data || !data.ok) {
+            if (typeof rfToast === "function") rfToast("No se pudo desvincular la línea.", "err");
+            return;
+        }
+        var L = ForgeLineaPlanoPorId(planoId);
+        if (L) L.linea_id = 0;
+        if (typeof rfToast === "function") rfToast("Línea desvinculada.", "ok");
+        ForgeDibujarPlano();
+    })
+    .catch(function (err) {
+        var m = "No se pudo desvincular la línea: " + err.message;
         if (typeof rfToast === "function") rfToast(m, "err"); else alert(m);
     });
 }

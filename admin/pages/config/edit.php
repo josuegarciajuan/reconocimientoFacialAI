@@ -112,7 +112,7 @@ $hints = [
     "nodos/eliminar"   => "Elige el par de cámaras cuya cadena de nodos quieres romper.",
     "lineas/trazar"    => "Elige una cámara: el lienzo mostrará su foto para trazar las líneas de vigilancia.",
     "lineas/editar"    => "Elige una línea: el lienzo mostrará la foto de su cámara para corregirla.",
-    "lineas/plano"     => "Líneas dibujadas sobre el plano del local. Elige una cámara y nombre, pulsa «Dibujar en el plano» y haz dos clics (inicio y fin); luego arrastra los extremos para ajustarla.",
+    "lineas/plano"     => "Líneas dibujadas sobre el plano del local. Elige una cámara (y opcionalmente la línea de cámara a representar), pulsa «Dibujar en el plano» y haz dos clics (inicio y fin); luego arrastra los extremos para ajustarla. Las vinculadas muestran un rayo de enfoque desde su cámara.",
     "plano/"           => "Así se ve el plano activo. Arrastra una cámara para moverla sobre el plano. Usa el panel para subir una imagen o dibujar un croquis.",
 ];
 $hint_key = ($sub !== "") ? $tab . "/" . $sub : $tab . "/";

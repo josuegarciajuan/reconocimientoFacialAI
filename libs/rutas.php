@@ -8,12 +8,36 @@
 require_once __DIR__ . "/fechas.php";
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/nodos.php";
+require_once __DIR__ . "/avatars.php";
 
 /** Cámaras de entrada (puerta) y salida de un local. */
 function camaras_puerta_salida($local_id) {
     $puerta = array_column(DB::select("SELECT id FROM camaras WHERE local_id = ? AND puerta = 1", [$local_id]), "id");
     $salida = array_column(DB::select("SELECT id FROM camaras WHERE local_id = ? AND salida = 1", [$local_id]), "id");
     return [$puerta, $salida];
+}
+
+/**
+ * Posteres de vídeo por video_id (para los botones Ver del player).
+ * @return array [video_id => poster_relativo]
+ */
+function rutas_posteres(array $video_ids): array {
+    $video_ids = array_values(array_unique(array_filter(array_map("intval", $video_ids))));
+    if (!$video_ids) {
+        return [];
+    }
+    $in = implode(",", array_fill(0, count($video_ids), "?"));
+    $filas = DB::select("SELECT id, poster FROM videos WHERE id IN ($in)", $video_ids);
+    $out = [];
+    foreach ($filas as $f) {
+        $out[(int)$f["id"]] = (string)$f["poster"];
+    }
+    return $out;
+}
+
+/** URL relativa del avatar de una persona (o ""). */
+function rutas_avatar_url(int $persona_id): string {
+    return avatar_url($persona_id);
 }
 
 /**
@@ -55,7 +79,16 @@ function construye_ruta($entrada, $camaras_salida) {
 
     $cam = DB::selectOne("SELECT id, descripcion, x, y FROM camaras WHERE id = ?", [(int)$entrada["camara_id"]]);
     if ($cam) {
-        $puntos[] = ["fecha" => $fecha_ini, "camara_id" => $cam["id"], "x" => $cam["x"], "y" => $cam["y"], "desc" => $cam["descripcion"]];
+        $puntos[] = [
+            "fecha"      => $fecha_ini,
+            "t"          => (int)strtotime($fecha_ini),
+            "camara_id"  => $cam["id"],
+            "x"          => $cam["x"],
+            "y"          => $cam["y"],
+            "desc"       => $cam["descripcion"],
+            "estancia_id"=> $inicio_id,
+            "video_id"   => (int)($entrada["video_id"] ?? 0),
+        ];
     }
 
     $esta_dentro = true;
@@ -67,7 +100,16 @@ function construye_ruta($entrada, $camaras_salida) {
         $ids[] = (int)$e["id"];
         $cam2 = DB::selectOne("SELECT id, descripcion, x, y FROM camaras WHERE id = ?", [(int)$e["camara_id"]]);
         if ($cam2) {
-            $puntos[] = ["fecha" => $e["fecha_ini"], "camara_id" => $cam2["id"], "x" => $cam2["x"], "y" => $cam2["y"], "desc" => $cam2["descripcion"]];
+            $puntos[] = [
+                "fecha"      => $e["fecha_ini"],
+                "t"          => (int)strtotime($e["fecha_ini"]),
+                "camara_id"  => $cam2["id"],
+                "x"          => $cam2["x"],
+                "y"          => $cam2["y"],
+                "desc"       => $cam2["descripcion"],
+                "estancia_id"=> (int)$e["id"],
+                "video_id"   => (int)($e["video_id"] ?? 0),
+            ];
             if (in_array((int)$cam2["id"], $camaras_salida)) {
                 $esta_dentro = false;
             }
@@ -77,6 +119,14 @@ function construye_ruta($entrada, $camaras_salida) {
             break;
         }
     }
+
+    // Posteres de los vídeos de los pasos (para el botón Ver del player).
+    $video_ids = array_column($puntos, "video_id");
+    $posteres = rutas_posteres($video_ids);
+    foreach ($puntos as &$p) {
+        $p["poster"] = $posteres[(int)$p["video_id"]] ?? "";
+    }
+    unset($p);
 
     $segmentos = [];
     for ($i = 0; $i < count($puntos) - 1; $i++) {
@@ -131,4 +181,26 @@ function obtener_rutas($local_id, $desde_sql, $hasta_sql, $persona_filtro) {
     }
 
     return [$rutas_data, count($camaras_puerta)];
+}
+
+/**
+ * Una sola ruta completa a partir de su estancia de entrada (para el player).
+ * @return array|null la ruta (construye_ruta) o null si no existe/pertenece al local.
+ */
+function obtener_ruta($local_id, $inicio_id) {
+    $inicio_id = (int)$inicio_id;
+    if ($inicio_id <= 0) {
+        return null;
+    }
+    $entrada = DB::selectOne(
+        "SELECT e.* FROM estancias e
+         JOIN camaras c ON c.id = e.camara_id
+         WHERE e.id = ? AND c.local_id = ?",
+        [$inicio_id, (int)$local_id]
+    );
+    if (!$entrada) {
+        return null;
+    }
+    list($camaras_puerta, $camaras_salida) = camaras_puerta_salida($local_id);
+    return construye_ruta($entrada, $camaras_salida);
 }

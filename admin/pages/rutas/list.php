@@ -1,13 +1,17 @@
 <?php
-/* 
- * Rutas — listado (REFACTOR Fase 3).
- * Lógica en libs/rutas.php; aquí solo filtros + render.
+/*
+ * Caminos — listado + player (rediseño de Rutas).
+ * Lista los recorridos de personas y reproduce el camino de cada una sobre el
+ * plano con un monigote animado (cabeza = avatar recortado transparente).
+ * Lógica en libs/rutas.php y libs/trayectoria.php; aquí solo filtros + render.
  */
 
 require_once __DIR__ . "/../../../libs/db.php";
 require_once __DIR__ . "/../../../libs/fechas.php";
 require_once __DIR__ . "/../../../libs/rutas.php";
+require_once __DIR__ . "/../../../libs/trayectoria.php";
 require_once __DIR__ . "/../../../libs/planos.php";
+require_once __DIR__ . "/../../../libs/lineas_plano.php";
 
 // --- filtros (fechas corregidas) ---
 $desde_sql = rango_a_sql($_GET["desde"] ?? "", date("Y-m-d 00:00:00"));
@@ -31,6 +35,9 @@ $plano_url = plano_url($local_id);
 $camaras_data = DB::select("SELECT id, descripcion, x, y FROM camaras WHERE local_id = ? ORDER BY id ASC", [$local_id]);
 $camaras_json = json_encode($camaras_data, JSON_UNESCAPED_UNICODE);
 
+// --- líneas del plano (con su línea de cámara vinculada) para el mapa ---
+$lineas_plano_json = json_encode(lineas_plano_del_local($local_id), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
 // --- personas para el filtro ---
 $personas_opciones = DB::select(
     "SELECT p.id, p.cod_interno, p.nombre FROM personas p
@@ -41,7 +48,7 @@ $personas_opciones = DB::select(
 ?>
 
 <div class="intro-y flex flex-col sm:flex-row items-center mt-8">
-    <h2 class="text-lg font-medium mr-auto">Rutas</h2>
+    <h2 class="text-lg font-medium mr-auto">Caminos</h2>
     <div class="filter-bar mt-4 sm:mt-0">
         <div class="filter-item">
             <label for="persona_id">Persona</label>
@@ -82,7 +89,7 @@ $personas_opciones = DB::select(
         <?php if ($num_puerta === 0): ?>
             <tr><td colspan="6" class="text-center py-8 text-gray-500 dark:text-gray-500">No hay cámaras de entrada (puerta) configuradas en este local.</td></tr>
         <?php elseif (count($rutas_data) === 0): ?>
-            <tr><td colspan="6" class="text-center py-8 text-gray-500 dark:text-gray-500">No hay rutas para el filtro seleccionado.</td></tr>
+            <tr><td colspan="6" class="text-center py-8 text-gray-500 dark:text-gray-500">No hay caminos para el filtro seleccionado.</td></tr>
         <?php else: ?>
             <?php
             $js_quote = function ($s) {
@@ -94,6 +101,7 @@ $personas_opciones = DB::select(
                 $ts_fin = strtotime($r["fin"]);
                 $inicio_fmt = $ts_ini ? date("d/m/Y H:i", $ts_ini) : $r["inicio"];
                 $fin_fmt = $ts_fin ? date("d/m/Y H:i", $ts_fin) : $r["fin"];
+                $num_videos = count(array_filter($r["puntos"], fn($p) => !empty($p["video_id"])));
             ?>
                 <tr class="<?= $par; ?>">
                     <td class="text-center border-b"><?= htmlspecialchars($inicio_fmt); ?></td>
@@ -108,8 +116,8 @@ $personas_opciones = DB::select(
                     <td class="text-center border-b"><?= htmlspecialchars($r["tiempo"]); ?></td>
                     <td class="text-center border-b">
                         <div class="flex flex-col sm:flex-row sm:justify-center items-center gap-2">
-                            <a href="javascript:;" data-toggle="modal" data-target="#basic-modal-preview" onclick="ver_ruta(<?= $i; ?>)" class="button inline-block bg-theme-1 text-white">Ver Ruta</a>
-                            <a target="_blank" href="?page=visitantes&mode=editar&id=<?= $r["persona_id"]; ?>" class="button inline-block bg-theme-1 text-white">Ver Persona</a>
+                            <a href="javascript:;" data-toggle="modal" data-target="#basic-modal-preview" onclick="abrirCamino(<?= (int)$r["inicio_id"]; ?>)" class="button inline-block bg-theme-1 text-white">▶ Ver camino</a>
+                            <a target="_blank" href="?page=visitantes&mode=editar&id=<?= $r["persona_id"]; ?>" class="button inline-block bg-theme-2 text-white">Ver Persona</a>
                         </div>
                     </td>
                 </tr>
@@ -123,11 +131,45 @@ $personas_opciones = DB::select(
 <div class="modal" id="basic-modal-preview">
     <div class="modal__content box p-5 modal__content--xl">
         <div class="flex items-center mb-4">
-            <h3 class="media-modal__title mr-auto truncate">Plano de la ruta</h3>
+            <h3 id="caminoTitulo" class="media-modal__title mr-auto truncate">Camino de la persona</h3>
             <a href="javascript:;" data-dismiss="modal" class="button button--sm text-white bg-theme-6 ml-3">Cerrar</a>
         </div>
+
         <div class="plan-wrap">
             <canvas id="canvasID" width="<?= CANVAS_WIDTH; ?>" height="<?= CANVAS_HEIGHT; ?>" style="border-style:solid;border-width:1px;border-color:var(--mordor-humo);"></canvas>
         </div>
+
+        <!-- ============ Controles del player ============ -->
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+            <button type="button" id="caminoPlay" class="button text-white bg-theme-1 shadow-md" onclick="PlayerToggle()">▶ Play</button>
+
+            <div class="filter-item">
+                <label for="caminoVelocidad">Velocidad</label>
+                <select class="input border" id="caminoVelocidad" onchange="PlayerVelocidad(this.value)">
+                    <?php foreach (trayectoria_velocidades() as $v): ?>
+                        <option value="<?= $v; ?>" <?= $v === 10 ? "selected" : ""; ?>>×<?= $v; ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <label for="caminoObjetivo">Ver jornada en</label>
+                <select class="input border" id="caminoObjetivo" onchange="PlayerObjetivo(this.value)">
+                    <option value="60">1 minuto</option>
+                    <option value="120" selected>2 minutos</option>
+                    <option value="300">5 minutos</option>
+                    <option value="0">Velocidad manual</option>
+                </select>
+            </div>
+
+            <button type="button" id="caminoAvatar" class="button text-white bg-theme-2 shadow-md" onclick="PlayerRegenerarAvatar()">↻ Avatar</button>
+        </div>
+
+        <div class="mt-3 flex items-center gap-3">
+            <span id="caminoHora" class="text-xs text-gray-500 dark:text-gray-600 whitespace-nowrap">—</span>
+            <input type="range" id="caminoScrub" class="w-full" min="0" max="1000" value="0" oninput="PlayerScrub(this.value)">
+        </div>
+
+        <div id="caminoPasos" class="mt-3 flex flex-wrap gap-2"></div>
     </div>
 </div>

@@ -42,6 +42,12 @@
         </div>
         <div class="form-grid__full">
             <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="editar_linea1()">Guardar cambios</button>
+            <a href="?page=config&tab=lineas&sub=plano" class="button text-white bg-theme-2 shadow-md">Representar en el plano →</a>
+        </div>
+        <div class="form-grid__full">
+            <p class="text-xs text-gray-500 dark:text-gray-600">
+                Tras corregir la línea, puedes representar la MISMA línea sobre el plano 2D desde la pestaña «Plano».
+            </p>
         </div>
     </div>
 </div>
@@ -102,20 +108,32 @@
         </div>
         <div>
             <label for="camara_linea_plano" class="field-label">Cámara</label>
-            <select name="camara_linea_plano" id="camara_linea_plano" class="input border w-full">
+            <select name="camara_linea_plano" id="camara_linea_plano" class="input border w-full"
+                    onchange="ForgeLineaPlanoCargarLineasCamara(this.value)">
                 <option value="-">Selecciona Cámara</option>
                 <?php foreach ($camaras as $c): ?>
                     <option value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
+        <div>
+            <label for="linea_camara_plano" class="field-label">Línea de cámara a representar</label>
+            <select name="linea_camara_plano" id="linea_camara_plano" class="input border w-full">
+                <option value="0">— (solo en el plano)</option>
+            </select>
+            <p class="text-xs text-gray-500 dark:text-gray-600 mt-1">
+                La MISMA línea dibujada sobre la foto de la cámara, representada en el plano (1:1). Aparece un rayo de enfoque desde la cámara.
+            </p>
+        </div>
         <div class="form-grid__full">
             <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="ForgeLineaPlanoNueva()">Dibujar en el plano</button>
             <button type="button" class="button text-white bg-theme-2 shadow-md" id="btn_linea_plano_redibujar" onclick="ForgeLineaPlanoRedibujar()">Redibujar seleccionada</button>
+            <button type="button" class="button text-white bg-theme-2 shadow-md" onclick="ForgeLineaPlanoVincular(Forge.lineaPlanoSel)">Vincular seleccionada</button>
+            <button type="button" class="button text-white bg-theme-6 shadow-md" onclick="ForgeLineaPlanoDesvincular(Forge.lineaPlanoSel)">Desvincular</button>
         </div>
         <div class="form-grid__full">
             <p class="text-xs text-gray-500 dark:text-gray-600" id="hint_linea_plano">
-                Escribe el nombre, elige la cámara y pulsa «Dibujar en el plano»: dos clics en el lienzo (inicio y fin) crean la línea. Luego arrastra sus extremos para ajustarla.
+                Escribe el nombre, elige la cámara y pulsa «Dibujar en el plano»: dos clics en el lienzo (inicio y fin) crean la línea. Luego arrastra sus extremos para ajustarla. Para representar una línea de cámara, elígela en el desplegable y dibuja la línea sobre el plano.
             </p>
         </div>
     </div>
@@ -148,6 +166,12 @@
 
         <div class="form-grid__full">
             <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="guardar_lineas()">Guardar líneas</button>
+            <a href="?page=config&tab=lineas&sub=plano" class="button text-white bg-theme-2 shadow-md">Representar en el plano →</a>
+        </div>
+        <div class="form-grid__full">
+            <p class="text-xs text-gray-500 dark:text-gray-600">
+                Tras guardar, ve a «Plano» y elige la línea en el desplegable «Línea de cámara a representar» para dibujarla sobre el plano.
+            </p>
         </div>
     </div>
 </div>
