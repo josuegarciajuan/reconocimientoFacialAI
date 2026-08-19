@@ -10,6 +10,9 @@ ExecStart=/usr/bin/php /root/reconocimientoFacial/capturador.php
 Restart=always
 RestartSec=5
 User=root
+# Tope de memoria del cgroup (capturador + 12 guarda_movimientosV3 + ffmpeg):
+# protege a los demás servicios de la máquina (autotube) si la RAM escasea.
+MemoryMax=5G
 # Logs a journald (rotación gestionada por el sistema)
 
 [Install]

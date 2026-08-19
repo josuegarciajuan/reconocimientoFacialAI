@@ -697,6 +697,18 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
     return n
 
 
+def _ram_available_gb() -> float:
+    """GB disponibles (MemAvailable de /proc/meminfo); 99.0 si no se puede leer."""
+    try:
+        with open("/proc/meminfo", encoding="ascii") as fh:
+            for line in fh:
+                if line.startswith("MemAvailable:"):
+                    return int(line.split()[1]) / 1024 / 1024
+    except Exception:  # noqa: BLE001
+        pass
+    return 99.0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("local_id")
@@ -731,6 +743,13 @@ def main() -> int:
         f" vlm={cfg.vlm_enabled} openai={cfg.openai_enabled}")
     while True:
         try:
+            # RAM-gate: con la memoria disponible escasa (p. ej. autotube
+            # renderizando en la misma máquina) se duerme en vez de procesar;
+            # evita el pico de RAM de los 12 clasificadores + procesa_video
+            # que disparaba el OOM killer global (mataba rf o autotube).
+            if _ram_available_gb() < cfg.ram_min_free_gb:
+                time.sleep(5)
+                continue
             n = process_once(args.ruta, args.local_id, args.camara_id, cfg, store, feedback)
             nb = process_body_once(args.ruta, args.local_id, args.camara_id, cfg, store)
             if n or nb:
