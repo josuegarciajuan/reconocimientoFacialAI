@@ -99,7 +99,7 @@ $js_quote = function ($s) {
         foreach ($persona_ids as $prow) {
             $pid = (int)$prow["persona_id"];
 
-            $pers = DB::selectOne("SELECT cod_interno, nombre FROM personas WHERE id = ?", [$pid]);
+            $pers = DB::selectOne("SELECT cod_interno, nombre, trabajador FROM personas WHERE id = ?", [$pid]);
             $cod_interno = $pers ? $pers["cod_interno"] : $pid;
             $nombre = $pers ? $pers["nombre"] : "";
 
@@ -135,17 +135,36 @@ $js_quote = function ($s) {
                     <span style="display:none" id="cargador<?= $pid; ?>"></span>
                 </td>
                 <td class="text-center border-b" align="center"><?= $veces; ?></td>
-                <td class="border-b w-5">
-                    <div class="flex sm:justify-center items-center">
-                        <a class="flex items-center mr-3" href="?page=visitantes&mode=editar&id=<?= $pid; ?>">Ver</a>
-                        <a class="flex items-center mr-3" href="?page=accesos&persona_id=<?= $pid; ?>">Movimientos</a>
-                        <a class="flex items-center mr-3" href="?page=visitantes&mode=editar&id=<?= $pid; ?>#videos">Vídeos</a>
-                        <a class="flex items-center mr-3" href="?page=lineas&persona_id=<?= $pid; ?>">Cruces</a>
-                        <a class="flex items-center mr-3" href="?page=rutas&persona_id=<?= $pid; ?>">Rutas</a>
+                <td class="border-b">
+                    <div class="acciones-stack">
+                        <div class="accion-item">
+                            <a href="?page=visitantes&mode=editar&id=<?= $pid; ?>" data-tip="Ver y editar los datos de la persona">Ver</a>
+                        </div>
+                        <div class="accion-item">
+                            <a href="?page=accesos&persona_id=<?= $pid; ?>" data-tip="Ver los movimientos y accesos de la persona">Movimientos</a>
+                        </div>
+                        <div class="accion-item">
+                            <a href="?page=visitantes&mode=editar&id=<?= $pid; ?>#videos" data-tip="Ver los vídeos vinculados a la persona">Vídeos</a>
+                        </div>
+                        <div class="accion-item">
+                            <a href="?page=lineas&persona_id=<?= $pid; ?>" data-tip="Ver los cruces de línea de la persona">Cruces</a>
+                        </div>
+                        <div class="accion-item">
+                            <a href="?page=rutas&persona_id=<?= $pid; ?>" data-tip="Ver las rutas de la persona">Rutas</a>
+                        </div>
+                        <?php if ((int)($pers["trabajador"] ?? 0) === 1): ?>
+                        <div class="accion-item">
+                            <a href="?page=fichajes&persona_id=<?= $pid; ?>" data-tip="Ver los fichajes del trabajador (entradas y salidas)">Fichajes</a>
+                        </div>
+                        <?php endif; ?>
                         <?php if (!isset($_GET["unir"])): ?>
-                            <a class="flex items-center mr-3" href="?page=visitantes&unir=<?= $pid; ?>&camara=<?= $camara_filtro; ?>&desde=<?= urlencode($desde); ?>&hasta=<?= urlencode($hasta); ?>&trabajador=<?= $trabajador_filtro ? 1 : 0; ?>">Unir</a>
+                            <div class="accion-item">
+                                <a href="?page=visitantes&unir=<?= $pid; ?>&camara=<?= $camara_filtro; ?>&desde=<?= urlencode($desde); ?>&hasta=<?= urlencode($hasta); ?>&trabajador=<?= $trabajador_filtro ? 1 : 0; ?>" data-tip="Unir esta persona con otra para fusionar identidades">Unir</a>
+                            </div>
                         <?php else: ?>
-                            <a class="flex items-center mr-3" href="?page=visitantes&este=<?= (int)$_GET["unir"]; ?>&coneste=<?= $pid; ?>">Con este</a>
+                            <div class="accion-item">
+                                <a href="?page=visitantes&este=<?= (int)$_GET["unir"]; ?>&coneste=<?= $pid; ?>" data-tip="Fusionar esta persona con la seleccionada">Con este</a>
+                            </div>
                         <?php endif; ?>
                     </div>
                 </td>

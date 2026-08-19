@@ -1009,3 +1009,101 @@ input:focus-visible {
     overflow: hidden;
   }
 }
+
+/* ============================================================
+   ACCIONES EN PILA VERTICAL (tablas) — enlaces estilo Mordor
+   ============================================================ */
+.acciones-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.accion-item {
+  position: relative;
+  display: block;
+}
+
+.accion-item a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.18rem 0.6rem;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  color: var(--mordor-ceniza);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(201, 162, 39, 0.28);
+  border-radius: 0.35rem;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.15s ease, border-color 0.15s ease,
+              background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.accion-item a:hover,
+.accion-item a:focus-visible {
+  color: #f6e6ae;
+  background: rgba(255, 90, 31, 0.12);
+  border-color: rgba(201, 162, 39, 0.65);
+  box-shadow: 0 0 10px -2px rgba(255, 90, 31, 0.45);
+}
+
+/* ============================================================
+   TOOLTIP UNIVERSAL (rf-tip) — globo estilo Mordor
+   Se muestra con data-tip="texto"; la dirección (up/down/left/
+   right) la decide el JS según el espacio libre en el viewport.
+   ============================================================ */
+.rf-tip {
+  position: fixed;
+  z-index: 100;
+  max-width: 240px;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--mordor-ceniza);
+  background: rgba(22, 18, 26, 0.96);
+  border: 1px solid rgba(201, 162, 39, 0.5);
+  border-radius: 0.35rem;
+  box-shadow: 0 10px 26px -8px rgba(0, 0, 0, 0.85),
+              0 0 12px -4px rgba(201, 162, 39, 0.35);
+  pointer-events: none;
+}
+
+.rf-tip::after {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 0;
+  border: 5px solid transparent;
+}
+
+/* Flecha apuntando hacia el elemento según la dirección elegida */
+.rf-tip--down::after {   /* tooltip bajo el elemento: flecha arriba */
+  top: -10px;
+  left: 50%;
+  margin-left: -5px;
+  border-bottom-color: rgba(201, 162, 39, 0.9);
+}
+
+.rf-tip--up::after {     /* tooltip sobre el elemento: flecha abajo */
+  bottom: -10px;
+  left: 50%;
+  margin-left: -5px;
+  border-top-color: rgba(201, 162, 39, 0.9);
+}
+
+.rf-tip--right::after {  /* tooltip a la derecha: flecha izquierda */
+  left: -10px;
+  top: 50%;
+  margin-top: -5px;
+  border-right-color: rgba(201, 162, 39, 0.9);
+}
+
+.rf-tip--left::after {   /* tooltip a la izquierda: flecha derecha */
+  right: -10px;
+  top: 50%;
+  margin-top: -5px;
+  border-left-color: rgba(201, 162, 39, 0.9);
+}
