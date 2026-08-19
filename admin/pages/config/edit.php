@@ -105,7 +105,7 @@ $hints = [
     "nodos/eliminar"   => "Elige el par de cámaras cuya cadena de nodos quieres romper.",
     "lineas/trazar"    => "Elige una cámara: el lienzo mostrará su foto para trazar las líneas de vigilancia.",
     "lineas/editar"    => "Elige una línea: el lienzo mostrará la foto de su cámara para corregirla.",
-    "plano/"           => "Así se ve el plano activo. Usa el panel para subir una imagen o dibujar un croquis.",
+    "plano/"           => "Así se ve el plano activo. Arrastra una cámara para moverla sobre el plano. Usa el panel para subir una imagen o dibujar un croquis.",
 ];
 $hint_key = ($sub !== "") ? $tab . "/" . $sub : $tab . "/";
 $hint = $hints[$hint_key] ?? $hints[$tab . "/crear"] ?? "Usa el panel de la izquierda para configurar el local.";
@@ -159,7 +159,7 @@ $hint = $hints[$hint_key] ?? $hints[$tab . "/crear"] ?? "Usa el panel de la izqu
                 <div class="plan-wrap">
                     <canvas id="canvasID" width="<?= CANVAS_WIDTH; ?>" height="<?= CANVAS_HEIGHT; ?>"
                             class="border border-gray-700"
-                            style="position:relative;left:0px;z-index:999999"></canvas>
+                            style="position:relative;left:0px;z-index:999999;touch-action:none;user-select:none"></canvas>
                 </div>
                 <input type="hidden" name="x_hidden" id="x_hidden" value="">
                 <input type="hidden" name="y_hidden" id="y_hidden" value="">
