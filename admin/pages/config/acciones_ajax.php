@@ -28,6 +28,30 @@ switch ($_GET["a"]) {
         );
         break;
 
+    case "3": // refrescar snapshot de cámara (dofoto.py en segundo plano si está viejo)
+        $cam_id = (int)($_GET["camara"] ?? 0);
+        $cam = DB::selectOne("SELECT id, url_conexion FROM camaras WHERE id = ?", [$cam_id]);
+        if ($cam) {
+            $foto = RUTA_PROYECTO . "admin/fotos_camara/" . $cam_id . ".png";
+            if (!is_file($foto) || (time() - filemtime($foto)) > 15) {
+                $url = str_replace("'", "", (string)$cam["url_conexion"]);
+                $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/dofoto.py " . $cam_id
+                     . " '" . $url . "' '" . RUTA_PROYECTO . "'";
+                exec($cmd . " > /dev/null 2>&1 &");
+            }
+        }
+        echo "ok";
+        break;
+
+    case "4": // líneas de una cámara (para el lienzo en modo foto, sin recargar)
+        $cam_id = (int)($_GET["camara"] ?? 0);
+        $lineas = DB::select(
+            "SELECT id, nombre, x1, y1, x2, y2 FROM lineas WHERE camara_id = ? AND eliminada = 0 ORDER BY id ASC",
+            [$cam_id]
+        );
+        echo json_encode($lineas, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        break;
+
     default:
         break;
 }

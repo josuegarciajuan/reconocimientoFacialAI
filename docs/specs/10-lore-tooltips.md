@@ -129,9 +129,24 @@ Reglas:
 ### La Forja (ambiguos, `match:"explicito"` + `data-lore`)
 | Clave | Término | Significado |
 |---|---|---|
-| `puerta-camara` | Puerta | Cámara de entrada |
-| `salida-camara` | Salida | Cámara de salida |
+| `el-yunque` | El Yunque | El plano/lienzo del local |
+| `forjar` | Forjar | Crear una cámara nueva |
+| `forja-camaras` | Forjar (Cámaras) | La sección de cámaras de La Forja |
+| `templar` | Templar | Editar cámara + parámetros de análisis |
+| `cadenas` | Cadenas | Nodos que unen dos cámaras |
+| `unir-nodos` | Unir | Crear nodos (marcar el camino entre cámaras) |
+| `romper` | Romper | Eliminar la cadena de nodos |
+| `trazos` | Trazos | Líneas de vigilancia sobre la foto de cámara |
+| `trazar` | Trazar | Dibujar una línea nueva |
+| `corregir` | Corregir | Editar una línea existente |
+| `puerta-camara` | Puerta | Cámara de entrada (puede ser también de salida) |
+| `salida-camara` | Salida | Cámara de salida (puede ser también de entrada) |
+| `puerta-y-salida` | Entrada y salida a la vez | Cámara que registra ambos sentidos |
 | `encendida` | Encendida | Cámara activa |
+
+> Las pestañas de La Forja usan nombres híbridos (sabor Mordor en Cinzel +
+> entidad real debajo). Cada sabor lleva su `data-lore` en la pestaña y en la
+> sub-acción, para que el usuario entienda qué significa.
 
 ### El Concilio
 | Clave | Término | Significado |

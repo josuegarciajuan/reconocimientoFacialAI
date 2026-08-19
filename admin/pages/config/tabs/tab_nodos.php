@@ -1,49 +1,24 @@
 <?php
-/* La Forja · Tab Nodos: crear nodos + eliminar nodos.
+/* La Forja · Tab Nodos (sabor: Cadenas): crear nodos + eliminar nodos.
  * Los nodos se marcan haciendo clic sobre el lienzo (canvasID, en edit.php).
+ * Sub-acciones: Unir (crear) / Romper (eliminar) — resueltas en $sub.
  * Variable disponible: $camaras.
  */
 ?>
 
-<!-- ---------- Crear nodos ---------- -->
-<div class="form-section">
-    <div class="form-section__title">
-        <span class="form-section__emoji" aria-hidden="true">🔗</span>
-        Crear nodos
-    </div>
-
-    <div class="form-grid">
-        <div>
-            <label for="camara1" class="field-label">Cámara (1)</label>
-            <select id="camara1" name="camara1" class="input border w-full" onchange="meter_nodos()">
-                <option value="-">Selecciona Cámara</option>
-                <?php foreach ($camaras as $c): ?>
-                    <option value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <div>
-            <label for="camara2" class="field-label">Cámara (2)</label>
-            <select id="camara2" name="camara2" class="input border w-full" onchange="meter_nodos()">
-                <option value="-">Selecciona Cámara</option>
-                <?php foreach ($camaras as $c): ?>
-                    <option value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <div class="form-grid__full">
-            <div class="flex flex-col sm:flex-row sm:items-center gap-2">
-                <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="guardar_nodos()">Guardar nodos</button>
-                <span class="text-xs text-gray-500 dark:text-gray-600">
-                    Selecciona ambas cámaras y haz clic en el lienzo para marcar cada nodo.
-                </span>
-            </div>
-        </div>
-    </div>
+<!-- ---------- Submenú de la pestaña ---------- -->
+<div class="forge-submenu" role="tablist" aria-label="Acciones de nodos">
+    <a role="tab" aria-selected="<?= $sub === "crear" ? "true" : "false"; ?>"
+       class="forge-sub<?= $sub === "crear" ? " is-active" : ""; ?>"
+       href="?page=config&tab=nodos&sub=crear" data-lore="unir-nodos">Unir</a>
+    <a role="tab" aria-selected="<?= $sub === "eliminar" ? "true" : "false"; ?>"
+       class="forge-sub<?= $sub === "eliminar" ? " is-active" : ""; ?>"
+       href="?page=config&tab=nodos&sub=eliminar" data-lore="romper">Romper</a>
 </div>
 
-<!-- ---------- Eliminar nodos ---------- -->
-<div class="form-section">
+<?php if ($sub === "eliminar"): ?>
+<!-- ---------- Romper (eliminar nodos) ---------- -->
+<div class="form-section" data-panel-forge="eliminar">
     <div class="form-section__title">
         <span class="form-section__emoji" aria-hidden="true">🧹</span>
         Eliminar nodos
@@ -73,3 +48,42 @@
         </div>
     </div>
 </div>
+
+<?php else: ?>
+<!-- ---------- Unir (crear nodos) ---------- -->
+<div class="form-section" data-panel-forge="crear">
+    <div class="form-section__title">
+        <span class="form-section__emoji" aria-hidden="true">🔗</span>
+        Crear nodos
+    </div>
+
+    <div class="form-grid">
+        <div>
+            <label for="camara1" class="field-label">Cámara (1)</label>
+            <select id="camara1" name="camara1" class="input border w-full">
+                <option value="-">Selecciona Cámara</option>
+                <?php foreach ($camaras as $c): ?>
+                    <option value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div>
+            <label for="camara2" class="field-label">Cámara (2)</label>
+            <select id="camara2" name="camara2" class="input border w-full">
+                <option value="-">Selecciona Cámara</option>
+                <?php foreach ($camaras as $c): ?>
+                    <option value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="form-grid__full">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="guardar_nodos()">Guardar nodos</button>
+                <span class="text-xs text-gray-500 dark:text-gray-600">
+                    Selecciona ambas cámaras y haz clic en el lienzo para marcar cada nodo.
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>

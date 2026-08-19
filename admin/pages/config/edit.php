@@ -9,7 +9,9 @@
  * (ids, names, onclicks, XHR) la consume admin/pages/config/javascript.php.
  *
  * REFACTOR: secciones agrupadas en pestañas (Cámaras / Nodos / Líneas / Plano)
- * con un lienzo de trabajo persistente. Cada pestaña vive en tabs/tab_*.php.
+ * con un lienzo de trabajo persistente. Cada pestaña vive en tabs/tab_*.php y
+ * puede tener sub-acciones (sub) que se resuelven en index.php.
+ * $tab y $sub vienen resueltos desde index.php.
  */
 
 require_once __DIR__ . "/../../../libs/db.php";
@@ -78,24 +80,26 @@ function rf_cfg_select_rango($ini, $fin, $valor) {
     return $html;
 }
 
-/* --- Pestaña activa (con validación defensiva) --- */
-$tab_permitidos = ["camaras", "nodos", "lineas", "plano"];
-$tab = (isset($_GET["tab"]) && in_array($_GET["tab"], $tab_permitidos, true)) ? $_GET["tab"] : "camaras";
-
-$hints = [
-    "camaras" => "Haz clic sobre el lienzo para fijar la posición (X/Y) de la cámara: la nueva (crear) o la seleccionada (editar).",
-    "nodos"   => "Selecciona dos cámaras en el panel y haz clic sobre el lienzo para marcar cada nodo del camino.",
-    "lineas"  => "Al elegir una cámara, el lienzo se sustituye por su foto capturada para dibujar las líneas de vigilancia.",
-    "plano"   => "Así se ve el plano activo. Usa el panel para subir una imagen o dibujar un croquis.",
-];
-$hint = $hints[$tab] ?? $hints["camaras"];
-
+/* --- Pestañas de sección: [clave] => [emoji, sabor(Cinzel), entidad, lore] --- */
 $tabs_ui = [
-    "camaras" => ["📷", "Cámaras"],
-    "nodos"   => ["🔗", "Nodos"],
-    "lineas"  => ["📏", "Líneas"],
-    "plano"   => ["🗺️", "Plano"],
+    "camaras" => ["📷", "Forjar", "Cámaras", "forja-camaras"],
+    "nodos"   => ["🔗", "Cadenas", "Nodos", "cadenas"],
+    "lineas"  => ["📏", "Trazos", "Líneas", "trazos"],
+    "plano"   => ["🗺️", "El Yunque", "Plano", "el-yunque"],
 ];
+
+/* --- Ayuda contextual del lienzo por pestaña + sub-acción --- */
+$hints = [
+    "camaras/crear"    => "Haz clic sobre el lienzo para fijar la posición (X/Y) de la nueva cámara.",
+    "camaras/editar"   => "Haz clic sobre el lienzo para reposicionar la cámara seleccionada (X/Y).",
+    "nodos/crear"      => "Selecciona dos cámaras distintas y haz clic sobre el lienzo para marcar cada nodo del camino.",
+    "nodos/eliminar"   => "Elige el par de cámaras cuya cadena de nodos quieres romper.",
+    "lineas/trazar"    => "Elige una cámara: el lienzo mostrará su foto para trazar las líneas de vigilancia.",
+    "lineas/editar"    => "Elige una línea: el lienzo mostrará la foto de su cámara para corregirla.",
+    "plano/"           => "Así se ve el plano activo. Usa el panel para subir una imagen o dibujar un croquis.",
+];
+$hint_key = ($sub !== "") ? $tab . "/" . $sub : $tab . "/";
+$hint = $hints[$hint_key] ?? $hints[$tab . "/crear"] ?? "Usa el panel de la izquierda para configurar el local.";
 ?>
 
 <div class="intro-y flex flex-col sm:flex-row items-center mt-8">
@@ -107,14 +111,18 @@ $tabs_ui = [
 
 <div class="intro-y box p-5 mt-5">
 
-    <!-- ================= Pestañas de sección ================= -->
+    <!-- ================= Pestañas de sección (sabor + entidad) ================= -->
     <nav class="section-tabs" role="tablist" aria-label="Secciones de La Forja">
         <?php foreach ($tabs_ui as $key => $t): ?>
             <a role="tab" aria-selected="<?= $tab === $key ? "true" : "false"; ?>"
                class="section-tab<?= $tab === $key ? " is-active" : ""; ?>"
-               href="?page=config&tab=<?= $key; ?>">
+               href="?page=config&tab=<?= $key; ?>"
+               data-lore="<?= htmlspecialchars($t[3], ENT_QUOTES); ?>">
                 <span class="section-tab__emoji" aria-hidden="true"><?= $t[0]; ?></span>
-                <?= $t[1]; ?>
+                <span class="section-tab__text">
+                    <span class="section-tab__flavor"><?= htmlspecialchars($t[1]); ?></span>
+                    <span class="section-tab__entity"><?= htmlspecialchars($t[2]); ?></span>
+                </span>
             </a>
         <?php endforeach; ?>
     </nav>
@@ -123,12 +131,18 @@ $tabs_ui = [
 
         <!-- ================= Lienzo de trabajo (persistente en todos los tabs) ================= -->
         <div class="order-1 xl:order-2 xl:col-span-5 min-w-0">
-            <div class="form-section">
+            <div class="form-section forge-canvas">
                 <div class="form-section__title">
                     <span class="form-section__emoji" aria-hidden="true">🖼️</span>
-                    Lienzo del local
+                    <span data-lore="el-yunque" id="forgeLienzoTitulo">El Yunque — Plano del local</span>
                 </div>
-                <p class="text-xs text-gray-500 dark:text-gray-600 mb-3">
+
+                <div class="forge-canvas__meta">
+                    <span class="forge-mode-chip forge-mode-chip--plano" id="forgeModoChip">MODO · PLANO</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-600">Lienzo del local</span>
+                </div>
+
+                <p class="text-xs text-gray-500 dark:text-gray-600 mb-3" id="forgeHint">
                     <?= htmlspecialchars($hint); ?>
                 </p>
 

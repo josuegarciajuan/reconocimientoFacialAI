@@ -572,3 +572,113 @@
   }
 }
 
+/* --- La Forja: sabor + entidad en pestañas de sección ---------- */
+.section-tab__text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  text-align: left;
+}
+
+.section-tab__flavor {
+  font-family: "Cinzel", serif;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.section-tab__entity {
+  font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--mordor-humo);
+}
+
+.section-tab.is-active .section-tab__entity {
+  color: var(--mordor-ceniza);
+}
+
+/* --- La Forja: submenú de sub-acciones ------------------------- */
+.forge-submenu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid rgba(201, 162, 39, 0.14);
+}
+
+.forge-sub {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.32rem 0.8rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(201, 162, 39, 0.22);
+  color: var(--mordor-humo);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.forge-sub:hover {
+  color: var(--mordor-ceniza);
+  border-color: var(--mordor-oro);
+}
+
+.forge-sub.is-active {
+  color: var(--mordor-negro);
+  background: linear-gradient(180deg, var(--mordor-oro), #a8841d);
+  border-color: var(--mordor-oro);
+}
+
+.forge-sub:focus-visible {
+  outline: 2px solid rgba(255, 90, 31, 0.8);
+  outline-offset: 2px;
+}
+
+/* --- La Forja: lienzo sticky + chip de modo --------------------- */
+.forge-canvas {
+  position: sticky;
+  top: 0.75rem;
+}
+
+.forge-canvas__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.forge-mode-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.18rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.forge-mode-chip--plano {
+  background: var(--mordor-oro);
+  color: #14110c;
+}
+
+.forge-mode-chip--foto {
+  background: var(--mordor-brasa);
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forge-sub,
+  .section-tab {
+    transition: none;
+  }
+}
+
