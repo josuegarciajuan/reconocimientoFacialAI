@@ -174,6 +174,12 @@ class H264VideoWriter:
             except Exception:
                 pass
             return None
+        # Si ffmpeg salió con error, el MP4 está truncado (sin moov atom): devolver
+        # None para que guarda_movimientosV3.py DESCARTE el .tmp en vez de renombrarlo
+        # a .mp4 (antes se publicaba igual y archiva_video fallaba en bucle con
+        # "moov atom not found").
+        if proc.returncode != 0:
+            return None
         if os.path.exists(self.dst) and os.path.getsize(self.dst) > 0:
             return os.path.getsize(self.dst)
         return None

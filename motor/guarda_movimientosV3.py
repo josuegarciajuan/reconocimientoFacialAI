@@ -22,6 +22,12 @@ from motor.core.video import H264VideoWriter, VideoConfig  # noqa: E402
 #python3.7 motor/guarda_movimientosV3.py 1 1 2 60 220 22 60 0.6 1 45.148.29.34 testuser prueba123 'rtsp://admin:bakcAse4@93.176.162.71:902/cam/realmonitor?channel=1&subtype=0'
 
 
+# Log por frame (DEBUG): desactivado por defecto. Los prints por frame saturaban
+# CPU y llenaban el .out sin límite (llegó a 1,4 GB). Activar con RF_DEBUG_FRAMES=1
+# SOLO para depurar; en producción debe quedar a 0.
+DEBUG_FRAMES = os.environ.get("RF_DEBUG_FRAMES", "0") == "1"
+
+
 def printLog(*args, **kwargs):
     print(*args, **kwargs)
     
@@ -35,17 +41,26 @@ def hay_movimiento(the_motion_list):
         if m==1:
             num=num+1
     retorno=False        
-    printLog("dentro de hay_movimiento, numero de frames q ha habido mov:"+str(num)+"<- y para considerarse este es el limite(frames_con_movimiento):("+str(frames_con_movimiento)+")")
+    if DEBUG_FRAMES:
+        printLog("dentro de hay_movimiento, numero de frames q ha habido mov:"+str(num)+"<- y para considerarse este es el limite(frames_con_movimiento):("+str(frames_con_movimiento)+")")
     # if num>=frames_con_movimiento and motion_list[-1]==1:
     if num>=frames_con_movimiento:
         retorno=True
-        printLog("Si hay movimiento si")
+        if DEBUG_FRAMES:
+            printLog("Si hay movimiento si")
     return retorno  
 
 
 
 LOCAL_ID=sys.argv[1]
 CAMARA_ID=sys.argv[2]
+# Truncar el log de esta cámara al arrancar: evita que el .out crezca sin límite
+# entre reinicios del worker (capturador.php lo recicla cada N minutos).
+try:
+    with open('motor/logs/guarda_movimientosV2_'+CAMARA_ID+'.out','w') as _f:
+        pass
+except Exception:
+    pass
 segundos_analizar=int(sys.argv[3])  #cuanto mas segundos movs mas largos detecta los peqños los descarta por lo qe influira la sensibiliafda
 porcentaje_mov=int(sys.argv[4]) #de este campo puede depender la sensibilidad
 dontCare = int(sys.argv[5]) #Area of the detected contour, below this value it's not counted as detected   (tambien influye en la sensibilidad)
@@ -127,15 +142,14 @@ while(True):
         printLog(str(e))
 
 
-    #Blur for better results
-    output = cv2.GaussianBlur(frame, (21, 21), 0)
-
-
     #de cada cuantos frames cojo uno
     count_sensibilidad=count_sensibilidad+1
     if count_sensibilidad==SENSIBILIDAD:
         count_sensibilidad=0
 
+        #Blur for better results (solo cuando se analiza este frame; antes se hacía
+        #en TODOS los frames y saturaba CPU innecesariamente)
+        output = cv2.GaussianBlur(frame, (21, 21), 0)
 
         #tratamiento del buffer de los últimos frames_antes (pre-roll)
         last_frames.apilar(frame_original)
@@ -179,7 +193,8 @@ while(True):
             (x, y, w, h) = cv2.boundingRect(c)
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
             i+=1
-            printLog ('Detected something' + str(i))
+            if DEBUG_FRAMES:
+                printLog ('Detected something' + str(i))
             #print ('Area: ' + str(cv2.contourArea(c)))
             # printLog ('-->' + str(cv2.contourArea(c)))
 
@@ -188,7 +203,8 @@ while(True):
 
         motion_list.append(motion)
         motion_list = motion_list[-frames_a_analizar:]
-        printLog("Estado actual del movimiento:"+str(motion))
+        if DEBUG_FRAMES:
+            printLog("Estado actual del movimiento:"+str(motion))
 
         haymovimiento=hay_movimiento(motion_list)
         if haymovimiento and grabando==False:
@@ -243,7 +259,8 @@ while(True):
 
 
         if grabando:
-            printLog ("Grabando...")
+            if DEBUG_FRAMES:
+                printLog ("Grabando...")
 
             if writer is not None:
                 writer.write(frame_original)
@@ -257,7 +274,8 @@ while(True):
 
         if parando and grabando:
             count_para=count_para+1
-            printLog("Proceso de frenado:"+str(count_para))
+            if DEBUG_FRAMES:
+                printLog("Proceso de frenado:"+str(count_para))
 
 
         if count_para==frames_despues:
@@ -297,7 +315,8 @@ while(True):
                 siguegrabando=True
 
 
-        printLog("Y muestro webcam")
+        if DEBUG_FRAMES:
+            printLog("Y muestro webcam")
         # headless: sin imshow
         # if cv2.waitKey(1) & 0xFF == ord('q'):
         #     break

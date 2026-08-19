@@ -149,8 +149,23 @@ while (true) {
                             @unlink($marker_arch);
                             echo "Marker archiva limpiado (vídeo ya no existe): " . $video . "\n";
                         } elseif (!$vivo_arch && (time() - @filemtime($marker_arch)) > CONFIG_MARCADOR_HUERFANO_SEGS) {
+                            // archiva_video.py murió/falló pero el origen sigue en disco: reintentar
+                            // con tope. Antes se relanzaba sin límite -> bucle infinito con MP4
+                            // corruptos ("moov atom not found").
+                            $f_int = RUTA_PROYECTO . "aux/archiva_" . $video . ".intentos";
+                            $intentos = 0;
+                            if (file_exists($f_int)) { $intentos = (int)trim(file_get_contents($f_int)); }
+                            $intentos++;
+                            file_put_contents($f_int, (string)$intentos);
                             @unlink($marker_arch);
-                            echo "Marker archiva huérfano limpiado: " . $video . "\n";
+                            if ($intentos >= (int)CONFIG_REINTENTOS_ARCHIVA) {
+                                @unlink($f_int);
+                                $fuente_corrupta = $dir_videos . $video;
+                                if (file_exists($fuente_corrupta)) { @unlink($fuente_corrupta); }
+                                echo "Vídeo corrupto descartado tras " . $intentos . " intentos de archivado: " . $video . "\n";
+                                continue;
+                            }
+                            echo "Reintento de archivado " . $intentos . "/" . CONFIG_REINTENTOS_ARCHIVA . " de " . $video . "\n";
                         }
                     } elseif ($numero_archiva < (int)CONFIG_LIMITE_ARCHIVA) {
                         exec("echo '" . date("Y-m-d H:i:s") . "' > " . $marker_arch);
