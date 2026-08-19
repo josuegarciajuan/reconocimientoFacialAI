@@ -216,9 +216,14 @@ while(True):
             now = str(datetime.now())
             now=now.replace(" ","_");
             video_actual=CAMARA_ID+'_'+now+'.mp4'
+            # Publicación atómica (fix moov-race): se escribe a `video_actual.tmp`
+            # y SOLO se renombra a .mp4 cuando ffmpeg cierra correctamente (moov
+            # escrito). Así detector.php nunca lanza archiva/procesa sobre un MP4
+            # a medio escribir (que lee 0 frames y falla el archivado).
+            video_tmp = video_actual + '.tmp'
             # Fase 4c: layout con subdirectorio de cámara (motor/videos/<local>/<cam>/)
             os.makedirs('motor/videos/'+LOCAL_ID+'/'+CAMARA_ID, exist_ok=True)
-            writer = H264VideoWriter('motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/'+video_actual,
+            writer = H264VideoWriter('motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/'+video_tmp,
                                      size, int(FPS), VideoConfig())
             time_inicio = time.time()
             printLog ("Se empieza a generar el siguiente video:"+video_actual)
@@ -263,6 +268,23 @@ while(True):
             if writer is not None:
                 peso = writer.close()
                 writer = None
+                tmp_path = 'motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/'+video_tmp
+                final_path = 'motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/'+video_actual
+                if peso is not None:
+                    # cierre correcto: publicar (rename atómico; el detector solo
+                    # ve .mp4 completos)
+                    try:
+                        if os.path.exists(tmp_path):
+                            os.rename(tmp_path, final_path)
+                    except OSError as e:
+                        printLog("no se pudo renombrar video: "+str(e))
+                else:
+                    # cierre fallido (ffmpeg muerto/timeout): descartar el tmp
+                    try:
+                        if os.path.exists(tmp_path):
+                            os.remove(tmp_path)
+                    except OSError as e:
+                        printLog("no se pudo borrar tmp corrupto: "+str(e))
                 printLog("Video cerrado: "+video_actual+" peso="+str(peso)+" bytes")
             num_video=num_video+1
             printLog("Se marca siguegrabando como false")
