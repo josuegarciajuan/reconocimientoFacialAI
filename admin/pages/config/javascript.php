@@ -1648,6 +1648,7 @@ var dibujo = {
     fondo: null,     // Image con el plano actual (referencia para calcar)
     base: null,      // Image del croquis ya guardado (si existe)
     dibujando: false,
+    cargando: false, // true mientras se carga la base (croquis previo): bloquea el pincel
     ultimo: null,
     color: "#1e1e1e",
     grosor: 3,
@@ -1796,15 +1797,18 @@ function abrirDibujo() {
     // El borrador y el deshacer actúan también sobre el dibujo previo.
     if (PLANO_DIBUJO_URL) {
         document.getElementById("dibujoFondoWrap").classList.add("dibujo-fondo--oculto");
+        dibujo.cargando = true;   // el pincel se desbloquea al terminar de cargar la base
         var img = new Image();
         img.onload = function () {
             dibujo.base = img;
             dibujo.capaCtx.drawImage(img, 0, 0, dibujo.canvas.width, dibujo.canvas.height);
             dibujoGuardarSnapshot();
+            dibujo.cargando = false;
             dibujoRedibujar();
         };
         img.onerror = function () {
             dibujo.base = null;
+            dibujo.cargando = false;
             dibujoRedibujar();
             alert("No se pudo cargar el croquis existente. Vuelve a intentarlo.");
         };
@@ -1971,7 +1975,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     canvas.addEventListener("mousedown", function (e) {
-        if (!dibujo.abierto) return;
+        if (!dibujo.abierto || dibujo.cargando) return;
         dibujo.dibujando = true;
         dibujo.ultimo = dibujoCoord(e);
         // snapshot previo: el deshacer vuelve al estado antes de este trazo
