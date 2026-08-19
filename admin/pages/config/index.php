@@ -11,14 +11,18 @@
  */
 
 $tab_permitidos = ["camaras", "nodos", "lineas", "plano"];
-$tab = (isset($_GET["tab"]) && in_array($_GET["tab"], $tab_permitidos, true)) ? $_GET["tab"] : "camaras";
-
 $sub_per_tab = [
     "camaras" => ["crear", "editar"],
     "nodos"   => ["crear", "editar", "eliminar"],
     "lineas"  => ["trazar", "editar"],
     "plano"   => [],
 ];
+// Fortalezas (locales): pestaña solo visible para administradores.
+if (($_SESSION["admin"] ?? 0) == 1) {
+    $tab_permitidos[] = "locales";
+    $sub_per_tab["locales"] = ["listar"];
+}
+$tab = (isset($_GET["tab"]) && in_array($_GET["tab"], $tab_permitidos, true)) ? $_GET["tab"] : "camaras";
 $sub = (isset($_GET["sub"]) && in_array($_GET["sub"], $sub_per_tab[$tab] ?? [], true))
     ? $_GET["sub"]
     : ($sub_per_tab[$tab][0] ?? "");

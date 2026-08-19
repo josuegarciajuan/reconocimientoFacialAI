@@ -1744,16 +1744,12 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
 
                 <nav class="ring-hub__nav" aria-label="Accesos rápidos del panel">
                     <a class="ring-hub__nav-link" href="?page=dash"><span aria-hidden="true">👁️</span> La Torre</a>
-                    <a class="ring-hub__nav-link" href="?page=camaras"><span aria-hidden="true">📡</span> El Ojo en Vivo</a>
-                    <?php if (($_SESSION["admin"] ?? 0) == 1): ?>
-                    <a class="ring-hub__nav-link" href="?page=locales"><span aria-hidden="true">🏰</span> Fortalezas</a>
-                    <?php endif; ?>
-                    <a class="ring-hub__nav-link" href="?page=visitantes"><span aria-hidden="true">👹</span> Pueblos</a>
+                    <a class="ring-hub__nav-link ring-hub__nav-link--featured" href="?page=camaras"><span aria-hidden="true">📡</span> El Ojo en Vivo</a>
                     <a class="ring-hub__nav-link" href="?page=accesos"><span aria-hidden="true">⚔️</span> Movimientos</a>
-                    <a class="ring-hub__nav-link" href="?page=lineas"><span aria-hidden="true">📐</span> Líneas</a>
+                    <a class="ring-hub__nav-link" href="?page=visitantes"><span aria-hidden="true">👹</span> Pueblos</a>
                     <a class="ring-hub__nav-link" href="?page=rutas"><span aria-hidden="true">🗺️</span> Caminos</a>
+                    <a class="ring-hub__nav-link" href="?page=lineas"><span aria-hidden="true">📐</span> Líneas</a>
                     <a class="ring-hub__nav-link" href="?page=config"><span aria-hidden="true">⚒️</span> La Forja</a>
-                    <a class="ring-hub__nav-link" href="?page=fichajes"><span aria-hidden="true">⏳</span> Fichajes</a>
                     <a class="ring-hub__nav-link" href="?page=ayuda"><span aria-hidden="true">📜</span> El Concilio</a>
                 </nav>
 

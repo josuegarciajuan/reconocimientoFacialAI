@@ -87,6 +87,14 @@ $tabs_ui = [
     "lineas"  => ["📏", "Trazos", "Líneas", "trazos"],
     "plano"   => ["🗺️", "El Yunque", "Plano", "el-yunque"],
 ];
+// Fortalezas (locales): pestaña solo para administradores.
+if (($_SESSION["admin"] ?? 0) == 1) {
+    $tabs_ui["locales"] = ["🏰", "Fortalezas", "Locales", "fortalezas"];
+}
+
+/* En la pestaña "locales" no hay trabajo de plano: oculta el lienzo y
+   deja que el listado ocupe todo el ancho (sin romper los demás tabs). */
+$es_tab_locales = ($tab === "locales");
 
 /* --- Ayuda contextual del lienzo por pestaña + sub-acción --- */
 $hints = [
@@ -130,6 +138,7 @@ $hint = $hints[$hint_key] ?? $hints[$tab . "/crear"] ?? "Usa el panel de la izqu
 
     <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start mt-5">
 
+        <?php if (!$es_tab_locales): ?>
         <!-- ================= Lienzo de trabajo (persistente en todos los tabs) ================= -->
         <div class="order-1 xl:order-2 xl:col-span-5 min-w-0">
             <div class="form-section forge-canvas">
@@ -157,8 +166,10 @@ $hint = $hints[$hint_key] ?? $hints[$tab . "/crear"] ?? "Usa el panel de la izqu
             </div>
         </div>
 
+        <?php endif; ?>
+
         <!-- ================= Panel de la pestaña activa ================= -->
-        <div class="order-2 xl:order-1 xl:col-span-7 min-w-0">
+        <div class="order-2 xl:order-1 <?= $es_tab_locales ? "xl:col-span-12" : "xl:col-span-7"; ?> min-w-0">
             <?php include __DIR__ . "/tabs/tab_" . $tab . ".php"; ?>
         </div>
     </div>

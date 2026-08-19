@@ -1626,3 +1626,94 @@ input:focus-visible {
     animation: none;
   }
 }
+
+/* ============================================================
+   MORDOR · Reordenación del menú (2026-08-19)
+   "La Forja" hero + separadores ornamentales + halo de brasa.
+   ============================================================ */
+
+/* --- Separador ornamental entre grupos (desktop + drawer) ----- */
+.top-nav__sep {
+  flex: none;
+  width: 1px;
+  align-self: stretch;
+  margin: 0.45rem 0.4rem;
+  background: linear-gradient(180deg, transparent, rgba(201, 162, 39, 0.45), transparent);
+}
+
+.panel-drawer__sep {
+  height: 1px;
+  margin: 0.55rem 0.9rem;
+  background: linear-gradient(90deg, transparent, rgba(201, 162, 39, 0.35), transparent);
+}
+
+/* --- "La Forja" como item hero (primera posición) ------------- */
+.dark .top-nav > ul li .top-menu--hero {
+  background: linear-gradient(135deg,
+      rgba(201, 162, 39, 0.16) 0%,
+      rgba(255, 90, 31, 0.08) 55%,
+      rgba(201, 162, 39, 0.05) 100%);
+  box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.38);
+}
+
+.dark .top-nav > ul li .top-menu--hero .top-menu__title {
+  color: #f0d78c;
+  font-weight: 600;
+}
+
+.dark .top-nav > ul li .top-menu--hero .menu__emoji {
+  filter: drop-shadow(0 0 6px rgba(201, 162, 39, 0.55));
+}
+
+.dark .top-nav > ul li .top-menu--hero:hover:not(.top-menu--active) {
+  background: linear-gradient(135deg,
+      rgba(201, 162, 39, 0.22) 0%,
+      rgba(255, 90, 31, 0.14) 55%,
+      rgba(201, 162, 39, 0.08) 100%);
+  box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.6), 0 0 12px -2px rgba(255, 90, 31, 0.5);
+}
+
+.dark .top-nav > ul li .top-menu--hero.top-menu--active {
+  background: linear-gradient(180deg, rgba(255, 90, 31, 0.22), rgba(224, 60, 0, 0.10));
+  box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.55), 0 6px 18px -8px rgba(224, 60, 0, 0.55);
+}
+
+/* Halo de brasa en el título del item activo */
+.dark .top-nav > ul li .top-menu.top-menu--active .top-menu__title {
+  text-shadow: 0 0 12px rgba(255, 90, 31, 0.4);
+}
+
+/* --- "La Forja" hero en el drawer móvil ------------------------ */
+.panel-drawer .menu.menu--hero {
+  background: linear-gradient(135deg,
+      rgba(201, 162, 39, 0.14) 0%,
+      rgba(255, 90, 31, 0.08) 55%,
+      rgba(201, 162, 39, 0.05) 100%);
+  box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.32);
+}
+
+.panel-drawer .menu.menu--hero .menu__title {
+  color: #f0d78c;
+}
+
+.panel-drawer .menu.menu--hero.menu--active {
+  background: linear-gradient(180deg, rgba(255, 90, 31, 0.2), rgba(224, 60, 0, 0.1));
+  box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.45);
+  color: #f6e6ae;
+}
+
+/* --- "El Ojo en Vivo" destacado dentro del Anillo -------------- */
+.ring-hub__nav-link--featured {
+  border-color: rgba(201, 162, 39, 0.45);
+  background: linear-gradient(135deg,
+      rgba(255, 90, 31, 0.14) 0%,
+      rgba(224, 60, 0, 0.04) 55%,
+      rgba(201, 162, 39, 0.10) 100%);
+  color: #f6e6ae;
+}
+
+.ring-hub__nav-link--featured:hover,
+.ring-hub__nav-link--featured:focus-visible {
+  border-color: rgba(255, 90, 31, 0.7);
+  box-shadow: 0 0 12px -3px rgba(255, 90, 31, 0.55);
+}

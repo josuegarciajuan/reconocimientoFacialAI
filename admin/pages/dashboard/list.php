@@ -273,7 +273,7 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
         <a href="?page=dash" class="ml-auto flex text-theme-1 dark:text-theme-10">🔮 Reinvocar Datos</a>
     </div>
     <nav class="quick-links mt-3" aria-label="Accesos directos">
-        <a class="quick-link" href="?page=fichajes&desde=<?= urlencode(date("n/d") . " 12:01 AM"); ?>&hasta=<?= urlencode(date("n/d") . " 11:59 PM"); ?>"><span class="quick-link__emoji" aria-hidden="true">⏳</span><span class="quick-link__label">Fichajes de hoy</span></a>
+        <a class="quick-link quick-link--anchor" href="#seccion-fichajes"><span class="quick-link__emoji" aria-hidden="true">⏳</span><span class="quick-link__label">Fichajes de hoy</span></a>
         <a class="quick-link" href="?page=camaras"><span class="quick-link__emoji" aria-hidden="true">📡</span><span class="quick-link__label">El Ojo en Vivo</span></a>
         <a class="quick-link" href="?page=accesos"><span class="quick-link__emoji" aria-hidden="true">⚔️</span><span class="quick-link__label">Movimientos</span></a>
         <a class="quick-link" href="?page=visitantes"><span class="quick-link__emoji" aria-hidden="true">👹</span><span class="quick-link__label">Pueblos</span></a>
@@ -652,6 +652,22 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
         </button>
         <div class="scroll-section__body" id="falta-body" hidden>
             <div id="missing-list"><?= dash_falta_html($local_id); ?></div>
+        </div>
+    </section>
+
+    <!-- Fichajes de hoy -->
+    <section class="scroll-section scroll-section--open intro-y box p-5 mt-5" id="seccion-fichajes">
+        <button class="scroll-section__toggle" aria-expanded="true" aria-controls="fichajes-body">
+            <span class="scroll-section__emoji" aria-hidden="true">⏳</span>
+            <span class="scroll-section__title">Fichajes de hoy</span>
+            <span class="scroll-section__hint"><span class="tnum"><?= $fichados_hoy; ?></span> trabajadores han fichado</span>
+            <span class="scroll-section__chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="scroll-section__body" id="fichajes-body">
+            <div id="fichajes-hoy-list"><?= dash_fichajes_html($local_id); ?></div>
+            <div class="mt-4 text-right">
+                <a class="text-theme-1 dark:text-theme-10 text-xs font-semibold" href="?page=fichajes">↳ Ver todos los Fichajes →</a>
+            </div>
         </div>
     </section>
 

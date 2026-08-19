@@ -11,6 +11,7 @@
  */
 
 require_once __DIR__ . "/../../../libs/db.php";
+require_once __DIR__ . "/../../../libs/fechas.php";
 
 /* ---------------------------------------------------------------
  * Utilidades
@@ -129,6 +130,21 @@ function dash_falta_fichar($local_id) {
     $map = dash_fotos_personas(array_column($rows, "id"));
     foreach ($rows as &$r) { $r["foto_id"] = $map[(int)$r["id"]] ?? 0; }
     return $rows;
+}
+
+/** Fichajes de HOY (fecha = CURDATE()) del local. */
+function dash_fichajes_hoy($local_id) {
+    return DB::select(
+        "SELECT f.id AS fid, f.fecha, f.bloque, f.estado,
+                f.entrada_hora, f.salida_hora,
+                f.entrada_estancia_id, f.salida_estancia_id,
+                p.id AS persona_id, p.cod_interno, p.nombre
+         FROM fichajes f
+         JOIN personas p ON p.id = f.persona_id
+         WHERE f.local_id = ? AND f.fecha = CURDATE()
+         ORDER BY COALESCE(f.entrada_hora, f.salida_hora) ASC, p.nombre ASC, f.bloque ASC",
+        [(int)$local_id]
+    );
 }
 
 /** Top visitantes del último mes (por nº de estancias). */
@@ -435,6 +451,66 @@ function dash_falta_html($local_id) {
             . '</li>';
     }
     $out .= '</ul>';
+    return $out;
+}
+
+/** Fichajes de hoy: tabla compacta (trabajador, entrada, salida, duración, estado). */
+function dash_fichajes_html($local_id) {
+    $rows = dash_fichajes_hoy($local_id);
+    if (!$rows) {
+        return '<div class="empty-state"><div class="empty-state__icon">🕰️</div>'
+            . '<div class="empty-state__title">Aún no hay fichajes hoy</div>'
+            . '<div class="empty-state__hint">El Conciliador los genera cuando los trabajadores cruzan la puerta. Si nadie ha llegado, el reloj sigue en silencio.</div></div>';
+    }
+
+    $js_quote = function ($s) {
+        return htmlspecialchars(str_replace(["\\", "'"], ["\\\\", "\\'"], (string)$s), ENT_QUOTES);
+    };
+    $foto_por_persona = dash_fotos_personas(array_column($rows, "persona_id"));
+
+    $out = '<div class="table-wrap dash-fichajes">';
+    $out .= '<table class="table table-report table-report--bordered w-full">';
+    $out .= '<thead><tr>'
+        . '<th class="border-b-2 text-center">TRABAJADOR</th>'
+        . '<th class="border-b-2 text-center">ENTRADA</th>'
+        . '<th class="border-b-2 text-center">SALIDA</th>'
+        . '<th class="border-b-2 text-center">DURACIÓN</th>'
+        . '<th class="border-b-2 text-center">ESTADO</th>'
+        . '</tr></thead><tbody>';
+
+    $par = "odd";
+    foreach ($rows as $r) {
+        $nombre  = ($r["nombre"] !== "") ? $r["nombre"] : $r["cod_interno"];
+        $fid     = (int)($foto_por_persona[(int)$r["persona_id"]] ?? 0);
+        $avatar  = "./caras_procesadas/" . $fid . ".jpg";
+
+        $entrada = $r["entrada_hora"] ? date("H:i", strtotime($r["entrada_hora"])) : "—";
+        $salida  = $r["salida_hora"]  ? date("H:i", strtotime($r["salida_hora"]))  : "—";
+
+        $duracion = "—";
+        if ($r["entrada_hora"] && $r["salida_hora"]) {
+            $duracion = formato_duracion(strtotime($r["salida_hora"]) - strtotime($r["entrada_hora"]));
+        }
+
+        $estado = ($r["estado"] === "conciliado")
+            ? '<span class="tendencia-pill tendencia-pill--up">Conciliado</span>'
+            : '<span class="tendencia-pill tendencia-pill--flat">Provisional</span>';
+
+        $out .= '<tr class="' . $par . '">'
+            . '<td class="border-b">'
+            . '<div class="flex items-center gap-2">'
+            . '<img class="img-thumb" src="' . htmlspecialchars($avatar) . '" alt="" loading="lazy"'
+            . ' onerror="this.onerror=null;this.src=\'./files/logo-sauron.png\';">'
+            . '<span class="truncate">' . htmlspecialchars($r["cod_interno"] . " - " . $nombre) . '</span>'
+            . '</div></td>'
+            . '<td class="border-b text-center tnum">' . htmlspecialchars($entrada) . '</td>'
+            . '<td class="border-b text-center tnum">' . htmlspecialchars($salida) . '</td>'
+            . '<td class="border-b text-center">' . htmlspecialchars($duracion) . '</td>'
+            . '<td class="border-b text-center">' . $estado . '</td>'
+            . '</tr>';
+        $par = ($par === "odd") ? "pair" : "odd";
+    }
+    $out .= '</tbody></table></div>';
     return $out;
 }
 
