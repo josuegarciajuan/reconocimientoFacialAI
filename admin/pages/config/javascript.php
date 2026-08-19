@@ -92,7 +92,7 @@ window.onload=function(){
                     id_lineas.push('<?= (int)$l["id"]; ?>');
 
 
-                    txt='<input type="text" name="nombre_linea_<?= (int)$l["id"]; ?>" id="nombre_linea_<?= (int)$l["id"]; ?>" value="<?= htmlspecialchars($l["nombre"]); ?>" style="border-width:1px;border-style:solid;border-color:'+listado_colores[voypocolores]+'">&nbsp;<a href="?page=config&accion=eliminar_linea&id_linea=<?= (int)$l["id"]; ?>&mostrar_foto=2">(X)</a><br />';
+                    txt='<input type="text" name="nombre_linea_<?= (int)$l["id"]; ?>" id="nombre_linea_<?= (int)$l["id"]; ?>" value="<?= htmlspecialchars($l["nombre"]); ?>" style="border-width:1px;border-style:solid;border-color:'+listado_colores[voypocolores]+'">&nbsp;<a href="?page=config&accion=eliminar_linea&id_linea=<?= (int)$l["id"]; ?>&mostrar_foto=2&tab=lineas">(X)</a><br />';
                     nombres_lineas_capa.innerHTML=nombres_lineas_capa.innerHTML+txt;
 
                     voypocolores++;
@@ -242,7 +242,7 @@ function crear(){
     url_conexion=url_conexion.replace('&', '--jos--');
     
     
-    uri="?page=config&accion=crear&nombre_nueva="+nombre_nueva+"&x_nueva="+x_nueva+"&y_nueva="+y_nueva+"&puerta="+puerta+"&salida="+salida+"&encendida_nueva="+encendida_nueva+'&url_conexion='+url_conexion+"&sistema="+tipo_camara+"&ipcamlive_alias="+ipcamlive_alias;
+    uri="?page=config&tab=camaras&accion=crear&nombre_nueva="+nombre_nueva+"&x_nueva="+x_nueva+"&y_nueva="+y_nueva+"&puerta="+puerta+"&salida="+salida+"&encendida_nueva="+encendida_nueva+'&url_conexion='+url_conexion+"&sistema="+tipo_camara+"&ipcamlive_alias="+ipcamlive_alias;
     
     
     var res = encodeURI(uri);
@@ -315,7 +315,7 @@ function guardar(){
     url_conexion=url_conexion.replace('&', '--jos--');
     url_desdeserver=url_desdeserver.replace('&', '--jos--');
     
-    uri="?page=config&accion=guardar&camara="+camara+"&nombre="+nombre+"&encendida="+encendida+"&x="+x_camara+"&y="+y_camara+"&puerta="+puerta+"&salida="+salida+"&url_conexion="+url_conexion+"&url_desdeserver="+url_desdeserver+"&sistema="+tipo_camara+"&ipcamlive_alias="+ipcamlive_alias/*+"&sensibilidad_movimiento="+sensibilidad_movimiento*/;
+    uri="?page=config&tab=camaras&accion=guardar&camara="+camara+"&nombre="+nombre+"&encendida="+encendida+"&x="+x_camara+"&y="+y_camara+"&puerta="+puerta+"&salida="+salida+"&url_conexion="+url_conexion+"&url_desdeserver="+url_desdeserver+"&sistema="+tipo_camara+"&ipcamlive_alias="+ipcamlive_alias/*+"&sensibilidad_movimiento="+sensibilidad_movimiento*/;
     
     uri+="&segundos_analizar="+segundos_analizar;
     uri+="&porcentaje_mov="+porcentaje_mov;
@@ -492,7 +492,7 @@ function guardar_nodos(){
         if(i==(nodos_x.length-1)){
             ajax.onreadystatechange = function () {
                 if (ajax.readyState == 4) {
-                    location.href="?page=config";
+                    location.href="?page=config&tab=nodos";
                 }
             }
         }
@@ -505,7 +505,7 @@ function eliminar_nodos(){
     camara1=document.getElementById("camara1_el").value;
     camara2=document.getElementById("camara2_el").value;
     
-    location.href="?page=config&accion=eliminar_nodos&camara1="+camara1+"&camara2="+camara2;
+    location.href="?page=config&tab=nodos&accion=eliminar_nodos&camara1="+camara1+"&camara2="+camara2;
     
 }
 
@@ -515,7 +515,7 @@ function carga_foto_linea(){
     var porciones = editar_linea.split('-');
     camara_id=porciones[1];
     //llamara a archivo python qe sacara una foto de la camara
-    url='?page=config&mostrar_foto='+camara_id+"&editar_linea="+editar_linea;
+    url='?page=config&tab=lineas&mostrar_foto='+camara_id+"&editar_linea="+editar_linea;
     //alert(url);
     location.href=url;
     
@@ -525,7 +525,7 @@ function carga_foto_linea(){
 
 function carga_foto_camara(){
     //llamara a archivo python qe sacara una foto de la camara
-    url='?page=config&mostrar_foto='+document.getElementById("camara1_linea").value;
+    url='?page=config&tab=lineas&mostrar_foto='+document.getElementById("camara1_linea").value;
     //alert(url);
     location.href=url;
 }
@@ -648,7 +648,7 @@ function guardar_lineas(){
 
    }
    
-   url="?page=config&accion=guardar_lineas&lasx="+lasx+"&lasy="+lasy+"&losnombres="+losnombres+"&losids="+losids+"&camara_id="+document.getElementById("camara1_linea").value+"&mostrar_foto="+document.getElementById("camara1_linea").value;
+   url="?page=config&tab=lineas&accion=guardar_lineas&lasx="+lasx+"&lasy="+lasy+"&losnombres="+losnombres+"&losids="+losids+"&camara_id="+document.getElementById("camara1_linea").value+"&mostrar_foto="+document.getElementById("camara1_linea").value;
    
    location.href=url; 
     
@@ -689,7 +689,7 @@ function editar_linea1(){
 
    
    
-   url="?page=config&accion=editar_lineas&linea_id="+linea_id+"&lasx="+encodeURIComponent(lasx)+"&lasy="+encodeURIComponent(lasy)+"&losnombres="+losnombres+"&losids="+losids+"&camara_id="+document.getElementById("camara1_linea").value+"&mostrar_foto="+document.getElementById("camara1_linea").value+"&editar_linea="+editar_linea;
+   url="?page=config&tab=lineas&accion=editar_lineas&linea_id="+linea_id+"&lasx="+encodeURIComponent(lasx)+"&lasy="+encodeURIComponent(lasy)+"&losnombres="+losnombres+"&losids="+losids+"&camara_id="+document.getElementById("camara1_linea").value+"&mostrar_foto="+document.getElementById("camara1_linea").value+"&editar_linea="+editar_linea;
    
    location.href=url; 
     
@@ -951,7 +951,7 @@ function guardarDibujo() {
     var fd = new FormData();
     fd.append("plano_dibujo", dataURL);
 
-    fetch("?page=config&accion=plano_dibujo", {
+    fetch("?page=config&tab=plano&accion=plano_dibujo", {
         method: "POST",
         body: fd
     })
@@ -959,7 +959,7 @@ function guardarDibujo() {
         if (!res.ok) throw new Error("HTTP " + res.status);
         if (res.redirected) {
             // El servidor redirige a ?page=config tras guardar: éxito.
-            location.href = "?page=config";
+            location.href = "?page=config&tab=plano";
             return null;
         }
         return res.text();
@@ -970,7 +970,7 @@ function guardarDibujo() {
             alert(txt);
             return;
         }
-        location.href = "?page=config";
+        location.href = "?page=config&tab=plano";
     })
     .catch(function (err) {
         alert("No se pudo guardar el croquis: " + err.message);

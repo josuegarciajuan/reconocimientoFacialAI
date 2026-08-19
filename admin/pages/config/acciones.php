@@ -72,10 +72,9 @@ switch ($_GET["accion"]) {
         }
         if (move_uploaded_file($_FILES['plano']['tmp_name'], "pages/config/planos/plano_" . $local_id . "." . $fileExtension)) {
             DB::execute("UPDATE locales SET plano_activo = 'subida' WHERE id = ?", [$local_id]);
-            echo 'File is successfully uploaded.';
-        } else {
-            echo 'There was some error moving the file.';
         }
+        header("Location: ?page=config&tab=plano");
+        exit;
         break;
 
     /* Croquis dibujado a mano alzada: recibe un dataURL PNG (canvas.toDataURL). */
@@ -90,7 +89,7 @@ switch ($_GET["accion"]) {
                 }
                 if (file_put_contents($dibujo, $bin) !== false) {
                     DB::execute("UPDATE locales SET plano_activo = 'dibujo' WHERE id = ?", [$local_id]);
-                    header("Location: ?page=config");
+                    header("Location: ?page=config&tab=plano");
                     exit;
                 }
             }
@@ -108,7 +107,7 @@ switch ($_GET["accion"]) {
         if ($existe) {
             DB::execute("UPDATE locales SET plano_activo = ? WHERE id = ?", [$tipo, $local_id]);
         }
-        header("Location: ?page=config");
+        header("Location: ?page=config&tab=plano");
         exit;
         break;
 
