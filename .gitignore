@@ -32,6 +32,8 @@ motor/revision/
 motor/backups/
 motor/calib/
 motor/llm_cache/
+# Informes de re-matching (reagrupar.py)
+motor/reagrupar_out/
 aux/
 admin/caras_procesadas/
 admin/fotos_camara/
