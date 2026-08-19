@@ -7,6 +7,9 @@
  *
  * UI: Barad-dûr (Mordor). Solo presentación responsive: la lógica
  * (ids, names, onclicks, XHR) la consume admin/pages/config/javascript.php.
+ *
+ * REFACTOR: secciones agrupadas en pestañas (Cámaras / Nodos / Líneas / Plano)
+ * con un lienzo de trabajo persistente. Cada pestaña vive en tabs/tab_*.php.
  */
 
 require_once __DIR__ . "/../../../libs/db.php";
@@ -74,6 +77,25 @@ function rf_cfg_select_rango($ini, $fin, $valor) {
     }
     return $html;
 }
+
+/* --- Pestaña activa (con validación defensiva) --- */
+$tab_permitidos = ["camaras", "nodos", "lineas", "plano"];
+$tab = (isset($_GET["tab"]) && in_array($_GET["tab"], $tab_permitidos, true)) ? $_GET["tab"] : "camaras";
+
+$hints = [
+    "camaras" => "Haz clic sobre el lienzo para fijar la posición (X/Y) de la cámara: la nueva (crear) o la seleccionada (editar).",
+    "nodos"   => "Selecciona dos cámaras en el panel y haz clic sobre el lienzo para marcar cada nodo del camino.",
+    "lineas"  => "Al elegir una cámara, el lienzo se sustituye por su foto capturada para dibujar las líneas de vigilancia.",
+    "plano"   => "Así se ve el plano activo. Usa el panel para subir una imagen o dibujar un croquis.",
+];
+$hint = $hints[$tab] ?? $hints["camaras"];
+
+$tabs_ui = [
+    "camaras" => ["📷", "Cámaras"],
+    "nodos"   => ["🔗", "Nodos"],
+    "lineas"  => ["📏", "Líneas"],
+    "plano"   => ["🗺️", "Plano"],
+];
 ?>
 
 <div class="intro-y flex flex-col sm:flex-row items-center mt-8">
@@ -84,396 +106,55 @@ function rf_cfg_select_rango($ini, $fin, $valor) {
 </div>
 
 <div class="intro-y box p-5 mt-5">
-    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
 
-        <!-- ================= Plano del local (móvil: arriba · escritorio: derecha) ================= -->
+    <!-- ================= Pestañas de sección ================= -->
+    <nav class="section-tabs" role="tablist" aria-label="Secciones de La Forja">
+        <?php foreach ($tabs_ui as $key => $t): ?>
+            <a role="tab" aria-selected="<?= $tab === $key ? "true" : "false"; ?>"
+               class="section-tab<?= $tab === $key ? " is-active" : ""; ?>"
+               href="?page=config&tab=<?= $key; ?>">
+                <span class="section-tab__emoji" aria-hidden="true"><?= $t[0]; ?></span>
+                <?= $t[1]; ?>
+            </a>
+        <?php endforeach; ?>
+    </nav>
+
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start mt-5">
+
+        <!-- ================= Lienzo de trabajo (persistente en todos los tabs) ================= -->
         <div class="order-1 xl:order-2 xl:col-span-5 min-w-0">
             <div class="form-section">
                 <div class="form-section__title">
-                    <span class="form-section__emoji" aria-hidden="true">🗺️</span>
-                    Plano del local
+                    <span class="form-section__emoji" aria-hidden="true">🖼️</span>
+                    Lienzo del local
                 </div>
-
-                <!-- Pestañas: qué plano se usa como fondo (imagen subida o croquis dibujado) -->
-                <div class="rf-tabs" role="tablist" aria-label="Plano en uso">
-                    <a role="tab" aria-selected="<?= $plano_act_cfg === "subida" ? "true" : "false"; ?>"
-                       class="rf-tab<?= $plano_act_cfg === "subida" ? " is-active" : ""; ?><?= !$plano_subida_cfg ? " is-empty" : ""; ?>"
-                       href="?page=config&accion=plano_activo&tipo=subida">Imagen subida</a>
-                    <a role="tab" aria-selected="<?= $plano_act_cfg === "dibujo" ? "true" : "false"; ?>"
-                       class="rf-tab<?= $plano_act_cfg === "dibujo" ? " is-active" : ""; ?><?= !$plano_dibujo_cfg ? " is-empty" : ""; ?>"
-                       href="?page=config&accion=plano_activo&tipo=dibujo">Croquis dibujado</a>
-                </div>
-                <p class="text-xs text-gray-500 dark:text-gray-600 mt-1 mb-3">
-                    El plano marcado es el que se muestra como fondo aquí y en Rutas. La pestaña sin archivo todavía no puede activarse.
+                <p class="text-xs text-gray-500 dark:text-gray-600 mb-3">
+                    <?= htmlspecialchars($hint); ?>
                 </p>
 
-                <form action="?page=config&accion=plano" method="POST" enctype="multipart/form-data" name="formplano" id="formplano">
-                    <label for="plano" class="field-label">Imagen del plano</label>
-                    <div class="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
-                        <input type="file" name="plano" id="plano" class="input border w-full">
-                        <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="cargarplano()">Cargar plano</button>
-                    </div>
-                </form>
-
-                <button type="button" class="button text-white bg-theme-1 shadow-md mt-3 w-full sm:w-auto" onclick="abrirDibujo()">
-                    ✏️ Dibujar croquis a mano alzada
-                </button>
-                <p class="text-xs text-gray-500 dark:text-gray-600 mt-1">
-                    Abre un editor tipo Paint: dibuja con el ratón y guárdalo como plano del local (se guarda aparte de la imagen subida).
-                </p>
-
-                <div class="plan-wrap mt-4">
+                <div class="plan-wrap">
                     <canvas id="canvasID" width="<?= CANVAS_WIDTH; ?>" height="<?= CANVAS_HEIGHT; ?>"
                             class="border border-gray-700"
                             style="position:relative;left:0px;z-index:999999"></canvas>
                 </div>
                 <input type="hidden" name="x_hidden" id="x_hidden" value="">
                 <input type="hidden" name="y_hidden" id="y_hidden" value="">
-
-                <p class="text-xs text-gray-500 dark:text-gray-600 mt-2">
-                    Haz clic sobre el plano para marcar la posición de cámaras y nodos.
-                </p>
             </div>
         </div>
 
-        <!-- ================= Formularios (escritorio: izquierda) ================= -->
+        <!-- ================= Panel de la pestaña activa ================= -->
         <div class="order-2 xl:order-1 xl:col-span-7 min-w-0">
-
-            <!-- ---------- Crear cámara ---------- -->
-            <div class="form-section">
-                <div class="form-section__title">
-                    <span class="form-section__emoji" aria-hidden="true">📷</span>
-                    Crear cámara
-                </div>
-
-                <div class="form-grid">
-                    <div>
-                        <label for="nombre_nueva" class="field-label">Descripción</label>
-                        <input type="text" name="nombre_nueva" id="nombre_nueva" class="input border w-full" placeholder="Descripción">
-                    </div>
-                    <div>
-                        <label for="url_conexion_nueva" class="field-label">URL de conexión / ID cámara local</label>
-                        <input type="text" name="url_conexion_nueva" id="url_conexion_nueva" class="input border w-full" placeholder="Url conexion / id camara local">
-                    </div>
-                    <div>
-                        <label for="ipcamlive_alias" class="field-label">Alias IPCamlive</label>
-                        <input type="text" name="ipcamlive_alias" id="ipcamlive_alias" class="input border w-full" placeholder="ipcamlive_alias">
-                    </div>
-
-                    <div>
-                        <span class="field-label">Tipo de acceso</span>
-                        <div class="flex flex-wrap gap-x-4 gap-y-2 items-center">
-                            <label for="entrada1" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="puerta-camara">
-                                <input type="radio" name="eos1" id="entrada1" value="entrada" style="accent-color:var(--mordor-oro)"> Puerta
-                            </label>
-                            <label for="salida1" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="salida-camara">
-                                <input type="radio" name="eos1" id="salida1" value="salida" style="accent-color:var(--mordor-oro)"> Salida
-                            </label>
-                        </div>
-                    </div>
-
-                    <div>
-                        <span class="field-label">Estado</span>
-                        <label for="encendida_nueva" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="encendida">
-                            <input type="checkbox" name="encendida_nueva" id="encendida_nueva" value="1" style="accent-color:var(--mordor-oro)"> Encendida
-                        </label>
-                    </div>
-
-                    <div>
-                        <span class="field-label">Origen de vídeo</span>
-                        <div class="flex flex-wrap gap-x-4 gap-y-2 items-center">
-                            <label for="tipo_camara_ip" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                <input type="radio" name="tipo_camara" id="tipo_camara_ip" value="ip" style="accent-color:var(--mordor-oro)"> Cámara IP
-                            </label>
-                            <label for="tipo_camara_grabador" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                <input type="radio" name="tipo_camara" id="tipo_camara_grabador" value="grabador" style="accent-color:var(--mordor-oro)"> Grabador
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="form-grid__full">
-                        <span class="field-label">Posición en el plano</span>
-                        <div class="flex flex-wrap gap-x-4 gap-y-2 items-center">
-                            <div class="flex items-center gap-2">
-                                <label for="x_nueva" class="text-sm text-gray-600 dark:text-gray-400">X</label>
-                                <input type="text" name="x_nueva" id="x_nueva" class="input border w-24" readonly placeholder="X">
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <label for="y_nueva" class="text-sm text-gray-600 dark:text-gray-400">Y</label>
-                                <input type="text" name="y_nueva" id="y_nueva" class="input border w-24" readonly placeholder="Y">
-                            </div>
-                            <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="crear()">Crear cámara</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ---------- Editar cámara ---------- -->
-            <div class="form-section">
-                <div class="form-section__title">
-                    <span class="form-section__emoji" aria-hidden="true">✏️</span>
-                    Editar cámara
-                </div>
-
-                <div class="form-grid">
-                    <div class="form-grid__full">
-                        <label for="camara" class="field-label">Cámara a editar</label>
-                        <select id="camara" name="camara" class="input border w-full" onchange="seleccionar_camara()">
-                            <option value="-" <?php if (!isset($_GET["camara"]) or $_GET["camara"] == "-") { echo "selected='selected'"; } ?>>Selecciona Cámara</option>
-                            <?php foreach ($camaras as $c): ?>
-                                <option <?php if (isset($_GET["camara"]) && $_GET["camara"] == $c["id"]) { echo "selected='selected'"; } ?> value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label for="nombre" class="field-label">Descripción</label>
-                        <input type="text" name="nombre" id="nombre" class="input border w-full" placeholder="Descripción" value="<?= htmlspecialchars($camara_sel["descripcion"] ?? ""); ?>">
-                    </div>
-                    <div>
-                        <label for="url_conexion" class="field-label">URL de conexión</label>
-                        <input type="text" name="url_conexion" id="url_conexion" class="input border w-full" placeholder="url_conexion" value="<?= htmlspecialchars($camara_sel["url_conexion"] ?? ""); ?>">
-                    </div>
-                    <div>
-                        <label for="url_desdeserver" class="field-label">URL desde servidor</label>
-                        <input type="text" name="url_desdeserver" id="url_desdeserver" class="input border w-full" placeholder="url_desdeserver" value="<?= htmlspecialchars($camara_sel["url_desdeserver"] ?? ""); ?>">
-                    </div>
-                    <div>
-                        <label for="ipcamlive_alias1" class="field-label">Alias IPCamlive</label>
-                        <input type="text" name="ipcamlive_alias1" id="ipcamlive_alias1" class="input border w-full" placeholder="ipcamlive_alias" value="<?= htmlspecialchars($camara_sel["ipcamlive_alias"] ?? ""); ?>">
-                    </div>
-
-                    <div>
-                        <span class="field-label">Tipo de acceso</span>
-                        <div class="flex flex-wrap gap-x-4 gap-y-2 items-center">
-                            <label for="entrada2" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="puerta-camara">
-                                <input type="radio" name="eos2" id="entrada2" value="entrada" style="accent-color:var(--mordor-oro)" <?= $puerta_sel === 1 ? "checked" : ""; ?>> Puerta
-                            </label>
-                            <label for="salida2" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="salida-camara">
-                                <input type="radio" name="eos2" id="salida2" value="salida" style="accent-color:var(--mordor-oro)" <?= $salida_sel === 1 ? "checked" : ""; ?>> Salida
-                            </label>
-                        </div>
-                    </div>
-
-                    <div>
-                        <span class="field-label">Estado</span>
-                        <label for="encendida" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="encendida">
-                            <input type="checkbox" name="encendida" id="encendida" value="1" style="accent-color:var(--mordor-oro)" <?= $encendida_sel === 1 ? "checked" : ""; ?>> Encendida
-                        </label>
-                    </div>
-
-                    <div>
-                        <span class="field-label">Origen de vídeo</span>
-                        <div class="flex flex-wrap gap-x-4 gap-y-2 items-center">
-                            <label for="tipo_camara_ip_ed" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                <input type="radio" name="tipo_camara_ed" id="tipo_camara_ip_ed" value="ip" style="accent-color:var(--mordor-oro)" <?= $sistema_sel === 0 ? "checked" : ""; ?>> Cámara IP
-                            </label>
-                            <label for="tipo_camara_grabador_ed" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                <input type="radio" name="tipo_camara_ed" id="tipo_camara_grabador_ed" value="grabador" style="accent-color:var(--mordor-oro)" <?= $sistema_sel === 1 ? "checked" : ""; ?>> Grabador
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ---------- Parámetros de análisis ---------- -->
-                <div class="form-section__title mt-6">
-                    <span class="form-section__emoji" aria-hidden="true">⚙️</span>
-                    Parámetros de análisis
-                </div>
-                <p class="text-xs text-gray-500 dark:text-gray-600 mb-4">
-                    Parámetros que aplica el motor a la cámara seleccionada. Se guardan con el botón «Guardar cámara».
-                </p>
-
-                <div class="form-grid">
-                    <div>
-                        <label for="segundos_analizar" class="field-label">Segundos a analizar</label>
-                        <select name="segundos_analizar" id="segundos_analizar" class="input border w-full">
-                            <?= rf_cfg_select_rango(1, 10, $cfg["segundos_analizar"]); ?>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="porcentaje_mov" class="field-label">Porcentaje de movimiento</label>
-                        <select name="porcentaje_mov" id="porcentaje_mov" class="input border w-full">
-                            <?= rf_cfg_select_rango(1, 100, $cfg["porcentaje_mov"]); ?>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="dontCare" class="field-label">DontCare</label>
-                        <select name="dontCare" id="dontCare" class="input border w-full">
-                            <?= rf_cfg_select_rango(10, 2000, $cfg["dontCare"]); ?>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="fps" class="field-label">FPS</label>
-                        <select name="fps" id="fps" class="input border w-full">
-                            <?= rf_cfg_select_rango(1, 30, $cfg["fps"]); ?>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="maximo_videos" class="field-label">Máximo de vídeos</label>
-                        <select name="maximo_videos" id="maximo_videos" class="input border w-full">
-                            <?= rf_cfg_select_rango(20, 120, $cfg["maximo_videos"]); ?>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="redimesionframe" class="field-label">Redimensionar frame</label>
-                        <select name="redimesionframe" id="redimesionframe" class="input border w-full">
-                            <?= rf_cfg_select_rango(1, 100, $cfg["redimesionframe"]); ?>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="sensibilidad" class="field-label">Sensibilidad</label>
-                        <select name="sensibilidad" id="sensibilidad" class="input border w-full">
-                            <?= rf_cfg_select_rango(1, 15, $cfg["sensibilidad"]); ?>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 items-center">
-                    <div class="flex items-center gap-2">
-                        <label for="x_camara" class="text-sm text-gray-600 dark:text-gray-400">X</label>
-                        <input type="text" name="x_camara" id="x_camara" class="input border w-24" readonly placeholder="X" value="<?= htmlspecialchars($camara_sel["x"] ?? ""); ?>">
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <label for="y_camara" class="text-sm text-gray-600 dark:text-gray-400">Y</label>
-                        <input type="text" name="y_camara" id="y_camara" class="input border w-24" readonly placeholder="Y" value="<?= htmlspecialchars($camara_sel["y"] ?? ""); ?>">
-                    </div>
-                    <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="guardar()">Guardar cámara</button>
-                </div>
-            </div>
-
-            <!-- ---------- Crear nodos ---------- -->
-            <div class="form-section">
-                <div class="form-section__title">
-                    <span class="form-section__emoji" aria-hidden="true">🔗</span>
-                    Crear nodos
-                </div>
-
-                <div class="form-grid">
-                    <div>
-                        <label for="camara1" class="field-label">Cámara (1)</label>
-                        <select id="camara1" name="camara1" class="input border w-full" onchange="meter_nodos()">
-                            <option value="-">Selecciona Cámara</option>
-                            <?php foreach ($camaras as $c): ?>
-                                <option value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="camara2" class="field-label">Cámara (2)</label>
-                        <select id="camara2" name="camara2" class="input border w-full" onchange="meter_nodos()">
-                            <option value="-">Selecciona Cámara</option>
-                            <?php foreach ($camaras as $c): ?>
-                                <option value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="form-grid__full">
-                        <div class="flex flex-col sm:flex-row sm:items-center gap-2">
-                            <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="guardar_nodos()">Guardar nodos</button>
-                            <span class="text-xs text-gray-500 dark:text-gray-600">
-                                Selecciona ambas cámaras y haz clic en el plano para marcar cada nodo.
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ---------- Eliminar nodos ---------- -->
-            <div class="form-section">
-                <div class="form-section__title">
-                    <span class="form-section__emoji" aria-hidden="true">🧹</span>
-                    Eliminar nodos
-                </div>
-
-                <div class="form-grid">
-                    <div>
-                        <label for="camara1_el" class="field-label">Cámara (1)</label>
-                        <select id="camara1_el" name="camara1_el" class="input border w-full">
-                            <option value="-">Selecciona Cámara</option>
-                            <?php foreach ($camaras as $c): ?>
-                                <option value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="camara2_el" class="field-label">Cámara (2)</label>
-                        <select id="camara2_el" name="camara2_el" class="input border w-full">
-                            <option value="-">Selecciona Cámara</option>
-                            <?php foreach ($camaras as $c): ?>
-                                <option value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="form-grid__full">
-                        <button type="button" class="button text-white bg-theme-6 shadow-md" onclick="eliminar_nodos()">Eliminar nodos</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ---------- Líneas ---------- -->
-            <div class="form-section">
-                <div class="form-section__title">
-                    <span class="form-section__emoji" aria-hidden="true">📏</span>
-                    Líneas
-                </div>
-
-                <div class="form-grid">
-                    <div class="form-grid__full">
-                        <label for="camara1_linea" class="field-label">Cámara</label>
-                        <select id="camara1_linea" name="camara1_linea" class="input border w-full" onchange="carga_foto_camara()">
-                            <option value="-">Selecciona Cámara</option>
-                            <?php foreach ($camaras as $c): ?>
-                                <option <?php if (isset($_GET["mostrar_foto"]) && $_GET["mostrar_foto"] == $c["id"]) { echo "selected='selected'"; } ?> value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <p class="text-xs text-gray-500 dark:text-gray-600 mt-2">
-                            Selecciona la cámara para capturar su foto y dibujar líneas sobre el plano.
-                        </p>
-                    </div>
-
-                    <div id="nombres_lineas_capa" class="form-grid__full">
-                    </div>
-
-                    <div class="form-grid__full">
-                        <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="guardar_lineas()">Guardar líneas</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ---------- Editar líneas ---------- -->
-            <div class="form-section">
-                <div class="form-section__title">
-                    <span class="form-section__emoji" aria-hidden="true">✏️</span>
-                    Editar líneas
-                </div>
-
-                <div class="form-grid">
-                    <div class="form-grid__full">
-                        <label for="editar_linea" class="field-label">Línea a editar</label>
-                        <select id="editar_linea" name="editar_linea" class="input border w-full" onchange="carga_foto_linea()">
-                            <option value="-">Selecciona Línea</option>
-                            <?php foreach ($lineas_edit as $l): ?>
-                                <option <?php if (isset($_GET["editar_linea"]) && $_GET["editar_linea"] == $l["id"] . "-" . $l["camara_id"]) { echo "selected='selected'"; } ?> value="<?= (int)$l["id"]; ?>-<?= (int)$l["camara_id"]; ?>"><?= htmlspecialchars($l["nombre"] . " - " . $l["descripcion"]); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="form-grid__full">
-                        <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="editar_linea1()">Guardar cambios</button>
-                    </div>
-                </div>
-            </div>
-
+            <?php include __DIR__ . "/tabs/tab_" . $tab . ".php"; ?>
         </div>
     </div>
 </div>
 
 <!-- ============ Modal: editor de croquis a mano alzada (tipo Paint) ============ -->
 <div id="planoDibujoModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="planoDibujoTitulo">
-    <div class="modal__content modal__content--xl box p-5">
+    <div class="modal__content box p-5">
         <div class="flex items-center mb-4">
             <h3 id="planoDibujoTitulo" class="media-modal__title mr-auto truncate">✏️ Dibujar croquis del local</h3>
-            <a href="javascript:;" onclick="cerrarDibujo()" class="button button--sm text-white bg-theme-6 ml-3">Cerrar</a>
+            <a href="javascript:;" data-dismiss="modal" class="button button--sm text-white bg-theme-6 ml-3">Cerrar</a>
         </div>
 
         <div class="dibujo-toolbar">
@@ -503,7 +184,7 @@ function rf_cfg_select_rango($ini, $fin, $valor) {
 
         <div class="mt-4 flex flex-wrap gap-2 items-center">
             <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="guardarDibujo()">Guardar como plano</button>
-            <a href="javascript:;" onclick="cerrarDibujo()" class="button text-white bg-theme-6 shadow-md">Cancelar</a>
+            <a href="javascript:;" data-dismiss="modal" class="button text-white bg-theme-6 shadow-md">Cancelar</a>
         </div>
     </div>
 </div>

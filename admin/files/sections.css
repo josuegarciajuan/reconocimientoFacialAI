@@ -446,6 +446,64 @@
   color: var(--mordor-humo);
 }
 
+/* --- Pestañas de sección (La Forja y futuras secciones) ---------- */
+.section-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.15rem;
+  border-bottom: 1px solid rgba(201, 162, 39, 0.18);
+  margin-bottom: 0.25rem;
+}
+
+.section-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 0.95rem;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  border-radius: 0.4rem 0.4rem 0 0;
+  font-family: "Cinzel", serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--mordor-humo);
+  text-decoration: none;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.section-tab__emoji {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.section-tab:hover {
+  color: var(--mordor-ceniza);
+  border-bottom-color: rgba(201, 162, 39, 0.35);
+}
+
+.section-tab.is-active {
+  color: var(--mordor-oro);
+  border-bottom-color: var(--mordor-oro);
+  background: linear-gradient(180deg, transparent, rgba(201, 162, 39, 0.08));
+}
+
+.section-tab:focus-visible {
+  outline: 2px solid rgba(255, 90, 31, 0.8);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .section-tabs {
+    gap: 0.1rem;
+  }
+  .section-tab {
+    padding: 0.55rem 0.7rem;
+    font-size: 0.76rem;
+  }
+}
+
 /* --- Modal de dibujo del croquis ---------------------------------- */
 .dibujo-toolbar {
   display: flex;
