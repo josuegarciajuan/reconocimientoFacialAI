@@ -186,6 +186,180 @@ function rf_glosario() {
             "match"      => "auto",
         ],
 
+        /* ---------------- Dashboard v2 (La Torre, rediseño 2026-08-19) ---------------- */
+        "estado-mordor" => [
+            "termino"    => "Estado de Mordor",
+            "significado" => "Resumen general del panel: el estado actual de Mordor de un vistazo (aforo, cámaras en pie, anomalías y vídeos de hoy).",
+            "match"      => "auto",
+        ],
+        "camino-mensajero" => [
+            "termino"    => "El Camino del Mensajero",
+            "significado" => "Los accesos directos del dashboard: atajos de un clic a las secciones más usadas (fichajes, cámaras, movimientos, pueblos…).",
+            "match"      => "auto",
+        ],
+        "vanguardia" => [
+            "termino"    => "La Vanguardia",
+            "significado" => "Las tarjetas KPI del dashboard: las métricas esenciales (entradas, aforo, fichajes, cámaras…) que se leen de un vistazo.",
+            "match"      => "auto",
+        ],
+        "almas-dentro-ahora" => [
+            "termino"    => "Almas dentro ahora",
+            "significado" => "Personas que están dentro del local en este momento: su último cruce de entrada es posterior a su última salida.",
+            "match"      => "auto",
+        ],
+        "legion-formacion" => [
+            "termino"    => "Legión en formación",
+            "significado" => "Trabajadores que ya han fichado hoy frente al total de trabajadores dados de alta en el local.",
+            "match"      => "auto",
+        ],
+        "camaras-ciegas" => [
+            "termino"    => "Cámaras ciegas",
+            "significado" => "Cámaras apagadas: el Ojo no vigila por ellas. Si hay alguna, hay que revisarla en 'El Ojo en Vivo'.",
+            "match"      => "auto",
+        ],
+        "hora-asedio" => [
+            "termino"    => "Hora del asedio",
+            "significado" => "La hora de hoy con más actividad (el pico de afluencia): cuándo se concentra la gente para prever aforo y turnos.",
+            "match"      => "auto",
+        ],
+        "pergaminos-ojo" => [
+            "termino"    => "Pergaminos del Ojo",
+            "significado" => "Los vídeos de movimiento grabados: cuántos se generaron hoy y cuánto espacio (GB) ocupan en disco.",
+            "match"      => "auto",
+        ],
+        "vigia-incansable" => [
+            "termino"    => "El vigía incansable",
+            "significado" => "La cámara más activa de hoy: la que más detecciones ha generado en lo que va de día.",
+            "match"      => "auto",
+        ],
+        "puerta-vs-camaras" => [
+            "termino"    => "La Puerta vs Las Cámaras",
+            "significado" => "Distribución de la actividad por cámara en el último mes: qué cámaras captan más movimiento (gráfico de anillo).",
+            "match"      => "auto",
+        ],
+        "fraguas-hora" => [
+            "termino"    => "Las Fraguas por Hora",
+            "significado" => "Mapa de calor de 7 días × 24 horas: la afluencia por día de la semana y hora, para ver los patrones de un vistazo.",
+            "match"      => "auto",
+        ],
+        "entradas-salidas" => [
+            "termino"    => "Entradas vs Salidas",
+            "significado" => "Comparativa de entradas (cámara de puerta) y salidas (cámara de salida) por hora de hoy.",
+            "match"      => "auto",
+        ],
+        "alcance-ojo" => [
+            "termino"    => "El Alcance del Ojo",
+            "significado" => "Las secciones de detalle del dashboard: feed en vivo, quién está dentro, quién falta por fichar y rankings.",
+            "match"      => "auto",
+        ],
+        "cronica-ojo-en-vivo" => [
+            "termino"    => "Crónica del Ojo en Vivo",
+            "significado" => "Feed en tiempo real con los últimos movimientos registrados: quién entra o sale, por qué cámara y con su foto.",
+            "match"      => "auto",
+        ],
+        "quien-esta-dentro" => [
+            "termino"    => "Quién está Dentro",
+            "significado" => "Lista de las personas que están ahora mismo dentro de la fortaleza, con su hora de entrada.",
+            "match"      => "auto",
+        ],
+        "falta-por-fichar" => [
+            "termino"    => "Falta por Fichar",
+            "significado" => "Trabajadores que todavía no han fichado hoy, según el horario habitual del local.",
+            "match"      => "auto",
+        ],
+        "concilio-fieles" => [
+            "termino"    => "El Concilio de los Fieles",
+            "significado" => "Rankings y glorias del mes: los visitantes más leales, el alma madrugadora y las rachas de presencia.",
+            "match"      => "auto",
+        ],
+        "los-mas-leales" => [
+            "termino"    => "Los más leales",
+            "significado" => "Ranking de los visitantes más frecuentes en los últimos 30 días (quién visita más la fortaleza).",
+            "match"      => "auto",
+        ],
+        "glorias-reino" => [
+            "termino"    => "Glorias del Reino",
+            "significado" => "Reconocimientos destacados: alma madrugadora de hoy, visitante más leal y rachas de presencia.",
+            "match"      => "auto",
+        ],
+        "profecia-afluencia" => [
+            "termino"    => "Profecía de Afluencia",
+            "significado" => "Previsión de afluencia de hoy (línea dorada) frente a la media de los mismos días de semana de las últimas 4 semanas.",
+            "match"      => "auto",
+        ],
+        "seis-centinelas" => [
+            "termino"    => "Los Seis Centinelas",
+            "significado" => "Los 6 procesos (daemons) del sistema: capturador, detector, clasificador, vinculador, conciliador y live. Si alguno cae, la vigilancia se resiente.",
+            "match"      => "auto",
+        ],
+        "fichajes-hoy" => [
+            "termino"    => "Fichajes de hoy",
+            "significado" => "Acceso directo al listado de fichajes ya filtrado al día de hoy.",
+            "match"      => "auto",
+        ],
+        "senal-alarma" => [
+            "termino"    => "Señales de alarma",
+            "significado" => "Alertas activas del dashboard: cámaras apagadas, aforo al límite o fichajes sin conciliar.",
+            "match"      => "auto",
+        ],
+
+        /* Dashboard v2 — términos explícitos (solo con data-lore) */
+        "caldero-aforo" => [
+            "termino"    => "Caldero de aforo",
+            "significado" => "Representa el aforo actual frente al máximo: la 'lava' sube según cuántas almas hay dentro.",
+            "match"      => "explicito",
+        ],
+        "semaforo-aforo" => [
+            "termino"    => "Semáforo de aforo",
+            "significado" => "Nivel de ocupación de la fortaleza: Tranquilo (verde, <60%), Animado (oro, 60-85%) o Asedio (rojo, >85%).",
+            "match"      => "explicito",
+        ],
+        "fijar-aforo" => [
+            "termino"    => "Fijar el aforo",
+            "significado" => "Actualizar manualmente el número de personas que hay dentro ahora (el aforo actual).",
+            "match"      => "explicito",
+        ],
+        "camaras-en-pie" => [
+            "termino"    => "Cámaras en pie",
+            "significado" => "Cámaras encendidas (operativas) frente al total de cámaras desplegadas.",
+            "match"      => "explicito",
+        ],
+        "anomalias-ojo" => [
+            "termino"    => "Anomalías del Ojo",
+            "significado" => "Alertas activas: cámaras apagadas, aforo al límite o fichajes provisionales sin conciliar de días anteriores.",
+            "match"      => "explicito",
+        ],
+        "el-vigia" => [
+            "termino"    => "El Vigía",
+            "significado" => "Daemon capturador (rf-capturador): detecta movimiento y graba los vídeos en H.264.",
+            "match"      => "explicito",
+        ],
+        "el-rastreador" => [
+            "termino"    => "El Rastreador",
+            "significado" => "Daemon detector (rf-detector): detecta cruces de línea y extrae las caras de los vídeos.",
+            "match"      => "explicito",
+        ],
+        "la-mirada" => [
+            "termino"    => "La Mirada",
+            "significado" => "Daemon clasificador (rf-clasificador): ingesta a la base de datos (personas, estancias y fotos).",
+            "match"      => "explicito",
+        ],
+        "el-atador" => [
+            "termino"    => "El Atador",
+            "significado" => "Daemon vinculador (rf-vinculador): enlaza los vídeos con las personas y los cruces de línea.",
+            "match"      => "explicito",
+        ],
+        "el-conciliador" => [
+            "termino"    => "El Conciliador",
+            "significado" => "Daemon conciliador (rf-conciliador): calcula y concilia los fichajes diarios según el horario del local.",
+            "match"      => "explicito",
+        ],
+        "el-mensajero" => [
+            "termino"    => "El Mensajero",
+            "significado" => "Daemon live (rf-live): sirve los snapshots en tiempo real para 'El Ojo en Vivo'.",
+            "match"      => "explicito",
+        ],
+
         /* ---------------- Notificaciones (Señales de Guerra) ---------------- */
         "senal-guerra" => [
             "termino"    => "Señales de Guerra",

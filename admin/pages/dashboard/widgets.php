@@ -298,12 +298,12 @@ function dash_daemon_estado($svc) {
 /** Lista de daemons con estado (los 6 centinelas). */
 function dash_daemons() {
     $lista = [
-        ["svc" => "rf-capturador",   "nombre" => "El Vigía",       "emoji" => "📡", "rol" => "Graba movimientos"],
-        ["svc" => "rf-detector",     "nombre" => "El Rastreador",  "emoji" => "🐺", "rol" => "Cruces + caras"],
-        ["svc" => "rf-clasificador", "nombre" => "La Mirada",      "emoji" => "👁️", "rol" => "Ingesta a la BD"],
-        ["svc" => "rf-vinculador",   "nombre" => "El Atador",      "emoji" => "⛓️", "rol" => "Vídeo ↔ personas"],
-        ["svc" => "rf-conciliador",  "nombre" => "El Conciliador", "emoji" => "⚖️", "rol" => "Fichajes diarios"],
-        ["svc" => "rf-live",         "nombre" => "El Mensajero",   "emoji" => "📯", "rol" => "Snapshots en vivo"],
+        ["svc" => "rf-capturador",   "nombre" => "El Vigía",       "emoji" => "📡", "rol" => "Graba movimientos", "lore" => "el-vigia"],
+        ["svc" => "rf-detector",     "nombre" => "El Rastreador",  "emoji" => "🐺", "rol" => "Cruces + caras",      "lore" => "el-rastreador"],
+        ["svc" => "rf-clasificador", "nombre" => "La Mirada",      "emoji" => "👁️", "rol" => "Ingesta a la BD",    "lore" => "la-mirada"],
+        ["svc" => "rf-vinculador",   "nombre" => "El Atador",      "emoji" => "⛓️", "rol" => "Vídeo ↔ personas",  "lore" => "el-atador"],
+        ["svc" => "rf-conciliador",  "nombre" => "El Conciliador", "emoji" => "⚖️", "rol" => "Fichajes diarios",  "lore" => "el-conciliador"],
+        ["svc" => "rf-live",         "nombre" => "El Mensajero",   "emoji" => "📯", "rol" => "Snapshots en vivo", "lore" => "el-mensajero"],
     ];
     foreach ($lista as &$d) {
         $st = dash_daemon_estado($d["svc"]);
@@ -443,7 +443,7 @@ function dash_daemons_html() {
     $daemons = dash_daemons();
     $out = "";
     foreach ($daemons as $d) {
-        $out .= '<div class="daemon-tile daemon-tile--' . $d["clase"] . '" data-svc="' . htmlspecialchars($d["svc"]) . '">'
+        $out .= '<div class="daemon-tile daemon-tile--' . $d["clase"] . '" data-svc="' . htmlspecialchars($d["svc"]) . '" data-lore="' . htmlspecialchars($d["lore"]) . '">'
             . '<span class="daemon-tile__led" aria-hidden="true"></span>'
             . '<div class="daemon-tile__emoji" aria-hidden="true">' . $d["emoji"] . '</div>'
             . '<div class="daemon-tile__name">' . htmlspecialchars($d["nombre"]) . '</div>'
