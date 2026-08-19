@@ -295,7 +295,7 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
             <!-- Caldero de aforo -->
             <div class="mordor-hero__gauge">
                 <div class="aforo-gauge aforo-gauge--<?= $aforo["estado"]; ?>" id="aforo-gauge">
-                    <div class="aforo-gauge__vessel" role="img" aria-label="Caldero de aforo">
+                    <div class="aforo-gauge__vessel" role="img" aria-label="Caldero de aforo" data-lore="caldero-aforo">
                         <div class="aforo-gauge__lava" id="aforo-lava" style="--nivel:<?= min(100, $aforo["pct"]); ?>%"></div>
                         <span class="aforo-gauge__tick aforo-gauge__tick--t1" aria-hidden="true"></span>
                         <span class="aforo-gauge__tick aforo-gauge__tick--t2" aria-hidden="true"></span>
@@ -305,14 +305,14 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
                     <div class="aforo-gauge__readout">
                         <div class="aforo-gauge__value tnum" id="aforo-actual"><?= (int)$aforo["actual"]; ?></div>
                         <div class="aforo-gauge__of">de <span id="aforo-max" class="tnum"><?= (int)$aforo["max"]; ?></span> plazas</div>
-                        <div class="aforo-gauge__sem" id="aforo-sem"><?php
+                        <div class="aforo-gauge__sem" id="aforo-sem" data-lore="semaforo-aforo"><?php
                             if ($aforo["estado"] === "full") { echo "🔴 Asedio · " . $aforo["pct"] . "%"; }
                             elseif ($aforo["estado"] === "warn") { echo "🟡 Animado · " . $aforo["pct"] . "%"; }
                             else { echo "🟢 Tranquilo · " . $aforo["pct"] . "%"; }
                         ?></div>
                         <div class="aforo-gauge__control">
                             <input type="number" id="aforo_input" class="input border w-24" min="0" placeholder="<?= (int)$aforo["actual"]; ?>" aria-label="Nuevo aforo actual de la fortaleza" title="Fijar el aforo actual">
-                            <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="dashCambiarAforo()">⚙️ Fijar</button>
+                            <button type="button" class="button text-white bg-theme-1 shadow-md" data-lore="fijar-aforo" onclick="dashCambiarAforo()">⚙️ Fijar</button>
                         </div>
                     </div>
                 </div>
@@ -325,22 +325,22 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
                 <p class="mordor-hero__saludo"><?= dash_saludo(); ?>, <strong><?= htmlspecialchars($usuario); ?></strong> — <?= htmlspecialchars(dash_fecha_larga()); ?> · <span id="dash-clock" class="tnum">--:--:--</span></p>
 
                 <div class="hero-kpis">
-                    <div class="hero-kpi">
+                    <div class="hero-kpi" data-lore="almas-dentro-ahora">
                         <span class="hero-kpi__emoji" aria-hidden="true">👁️</span>
                         <span class="hero-kpi__num tnum" id="hero-dentro"><?= $almas_dentro; ?></span>
                         <span class="hero-kpi__lbl">almas dentro</span>
                     </div>
-                    <div class="hero-kpi <?= $ciegas > 0 ? "hero-kpi--alerta" : ""; ?>">
+                    <div class="hero-kpi <?= $ciegas > 0 ? "hero-kpi--alerta" : ""; ?>" data-lore="camaras-en-pie">
                         <span class="hero-kpi__emoji" aria-hidden="true">📷</span>
                         <span class="hero-kpi__num tnum"><?= $total_camaras - $ciegas; ?>/<?= $total_camaras; ?></span>
                         <span class="hero-kpi__lbl">cámaras en pie</span>
                     </div>
-                    <div class="hero-kpi <?= $anomalias > 0 ? "hero-kpi--alerta" : ""; ?>">
+                    <div class="hero-kpi <?= $anomalias > 0 ? "hero-kpi--alerta" : ""; ?>" data-lore="anomalias-ojo">
                         <span class="hero-kpi__emoji" aria-hidden="true">🔥</span>
                         <span class="hero-kpi__num tnum"><?= $anomalias; ?></span>
                         <span class="hero-kpi__lbl">anomalías</span>
                     </div>
-                    <div class="hero-kpi">
+                    <div class="hero-kpi" data-lore="pergaminos-ojo">
                         <span class="hero-kpi__emoji" aria-hidden="true">🎞️</span>
                         <span class="hero-kpi__num tnum"><?= $videos_hoy; ?></span>
                         <span class="hero-kpi__lbl">vídeos hoy</span>
@@ -376,7 +376,7 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
                         <div class="ml-auto"><span class="tendencia-pill tendencia-pill--<?= $pct_entradas >= 0 ? "up" : "down"; ?>"><?= ($pct_entradas > 0 ? "+" : "") . $pct_entradas . "%"; ?></span></div>
                     </div>
                     <div class="kpi-number mt-4 tnum count-up" data-count="<?= $entradas_hoy; ?>"><?= $entradas_hoy; ?></div>
-                    <div class="kpi-label mt-1">Cruzaron la Puerta Negra <span class="kpi-sub">· <?= $salidas_hoy; ?> salieron · neto <?= ($entradas_hoy - $salidas_hoy) >= 0 ? "+" : ""; ?><?= $entradas_hoy - $salidas_hoy; ?></span></div>
+                    <div class="kpi-label mt-1" data-lore="cruzaron-puerta">Cruzaron la Puerta Negra <span class="kpi-sub">· <?= $salidas_hoy; ?> salieron · neto <?= ($entradas_hoy - $salidas_hoy) >= 0 ? "+" : ""; ?><?= $entradas_hoy - $salidas_hoy; ?></span></div>
                 </div>
             </div>
         </div>
