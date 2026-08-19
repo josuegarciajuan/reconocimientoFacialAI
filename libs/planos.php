@@ -69,6 +69,14 @@ function plano_dibujo_existe($local_id)
     return file_exists(plano_dir() . "plano_dibujo_" . (int)$local_id . ".png");
 }
 
+/** URL relativa del croquis dibujado ("" si no existe). */
+function plano_dibujo_url($local_id)
+{
+    $local_id = (int)$local_id;
+    $rel = "pages/config/planos/plano_dibujo_" . $local_id . ".png";
+    return file_exists(plano_dir() . $rel) ? $rel : "";
+}
+
 /** ¿Existe una imagen subida para este local? */
 function plano_subida_existe($local_id)
 {

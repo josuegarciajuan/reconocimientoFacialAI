@@ -33,9 +33,10 @@
     </form>
 
     <button type="button" class="button text-white bg-theme-1 shadow-md mt-3 w-full sm:w-auto" onclick="abrirDibujo()">
-        ✏️ Dibujar croquis a mano alzada
+        <?= $plano_dibujo_cfg ? "✏️ Editar croquis a mano alzada" : "✏️ Dibujar croquis a mano alzada"; ?>
     </button>
     <p class="text-xs text-gray-500 dark:text-gray-600 mt-1">
         Abre un editor tipo Paint: dibuja con el ratón y guárdalo como plano del local (se guarda aparte de la imagen subida).
+        <?= $plano_dibujo_cfg ? "Ya tienes un croquis: se cargará al abrir para poder retocarlo o borrarlo." : ""; ?>
     </p>
 </div>

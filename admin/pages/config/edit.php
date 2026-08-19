@@ -206,6 +206,7 @@ $hint = $hints[$hint_key] ?? $hints[$tab . "/crear"] ?? "Usa el panel de la izqu
         </div>
         <p class="text-xs text-gray-500 dark:text-gray-600 mt-2">
             Dibuja a mano alzada con el ratón como en Paint. Al guardar, el croquis se guarda aparte de la imagen subida y podrás elegir cuál usar con las pestañas de arriba.
+            <?= $plano_dibujo_cfg ? " Si ya tienes un croquis, se carga automáticamente al abrir para que puedas seguir editándolo (añadir trazos o borrar)." : ""; ?>
         </p>
 
         <div class="mt-4 flex flex-wrap gap-2 items-center">
