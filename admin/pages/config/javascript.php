@@ -7,10 +7,15 @@
  */
 
 require_once __DIR__ . "/../../../libs/db.php";
+require_once __DIR__ . "/../../../libs/planos.php";
 $cams = DB::select("SELECT * FROM camaras WHERE local_id = ?", [(int)($_SESSION["local_id"] ?? 0)]);
+$plano_activo_url = plano_url((int)($_SESSION["local_id"] ?? 0));
 ?>
 
 <script>
+
+var PLANO_ACTIVO_URL = <?= json_encode($plano_activo_url ?? ""); ?>;
+var LOCAL_ID = <?= (int)($_SESSION["local_id"] ?? 0); ?>;
 
 var x_lineas=[];
 var y_lineas=[];
@@ -28,7 +33,7 @@ window.onload=function(){
     
     console.log("->window.onload<-");
     
-    let canvasElem = document.querySelector("canvas");
+    let canvasElem = document.getElementById("canvasID");
 
      
     var ctx = canvasElem.getContext("2d");
@@ -105,44 +110,41 @@ window.onload=function(){
         <?php
         }
     }else{
-   
-        
-        for($i=0;$i<count($extensiones);$i++){
-            if(file_exists("pages/config/planos/plano_".$_SESSION["local_id"].".".$extensiones[$i])){
-                ?>
-                    img.src = "<?= "pages/config/planos/plano_".$_SESSION["local_id"].".".$extensiones[$i]; ?>";
-                    img.onload = function(){
-                        ctx.drawImage(img, 0, 0,<?= CANVAS_WIDTH ?>, <?= CANVAS_HEIGHT; ?>);
+        ?>
+        //plano de fondo: el activo (imagen subida o croquis dibujado), resuelto en libs/planos.php
+        function pintarCamarasYNodos(ctx){
+            ctx.fillStyle = "#D22829";
+            ctx.font = "10px Arial";
+            <?php
+            $ids_camaras = array_column($cams, "id");
+            foreach ($cams as $cam): ?>
+                ctx.fillRect(<?= (int)$cam["x"]; ?>,<?= (int)$cam["y"]; ?>,10,10);
+                ctx.fillText("<?= htmlspecialchars($cam["descripcion"]); ?>", <?= (int)$cam["x"]; ?>  ,<?= (int)$cam["y"]; ?> );
+            <?php endforeach; ?>
 
-
-                        //pintar las camaras existentes en azul
-                        ctx.fillStyle = "#D22829";
-                        ctx.font = "10px Arial";
-                        <?php
-                        $ids_camaras = array_column($cams, "id");
-                        foreach ($cams as $cam): ?>
-                            ctx.fillRect(<?= (int)$cam["x"]; ?>,<?= (int)$cam["y"]; ?>,10,10);
-                            ctx.fillText("<?= htmlspecialchars($cam["descripcion"]); ?>", <?= (int)$cam["x"]; ?>  ,<?= (int)$cam["y"]; ?> );
-                        <?php endforeach; ?>
-
-                        ctx.fillStyle = "#2596be";
-                        <?php
-                        if ($ids_camaras) {
-                            $in = implode(",", array_fill(0, count($ids_camaras), "?"));
-                            $params = array_merge($ids_camaras, $ids_camaras);
-                            $nodos = DB::select("SELECT x, y FROM nodos WHERE camara_id1 IN ($in) OR camara_id2 IN ($in)", $params);
-                            foreach ($nodos as $n): ?>
-                                ctx.fillRect(<?= (int)$n["x"]; ?>,<?= (int)$n["y"]; ?>,10,10);
-                            <?php endforeach;
-                        }
-                        ?>
-
-
-                      }
-                <?php        
+            ctx.fillStyle = "#2596be";
+            <?php
+            if ($ids_camaras) {
+                $in = implode(",", array_fill(0, count($ids_camaras), "?"));
+                $params = array_merge($ids_camaras, $ids_camaras);
+                $nodos = DB::select("SELECT x, y FROM nodos WHERE camara_id1 IN ($in) OR camara_id2 IN ($in)", $params);
+                foreach ($nodos as $n): ?>
+                    ctx.fillRect(<?= (int)$n["x"]; ?>,<?= (int)$n["y"]; ?>,10,10);
+                <?php endforeach;
             }
+            ?>
         }
-        
+
+        if (PLANO_ACTIVO_URL) {
+            img.src = PLANO_ACTIVO_URL;
+            img.onload = function(){
+                ctx.drawImage(img, 0, 0, <?= CANVAS_WIDTH ?>, <?= CANVAS_HEIGHT; ?>);
+                pintarCamarasYNodos(ctx);
+            };
+        } else {
+            pintarCamarasYNodos(ctx);
+        }
+        <?php
     }    
         ?>
     
@@ -337,7 +339,7 @@ function seleccionar_camara(){
     
     if(!activar_seleccionador){
         activar_seleccionador=true;
-        let canvasElem = document.querySelector("canvas");
+        let canvasElem = document.getElementById("canvasID");
         canvasElem.addEventListener('mousedown', function(e) {
             getCursorPosition(canvasElem, e)
         });
@@ -448,7 +450,7 @@ function meter_nodos(){
     activa_meter_nodos++;
     if(activa_meter_nodos==2){
         
-        let canvasElem = document.querySelector("canvas");
+        let canvasElem = document.getElementById("canvasID");
         canvasElem.addEventListener('mousedown', function(e) {
             meter_nodos_fisicos(canvasElem, e)
         });
@@ -692,6 +694,279 @@ function editar_linea1(){
    location.href=url; 
     
     
+}
+
+
+/* =========================================================================
+ * Editor de croquis a mano alzada (tipo Paint) — plano_dibujo_<local>.png
+ * El lienzo es fijo (CANVAS_WIDTH x CANVAS_HEIGHT) para que las coordenadas
+ * coincidan con el sistema de píxeles que usan cámaras/nodos.
+ * Los trazos se pintan en una capa aparte (off-screen) para poder usar
+ * borrador con composición real y deshacer/limpiar sin perder el fondo.
+ * ========================================================================= */
+var dibujo = {
+    abierto: false,
+    canvas: null,
+    ctx: null,
+    capa: null,      // off-screen con los trazos (borrador = destination-out)
+    capaCtx: null,
+    fondo: null,     // Image con el plano actual (referencia para calcar)
+    dibujando: false,
+    ultimo: null,
+    color: "#1e1e1e",
+    grosor: 3,
+    borrador: false,
+    trazos: []       // [{pts:[{x,y}], color, grosor, borrador}]
+};
+
+function dibujoCoord(e) {
+    var rect = dibujo.canvas.getBoundingClientRect();
+    return {
+        x: (e.clientX - rect.left) * dibujo.canvas.width / rect.width,
+        y: (e.clientY - rect.top) * dibujo.canvas.height / rect.height
+    };
+}
+
+function dibujoRedibujar() {
+    var ctx = dibujo.ctx;
+    var w = dibujo.canvas.width, h = dibujo.canvas.height;
+
+    // lienzo base blanco
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, w, h);
+
+    // fondo de referencia (plano actual), al 45% para que el trazo se vea
+    if (dibujo.fondo && document.getElementById("dibujoFondo").checked) {
+        ctx.save();
+        ctx.globalAlpha = 0.45;
+        ctx.drawImage(dibujo.fondo, 0, 0, w, h);
+        ctx.restore();
+    }
+
+    // capa de trazos
+    var capaCtx = dibujo.capaCtx;
+    capaCtx.clearRect(0, 0, w, h);
+    for (var i = 0; i < dibujo.trazos.length; i++) {
+        dibujoPintarTrazo(capaCtx, dibujo.trazos[i]);
+    }
+    ctx.drawImage(dibujo.capa, 0, 0);
+}
+
+function dibujoPintarTrazo(ctx, trazo) {
+    if (!trazo.pts.length) return;
+    ctx.save();
+    ctx.strokeStyle = trazo.borrador ? "#ffffff" : trazo.color;
+    ctx.lineWidth = trazo.borrador ? trazo.grosor * 2 : trazo.grosor;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    if (trazo.borrador) {
+        ctx.globalCompositeOperation = "destination-out";
+    }
+    ctx.beginPath();
+    ctx.moveTo(trazo.pts[0].x, trazo.pts[0].y);
+    for (var i = 1; i < trazo.pts.length; i++) {
+        ctx.lineTo(trazo.pts[i].x, trazo.pts[i].y);
+    }
+    ctx.stroke();
+    ctx.restore();
+}
+
+function dibujoTrazoNuevo(p) {
+    return { pts: [p], color: dibujo.color, grosor: dibujo.grosor, borrador: dibujo.borrador };
+}
+
+function dibujoToggleBorrador() {
+    dibujo.borrador = !dibujo.borrador;
+    document.getElementById("dibujoBorrador").classList.toggle("is-activo", dibujo.borrador);
+}
+
+function dibujoDeshacer() {
+    dibujo.trazos.pop();
+    dibujoRedibujar();
+}
+
+function dibujoLimpiar() {
+    if (!confirm("¿Borrar todo el croquis y empezar de nuevo?")) return;
+    dibujo.trazos = [];
+    dibujoRedibujar();
+}
+
+function cargarDibujoFondo() {
+    var usaFondo = document.getElementById("dibujoFondo").checked;
+    if (usaFondo && PLANO_ACTIVO_URL) {
+        var img = new Image();
+        img.onload = function () {
+            dibujo.fondo = img;
+            dibujoRedibujar();
+        };
+        img.onerror = function () {
+            dibujo.fondo = null;
+            dibujoRedibujar();
+        };
+        img.src = PLANO_ACTIVO_URL;
+    } else {
+        dibujo.fondo = null;
+        dibujoRedibujar();
+    }
+}
+
+function abrirDibujo() {
+    dibujo.canvas = document.getElementById("canvasDibujo");
+    dibujo.ctx = dibujo.canvas.getContext("2d");
+
+    if (!dibujo.capa) {
+        dibujo.capa = document.createElement("canvas");
+        dibujo.capa.width = dibujo.canvas.width;
+        dibujo.capa.height = dibujo.canvas.height;
+        dibujo.capaCtx = dibujo.capa.getContext("2d");
+    }
+
+    dibujo.trazos = [];
+    dibujo.borrador = false;
+    document.getElementById("dibujoBorrador").classList.remove("is-activo");
+    document.getElementById("dibujoGrosor").value = 3;
+    document.getElementById("dibujoGrosorVal").textContent = 3;
+    dibujo.grosor = 3;
+    document.getElementById("dibujoFondo").checked = true;
+
+    cargarDibujoFondo();
+    dibujoRedibujar();
+    dibujo.abierto = true;
+    if (typeof rfAbrirModal === "function") {
+        rfAbrirModal("planoDibujoModal");
+    } else {
+        document.getElementById("planoDibujoModal").style.display = "block";
+    }
+}
+
+function cerrarDibujo() {
+    dibujo.abierto = false;
+    var modal = document.getElementById("planoDibujoModal");
+    var cerrar = modal.querySelector('[data-dismiss="modal"]');
+    if (cerrar) {
+        cerrar.click();
+    } else {
+        modal.style.display = "none";
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    var canvas = document.getElementById("canvasDibujo");
+    if (!canvas) return;
+
+    var color = document.getElementById("dibujoColor");
+    var grosor = document.getElementById("dibujoGrosor");
+
+    color.addEventListener("input", function () {
+        dibujo.color = color.value;
+        dibujo.borrador = false;
+        document.getElementById("dibujoBorrador").classList.remove("is-activo");
+    });
+    grosor.addEventListener("input", function () {
+        dibujo.grosor = parseInt(grosor.value, 10) || 3;
+        document.getElementById("dibujoGrosorVal").textContent = dibujo.grosor;
+    });
+    document.getElementById("dibujoFondo").addEventListener("change", cargarDibujoFondo);
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && dibujo.abierto) {
+            cerrarDibujo();
+        }
+    });
+
+    canvas.addEventListener("mousedown", function (e) {
+        if (!dibujo.abierto) return;
+        dibujo.dibujando = true;
+        dibujo.ultimo = dibujoCoord(e);
+        dibujo.trazos.push(dibujoTrazoNuevo(dibujo.ultimo));
+        // repintar toda la capa (trazos anteriores + el nuevo punto inicial)
+        dibujo.capaCtx.clearRect(0, 0, dibujo.canvas.width, dibujo.canvas.height);
+        for (var i = 0; i < dibujo.trazos.length; i++) {
+            dibujoPintarTrazo(dibujo.capaCtx, dibujo.trazos[i]);
+        }
+        dibujo.ctx.drawImage(dibujo.capa, 0, 0);
+    });
+
+    canvas.addEventListener("mousemove", function (e) {
+        if (!dibujo.abierto || !dibujo.dibujando) return;
+        var p = dibujoCoord(e);
+        var trazo = dibujo.trazos[dibujo.trazos.length - 1];
+        // el trazo se pinta incremental: línea desde el último punto al actual
+        dibujo.capaCtx.save();
+        dibujo.capaCtx.strokeStyle = trazo.borrador ? "#ffffff" : trazo.color;
+        dibujo.capaCtx.lineWidth = trazo.borrador ? trazo.grosor * 2 : trazo.grosor;
+        dibujo.capaCtx.lineCap = "round";
+        dibujo.capaCtx.lineJoin = "round";
+        if (trazo.borrador) {
+            dibujo.capaCtx.globalCompositeOperation = "destination-out";
+        }
+        dibujo.capaCtx.beginPath();
+        dibujo.capaCtx.moveTo(dibujo.ultimo.x, dibujo.ultimo.y);
+        dibujo.capaCtx.lineTo(p.x, p.y);
+        dibujo.capaCtx.stroke();
+        dibujo.capaCtx.restore();
+        trazo.pts.push(p);
+        dibujo.ultimo = p;
+        // componer: fondo + capa
+        var ctx = dibujo.ctx;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, dibujo.canvas.width, dibujo.canvas.height);
+        if (dibujo.fondo && document.getElementById("dibujoFondo").checked) {
+            ctx.save();
+            ctx.globalAlpha = 0.45;
+            ctx.drawImage(dibujo.fondo, 0, 0, dibujo.canvas.width, dibujo.canvas.height);
+            ctx.restore();
+        }
+        ctx.drawImage(dibujo.capa, 0, 0);
+    });
+
+    canvas.addEventListener("mouseup", function () {
+        dibujo.dibujando = false;
+    });
+    canvas.addEventListener("mouseleave", function () {
+        dibujo.dibujando = false;
+    });
+
+    // Pestañas: si el destino no tiene archivo, no navegar.
+    document.querySelectorAll(".rf-tab.is-empty").forEach(function (tab) {
+        tab.addEventListener("click", function (e) {
+            e.preventDefault();
+            alert("Ese plano todavía no existe. Súbelo o dibújalo primero.");
+        });
+    });
+});
+
+function guardarDibujo() {
+    if (!dibujo.abierto) return;
+    // El contenido visible (fondo + trazos) es exactamente lo que se guarda.
+    var dataURL = dibujo.canvas.toDataURL("image/png");
+
+    var fd = new FormData();
+    fd.append("plano_dibujo", dataURL);
+
+    fetch("?page=config&accion=plano_dibujo", {
+        method: "POST",
+        body: fd
+    })
+    .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        if (res.redirected) {
+            // El servidor redirige a ?page=config tras guardar: éxito.
+            location.href = "?page=config";
+            return null;
+        }
+        return res.text();
+    })
+    .then(function (txt) {
+        if (txt === null) return;
+        if (txt.indexOf("Error") !== -1) {
+            alert(txt);
+            return;
+        }
+        location.href = "?page=config";
+    })
+    .catch(function (err) {
+        alert("No se pudo guardar el croquis: " + err.message);
+    });
 }
 
 </script>

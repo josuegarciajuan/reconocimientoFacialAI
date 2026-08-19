@@ -10,6 +10,11 @@
  */
 
 require_once __DIR__ . "/../../../libs/db.php";
+require_once __DIR__ . "/../../../libs/planos.php";
+$local_id_cfg = (int)($_SESSION["local_id"] ?? 0);
+$plano_act_cfg = plano_activo($local_id_cfg);
+$plano_subida_cfg = plano_subida_existe($local_id_cfg);
+$plano_dibujo_cfg = plano_dibujo_existe($local_id_cfg);
 $camaras = DB::select("SELECT * FROM camaras WHERE local_id = ?", [(int)($_SESSION["local_id"] ?? 0)]);
 $lineas_edit = DB::select(
     "SELECT l.*, c.descripcion FROM lineas l JOIN camaras c ON c.id = l.camara_id WHERE c.local_id = ?",
@@ -89,6 +94,19 @@ function rf_cfg_select_rango($ini, $fin, $valor) {
                     Plano del local
                 </div>
 
+                <!-- Pestañas: qué plano se usa como fondo (imagen subida o croquis dibujado) -->
+                <div class="rf-tabs" role="tablist" aria-label="Plano en uso">
+                    <a role="tab" aria-selected="<?= $plano_act_cfg === "subida" ? "true" : "false"; ?>"
+                       class="rf-tab<?= $plano_act_cfg === "subida" ? " is-active" : ""; ?><?= !$plano_subida_cfg ? " is-empty" : ""; ?>"
+                       href="?page=config&accion=plano_activo&tipo=subida">Imagen subida</a>
+                    <a role="tab" aria-selected="<?= $plano_act_cfg === "dibujo" ? "true" : "false"; ?>"
+                       class="rf-tab<?= $plano_act_cfg === "dibujo" ? " is-active" : ""; ?><?= !$plano_dibujo_cfg ? " is-empty" : ""; ?>"
+                       href="?page=config&accion=plano_activo&tipo=dibujo">Croquis dibujado</a>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-600 mt-1 mb-3">
+                    El plano marcado es el que se muestra como fondo aquí y en Rutas. La pestaña sin archivo todavía no puede activarse.
+                </p>
+
                 <form action="?page=config&accion=plano" method="POST" enctype="multipart/form-data" name="formplano" id="formplano">
                     <label for="plano" class="field-label">Imagen del plano</label>
                     <div class="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
@@ -96,6 +114,13 @@ function rf_cfg_select_rango($ini, $fin, $valor) {
                         <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="cargarplano()">Cargar plano</button>
                     </div>
                 </form>
+
+                <button type="button" class="button text-white bg-theme-1 shadow-md mt-3 w-full sm:w-auto" onclick="abrirDibujo()">
+                    ✏️ Dibujar croquis a mano alzada
+                </button>
+                <p class="text-xs text-gray-500 dark:text-gray-600 mt-1">
+                    Abre un editor tipo Paint: dibuja con el ratón y guárdalo como plano del local (se guarda aparte de la imagen subida).
+                </p>
 
                 <div class="plan-wrap mt-4">
                     <canvas id="canvasID" width="<?= CANVAS_WIDTH; ?>" height="<?= CANVAS_HEIGHT; ?>"
@@ -439,6 +464,46 @@ function rf_cfg_select_rango($ini, $fin, $valor) {
                 </div>
             </div>
 
+        </div>
+    </div>
+</div>
+
+<!-- ============ Modal: editor de croquis a mano alzada (tipo Paint) ============ -->
+<div id="planoDibujoModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="planoDibujoTitulo">
+    <div class="modal__content box p-5">
+        <div class="flex items-center mb-4">
+            <h3 id="planoDibujoTitulo" class="media-modal__title mr-auto truncate">✏️ Dibujar croquis del local</h3>
+            <a href="javascript:;" data-dismiss="modal" class="button button--sm text-white bg-theme-6 ml-3">Cerrar</a>
+        </div>
+
+        <div class="dibujo-toolbar">
+            <label class="dibujo-tool" title="Color del trazo">
+                <span class="field-label">Color</span>
+                <input type="color" id="dibujoColor" value="#1e1e1e" class="dibujo-color">
+            </label>
+            <label class="dibujo-tool" title="Grosor del trazo">
+                <span class="field-label">Grosor <span id="dibujoGrosorVal">3</span></span>
+                <input type="range" id="dibujoGrosor" min="1" max="24" value="3" class="dibujo-rango">
+            </label>
+            <button type="button" id="dibujoBorrador" class="button text-white bg-theme-2 shadow-md dibujo-btn" onclick="dibujoToggleBorrador()">Borrador</button>
+            <button type="button" class="button text-white bg-theme-2 shadow-md dibujo-btn" onclick="dibujoDeshacer()">Deshacer</button>
+            <button type="button" class="button text-white bg-theme-6 shadow-md dibujo-btn" onclick="dibujoLimpiar()">Limpiar todo</button>
+            <label class="dibujo-tool dibujo-fondo" title="Dibuja sobre el plano actual como referencia">
+                <input type="checkbox" id="dibujoFondo" checked>
+                <span class="text-xs text-gray-500 dark:text-gray-600">Fondo: plano actual</span>
+            </label>
+        </div>
+
+        <div class="dibujo-lienzo-wrap">
+            <canvas id="canvasDibujo" width="<?= CANVAS_WIDTH; ?>" height="<?= CANVAS_HEIGHT; ?>" class="border border-gray-700 dibujo-lienzo"></canvas>
+        </div>
+        <p class="text-xs text-gray-500 dark:text-gray-600 mt-2">
+            Dibuja a mano alzada con el ratón como en Paint. Al guardar, el croquis se guarda aparte de la imagen subida y podrás elegir cuál usar con las pestañas de arriba.
+        </p>
+
+        <div class="mt-4 flex flex-wrap gap-2 items-center">
+            <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="guardarDibujo()">Guardar como plano</button>
+            <a href="javascript:;" data-dismiss="modal" class="button text-white bg-theme-6 shadow-md">Cancelar</a>
         </div>
     </div>
 </div>

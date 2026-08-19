@@ -6,8 +6,12 @@
  */
 
 require_once __DIR__ . "/../../../libs/db.php";
+require_once __DIR__ . "/../../../libs/planos.php";
 
-$extensiones = ["jpg", "jpeg", "png", "bmp"];
+$extensiones = plano_extensiones();
+
+/* Local de la sesión (con fallback defensivo). */
+$local_id = (int)($_SESSION["local_id"] ?? 0);
 
 switch ($_GET["accion"]) {
     case "crear":
@@ -55,7 +59,7 @@ switch ($_GET["accion"]) {
 
     case "plano":
         foreach ($extensiones as $ext) {
-            $p = "pages/config/planos/plano_" . $_SESSION["local_id"] . "." . $ext;
+            $p = "pages/config/planos/plano_" . $local_id . "." . $ext;
             if (file_exists($p)) {
                 unlink($p);
             }
@@ -63,11 +67,49 @@ switch ($_GET["accion"]) {
         $fileName = $_FILES['plano']['name'];
         $fileNameCmps = explode(".", $fileName);
         $fileExtension = strtolower(end($fileNameCmps));
-        if (move_uploaded_file($_FILES['plano']['tmp_name'], "pages/config/planos/plano_" . $_SESSION["local_id"] . "." . $fileExtension)) {
+        if (!is_dir("pages/config/planos")) {
+            @mkdir("pages/config/planos", 0777, true);
+        }
+        if (move_uploaded_file($_FILES['plano']['tmp_name'], "pages/config/planos/plano_" . $local_id . "." . $fileExtension)) {
+            DB::execute("UPDATE locales SET plano_activo = 'subida' WHERE id = ?", [$local_id]);
             echo 'File is successfully uploaded.';
         } else {
             echo 'There was some error moving the file.';
         }
+        break;
+
+    /* Croquis dibujado a mano alzada: recibe un dataURL PNG (canvas.toDataURL). */
+    case "plano_dibujo":
+        $data = $_POST["plano_dibujo"] ?? "";
+        if (preg_match('#^data:image/png;base64,(.+)$#s', $data, $m)) {
+            $bin = base64_decode($m[1]);
+            if ($bin !== false && strlen($bin) > 100) {
+                $dibujo = "pages/config/planos/plano_dibujo_" . $local_id . ".png";
+                if (!is_dir("pages/config/planos")) {
+                    @mkdir("pages/config/planos", 0777, true);
+                }
+                if (file_put_contents($dibujo, $bin) !== false) {
+                    DB::execute("UPDATE locales SET plano_activo = 'dibujo' WHERE id = ?", [$local_id]);
+                    header("Location: ?page=config");
+                    exit;
+                }
+            }
+        }
+        echo "Error: no se pudo guardar el croquis dibujado.";
+        break;
+
+    /* Cambiar qué plano se usa como fondo (imagen subida o croquis dibujado). */
+    case "plano_activo":
+        $tipo = ($_GET["tipo"] ?? "") === "dibujo" ? "dibujo" : "subida";
+        // Solo permitimos marcar como activo un plano que realmente existe.
+        $existe = ($tipo === "dibujo")
+            ? plano_dibujo_existe($local_id)
+            : (bool)plano_subida_existe($local_id);
+        if ($existe) {
+            DB::execute("UPDATE locales SET plano_activo = ? WHERE id = ?", [$tipo, $local_id]);
+        }
+        header("Location: ?page=config");
+        exit;
         break;
 
     case "eliminar_nodos":
