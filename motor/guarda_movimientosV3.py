@@ -61,6 +61,13 @@ try:
         pass
 except Exception:
     pass
+# Mismo criterio para el stderr de ffmpeg (motor/logs/ffmpeg_<cam>.log):
+# conserva solo la última ventana del worker, suficiente para diagnóstico.
+try:
+    with open('motor/logs/ffmpeg_'+CAMARA_ID+'.log','w') as _f:
+        pass
+except Exception:
+    pass
 segundos_analizar=int(sys.argv[3])  #cuanto mas segundos movs mas largos detecta los peqños los descarta por lo qe influira la sensibiliafda
 porcentaje_mov=int(sys.argv[4]) #de este campo puede depender la sensibilidad
 dontCare = int(sys.argv[5]) #Area of the detected contour, below this value it's not counted as detected   (tambien influye en la sensibilidad)
