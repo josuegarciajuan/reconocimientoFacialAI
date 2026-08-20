@@ -189,7 +189,10 @@ class Config:
     torso_h_face: float = 2.0           # alto del crop de torso (desde la barbilla) en veces la cara
 
     # --- F7: identificar de espaldas (crops de cuerpo sin cara) ---
-    body_match_conf: float = 0.9        # confianza mínima (torso+VLM) para asignar un cuerpo
+    body_match_conf: float = 0.9        # OBSOLETO: sin uso lógico (la decisión F7
+                                        # usa fuse() + gray_high + conf>=0.35 en
+                                        # fusion._decide_body). Se conserva por
+                                        # compat; pendiente de eliminar.
 
     # --- VLM local (F4, L2) — Ollama, UN solo worker compartido ---
     # Nota: el registro de Ollama ya no ofrece qwen2-vl:4b; se usa qwen2.5vl:3b
