@@ -10,6 +10,9 @@ ExecStart=/usr/bin/php /root/reconocimientoFacial/detector.php
 Restart=always
 RestartSec=5
 User=root
+# Prioridad de CPU BAJA (Tier 2/3, diferible): clasificador.py y procesa_video
+# heredan Nice=10, por debajo de los capturadores en tiempo real (Nice=-10).
+Nice=10
 # Tope de memoria del cgroup (detector + 12 clasificadores + procesa_video):
 # si se supera, el OOM killer actúa DENTRO de rf (reinicia el clasificador más
 # grande) y nunca mata procesos de autotube. Ajustable a la RAM de la máquina.
