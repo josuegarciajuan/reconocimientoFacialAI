@@ -32,6 +32,18 @@ def embedding_hash(emb: np.ndarray) -> str:
     return hashlib.sha256(np.asarray(emb, dtype=np.float32).tobytes()).hexdigest()
 
 
+def _ls_pair(v) -> tuple[float, float]:
+    """(score, confidence) de un LayerScore O de un dict {"s":..,"c":..}.
+
+    El clasificador pasa `result.layer_scores` (valores LayerScore); los tests
+    y el formato persistido usan dicts. Sin esto, log_decision crasheaba con
+    LayerScore (bug latente: antes layers siempre era {} y nunca se recorría).
+    """
+    if isinstance(v, dict):
+        return float(v.get("score", 0.0)), float(v.get("confidence", 0.0))
+    return float(getattr(v, "score", 0.0)), float(getattr(v, "confidence", 0.0))
+
+
 class FeedbackCollector:
     def __init__(self, ruta: str, local_id: str, enabled: bool = True):
         self.dir = os.path.join(ruta, "motor/feedback", str(local_id))
@@ -62,10 +74,17 @@ class FeedbackCollector:
             "top2": entry.get("top2"),
             "best": entry.get("best"),
             "second": entry.get("second"),
-            "layers": {k: {"s": float(v.get("score", 0.0)), "c": float(v.get("confidence", 0.0))}
-                       for k, v in (entry.get("layers") or {}).items()},
+            "layers": {k: {"s": s, "c": c}
+                       for k, v in (entry.get("layers") or {}).items()
+                       for s, c in [_ls_pair(v)]},
             "query_hash": entry.get("query_hash"),
             "stem": entry.get("stem"),
+            # F4: situación del query para calibración condicionada a la pose.
+            "situation": {
+                "pose": entry.get("pose"),
+                "sharpness": float(entry.get("sharpness", 0.0) or 0.0),
+                "has_face": bool(entry.get("has_face", True)),
+            },
         }
         self._append(self.decisions_path, e)
 
@@ -99,6 +118,15 @@ class FeedbackCollector:
     def export_matrix(self) -> tuple[np.ndarray, np.ndarray]:
         """(X, y) para la calibración: features por capa + etiqueta humana.
 
+        Retro-compatible: ver export_matrix_with_situations para la variante
+        con la situación (pose) de cada decisión.
+        """
+        X, y, _ = self.export_matrix_with_situations()
+        return X, y
+
+    def export_matrix_with_situations(self) -> tuple[np.ndarray, np.ndarray, list[str]]:
+        """(X, y, situ): features + etiqueta + clase de situación de cada fila.
+
         Regla de etiquetado:
           + merge(a, b): decisiones cuyo candidato final (person/top1) pertenece
             a {a, b} y el otro de {a, b} estaba en top1/top2 -> el par era
@@ -109,7 +137,7 @@ class FeedbackCollector:
         decisions = self._read_jsonl(self.decisions_path)
         labels = self._read_jsonl(self.labels_path)
         if not decisions or not labels:
-            return np.zeros((0, len(FEATURE_NAMES))), np.zeros(0, dtype=np.int64)
+            return (np.zeros((0, len(FEATURE_NAMES))), np.zeros(0, dtype=np.int64), [])
 
         merge_sets: list[set[str]] = []
         impostors: set[str] = set()
@@ -121,6 +149,7 @@ class FeedbackCollector:
 
         X: list[list[float]] = []
         y: list[int] = []
+        situ: list[str] = []
         for d in decisions:
             feats = _features(d)
             if feats is None:
@@ -138,7 +167,9 @@ class FeedbackCollector:
             if label is not None:
                 X.append(feats)
                 y.append(label)
-        return np.asarray(X, dtype=np.float64), np.asarray(y, dtype=np.int64)
+                sit = (d.get("situation") or {})
+                situ.append(sit.get("pose") or "otro")
+        return np.asarray(X, dtype=np.float64), np.asarray(y, dtype=np.int64), situ
 
 
 def _features(d: dict) -> list[float] | None:

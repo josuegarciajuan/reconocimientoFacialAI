@@ -260,6 +260,25 @@ class _CascadeCtx:
         c = float(np.clip(0.6 * pconf + 0.4 * sil, 0.0, 1.0))
         return LayerScore(score=float(s_face), confidence=c, available=True)
 
+    # --- L1c (reenfoque): silueta geométrica como SCORE propio ---
+    # En perfil/ángulos raros es CO-AUTORIDAD: debe superar silueta_min_score
+    # para confirmar el acuerdo. Antes solo modulaba la confianza de zonas.
+    def silueta_score(self, cod: str) -> LayerScore:
+        from motor.core.zones import silhouette_descriptor, silhouette_sim
+        if not self.cfg.silueta_enabled:
+            return LayerScore(available=False)
+        if self.rep_face is None or getattr(self.rep_face, "landmarks", None) is None:
+            return LayerScore(available=False)
+        cand_face = self._candidate_face(cod)
+        if cand_face is None or getattr(cand_face, "landmarks", None) is None:
+            return LayerScore(available=False)
+        a = silhouette_descriptor(self.rep_face)
+        b = silhouette_descriptor(cand_face)
+        if not a.size or not b.size:
+            return LayerScore(available=False)
+        sil = silhouette_sim(a, b)
+        return LayerScore(score=float(sil), confidence=float(sil), available=True)
+
     def _candidate_face(self, cod: str):
         """Primera cara de la foto representativa del candidato (para silueta)."""
         from motor.core.photos import find_person_photos
@@ -391,6 +410,7 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     enrich_on_uncertain = cfg.zones_enabled
 
     if cfg.cascade_enabled:
+        from motor.core.router import Situation
         face_scores = _face_scores(embs, store, cfg, query_pose)
         ranked = sorted(face_scores.items(), key=lambda kv: kv[1], reverse=True)
         s1 = ranked[0][1] if ranked else 0.0
@@ -401,13 +421,27 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
         ctx = _CascadeCtx(ruta, local_id, camara_id, cfg, store, face_scores,
                           query_pose, rep_item["path"], torso_path, rep_item["img"], rep_face)
         cc = CascadeContext(torso=ctx.torso_score, zonas=ctx.zonas_score,
+                            silueta=ctx.silueta_score,
                             vlm=ctx.vlm_score, openai=ctx.openai_score)
-        result = run_cascade(face_scores, cc, cfg, face_layer)
+        situ = Situation(pose=query_pose, sharpness=best_sharp,
+                         has_face=True, has_torso=torso_path is not None)
+        result = run_cascade(face_scores, cc, cfg, face_layer, situation=situ)
     else:
         result = match_group(embs, store, cfg)
         # pose-consciente (F2) sin cascada: se activa con zones_enabled
         if cfg.zones_enabled:
             result = match_group(embs, store, cfg, sharpness=best_sharp, pose=query_pose)
+        # F3 (autoaprendizaje): aunque no haya cascada, registrar features de la
+        # capa cara (score+confidence) y candidatos top-1/top-2. Sin esto,
+        # decisions.jsonl quedaba con layers={} y la calibración nunca tenía
+        # matriz de features (feedback.py::_features descartaba la decisión).
+        face_scores = _face_scores(embs, store, cfg, query_pose)
+        s1 = result.best_score
+        s2 = result.second_score
+        from motor.core.matching import face_confidence, select_candidates
+        face_layer = LayerScore(score=s1, confidence=face_confidence(s1, s2, best_sharp, cfg))
+        result.layer_scores = {"cara": face_layer}
+        result.candidates = select_candidates(face_scores, cfg)
 
     if result.verdict == "new" or result.person is None:
         person = random_code()
@@ -503,6 +537,9 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
             "layers": result.layer_scores,
             "query_hash": embedding_hash(embs[0]),
             "stem": rep_stem,
+            "pose": query_pose,
+            "sharpness": best_sharp,
+            "has_face": True,
         })
 
     # eliminar el resto de fotos del sub-clúster (ya procesadas)
@@ -669,7 +706,9 @@ def process_body_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
                              vlm=_body_vlm)
         face_layer = LayerScore(score=scores[best_cod].score,
                                 confidence=scores[best_cod].confidence)
-        result = run_cascade(face_scores, ctx, cfg, face_layer)
+        from motor.core.router import Situation
+        result = run_cascade(face_scores, ctx, cfg, face_layer,
+                             situation=Situation(has_face=False))
 
         if result.verdict == "match" and result.person is not None:
             # asignar: mover el crop al álbum de la persona (mismo contrato)
@@ -793,6 +832,32 @@ def _ram_available_gb() -> float:
     return 99.0
 
 
+def _apply_calib_weights(cfg, ruta: str) -> bool:
+    """Aplica los pesos-prior calibrados (motor/calib/calib_model.pkl) al Config.
+
+    Solo si RF_CALIB_APPLY=1 y el modelo dice weights_applied (calibrar.py lo
+    guarda versionado con cap anti-drift y validación held-out). El bucle de
+    autoaprendizaje re-pondera las capas; la decisión actual usa autoridad/veto
+    (no la media ponderada), así que estos pesos afinan el desempate/reporte.
+    """
+    if not getattr(cfg, "calib_apply", False):
+        return False
+    try:
+        from motor.core.calibration import CalibrationModel
+        model = CalibrationModel(os.path.join(ruta, cfg.calib_dir))
+        if not model.load():
+            return False
+        if not model.weights_applied or not model.weights:
+            return False
+        w = model.weights
+        cfg.w_cara = float(w.get("cara", cfg.w_cara))
+        cfg.w_torso = float(w.get("torso", cfg.w_torso))
+        cfg.w_llm = float(w.get("llm", cfg.w_llm))
+        return True
+    except Exception:  # noqa: BLE001 — un modelo corrupto degrada, no rompe
+        return False
+
+
 def _load_avg_1m() -> float:
     """Carga media de 1 minuto (loadavg); 0.0 si no se puede leer."""
     try:
@@ -841,11 +906,22 @@ def main() -> int:
     from motor.core.feedback import FeedbackCollector
     feedback = FeedbackCollector(args.ruta, args.local_id, enabled=cfg.feedback_enabled)
 
+    _apply_calib_weights(cfg, args.ruta)
+
     log(f"clasificador {args.local_id}/{args.camara_id} — face_enc_v2 con {len(store.persons())} personas"
         f" | cascada={cfg.cascade_enabled} torso={cfg.torso_enabled} zonas={cfg.zones_enabled}"
+        f" silueta={cfg.silueta_enabled}"
         f" vlm={cfg.vlm_enabled} openai={cfg.openai_enabled}")
+    _last_calib_check = 0.0
     while True:
         try:
+            # reload periódico de pesos calibrados (timer rf-calibra a las 05:10)
+            now = time.time()
+            if now - _last_calib_check > 60:
+                _last_calib_check = now
+                if _apply_calib_weights(cfg, args.ruta):
+                    log("[calib] pesos calibrados aplicados: "
+                        f"w_cara={cfg.w_cara:.3f} w_torso={cfg.w_torso:.3f} w_llm={cfg.w_llm:.3f}")
             # RAM-gate: con la memoria disponible escasa (p. ej. autotube
             # renderizando en la misma máquina) se duerme en vez de procesar;
             # evita el pico de RAM de los 12 clasificadores + procesa_video

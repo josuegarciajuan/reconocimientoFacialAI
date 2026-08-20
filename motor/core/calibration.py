@@ -34,6 +34,59 @@ FEATURE_NAMES = ["s_cara", "c_cara", "s_torso", "c_torso", "s_zona", "c_zona",
                  "s_vlm", "c_vlm", "s_openai", "c_openai"]
 EPS = 1e-6
 
+# F4: clases de situación para la calibración condicionada a la pose.
+PERFIL_CLASSES = {"pi", "pd"}
+ANGULOS_CLASSES = {"m45i", "m45d", "arr", "aba"}
+
+
+def situation_class(pose: str | None) -> str:
+    """Clase de situación del query: perfil / angulos / frontal / otro."""
+    if pose in PERFIL_CLASSES:
+        return "perfil"
+    if pose in ANGULOS_CLASSES:
+        return "angulos"
+    if pose == "f":
+        return "frontal"
+    return "otro"
+
+
+def layer_stats_by_situation(X: np.ndarray, y: np.ndarray, situ: list[str]) -> dict:
+    """Fiabilidad por capa CONDICIONADA a la clase de situación.
+
+    Devuelve {clase: {capa: {hits, total, conf_hit, conf_fail}}} con el mismo
+    esquema que _layer_stats de calibrar.py, pero agrupando las filas por la
+    situación registrada en la decisión (F4). Permite detectar, por ejemplo,
+    si el LLM acierta en frontal pero falla en perfil (sobreconfianza por
+    situación) y decidir después si una capa puede subir a autoridad.
+    """
+    names = ["cara", "cara", "torso", "torso", "zona", "zona",
+             "vlm", "vlm", "openai", "openai"]
+    out: dict[str, dict[str, dict]] = {}
+    for i in range(len(y)):
+        sc = situation_class(situ[i]) if i < len(situ) else "otro"
+        layers = out.setdefault(sc, {})
+        for layer in set(names):
+            layers.setdefault(layer, {"hits": 0, "total": 0,
+                                      "conf_hit": 0.0, "conf_fail": 0.0})
+        label = int(y[i])
+        for j, layer in enumerate(names):
+            if j % 2 == 0:
+                continue
+            d = layers[layer]
+            d["total"] += 1
+            c = float(X[i, j])
+            if label == 1:
+                d["hits"] += 1
+                d["conf_hit"] += c
+            else:
+                d["conf_fail"] += c
+    for sc, layers in out.items():
+        for layer, d in layers.items():
+            if d["total"]:
+                d["conf_hit"] /= max(1, d["hits"])
+                d["conf_fail"] /= max(1, d["total"] - d["hits"])
+    return out
+
 
 def logistic_fit(X: np.ndarray, y: np.ndarray, epochs: int = 400,
                  lr: float = 0.1) -> tuple[np.ndarray, float, np.ndarray, np.ndarray]:

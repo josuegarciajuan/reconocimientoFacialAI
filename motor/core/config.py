@@ -136,21 +136,47 @@ class Config:
     pitch_frontal: float = 20.0
 
     # ------------------------------------------------------------------
-    # CASCADA DE FUSIÓN (F0-F7) — feature-flags por fase, OFF por defecto
+    # MOTOR DE DECISIÓN SITUACIONAL (reenfoque A+B) — fusion.py + router.py
+    # La decisión ya NO es una media ponderada: cada situación elige qué
+    # capa es AUTORIDAD (cara/perfil), cuáles CONFIRMAN por ACUERDO (silueta
+    # en perfil/ángulos) y cuáles corroboran/vetan en la zona gris.
     # ------------------------------------------------------------------
 
-    # --- fusión ponderada (F3) ---
-    cascade_enabled: bool = False       # feature-flag global de la cascada
-    gray_low: float = 0.28              # fusión < esto con confianza alta => new
-    gray_high: float = 0.42             # fusión >= esto con confianza decente => match
-    new_confidence_min: float = 0.45    # confianza mínima de fusión para auto-crear "new"
-    early_exit_conf: float = 0.97       # capa con c_i >= esto finaliza inmediatamente
+    # --- feature-flags (activación gradual vía .env) ---
+    cascade_enabled: bool = False       # motor situacional (reemplaza la decisión binaria)
+    torso_enabled: bool = False         # capa L1b torso/ropa (apoyo)
+    silueta_enabled: bool = True        # capa geométrica L1c (acuerdo en perfil/ángulos)
+    perfil_layer_enabled: bool = True   # matching pose-consciente (perfil) — ya en L1a
+    zones_enabled: bool = True          # matching pose-consciente en L1a (activado por defecto)
+    vlm_enabled: bool = False
+    openai_enabled: bool = False
+
+    # --- umbrales operativos (calibrados 2026-08-18, sin tocar; override .env) ---
+    secure_threshold: float = 0.40      # s1 >= esto: match seguro (NUNCA new)
+    match_threshold: float = 0.30       # s1 >= esto: match si margen/confirmación
+    margin: float = 0.03                # separación top1-top2 (decisión binaria L1a)
+    gray_low: float = 0.28              # s < esto con confianza alta => evidencia en contra
+    gray_high: float = 0.42             # confirmación: capa de apoyo >= esto corrobora
     escalate_band: float = 0.05         # candidatos a >= top1 - banda ("podría-ser-la-misma")
-    w_cara: float = 0.60                # peso-prior capa cara (L1a)
-    w_torso: float = 0.15               # peso-prior capa torso/ropa (L1b)
-    w_llm: float = 0.25                 # peso-prior capas LLM (L2 vlm_local + L3 openai)
-    face_conf_secure_floor: float = 0.60  # si L1a da match seguro con c >= esto => match final
-                                           # (invariante de seguridad: nunca degradar a new)
+
+    # --- confianza mínima para VOTAR por capa ---
+    # Una capa solo aporta evidencia si su confianza de instancia supera su
+    # umbral; por debajo se ignora (su señal se considera no fiable, no en contra).
+    min_layer_conf: float = 0.70        # apoyo general (silueta/torso)
+    llm_min_conf: float = 0.85          # LLM: más estricto (sobreconfianza sin calibrar)
+    veto_conf: float = 0.90             # contradicción FUERTE (s < gray_low y c >= esto)
+
+    # --- acuerdo por silueta (perfil / ángulos raros) ---
+    silueta_min_score: float = 0.50     # silueta >= esto confirma el acuerdo; < bloquea
+
+    # --- pesos-prior (SOLO desempate/reporte; la decisión usa autoridad/veto) ---
+    w_cara: float = 0.70                # peso-prior capa cara (L1a)
+    w_torso: float = 0.10               # peso-prior capa torso/ropa (L1b, apoyo)
+    w_llm: float = 0.10                 # peso-prior capas LLM (L2 vlm_local + L3 openai)
+    perfil_w: float = 0.60              # peso de la cara pose-consciente (perfil)
+    silueta_w: float = 0.30             # peso de la silueta geométrica (acuerdo perfil)
+    face_conf_secure_floor: float = 0.60  # (legacy) suelo de confianza para c_cara
+    early_exit_conf: float = 0.97       # (legacy) early-exit antiguo (mantenido)
 
     # --- L1a cara: sub-pesos de la confianza de instancia ---
     c_w_sharp: float = 0.25             # nitidez normalizada
@@ -158,16 +184,9 @@ class Config:
     c_w_level: float = 0.40             # nivel absoluto del coseno
 
     # --- torso/ropa (F1, L1b) ---
-    torso_enabled: bool = False
     torso_ttl_days: float = 30.0        # frescura: 1.0 hoy -> 0.0 tras N días
     torso_w_face: float = 2.5           # ancho del crop de torso en veces el ancho de la cara
     torso_h_face: float = 2.0           # alto del crop de torso (desde la barbilla) en veces la cara
-
-    # --- zonas/ángulos (F2, L1c) ---
-    # ACTIVADO por defecto (plan refinamiento-autoaprendizaje, F2.3): matching
-    # pose-consciente (comparar solo poses comparables) es barato (sin VLM) y
-    # reduce tanto falsos match como falsos new.
-    zones_enabled: bool = True
 
     # --- F7: identificar de espaldas (crops de cuerpo sin cara) ---
     body_match_conf: float = 0.9        # confianza mínima (torso+VLM) para asignar un cuerpo
@@ -202,6 +221,8 @@ class Config:
     calibration_enabled: bool = True
     calib_lr: float = 0.15              # cap al delta diario de pesos (anti-drift)
     calib_ewma_alpha: float = 0.30      # factor de olvido del EWMA de accuracy
+    calib_apply: bool = False           # aplicar calib_model.pkl al arranque/reload
+                                        # (off hasta validar; activar RF_CALIB_APPLY=1)
 
     # --- rutas runtime (gitignored: git = código, no datos) ---
     feedback_dir: str = "motor/feedback"
@@ -267,4 +288,18 @@ class Config:
         cfg.match_threshold = get_float(ruta, "RF_MATCH_THRESHOLD", cfg.match_threshold)
         cfg.margin = get_float(ruta, "RF_MARGIN", cfg.margin)
         cfg.secure_threshold = get_float(ruta, "RF_SECURE_THRESHOLD", cfg.secure_threshold)
+
+        # Motor de decisión situacional: flags de activación gradual y umbrales
+        # de confianza por capa (sin tocar código).
+        cfg.cascade_enabled = get_bool(ruta, "RF_CASCADE_ENABLED", cfg.cascade_enabled)
+        cfg.torso_enabled = get_bool(ruta, "RF_TORSO_ENABLED", cfg.torso_enabled)
+        cfg.silueta_enabled = get_bool(ruta, "RF_SILUETA_ENABLED", cfg.silueta_enabled)
+        cfg.perfil_layer_enabled = get_bool(ruta, "RF_PERFIL_LAYER_ENABLED", cfg.perfil_layer_enabled)
+        cfg.vlm_enabled = get_bool(ruta, "RF_VLM_ENABLED", cfg.vlm_enabled)
+        cfg.openai_enabled = get_bool(ruta, "RF_OPENAI_ENABLED", cfg.openai_enabled)
+        cfg.min_layer_conf = get_float(ruta, "RF_MIN_LAYER_CONF", cfg.min_layer_conf)
+        cfg.llm_min_conf = get_float(ruta, "RF_LLM_MIN_CONF", cfg.llm_min_conf)
+        cfg.veto_conf = get_float(ruta, "RF_VETO_CONF", cfg.veto_conf)
+        cfg.silueta_min_score = get_float(ruta, "RF_SILUETA_MIN_SCORE", cfg.silueta_min_score)
+        cfg.calib_apply = get_bool(ruta, "RF_CALIB_APPLY", cfg.calib_apply)
         return cfg
