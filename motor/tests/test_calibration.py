@@ -2,9 +2,10 @@
 import numpy as np
 
 from motor.core.calibration import (CalibrationModel, layer_stats_by_situation,
-                                    logistic_fit, predict_proba,
+                                    load_progress, logistic_fit, predict_proba,
                                     situation_class, update_prior_weights,
-                                    validate_held_out)
+                                    update_progress, validate_held_out,
+                                    volume_gate)
 
 
 def test_situation_class():
@@ -104,3 +105,64 @@ def test_model_versioned_save_load(tmp_path):
     np.testing.assert_allclose(m2.w, m.w)
     np.testing.assert_allclose(m2.mean, m.mean)
     assert m2.weights == m.weights and m2.weights_applied
+
+
+# ------------------------------------------------------------- gate por volumen
+
+def _cfg(**kw):
+    from motor.core.config import Config
+    base = dict(min_new_labels=20, min_samples=20, min_interval_min=60)
+    base.update(kw)
+    return Config(**base)
+
+
+def test_volume_gate_primera_vez_con_suficientes():
+    """Sin progreso previo y con >=min_new y >=min_samples -> calibra."""
+    cfg = _cfg()
+    run, reason = volume_gate({"labeled": None, "ts": None}, 30, 1_000_000, cfg)
+    assert run and reason == ""
+
+
+def test_volume_gate_primera_vez_insuficientes():
+    cfg = _cfg()
+    run, reason = volume_gate({"labeled": None, "ts": None}, 10, 1_000_000, cfg)
+    assert not run and "10 etiquetas nuevas" in reason
+
+
+def test_volume_gate_bajo_umbral_de_nuevas():
+    """25 consumidas, 30 totales -> solo 5 nuevas (<20): no calibra."""
+    cfg = _cfg()
+    progress = {"labeled": 25, "ts": 1_000_000}
+    run, reason = volume_gate(progress, 30, 2_000_000, cfg)
+    assert not run and "nuevas" in reason
+
+
+def test_volume_gate_sobre_umbral_pero_cooldown():
+    """20 nuevas pero hace <60 min de la última -> cooldown."""
+    cfg = _cfg()
+    progress = {"labeled": 25, "ts": 1_000_000}
+    run, reason = volume_gate(progress, 45, 1_000_000 + 30 * 60, cfg)
+    assert not run and "cooldown" in reason
+
+
+def test_volume_gate_sobre_umbral_y_sin_cooldown():
+    cfg = _cfg()
+    progress = {"labeled": 25, "ts": 1_000_000}
+    run, _ = volume_gate(progress, 45, 1_000_000 + 61 * 60, cfg)
+    assert run
+
+
+def test_volume_gate_rotacion_resetea():
+    """labels.jsonl reseteado (labeled < prev) -> salta y avisa rotación."""
+    cfg = _cfg()
+    progress = {"labeled": 50, "ts": 1_000_000}
+    run, reason = volume_gate(progress, 10, 2_000_000, cfg)
+    assert not run and "rotados" in reason
+
+
+def test_progress_roundtrip(tmp_path):
+    from motor.core.calibration import load_progress, update_progress
+    assert load_progress(str(tmp_path)) == {"labeled": None, "ts": None}
+    update_progress(str(tmp_path), 42)
+    p = load_progress(str(tmp_path))
+    assert p["labeled"] == 42 and p["ts"] is not None

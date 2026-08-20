@@ -130,3 +130,19 @@ construido desde las capturas actuales (deficientes), calibrar ahí fijaría
 umbrales malos (circular). Queda pendiente hasta tener un set etiquetado
 limpio capturado con la detección mejorada. `motor/eval` se usa SOLO como
 diagnóstico relativo antes/después de activar capas.
+
+### Disparador por VOLUMEN (2026-08-20)
+La calibración ya no corre por horario fijo (diario 05:10): el timer
+`rf-calibra` SOLO SONDEA cada 60 min y `calibrar.py` decide con un gate de
+volumen de 2 etapas (auto-refinamiento):
+
+1. Pre-filtro barato: suma de líneas de `labels.jsonl` (no parsea decisions).
+2. Matriz precisa (`export_matrix_with_situations`) + `volume_gate`:
+   calibrar solo si hay `>= min_new_labels` (20) etiquetas NUEVAS desde la
+   última calibración efectiva, `>= min_samples` (20) totales y respetando el
+   cooldown `min_interval_min` (60 min).
+
+El progreso se persiste en `motor/calib/last_labels.json` (gitignored) tras
+cada entrenamiento real; la rotación de `labels.jsonl` resetea el progreso.
+Valores configurables: `RF_*` no aplica (son args del script o defaults de
+`Config`: `min_new_labels`, `min_samples`, `min_interval_min`).
