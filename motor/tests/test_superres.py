@@ -139,3 +139,45 @@ def test_restore_face_without_gfpgan_returns_native():
     out = restore_face(src, cfg)
     assert out is not None
     assert out.shape == src.shape
+
+
+# ---------------------------------------------------------------- merge_frames (MF-SR)
+
+def _fake_face(bbox):
+    return type("F", (), {"bbox": bbox})()
+
+
+def test_merge_frames_requires_two_frames():
+    from motor.core.superres import merge_frames
+    cfg = Config()
+    img = tiny_bgr(80, 80)
+    face = _fake_face((20, 20, 60, 60))
+    assert merge_frames([(img, face)], face.bbox, cfg) is None
+
+
+def test_merge_frames_median_of_identical():
+    from motor.core.superres import merge_frames
+    cfg = Config()
+    rng = np.random.default_rng(7)
+    img = rng.integers(0, 255, (80, 80, 3), dtype=np.uint8)
+    face = _fake_face((20, 20, 60, 60))
+    out = merge_frames([(img, face), (img, face)], face.bbox, cfg)
+    assert out is not None
+    assert out.dtype == np.uint8
+    assert out.ndim == 3 and out.shape[2] == 3
+
+
+def test_merge_frames_reduces_noise():
+    """La mediana de N frames ruidosos tiene menos varianza que un frame suelto."""
+    from motor.core.superres import merge_frames
+    cfg = Config()
+    rng = np.random.default_rng(3)
+    base = np.full((80, 80, 3), 100, dtype=np.uint8)
+    noisy = [np.clip(base + rng.integers(-30, 30, base.shape), 0, 255).astype(np.uint8)
+             for _ in range(5)]
+    face = _fake_face((20, 20, 60, 60))
+    out = merge_frames([(n, face) for n in noisy], face.bbox, cfg)
+    assert out is not None
+    single_std = float(np.std(noisy[0].astype(np.float32)))
+    out_std = float(np.std(out.astype(np.float32)))
+    assert out_std < single_std

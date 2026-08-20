@@ -45,7 +45,7 @@ from motor.core.matching import LayerScore, match_group, scores_per_person, scor
 from motor.core.model import analyze            # noqa: E402
 from motor.core.quality import face_sharpness, pose_label  # noqa: E402
 from motor.core.store import FaceStore          # noqa: E402
-from motor.core.superres import enhance_embedding, zoom_photo      # noqa: E402
+from motor.core.superres import enhance_embedding, merge_frames, restore_face, zoom_photo  # noqa: E402
 
 ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 IMG_EXTS = (".jpg", ".jpeg", ".png")
@@ -324,15 +324,19 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     item_idxs = sorted({face_list[i][1] for i in sub})
     embs = [face_list[i][0] for i in sub]
 
-    # foto representativa = la más enfocada del sub-clúster
+    # foto representativa: la más NÍTIDA Y CERCANA del sub-clúster.
+    # Se pondera sharpness por √(área de la cara): una cara lejana enfocada
+    # tiene menos píxeles reales que una cercana algo menos nítida.
     best = None
-    best_sharp = -1.0
+    best_score = -1.0
     for idx in item_idxs:
         it = battery[idx]
         for f in it["faces"]:
-            sh = face_sharpness(it["img"], f)
-            if sh > best_sharp:
-                best_sharp = sh
+            fw = f.bbox[2] - f.bbox[0]
+            fh = f.bbox[3] - f.bbox[1]
+            score = face_sharpness(it["img"], f) * (float(fw * fh) ** 0.5)
+            if score > best_score:
+                best_score = score
                 best = (idx, f)
     rep_item = battery[best[0]]
     rep_face = best[1]
@@ -385,7 +389,23 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     out_name = f"{nombre}_{foto_id}.jpg"
     # Auto-zoom hacia la cara + SR + restauración facial GFPGAN (solo visual;
     # embeddings intactos).
-    final_img = zoom_photo(rep_item["img"], rep_face.bbox, cfg)
+    # MF-SR: para caras pequeñas, fusionar los K crops más nítidos de la misma
+    # persona (sub-clúster) antes de SR/GFPGAN; reduce ruido y gana nitidez.
+    fw_rep = rep_face.bbox[2] - rep_face.bbox[0]
+    fh_rep = rep_face.bbox[3] - rep_face.bbox[1]
+    final_img = None
+    if cfg.sr_mf_enabled and max(fw_rep, fh_rep) < cfg.sr_mf_min_face:
+        frames = []
+        for idx in item_idxs:
+            it = battery[idx]
+            for f in it["faces"]:
+                frames.append((it["img"], f))
+        frames.sort(key=lambda x: face_sharpness(x[0], x[1]), reverse=True)
+        merged = merge_frames(frames[:cfg.sr_mf_k], rep_face.bbox, cfg)
+        if merged is not None:
+            final_img = restore_face(merged, cfg)
+    if final_img is None:
+        final_img = zoom_photo(rep_item["img"], rep_face.bbox, cfg)
     cv2.imwrite(os.path.join(out_dir, out_name), final_img, [cv2.IMWRITE_JPEG_QUALITY, 95])
     if os.path.exists(rep_item["path"]):
         os.remove(rep_item["path"])

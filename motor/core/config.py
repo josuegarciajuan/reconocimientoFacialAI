@@ -82,6 +82,15 @@ class Config:
     # recalcular el embedding ArcFace (mejora real del matching, no solo visual).
     sr_embed_min_face: int = 96
 
+    # --- super-resolución multi-frame (MF-SR) ---
+    # Para caras pequeñas (< sr_mf_min_face) en vez de un solo crop se alinean y
+    # fusionan (mediana) los K crops más nítidos de la misma cara capturados en
+    # frames consecutivos, antes del SR/GFPGAN. Reduce ruido/artefactos de
+    # compresión y gana resolución efectiva (la mayor mejora software de nitidez).
+    sr_mf_enabled: bool = True
+    sr_mf_k: int = 8                # nº de crops a alinear/fusionar por cara
+    sr_mf_min_face: int = 128       # solo fusionar si el lado mayor de la cara < esto
+
     # --- restauración facial GFPGAN (motor/core/gfpgan.py) ---
     sr_face_enabled: bool = True   # prior facial: caras naturales de 512 px sin pixelado
     sr_face_weight: float = 0.5    # mezcla salida GFPGAN / entrada SR (identidad; None no aplica)
@@ -208,6 +217,10 @@ class Config:
         cfg.sr_target_side = get_int(ruta, "RF_SR_TARGET_SIDE", cfg.sr_target_side)
         cfg.sr_min_side = get_int(ruta, "RF_SR_MIN_SIDE", cfg.sr_min_side)
         cfg.sr_embed_min_face = get_int(ruta, "RF_SR_EMBED_MIN_FACE", cfg.sr_embed_min_face)
+        cfg.sr_model = get(ruta, "RF_SR_MODEL", cfg.sr_model)
+        cfg.sr_mf_enabled = get_bool(ruta, "RF_SR_MF_ENABLED", cfg.sr_mf_enabled)
+        cfg.sr_mf_k = get_int(ruta, "RF_SR_MF_K", cfg.sr_mf_k)
+        cfg.sr_mf_min_face = get_int(ruta, "RF_SR_MF_MIN_FACE", cfg.sr_mf_min_face)
         cfg.sr_face_enabled = get_bool(ruta, "RF_SR_FACE_ENABLED", cfg.sr_face_enabled)
         cfg.sr_face_weight = get_float(ruta, "RF_SR_FACE_WEIGHT", cfg.sr_face_weight)
         cfg.min_sharpness = get_float(ruta, "RF_MIN_SHARPNESS", cfg.min_sharpness)
