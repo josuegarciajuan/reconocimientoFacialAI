@@ -368,4 +368,26 @@ switch ($_GET["accion"] ?? "") {
         }
         header("Location: ?page=config&tab=camaras&sub=calibrar&modo=general");
         exit;
+
+    /* Vigilancia de deriva (F3): comprobar una cámara AHORA (fondo, ~20s). */
+    case "deriva_check":
+        $camara_id = (int)($_GET["camara"] ?? 0);
+        if ($camara_id > 0) {
+            $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/vigilar_deriva.py --ruta '" . RUTA_PROYECTO
+                 . "' --solo-camara " . $camara_id . " --captura-s 20 > /dev/null 2>&1 &";
+            exec($cmd);
+        }
+        header("Location: ?page=config&tab=camaras&sub=calibrar&modo=general");
+        exit;
+
+    /* Vigilancia de deriva (F3): restablecer la referencia de una cámara. */
+    case "deriva_reset":
+        $camara_id = (int)($_GET["camara"] ?? 0);
+        if ($camara_id > 0) {
+            $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/vigilar_deriva.py --ruta '" . RUTA_PROYECTO
+                 . "' --reset-camara " . $camara_id . " > /dev/null 2>&1";
+            exec($cmd);
+        }
+        header("Location: ?page=config&tab=camaras&sub=calibrar&modo=general");
+        exit;
 }

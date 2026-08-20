@@ -1,0 +1,9 @@
+[Unit]
+Description=RF Vigilancia de deriva (F3) — detecta cámaras movidas (firma estructural)
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/reconocimientoFacial
+ExecStart=/root/reconocimientoFacial/motor/venv/bin/python /root/reconocimientoFacial/motor/vigilar_deriva.py --ruta /root/reconocimientoFacial --captura-s 30
+User=root

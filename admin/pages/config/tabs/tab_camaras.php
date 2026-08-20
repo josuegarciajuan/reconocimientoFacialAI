@@ -41,6 +41,10 @@ $reco_glob = $camara_sel ? calib_recomendaciones((int) $camara_sel["id"]) : [];
 /* Modo/cámara preseleccionados en Templar. */
 $calib_modo = (($_GET["modo"] ?? "") === "general") ? "general" : "camara";
 $calib_camara_sel = (int) ($_GET["camara"] ?? 0);
+
+/* Estado de deriva por cámara (F3, vigilar_deriva.py 1x/día). */
+$deriva_estado = calib_deriva_estado((int) ($_SESSION["local_id"] ?? 0));
+$deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0));
 ?>
 
 <!-- ---------- Submenú de la pestaña ---------- -->
@@ -376,6 +380,69 @@ $calib_camara_sel = (int) ($_GET["camara"] ?? 0);
                 vídeos positivos/negativos y escribe su recomendación aquí.
             </span>
         </div>
+
+        <!-- ---------- Vigilancia de deriva (F3) ---------- -->
+        <div class="form-section__title mt-6">
+            <span class="form-section__emoji" aria-hidden="true">📐</span> Vigilancia de deriva (cámaras movidas)
+        </div>
+        <p class="text-xs text-gray-500 dark:text-gray-600 mb-2">
+            Un timer diario (03:10) compara una <b>firma estructural</b> de cada cámara (fondo mediana +
+            bordes) contra su referencia de largo plazo. Avisa solo si la similitud cae 2 días seguidos,
+            así una caja o un cambio de luz temporal no disparan la alarma. «Comprobar ahora» tarda ~20 s
+            en segundo plano: refresca la página para ver el resultado.
+        </p>
+        <?php if (!$deriva_estado): ?>
+            <p class="text-xs text-gray-500 dark:text-gray-600">No hay cámaras en este local.</p>
+        <?php else: ?>
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+                <thead>
+                    <tr style="text-align:left;border-bottom:1px solid #333">
+                        <th class="p-2">Cámara</th>
+                        <th class="p-2">Última comprobación</th>
+                        <th class="p-2">Días</th>
+                        <th class="p-2">Similitud</th>
+                        <th class="p-2">Estado</th>
+                        <th class="p-2">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($deriva_estado as $de): ?>
+                        <tr style="border-bottom:1px solid #2a2a2a">
+                            <td class="p-2"><?= htmlspecialchars($de["descripcion"]); ?></td>
+                            <td class="p-2" style="font-family:monospace"><?= htmlspecialchars((string)($de["fecha_ultimo_check"] ?? "— sin comprobar")); ?></td>
+                            <td class="p-2"><?= (int)$de["n_dias"]; ?></td>
+                            <td class="p-2" style="font-family:monospace">
+                                <?= $de["ultima_sim"] !== null ? $de["ultima_sim"] : "—"; ?>
+                            </td>
+                            <td class="p-2">
+                                <?php if ($de["alerta"]): ?>
+                                    <span style="color:#e0563c;font-weight:600">🔴 posiblemente movida</span>
+                                <?php elseif ($de["n_dias"] === 0): ?>
+                                    <span style="color:#9a9a9a">sin referencia</span>
+                                <?php else: ?>
+                                    <span style="color:#2e9e44">✔ estable</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="p-2">
+                                <a href="?page=config&tab=camaras&sub=calibrar&accion=deriva_check&camara=<?= (int)$de["camara_id"]; ?>&modo=general"
+                                   class="button button--sm bg-theme-2 text-white" title="Comprobar ahora (fondo, ~20 s)">Comprobar</a>
+                                <a href="?page=config&tab=camaras&sub=calibrar&accion=deriva_reset&camara=<?= (int)$de["camara_id"]; ?>&modo=general"
+                                   class="button button--sm bg-gray-700 text-white" title="Restablecer la referencia (usar tras mover la cámara a propósito)">↺ Ref.</a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php if ($deriva_alertas_local): ?>
+            <p class="text-xs mt-2" style="color:#e0563c">
+                ⚠️ Alerta(s) activa(s): <?= htmlspecialchars(implode(" · ", array_map(function ($a) {
+                    return $a["descripcion"] . " (sim " . $a["similitud"] . ")";
+                }, $deriva_alertas_local))); ?> — revisa la cámara o «↺ Ref.» si la moviste a propósito.
+            </p>
+        <?php endif; ?>
+        <?php endif; ?>
     </div>
 </div>
 </div>

@@ -295,3 +295,74 @@ function calib_aplicar_globales(int $local_id, int $camara_id): array
     @file_put_contents($env, implode("\n", array_merge($resto, [""], $nuevas)) . "\n");
     return $aplicadas;
 }
+
+/* =====================================================================
+ * Vigilancia de deriva (F3) — motor/vigilar_deriva.py, 1x/día por timer
+ * ===================================================================== */
+
+/** Ruta base de los datos de deriva (gitignored). */
+function calib_deriva_dir(): string
+{
+    return rtrim(RUTA_PROYECTO, "/") . "/motor/calibrador/deriva";
+}
+
+/** Alertas de deriva activas (motor/calibrador/deriva/alertas.json) del local. */
+function calib_deriva_alertas(int $local_id): array
+{
+    $f = calib_deriva_dir() . "/alertas.json";
+    if (!is_file($f)) {
+        return [];
+    }
+    $data = json_decode((string) file_get_contents($f), true);
+    if (!is_array($data) || !$data) {
+        return [];
+    }
+    $cams = [];
+    foreach (DB::select("SELECT id, descripcion, local_id FROM camaras") as $c) {
+        $cams[(int) $c["id"]] = $c;
+    }
+    $out = [];
+    foreach ($data as $cam_id => $a) {
+        $cam_id = (int) $cam_id;
+        $c = $cams[$cam_id] ?? null;
+        if (!$c || (int) $c["local_id"] !== $local_id) {
+            continue;
+        }
+        $out[] = [
+            "camara_id"   => $cam_id,
+            "descripcion" => $c["descripcion"],
+            "fecha"       => $a["fecha"] ?? "",
+            "similitud"   => $a["similitud"] ?? null,
+            "dias_bajos"  => (int) ($a["dias_bajos"] ?? 0),
+            "celdas"      => $a["celdas"] ?? [],
+        ];
+    }
+    return $out;
+}
+
+/** Estado de deriva por cámara del local (para la tabla de Templar · General). */
+function calib_deriva_estado(int $local_id): array
+{
+    $dir = calib_deriva_dir();
+    $alertas = [];
+    $f_alertas = $dir . "/alertas.json";
+    if (is_file($f_alertas)) {
+        $alertas = json_decode((string) file_get_contents($f_alertas), true) ?: [];
+    }
+    $out = [];
+    foreach (DB::select("SELECT id, descripcion FROM camaras WHERE local_id = ? ORDER BY id ASC", [$local_id]) as $c) {
+        $f = $dir . "/" . (int) $c["id"] . ".json";
+        $st = is_file($f) ? (json_decode((string) file_get_contents($f), true) ?: []) : [];
+        $out[] = [
+            "camara_id"          => (int) $c["id"],
+            "descripcion"        => $c["descripcion"],
+            "fecha_ultimo_check" => $st["fecha_ultimo_check"] ?? null,
+            "fecha_referencia"   => $st["fecha_referencia"] ?? null,
+            "n_dias"             => (int) ($st["n_dias"] ?? 0),
+            "ultima_sim"         => $st["ultima_sim"] ?? null,
+            "dias_bajos"         => (int) ($st["dias_bajos"] ?? 0),
+            "alerta"             => isset($alertas[(string) (int) $c["id"]]),
+        ];
+    }
+    return $out;
+}
