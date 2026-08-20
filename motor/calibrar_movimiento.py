@@ -7,6 +7,14 @@ abajo (sin clip no hay caras/cruces que lo delaten), así que la calibración se
 hace OFFLINE reproduciendo vídeos reales a través del MISMO MotionDetector que
 usa el worker de captura (motor/core/motion.py).
 
+Fase 2 (2026-08-20):
+  - Barrido conjunto de `redimesionframe` (--resizes) con `dontCare`: el área
+    mínima se mide sobre el frame REDIMENSIONADO, así que ambos se calibran a
+    la vez (desacopla dontCare de la escala del frame).
+  - --camara N + --ruta: escribe la recomendación en
+    motor/calibrador/recomendaciones/<N>.json (por_camara) para que los badges
+    del panel (La Forja · Templar · Editar) la muestren.
+
 Datos (preparar a mano una vez):
   - Positivos  (--positivos): MP4 de movimiento ya archivados (movimiento
     confirmado; p. ej. copiar algunos de motor/videos_archivo/<local>/<cam>/).
@@ -33,8 +41,9 @@ Uso:
         --positivos motor/calib_mov/positivos \
         --negativos  motor/calib_mov/negativos \
         [--thresholds 18,21,24] [--dilates 1,2] [--dontcares 180,220,260] \
-        [--porcentajes 50,60,70] [--segundos 2] [--fps 14] [--resize 0.6] \
-        [--max-frames 600] [--out motor/calib/calib_movimiento.json]
+        [--porcentajes 50,60,70] [--segundos 2] [--fps 14] [--resizes 50,60,70] \
+        [--max-frames 600] [--camara 13] [--ruta /root/reconocimientoFacial] \
+        [--out motor/calib/calib_movimiento.json]
 """
 from __future__ import annotations
 
@@ -42,6 +51,7 @@ import argparse
 import json
 import os
 import sys
+from datetime import datetime
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -56,23 +66,25 @@ def _parse_csv(val: str, tipo=float):
     return [tipo(x) for x in val.split(",") if x.strip() != ""]
 
 
-def combos(args) -> list[MotionConfig]:
-    """Barrido de configuraciones (los valores fijos se aplican tal cual)."""
+def combos(args) -> list[tuple[float, MotionConfig]]:
+    """Barrido (resize_pct, MotionConfig): redimesionframe y dontCare juntos,
+    porque dontCare se mide sobre el frame ya redimensionado."""
     out = []
-    for thr in _parse_csv(args.thresholds, int):
-        for dil in _parse_csv(args.dilates, int):
-            for dc in _parse_csv(args.dontcares, int):
-                for pm in _parse_csv(args.porcentajes, int):
-                    out.append(MotionConfig(
-                        segundos_analizar=args.segundos,
-                        porcentaje_mov=pm,
-                        dontCare=dc,
-                        fps=args.fps,
-                        sensibilidad=1,
-                        threshold=thr,
-                        blur=args.blur,
-                        dilate=dil,
-                    ))
+    for rp in _parse_csv(args.resizes, float):
+        for thr in _parse_csv(args.thresholds, int):
+            for dil in _parse_csv(args.dilates, int):
+                for dc in _parse_csv(args.dontcares, int):
+                    for pm in _parse_csv(args.porcentajes, int):
+                        out.append((rp, MotionConfig(
+                            segundos_analizar=args.segundos,
+                            porcentaje_mov=pm,
+                            dontCare=dc,
+                            fps=args.fps,
+                            sensibilidad=1,
+                            threshold=thr,
+                            blur=args.blur,
+                            dilate=dil,
+                        )))
     return out
 
 
@@ -91,59 +103,55 @@ def _frames(path: str, resize: float, max_frames: int):
     cap.release()
 
 
-def evaluar_positivos(paths, cfgs: list[MotionConfig], resize, max_frames) -> dict:
-    """Por índice de cfg: {trigger, ttt_sum, n, dur_sum} (ttt en segundos)."""
-    res = [{"trigger": 0, "ttt_sum": 0.0, "n": 0, "dur_sum": 0.0} for _ in cfgs]
+def evaluar_positivos(paths, combos: list[tuple[float, MotionConfig]], max_frames) -> dict:
+    """Por índice de combo: {trigger, ttt_sum, n, dur_sum} (ttt en segundos)."""
+    res = [{"trigger": 0, "ttt_sum": 0.0, "n": 0, "dur_sum": 0.0} for _ in combos]
     for path in paths:
-        gen = _frames(path, resize, max_frames)
-        if gen is None:
-            print(f"  ! no se pudo abrir positivo: {path}", flush=True)
-            continue
-        dets = [MotionDetector(cfg) for cfg in cfgs]
-        ttt = [None] * len(cfgs)
-        pend = set(range(len(cfgs)))
-        idx = 0
-        dur = 0.0
-        for frame in gen:
-            dur += 1.0 / FPS_ARCHIVO
-            if pend:
-                for i in list(pend):
-                    motion, hay = dets[i].process(frame)
-                    if hay:
-                        ttt[i] = idx / FPS_ARCHIVO
-                        pend.discard(i)
-            idx += 1
-        for i in range(len(cfgs)):
+        for i, (rp, cfg) in enumerate(combos):
+            gen = _frames(path, rp / 100.0, max_frames)
+            if gen is None:
+                print(f"  ! no se pudo abrir positivo: {path}", flush=True)
+                continue
+            det = MotionDetector(cfg)
+            ttt = None
+            idx = 0
+            dur = 0.0
+            for frame in gen:
+                dur += 1.0 / FPS_ARCHIVO
+                motion, hay = det.process(frame)
+                if ttt is None and hay:
+                    ttt = idx / FPS_ARCHIVO
+                    break
+                idx += 1
             res[i]["n"] += 1
             res[i]["dur_sum"] += dur
-            if ttt[i] is not None:
+            if ttt is not None:
                 res[i]["trigger"] += 1
-                res[i]["ttt_sum"] += ttt[i]
+                res[i]["ttt_sum"] += ttt
             else:
                 # no disparó: cuenta como tiempo máximo (penalización de recall)
                 res[i]["ttt_sum"] += dur
     return res
 
 
-def evaluar_negativos(paths, cfgs: list[MotionConfig], resize, max_frames) -> dict:
-    """Por índice de cfg: {transiciones, dur_h} (falsos disparos por hora)."""
-    res = [{"transiciones": 0, "dur_h": 0.0} for _ in cfgs]
+def evaluar_negativos(paths, combos: list[tuple[float, MotionConfig]], max_frames) -> dict:
+    """Por índice de combo: {transiciones, dur_h} (falsos disparos por hora)."""
+    res = [{"transiciones": 0, "dur_h": 0.0} for _ in combos]
     for path in paths:
-        gen = _frames(path, resize, max_frames)
-        if gen is None:
-            print(f"  ! no se pudo abrir negativo: {path}", flush=True)
-            continue
-        dets = [MotionDetector(cfg) for cfg in cfgs]
-        prev_hay = [False] * len(cfgs)
-        dur = 0.0
-        for frame in gen:
-            dur += 1.0 / FPS_ARCHIVO
-            for i, det in enumerate(dets):
+        for i, (rp, cfg) in enumerate(combos):
+            gen = _frames(path, rp / 100.0, max_frames)
+            if gen is None:
+                print(f"  ! no se pudo abrir negativo: {path}", flush=True)
+                continue
+            det = MotionDetector(cfg)
+            prev_hay = False
+            dur = 0.0
+            for frame in gen:
+                dur += 1.0 / FPS_ARCHIVO
                 motion, hay = det.process(frame)
-                if hay and not prev_hay[i]:
+                if hay and not prev_hay:
                     res[i]["transiciones"] += 1
-                prev_hay[i] = hay
-        for i in range(len(cfgs)):
+                prev_hay = hay
             res[i]["dur_h"] += dur / 3600.0
     return res
 
@@ -159,13 +167,22 @@ def main() -> int:
     ap.add_argument("--porcentajes", default="50,60,70")
     ap.add_argument("--segundos", type=int, default=2)
     ap.add_argument("--fps", type=int, default=14)
-    ap.add_argument("--resize", type=float, default=0.6)
+    ap.add_argument("--resizes", default="50,60,70",
+                    help="redimesionframe (%) a barrer JUNTO a dontCare (el área mínima se mide sobre el frame redimensionado)")
+    ap.add_argument("--resize", type=float, default=None,
+                    help="(deprecado) uso fijo de resize; usar --resizes")
     ap.add_argument("--max-frames", type=int, default=600)
+    ap.add_argument("--camara", type=int, default=0,
+                    help="si >0, escribe la recomendación en motor/calibrador/recomendaciones/<camara>.json")
+    ap.add_argument("--ruta", default=os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
     ap.add_argument("--out", default="")
     args = ap.parse_args()
 
-    cfgs = combos(args)
-    print(f"barrido: {len(cfgs)} configuraciones")
+    if args.resize is not None:
+        args.resizes = str(args.resize * 100.0)
+
+    combos_l = combos(args)
+    print(f"barrido: {len(combos_l)} configuraciones (incluye {len(_parse_csv(args.resizes, float))} resizes)")
 
     def _videos(d):
         return sorted(
@@ -179,18 +196,18 @@ def main() -> int:
         print("ERROR: se necesitan al menos 1 positivo y 1 negativo (.mp4/.avi)")
         return 1
 
-    pos = evaluar_positivos(pos_paths, cfgs, args.resize, args.max_frames)
-    neg = evaluar_negativos(neg_paths, cfgs, args.resize, args.max_frames)
+    pos = evaluar_positivos(pos_paths, combos_l, args.max_frames)
+    neg = evaluar_negativos(neg_paths, combos_l, args.max_frames)
 
     filas = []
-    for i, cfg in enumerate(cfgs):
+    for i, (rp, cfg) in enumerate(combos_l):
         p = pos[i]
         n = neg[i]
         recall = p["trigger"] / p["n"] if p["n"] else 0.0
         ttt = p["ttt_sum"] / p["n"] if p["n"] else 0.0
         far = n["transiciones"] / n["dur_h"] if n["dur_h"] > 0 else 0.0
         filas.append({
-            "cfg": cfg, "recall": recall, "ttt_s": round(ttt, 2), "far_h": round(far, 1),
+            "resize": rp, "cfg": cfg, "recall": recall, "ttt_s": round(ttt, 2), "far_h": round(far, 1),
         })
     # Pareto: recall desc, far asc, ttt asc
     filas.sort(key=lambda r: (-r["recall"], r["far_h"], r["ttt_s"]))
@@ -199,24 +216,61 @@ def main() -> int:
     for r in filas[:10]:
         c = r["cfg"]
         print(f"  recall={r['recall']:.2f}  far={r['far_h']:.1f}/h  ttt={r['ttt_s']:.1f}s  "
-              f"thr={c.threshold} blur={c.blur} dil={c.dilate} dontCare={c.dontCare} "
-              f"porc={c.porcentaje_mov} seg={c.segundos_analizar}")
+              f"resize={r['resize']:.0f}% thr={c.threshold} blur={c.blur} dil={c.dilate} "
+              f"dontCare={c.dontCare} porc={c.porcentaje_mov} seg={c.segundos_analizar}")
 
-    mejor = filas[0]["cfg"]
+    mejor = filas[0]
+    c = mejor["cfg"]
     print("\n=== .env recomendado (REVISAR ANTES DE APLICAR) ===")
-    print(f"RF_MOV_THRESHOLD={mejor.threshold}")
-    print(f"RF_MOV_BLUR={mejor.blur}")
-    print(f"RF_MOV_DILATE={mejor.dilate}")
+    print(f"RF_MOV_THRESHOLD={c.threshold}")
+    print(f"RF_MOV_BLUR={c.blur}")
+    print(f"RF_MOV_DILATE={c.dilate}")
     print("# per-cámara (panel La Forja): "
-          f"dontCare={mejor.dontCare}  porcentaje_mov={mejor.porcentaje_mov}  "
-          f"segundos_analizar={mejor.segundos_analizar}  fps={mejor.fps}  sensibilidad=1")
+          f"redimesionframe={mejor['resize']:.0f}  dontCare={c.dontCare}  "
+          f"porcentaje_mov={c.porcentaje_mov}  segundos_analizar={c.segundos_analizar}  "
+          f"fps={c.fps}  sensibilidad=1")
+
+    # Recomendación por cámara para el panel (badges de Templar · Editar)
+    if args.camara > 0:
+        reco = {
+            "camara_id": args.camara,
+            "actualizados": datetime.now().isoformat(timespec="seconds"),
+            "ritual": "sweep_movimiento",
+            "recomendaciones": {
+                "RF_MOV_THRESHOLD": {"actual": None, "recomendado": c.threshold,
+                                     "motivo": "Barrido offline: mejor recall/falsos-h."},
+                "RF_MOV_BLUR": {"actual": None, "recomendado": c.blur,
+                                "motivo": "Barrido offline: kernel de blur del mejor combo."},
+                "RF_MOV_DILATE": {"actual": None, "recomendado": c.dilate,
+                                  "motivo": "Barrido offline: dilate del mejor combo."},
+            },
+            "por_camara": {
+                "redimesionframe": {"actual": None, "recomendado": int(round(mejor["resize"])),
+                                    "motivo": "Barrido offline: escala del frame del mejor combo "
+                                              "(desacoplado de dontCare)."},
+                "dontCare": {"actual": None, "recomendado": c.dontCare,
+                             "motivo": "Barrido offline: área mínima del mejor combo (sobre el frame "
+                                       f"redimensionado a {mejor['resize']:.0f}%)."},
+                "porcentaje_mov": {"actual": None, "recomendado": c.porcentaje_mov,
+                                   "motivo": "Barrido offline: % de frames con movimiento del mejor combo."},
+                "segundos_analizar": {"actual": None, "recomendado": c.segundos_analizar,
+                                      "motivo": "Barrido offline: ventana de decisión del mejor combo."},
+                "fps": {"actual": None, "recomendado": c.fps,
+                        "motivo": "Cadencia del mejor combo (ajustable después con el ritual B)."},
+            },
+        }
+        reco_dir = os.path.join(args.ruta, "motor/calibrador/recomendaciones")
+        os.makedirs(reco_dir, exist_ok=True)
+        with open(os.path.join(reco_dir, str(args.camara) + ".json"), "w") as fh:
+            json.dump(reco, fh, indent=2, ensure_ascii=False)
+        print(f"\nRecomendación por cámara escrita en motor/calibrador/recomendaciones/{args.camara}.json")
 
     if args.out:
         os.makedirs(os.path.dirname(args.out), exist_ok=True)
         with open(args.out, "w") as fh:
             json.dump({
                 "ranking": [{
-                    "threshold": r["cfg"].threshold, "blur": r["cfg"].blur,
+                    "resize": r["resize"], "threshold": r["cfg"].threshold, "blur": r["cfg"].blur,
                     "dilate": r["cfg"].dilate, "dontCare": r["cfg"].dontCare,
                     "porcentaje_mov": r["cfg"].porcentaje_mov,
                     "segundos_analizar": r["cfg"].segundos_analizar,

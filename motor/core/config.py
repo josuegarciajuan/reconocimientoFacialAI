@@ -261,5 +261,10 @@ class Config:
         cfg.face_fill = get_float(ruta, "RF_FACE_FILL", cfg.face_fill)
         cfg.face_min_pad = get_int(ruta, "RF_FACE_MIN_PAD", cfg.face_min_pad)
         cfg.ram_min_free_gb = get_float(ruta, "RF_RAM_MIN_FREE_GB", cfg.ram_min_free_gb)
-        cfg.max_load_ratio = get_float(ruta, "RF_MAX_LOAD_RATIO", cfg.max_load_ratio)
+
+        # Umbrales de matching configurables (calibrados offline con motor/eval/eval.py
+        # o por el ritual E del calibrador guiado; ver docs y libs/calibracion.php).
+        cfg.match_threshold = get_float(ruta, "RF_MATCH_THRESHOLD", cfg.match_threshold)
+        cfg.margin = get_float(ruta, "RF_MARGIN", cfg.margin)
+        cfg.secure_threshold = get_float(ruta, "RF_SECURE_THRESHOLD", cfg.secure_threshold)
         return cfg

@@ -29,6 +29,12 @@ $globales_ui = [
     "RF_FACE_EVERY"       => ["label" => "Muestreo de caras en procesa_video", "factory" => "2", "desc" => "Analiza 1 de cada N frames en los vídeos archivados."],
     "RF_VIDEO_SEG_ANTES"  => ["label" => "Pre-roll de vídeo", "factory" => "2", "desc" => "Segundos previos al movimiento que se incluyen en el clip."],
     "RF_VIDEO_SEG_DESPUES"=> ["label" => "Post-roll de vídeo", "factory" => "2", "desc" => "Segundos posteriores al movimiento que se incluyen en el clip."],
+    "RF_MATCH_THRESHOLD"  => ["label" => "Umbral de match (coseno)", "factory" => "0.30", "desc" => "Similitud mínima para considerar match (ritual E / eval TAR-FAR)."],
+    "RF_MARGIN"           => ["label" => "Margen top1-top2", "factory" => "0.03", "desc" => "Separación frente al 2º candidato para no confundir identidades."],
+    "RF_SECURE_THRESHOLD" => ["label" => "Umbral de match seguro", "factory" => "0.40", "desc" => "Por encima de esto el match es seguro sin margen."],
+    "RF_CRUCE_AREA_MIN"   => ["label" => "Área mínima de cruce (px²)", "factory" => "800", "desc" => "Contorno mínimo (MOG2) para considerar un cruce de línea."],
+    "RF_CRUCE_MIN_TRACK_FRAMES" => ["label" => "Persistencia mínima de cruce", "factory" => "3", "desc" => "Frames seguidos que debe verse el objeto antes de contar el cruce (anti-parpadeo)."],
+    "RF_CRUCE_VAR_THRESHOLD" => ["label" => "Sensibilidad MOG2 de cruce", "factory" => "25", "desc" => "varThreshold del fondo: más bajo = más sensible a cambios."],
 ];
 $reco_glob = $camara_sel ? calib_recomendaciones((int) $camara_sel["id"]) : [];
 
@@ -269,9 +275,38 @@ $calib_camara_sel = (int) ($_GET["camara"] ?? 0);
         </div>
         <div class="flex flex-wrap gap-2 mt-2">
             <button type="button" class="button text-white bg-theme-2 shadow-md calib-ritual" data-ritual="A"
-                    title="Mide a qué distancias/tamaños se detecta la cara">A · Alcance (detección de cara)</button>
+                    title="Mide a qué distancias/tamaños se detecta la cara">A · Alcance</button>
             <button type="button" class="button text-white bg-theme-2 shadow-md calib-ritual" data-ritual="B"
-                    title="Pasa rápido delante de la cámara: comprueba que el movimiento/captura no se pierde">B · Paso veloz (FPS)</button>
+                    title="Pasa rápido delante de la cámara: comprueba que el movimiento/captura no se pierde">B · Paso veloz</button>
+            <button type="button" class="button text-white bg-theme-2 shadow-md calib-ritual" data-ritual="C"
+                    title="C1: camina despacio (debe disparar). C2: agita la mano lejos (no debe disparar)">C · Disparo</button>
+            <button type="button" class="button text-white bg-theme-2 shadow-md calib-ritual" data-ritual="D"
+                    title="Cruza la línea N veces: comprueba que el detector de cruces los cuenta">D · Cruce de línea</button>
+            <button type="button" class="button text-white bg-theme-2 shadow-md calib-ritual" data-ritual="E"
+                    title="Offline: TAR/FAR sobre el set etiquetado motor/eval/data">E · Identidad</button>
+            <button type="button" class="button text-white bg-theme-2 shadow-md calib-ritual" data-ritual="F"
+                    title="Sostén la cara a la distancia máxima de reconocimiento">F · Enfoque</button>
+        </div>
+
+        <!-- Parámetros específicos por ritual -->
+        <div id="calibRitualParams" class="form-grid mt-3" style="display:none">
+            <div id="calibFaseWrap" style="display:none">
+                <span class="field-label">Fase del ritual C</span>
+                <select id="calib_fase" class="input border w-full">
+                    <option value="c1">C1 · Caminar despacio (DEBE disparar)</option>
+                    <option value="c2">C2 · Agitar la mano lejos (NO debe disparar)</option>
+                </select>
+                <p class="text-xs text-gray-500 dark:text-gray-600 mt-1">
+                    Ejecuta las dos fases: la recomendación combina ambas.
+                </p>
+            </div>
+            <div id="calibEsperadosWrap" style="display:none">
+                <span class="field-label">Cruces esperados</span>
+                <input type="number" id="calib_esperados" value="3" min="1" max="20" class="input border w-full">
+                <p class="text-xs text-gray-500 dark:text-gray-600 mt-1">
+                    Cuántas veces vas a cruzar la línea durante el ritual.
+                </p>
+            </div>
         </div>
 
         <div class="form-section__title mt-6">
@@ -336,7 +371,9 @@ $calib_camara_sel = (int) ($_GET["camara"] ?? 0);
                    class="button text-white bg-theme-1 shadow-md" title="Aplica las recomendaciones RF_* pendientes (de los rituales) al .env">Aplicar recomendaciones globales</a>
             <?php endif; ?>
             <span class="text-xs text-gray-500 dark:text-gray-600">
-                Los barridos offline (matching/cruces/face_every) llegarán en la Fase 2 del calibrador.
+                El ritual E (identidad) corre el TAR/FAR sobre el set etiquetado <code>motor/eval/data</code>.
+                El barrido offline de movimiento (<code>calibrar_movimiento.py</code>) se ejecuta por CLI con
+                vídeos positivos/negativos y escribe su recomendación aquí.
             </span>
         </div>
     </div>

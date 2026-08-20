@@ -995,6 +995,16 @@ function TemplarDetener() {
     Templar.job = null;
 }
 
+/* Muestra los parámetros específicos del ritual seleccionado (fase C / cruces D). */
+function TemplarRitualParams() {
+    var fase = document.getElementById("calibFaseWrap");
+    var esp = document.getElementById("calibEsperadosWrap");
+    var wrap = document.getElementById("calibRitualParams");
+    if (fase) fase.style.display = (Templar.ritual === "C") ? "" : "none";
+    if (esp) esp.style.display = (Templar.ritual === "D") ? "" : "none";
+    if (wrap) wrap.style.display = (Templar.ritual === "C" || Templar.ritual === "D") ? "" : "none";
+}
+
 function TemplarIniciar() {
     Templar.camara = parseInt(document.getElementById("calib_camara").value, 10) || 0;
     if (!Templar.camara) { alert("Selecciona una cámara."); return; }
@@ -1002,12 +1012,21 @@ function TemplarIniciar() {
     var btn = null;
     var bots = document.querySelectorAll(".calib-ritual");
     for (var i = 0; i < bots.length; i++) if (bots[i].classList.contains("is-activo")) { btn = bots[i]; break; }
-    if (!btn) { alert("Elige un ritual (A · Alcance o B · Paso veloz)."); return; }
+    if (!btn) { alert("Elige un ritual (A · Alcance … F · Enfoque)."); return; }
     Templar.ritual = btn.getAttribute("data-ritual");
+    var extra = "";
+    if (Templar.ritual === "C") {
+        var fase = document.getElementById("calib_fase");
+        extra = "&fase=" + encodeURIComponent(fase ? fase.value : "c1");
+    }
+    if (Templar.ritual === "D") {
+        var esp = document.getElementById("calib_esperados");
+        extra = "&esperados=" + (esp ? (parseInt(esp.value, 10) || 3) : 3);
+    }
     document.getElementById("calibEstadoRitual").textContent = "Iniciando ritual " + Templar.ritual + " en la cámara " + Templar.camara + " (" + Templar.segundos + "s)…";
     document.getElementById("calibRecomendaciones").textContent = "— midiendo en vivo —";
     document.getElementById("calibMetrics").textContent = "— arrancando el probe —";
-    fetch("pages/config/acciones_ajax.php?a=20&camara=" + Templar.camara + "&ritual=" + Templar.ritual + "&segundos=" + Templar.segundos)
+    fetch("pages/config/acciones_ajax.php?a=20&camara=" + Templar.camara + "&ritual=" + Templar.ritual + "&segundos=" + Templar.segundos + extra)
         .then(function (r) { return r.json(); })
         .then(function (d) {
             if (!d || !d.ok) {
@@ -1053,15 +1072,29 @@ function TemplarRenderMetricas(d) {
         "FPS real del stream: " + (d.fps_real != null ? d.fps_real : "—"),
         "Frames analizados: " + (d.frames != null ? d.frames : "—"),
     ];
-    if (d.ritual === "A") {
-        lineas.push("Caras vistas: " + (r.caras_vistas != null ? r.caras_vistas : "0"));
+    if (d.ritual === "A" || d.ritual === "F") {
+        lineas.push("Caras vistas: " + (r.caras_vistas != null ? r.caras_vistas : (r.n != null ? r.n : "0")));
         lineas.push("Tamaño de cara: " + (r.px_min != null ? r.px_min + " – " + r.px_max + " px" : "—"));
-        lineas.push("Enfoque: " + (r.sharp_min != null ? r.sharp_min + " – " + r.sharp_max : "—"));
-    } else {
+        lineas.push("Enfoque: " + (r.sharp_min != null ? r.sharp_min + " – " + (r.sharp_max != null ? r.sharp_max : (r.sharp_p25 != null ? r.sharp_p25 : "—")) : "—"));
+    } else if (d.ritual === "B") {
         lineas.push("Frames con cara: " + (r.frames_con_cara != null ? r.frames_con_cara : "0"));
         lineas.push("Racha máx. frames con cara: " + (r.racha_max_frames_cara != null ? r.racha_max_frames_cara : "0"));
         lineas.push("Disparos de movimiento (config actual): " + (r.disparos_movimiento != null ? r.disparos_movimiento : "0"));
         lineas.push("Paso capturado: " + (r.paso_capturado ? "SÍ" : "NO"));
+    } else if (d.ritual === "C") {
+        lineas.push("Fase: " + (d.fase || "—"));
+        lineas.push("Disparos: " + (r.disparos != null ? r.disparos : "0"));
+        lineas.push("% frames con movimiento: " + (r.pct_mov != null ? r.pct_mov : "—"));
+        if (r.fases_pendientes && r.fases_pendientes.length) lineas.push("Fase(s) pendiente(s): " + r.fases_pendientes.join(", "));
+        if (r.ajuste) lineas.push("Ajuste: " + r.ajuste);
+    } else if (d.ritual === "D") {
+        lineas.push("Cruces detectados: " + (r.detectados != null ? r.detectados + " / " + (r.esperados != null ? r.esperados : "?") : "0"));
+        lineas.push("Área mínima actual (px²): " + (r.area_min_actual != null ? r.area_min_actual : "—"));
+    } else if (d.ritual === "E") {
+        var tf = d.tar_far1 || {};
+        lineas.push("TAR a FAR=1%: " + (tf.tar != null ? (tf.tar * 100).toFixed(1) + "%" : "—"));
+        lineas.push("Umbral coseno (FAR 1%): " + (tf.umbral != null ? tf.umbral : "—"));
+        lineas.push("Pares genuinos/impostores: " + (d.n_genuinos != null ? d.n_genuinos + " / " + (d.n_impostores != null ? d.n_impostores : "—") : "—"));
     }
     el.innerHTML = lineas.join("<br>");
 }
@@ -1078,7 +1111,7 @@ function TemplarRenderRecomendaciones(d) {
         if (!v || v.recomendado == null) continue;
         html.push('<div style="padding:6px 0;border-bottom:1px solid #2a2a2a">'
             + '<b style="font-family:monospace">' + k + '</b>: '
-            + '<span style="text-decoration:line-through;color:#999">' + v.actual + '</span> → '
+            + '<span style="text-decoration:line-through;color:#999">' + (v.actual != null ? v.actual : "—") + '</span> → '
             + '<b style="color:#2e9e44">' + v.recomendado + '</b>'
             + '<div style="color:#9a9a9a">' + (v.motivo ? v.motivo : "") + '</div></div>');
     }
@@ -1348,10 +1381,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     for (var j = 0; j < camsRitual.length; j++) camsRitual[j].classList.remove("is-activo");
                     b.classList.add("is-activo");
                     Templar.ritual = b.getAttribute("data-ritual");
+                    TemplarRitualParams();
                 });
             })(camsRitual[i]);
         }
         if (camsRitual.length) camsRitual[0].classList.add("is-activo");
+        TemplarRitualParams();
         var selCalibCam = document.getElementById("calib_camara");
         if (selCalibCam) selCalibCam.addEventListener("change", function () {
             Templar.camara = parseInt(selCalibCam.value, 10) || 0;

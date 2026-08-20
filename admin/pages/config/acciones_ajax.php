@@ -431,37 +431,48 @@ switch ($_GET["a"]) {
 
     /* ---------- Templar · calibrador guiado ---------- */
 
-    case "20": // iniciar ritual del calibrador (GET: camara, ritual A|B, segundos)
+    case "20": // iniciar ritual del calibrador (GET: camara, ritual A-F, segundos, fase?, esperados?)
         $cam_id = (int)($_GET["camara"] ?? 0);
-        $ritual = in_array($_GET["ritual"] ?? "", ["A", "B"], true) ? $_GET["ritual"] : "";
+        $ritual = in_array($_GET["ritual"] ?? "", ["A", "B", "C", "D", "E", "F"], true) ? $_GET["ritual"] : "";
         $seg = max(5, min(60, (int)($_GET["segundos"] ?? 20)));
-        $cam = DB::selectOne("SELECT * FROM camaras WHERE id = ?", [$cam_id]);
-        if (!$cam || $ritual === "" || trim((string)$cam["url_conexion"]) === "") {
-            http_response_code(400);
-            echo json_encode(["ok" => false, "error" => "cámara/ritual inválidos o sin URL"]);
-            break;
+        $fase = in_array($_GET["fase"] ?? "", ["c1", "c2"], true) ? $_GET["fase"] : "c1";
+        $esperados = max(1, min(20, (int)($_GET["esperados"] ?? 3)));
+
+        if ($ritual !== "E") {
+            // Los rituales en vivo necesitan cámara + URL.
+            $cam = DB::selectOne("SELECT * FROM camaras WHERE id = ?", [$cam_id]);
+            if (!$cam || trim((string)$cam["url_conexion"]) === "") {
+                http_response_code(400);
+                echo json_encode(["ok" => false, "error" => "cámara inválida o sin URL"]);
+                break;
+            }
+            $url = str_replace("'", "", (string)$cam["url_conexion"]);
+            $parametros = implode(",", [
+                (int)$cam["segundos_analizar"], (int)$cam["porcentaje_mov"], (int)$cam["dontCare"],
+                (int)$cam["fps"], (int)$cam["redimesionframe"], (int)$cam["sensibilidad"],
+            ]);
+        } else {
+            // Ritual E (identidad): offline, no necesita cámara ni URL.
+            $url = "-";
+            $parametros = "2,60,220,14,60,1";
         }
-        $job = substr(bin2hex(random_bytes(6)), 0, 12);
-        $url = str_replace("'", "", (string)$cam["url_conexion"]);
-        $parametros = implode(",", [
-            (int)$cam["segundos_analizar"], (int)$cam["porcentaje_mov"], (int)$cam["dontCare"],
-            (int)$cam["fps"], (int)$cam["redimesionframe"], (int)$cam["sensibilidad"],
-        ]);
         $det = getenv("RF_DET_SIZE") ?: "1280";
         $sharp = getenv("RF_MIN_SHARPNESS") ?: "55";
         $sr = getenv("RF_SR_EMBED_MIN_FACE") ?: "96";
 
+        $job = substr(bin2hex(random_bytes(6)), 0, 12);
         $dir_jobs = rtrim(RUTA_PROYECTO, "/") . "/motor/calibrador/jobs";
         if (!is_dir($dir_jobs)) { @mkdir($dir_jobs, 0777, true); }
         @file_put_contents($dir_jobs . "/" . $job . ".json", json_encode([
             "camara_id" => $cam_id, "ritual" => $ritual, "segundos" => $seg,
-            "iniciado" => date("Y-m-d H:i:s"),
+            "fase" => $fase, "esperados" => $esperados, "iniciado" => date("Y-m-d H:i:s"),
         ]));
 
         $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/calibrador.py "
              . (int)$cam_id . " '" . $url . "' " . $ritual . " " . $job . " " . $seg
              . " --ruta '" . RUTA_PROYECTO . "'"
              . " --parametros '" . $parametros . "'"
+             . " --fase " . $fase . " --esperados " . $esperados
              . " --det-size " . (int)$det . " --min-sharpness " . (float)$sharp
              . " --sr-embed-min-face " . (int)$sr
              . " > /dev/null 2>&1 &";
