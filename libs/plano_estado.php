@@ -18,6 +18,7 @@
  */
 
 require_once __DIR__ . "/db.php";
+require_once __DIR__ . "/etiquetas.php";
 
 /**
  * Cámaras de un local con su estado de completado.
@@ -104,7 +105,7 @@ function nodos_del_local(int $local_id): array
             "ref_id" => (int)$c["id"],
             "x"      => (int)$c["x"],
             "y"      => (int)$c["y"],
-            "nombre" => (string)$c["descripcion"],
+            "nombre" => camara_label((string)$c["descripcion"]),
         ];
     }
 
