@@ -939,6 +939,147 @@ function cargarplano() {
 }
 
 /* =========================================================================
+ * Templar · calibrador guiado + restauración de valores de fábrica
+ * ========================================================================= */
+var Templar = {
+    job: null, poll: null, ritual: "A", camara: 0, segundos: 20,
+};
+
+/* ↺ por campo: restaura el select a su valor de fábrica (data-default). */
+function RestaurarCampo(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.value = el.getAttribute("data-default") || "";
+    if (typeof rfToast === "function") rfToast("Campo restaurado a fábrica. Pulsa «Guardar cámara».", "ok");
+}
+
+/* Restaura los 7 parámetros de análisis de la cámara seleccionada. */
+function RestaurarFabrica() {
+    var cam = document.getElementById("camara");
+    if (!cam || !cam.value || cam.value === "-") { alert("Selecciona primero una cámara."); return; }
+    if (!confirm("¿Restaurar los 7 parámetros de análisis de esta cámara a los valores de fábrica?")) return;
+    location.href = "?page=config&tab=camaras&sub=editar&accion=calibrar_restaurar_camara&camara=" + cam.value;
+}
+
+/* Cambio de modo (Esta cámara / Configuración general). */
+function TemplarModo() {
+    var r = document.querySelector('input[name="calib_modo"]:checked');
+    var general = r && r.value === "general";
+    var cam = document.getElementById("calibPanelCamara");
+    var gen = document.getElementById("calibPanelGeneral");
+    if (cam) cam.style.display = general ? "none" : "";
+    if (gen) gen.style.display = general ? "" : "none";
+    if (general) TemplarDetener();
+}
+
+function TemplarDetener() {
+    if (Templar.poll) { clearInterval(Templar.poll); Templar.poll = null; }
+    Templar.job = null;
+}
+
+function TemplarIniciar() {
+    Templar.camara = parseInt(document.getElementById("calib_camara").value, 10) || 0;
+    if (!Templar.camara) { alert("Selecciona una cámara."); return; }
+    Templar.segundos = parseInt(document.getElementById("calib_segundos").value, 10) || 20;
+    var btn = null;
+    var bots = document.querySelectorAll(".calib-ritual");
+    for (var i = 0; i < bots.length; i++) if (bots[i].classList.contains("is-activo")) { btn = bots[i]; break; }
+    if (!btn) { alert("Elige un ritual (A · Alcance o B · Paso veloz)."); return; }
+    Templar.ritual = btn.getAttribute("data-ritual");
+    document.getElementById("calibEstadoRitual").textContent = "Iniciando ritual " + Templar.ritual + " en la cámara " + Templar.camara + " (" + Templar.segundos + "s)…";
+    document.getElementById("calibRecomendaciones").textContent = "— midiendo en vivo —";
+    document.getElementById("calibMetrics").textContent = "— arrancando el probe —";
+    fetch("pages/config/acciones_ajax.php?a=20&camara=" + Templar.camara + "&ritual=" + Templar.ritual + "&segundos=" + Templar.segundos)
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            if (!d || !d.ok) {
+                document.getElementById("calibEstadoRitual").textContent = "Error: " + (d && d.error ? d.error : "no se pudo iniciar");
+                return;
+            }
+            Templar.job = d.job;
+            TemplarDetener();
+            Templar.poll = setInterval(TemplarPoll, 1000);
+        })
+        .catch(function () { document.getElementById("calibEstadoRitual").textContent = "Error de red al iniciar el ritual."; });
+}
+
+function TemplarPoll() {
+    if (!Templar.job) return;
+    var img = document.getElementById("calibImg");
+    if (img) img.src = "pages/config/acciones_ajax.php?a=22&job=" + Templar.job + "&t=" + Date.now();
+    fetch("pages/config/acciones_ajax.php?a=21&job=" + Templar.job)
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            if (!d) return;
+            if (d.estado === "corriendo" || d.estado === "pendiente") {
+                document.getElementById("calibEstadoRitual").textContent = "Ritual en curso… (" + d.estado + ")";
+                return;
+            }
+            TemplarDetener();
+            if (d.estado === "error") {
+                document.getElementById("calibEstadoRitual").textContent = "El ritual terminó con error: " + (d.error || "desconocido");
+                return;
+            }
+            document.getElementById("calibEstadoRitual").textContent = "Ritual " + d.ritual + " completado en " + d.duracion_s + "s. Revisa la recomendación.";
+            TemplarRenderMetricas(d);
+            TemplarRenderRecomendaciones(d);
+        })
+        .catch(function () {});
+}
+
+function TemplarRenderMetricas(d) {
+    var el = document.getElementById("calibMetrics");
+    if (!el) return;
+    var r = d.resumen || {};
+    var lineas = [
+        "FPS real del stream: " + (d.fps_real != null ? d.fps_real : "—"),
+        "Frames analizados: " + (d.frames != null ? d.frames : "—"),
+    ];
+    if (d.ritual === "A") {
+        lineas.push("Caras vistas: " + (r.caras_vistas != null ? r.caras_vistas : "0"));
+        lineas.push("Tamaño de cara: " + (r.px_min != null ? r.px_min + " – " + r.px_max + " px" : "—"));
+        lineas.push("Enfoque: " + (r.sharp_min != null ? r.sharp_min + " – " + r.sharp_max : "—"));
+    } else {
+        lineas.push("Frames con cara: " + (r.frames_con_cara != null ? r.frames_con_cara : "0"));
+        lineas.push("Racha máx. frames con cara: " + (r.racha_max_frames_cara != null ? r.racha_max_frames_cara : "0"));
+        lineas.push("Disparos de movimiento (config actual): " + (r.disparos_movimiento != null ? r.disparos_movimiento : "0"));
+        lineas.push("Paso capturado: " + (r.paso_capturado ? "SÍ" : "NO"));
+    }
+    el.innerHTML = lineas.join("<br>");
+}
+
+function TemplarRenderRecomendaciones(d) {
+    var el = document.getElementById("calibRecomendaciones");
+    if (!el) return;
+    var recs = d.recomendaciones || {};
+    var claves = Object.keys(recs);
+    if (!claves.length) { el.textContent = "— sin recomendación (revisa las métricas) —"; return; }
+    var html = [];
+    for (var i = 0; i < claves.length; i++) {
+        var k = claves[i], v = recs[k];
+        if (!v || v.recomendado == null) continue;
+        html.push('<div style="padding:6px 0;border-bottom:1px solid #2a2a2a">'
+            + '<b style="font-family:monospace">' + k + '</b>: '
+            + '<span style="text-decoration:line-through;color:#999">' + v.actual + '</span> → '
+            + '<b style="color:#2e9e44">' + v.recomendado + '</b>'
+            + '<div style="color:#9a9a9a">' + (v.motivo ? v.motivo : "") + '</div></div>');
+    }
+    el.innerHTML = html.join("");
+}
+
+function TemplarAplicar() {
+    if (!Templar.camara) { alert("Selecciona una cámara."); return; }
+    if (!confirm("¿Aplicar las recomendaciones pendientes a esta cámara?")) return;
+    location.href = "?page=config&tab=camaras&sub=editar&accion=calibrar_aplicar&camara=" + Templar.camara;
+}
+
+function TemplarRestaurarFabrica() {
+    if (!Templar.camara) { alert("Selecciona una cámara."); return; }
+    if (!confirm("¿Restaurar los parámetros de análisis de esta cámara a los valores de fábrica?")) return;
+    location.href = "?page=config&tab=camaras&sub=editar&accion=calibrar_restaurar_camara&camara=" + Templar.camara;
+}
+
+/* =========================================================================
  * Editor de croquis a mano alzada (tipo Paint) — plano_dibujo_<local>.png
  * ========================================================================= */
 var dibujo = {
@@ -1178,6 +1319,27 @@ document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll(".rf-tab.is-empty").forEach(function (tab) {
             tab.addEventListener("click", function (e) { e.preventDefault(); alert("Ese plano todavía no existe. Súbelo o dibújalo primero."); });
         });
+    }
+
+    /* ---------- Templar · calibrador guiado (tab=camaras, sub=calibrar) ---------- */
+    if (FORGE_TAB === "camaras" && FORGE_SUB === "calibrar") {
+        var camsRitual = document.querySelectorAll(".calib-ritual");
+        for (var i = 0; i < camsRitual.length; i++) {
+            (function (b) {
+                b.addEventListener("click", function () {
+                    for (var j = 0; j < camsRitual.length; j++) camsRitual[j].classList.remove("is-activo");
+                    b.classList.add("is-activo");
+                    Templar.ritual = b.getAttribute("data-ritual");
+                });
+            })(camsRitual[i]);
+        }
+        if (camsRitual.length) camsRitual[0].classList.add("is-activo");
+        var selCalibCam = document.getElementById("calib_camara");
+        if (selCalibCam) selCalibCam.addEventListener("change", function () {
+            Templar.camara = parseInt(selCalibCam.value, 10) || 0;
+            TemplarDetener();
+        });
+        TemplarModo();
     }
 });
 </script>

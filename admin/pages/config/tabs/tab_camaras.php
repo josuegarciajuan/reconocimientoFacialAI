@@ -1,13 +1,40 @@
 <?php
-/* La Forja · Tab Cámaras (sabor: Forjar): crear cámara + editar cámara.
- * Sub-acciones: Forjar (crear) / Templar (editar) — resueltas en $sub.
+/* La Forja · Tab Cámaras (sabor: Forjar).
+ * Sub-acciones: Forjar (crear) / Editar (datos + parámetros de análisis) /
+ * Templar (calibrador guiado) — resueltas en $sub.
+ *
+ * 2026-08-20:
+ *  - Submenú de 3 pasos; "Templar" pasa a ser el calibrador guiado.
+ *  - Form "Editar" reorganizado por dominios (movimiento/rendimiento/almacenamiento)
+ *    con botón ↺ por campo (restaurar a fábrica) y badges de recomendación del probe.
+ *  - Vista "Templar": calibrador con stream anotado en vivo + rituales + restaurar.
+ *
  * Variables disponibles: $camaras, $camara_sel, $cfg, $puerta_sel, $salida_sel,
  * $encendida_sel y la función rf_cfg_select_rango() (edit.php).
- *
- * 2026-08-19: se retiran "Alias IPCamlive" y "Origen de vídeo" (no aportan).
- * La posición X/Y ya no se edita aquí: se fija arrastrando la cámara en El Yunque.
  */
 require_once __DIR__ . "/../../../../libs/etiquetas.php";
+require_once __DIR__ . "/../../../../libs/calibracion.php";
+
+$calib_params = calib_parametros();
+$reco_cam = $camara_sel ? calib_recomendaciones_camara((int) $camara_sel["id"]) : [];
+
+/* Globales RF_* mostrados en "Configuración general" (fábrica = default del código). */
+$globales_ui = [
+    "RF_MOV_THRESHOLD"    => ["label" => "Umbral de movimiento", "factory" => "21", "desc" => "Diferencia de píxel para contar movimiento (absdiff)."],
+    "RF_MOV_BLUR"         => ["label" => "Blur de movimiento", "factory" => "21", "desc" => "Kernel GaussianBlur aplicado antes del umbral."],
+    "RF_MOV_DILATE"       => ["label" => "Dilate de movimiento", "factory" => "2", "desc" => "Iteraciones de dilate para unir el contorno."],
+    "RF_DET_SIZE"         => ["label" => "Resolución de detección de cara", "factory" => "1280", "desc" => "det_size del detector RetinaFace sobre el frame completo."],
+    "RF_MIN_SHARPNESS"    => ["label" => "Nitidez mínima de cara", "factory" => "55", "desc" => "Varianza de Laplaciano mínima para considerar la cara aprovechable."],
+    "RF_SR_EMBED_MIN_FACE"=> ["label" => "Cara mínima para SR antes de embedding", "factory" => "96", "desc" => "Caras con lado mayor menor que esto se super-resuelven antes del embedding."],
+    "RF_FACE_EVERY"       => ["label" => "Muestreo de caras en procesa_video", "factory" => "2", "desc" => "Analiza 1 de cada N frames en los vídeos archivados."],
+    "RF_VIDEO_SEG_ANTES"  => ["label" => "Pre-roll de vídeo", "factory" => "2", "desc" => "Segundos previos al movimiento que se incluyen en el clip."],
+    "RF_VIDEO_SEG_DESPUES"=> ["label" => "Post-roll de vídeo", "factory" => "2", "desc" => "Segundos posteriores al movimiento que se incluyen en el clip."],
+];
+$reco_glob = $camara_sel ? calib_recomendaciones((int) $camara_sel["id"]) : [];
+
+/* Modo/cámara preseleccionados en Templar. */
+$calib_modo = (($_GET["modo"] ?? "") === "general") ? "general" : "camara";
+$calib_camara_sel = (int) ($_GET["camara"] ?? 0);
 ?>
 
 <!-- ---------- Submenú de la pestaña ---------- -->
@@ -17,11 +44,14 @@ require_once __DIR__ . "/../../../../libs/etiquetas.php";
        href="?page=config&tab=camaras&sub=crear" data-lore="forjar">Forjar</a>
     <a role="tab" aria-selected="<?= $sub === "editar" ? "true" : "false"; ?>"
        class="forge-sub<?= $sub === "editar" ? " is-active" : ""; ?>"
-       href="?page=config&tab=camaras&sub=editar" data-lore="templar">Templar</a>
+       href="?page=config&tab=camaras&sub=editar" data-lore="editar">Editar</a>
+    <a role="tab" aria-selected="<?= $sub === "calibrar" ? "true" : "false"; ?>"
+       class="forge-sub<?= $sub === "calibrar" ? " is-active" : ""; ?>"
+       href="?page=config&tab=camaras&sub=calibrar" data-lore="templar">Templar</a>
 </div>
 
 <?php if ($sub === "editar"): ?>
-<!-- ---------- Templar (editar cámara) ---------- -->
+<!-- ================= Templar · Editar cámara ================= -->
 <div class="form-section" data-panel-forge="editar">
     <div class="form-section__title">
         <span class="form-section__emoji" aria-hidden="true">✏️</span>
@@ -75,73 +105,211 @@ require_once __DIR__ . "/../../../../libs/etiquetas.php";
         </div>
     </div>
 
-    <!-- ---------- Parámetros de análisis ---------- -->
+    <!-- ---------- Parámetros de análisis (agrupados por dominio) ---------- -->
     <div class="form-section__title mt-6">
         <span class="form-section__emoji" aria-hidden="true">⚙️</span>
         Parámetros de análisis
     </div>
     <p class="text-xs text-gray-500 dark:text-gray-600 mb-4">
-        Parámetros que aplica el motor a la cámara seleccionada. Se guardan con el botón «Guardar cámara».
+        Parámetros que aplica el motor a la cámara seleccionada. El «↺» restaura ese campo a su
+        valor de fábrica. Los badges <span style="color:#2e9e44">recomendado</span> llegan del
+        calibrador guiado (<a href="?page=config&tab=camaras&sub=calibrar&camara=<?= (int)($camara_sel["id"] ?? 0); ?>" class="underline">Templar</a>).
+    </p>
+
+    <?php
+    $dominios_ui = [
+        "movimiento"   => ["🎯", "Movimiento", "Cómo decide el centinela que hay movimiento (dispara la grabación)."],
+        "rendimiento"  => ["⚡", "Rendimiento", "Cadencia y escala de análisis: más exigente = más CPU."],
+        "almacenamiento" => ["💾", "Almacenamiento", "Cuánto ocupa cada clip de movimiento."],
+    ];
+    foreach ($dominios_ui as $dom => $d): ?>
+        <div class="form-section__title mt-4" style="font-size:0.9rem">
+            <span class="form-section__emoji" aria-hidden="true"><?= $d[0]; ?></span>
+            <?= htmlspecialchars($d[1]); ?>
+        </div>
+        <p class="text-xs text-gray-500 dark:text-gray-600 mb-2"><?= htmlspecialchars($d[2]); ?></p>
+        <div class="form-grid">
+            <?php foreach ($calib_params as $k => $meta): if ($meta["dominio"] !== $dom) { continue; } ?>
+                <?php $tiene_reco = isset($reco_cam[$k]); ?>
+                <div>
+                    <label for="<?= $k; ?>" class="field-label">
+                        <?= htmlspecialchars($meta["label"]); ?>
+                        <?php if ($tiene_reco): ?>
+                            <a href="?page=config&tab=camaras&sub=editar&accion=calibrar_aplicar&camara=<?= (int)$camara_sel["id"]; ?>&parametro=<?= $k; ?>"
+                               class="rf-badge" style="color:#2e9e44;font-weight:600" title="Aplicar recomendación del calibrador">
+                                recomendado: <?= (int)$reco_cam[$k]["recomendado"]; ?> ⚡
+                            </a>
+                        <?php endif; ?>
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <select name="<?= $k; ?>" id="<?= $k; ?>" class="input border w-full" data-default="<?= (int)$meta["factory"]; ?>">
+                            <?= rf_cfg_select_rango((int)$meta["rango"][0], (int)$meta["rango"][1], $cfg[$k]); ?>
+                        </select>
+                        <button type="button" class="button button--sm bg-gray-700 text-white"
+                                onclick="RestaurarCampo('<?= $k; ?>')" title="Restaurar a fábrica (<?= (int)$meta["factory"]; ?>)">↺</button>
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-600 mt-1"><?= htmlspecialchars($meta["lore"]); ?></p>
+                    <?php if ($tiene_reco && !empty($reco_cam[$k]["motivo"])): ?>
+                        <p class="text-xs mt-1" style="color:#2e9e44">💡 <?= htmlspecialchars($reco_cam[$k]["motivo"]); ?></p>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php endforeach; ?>
+
+    <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 items-center">
+        <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="guardar()">Guardar cámara</button>
+        <button type="button" class="button text-white bg-theme-6 shadow-md" onclick="RestaurarFabrica()">Restaurar valores de fábrica</button>
+        <?php if ($camara_sel): ?>
+            <a href="?page=config&tab=camaras&sub=calibrar&camara=<?= (int)$camara_sel["id"]; ?>"
+               class="button text-white bg-theme-2 shadow-md">Ir a Templar →</a>
+        <?php endif; ?>
+        <span class="text-xs text-gray-500 dark:text-gray-600" data-lore="posicion-yunque">
+            La posición (X/Y) se ajusta arrastrando la cámara en «El Yunque».
+        </span>
+    </div>
+</div>
+
+<?php elseif ($sub === "calibrar"): ?>
+<!-- ================= Templar · Calibrador guiado ================= -->
+<div class="form-section" data-panel-forge="calibrar">
+    <div class="form-section__title">
+        <span class="form-section__emoji" aria-hidden="true">🔧</span>
+        Templar · Calibrador guiado
+    </div>
+    <p class="text-xs text-gray-500 dark:text-gray-600 mb-4">
+        Cada ritual mide la cámara <b>en vivo</b> con el mismo código de producción y propone
+        valores con su motivo. Nada se aplica sin tu confirmación: revisa la recomendación y pulsa
+        «Aplicar» o descártala. También puedes ejecutar solo el ritual que te interese.
     </p>
 
     <div class="form-grid">
         <div>
-            <label for="segundos_analizar" class="field-label">Segundos a analizar</label>
-            <select name="segundos_analizar" id="segundos_analizar" class="input border w-full">
-                <?= rf_cfg_select_rango(1, 10, $cfg["segundos_analizar"]); ?>
+            <span class="field-label">Modo</span>
+            <div class="flex flex-wrap gap-x-4 gap-y-2 items-center">
+                <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <input type="radio" name="calib_modo" value="camara" style="accent-color:var(--mordor-oro)"
+                           <?= $calib_modo === "camara" ? "checked" : ""; ?> onchange="TemplarModo()"> Esta cámara
+                </label>
+                <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <input type="radio" name="calib_modo" value="general" style="accent-color:var(--mordor-oro)"
+                           <?= $calib_modo === "general" ? "checked" : ""; ?> onchange="TemplarModo()"> Configuración general
+                </label>
+            </div>
+        </div>
+        <div id="calibCamaraWrap">
+            <label for="calib_camara" class="field-label">Cámara</label>
+            <select id="calib_camara" name="calib_camara" class="input border w-full">
+                <?php foreach ($camaras as $c): ?>
+                    <option value="<?= (int)$c["id"]; ?>" <?= ($calib_camara_sel === (int)$c["id"]) ? "selected" : ""; ?>><?= htmlspecialchars(camara_label($c["descripcion"])); ?></option>
+                <?php endforeach; ?>
             </select>
         </div>
-        <div>
-            <label for="porcentaje_mov" class="field-label">Porcentaje de movimiento</label>
-            <select name="porcentaje_mov" id="porcentaje_mov" class="input border w-full">
-                <?= rf_cfg_select_rango(1, 100, $cfg["porcentaje_mov"]); ?>
-            </select>
-        </div>
-        <div>
-            <label for="dontCare" class="field-label">Área mínima de movimiento (px²)</label>
-            <select name="dontCare" id="dontCare" class="input border w-full">
-                <?= rf_cfg_select_rango(10, 2000, $cfg["dontCare"]); ?>
-            </select>
-            <p class="text-xs text-gray-500 dark:text-gray-600 mt-1">
-                Área mínima del contorno (px²) sobre el frame redimensionado por «Redimensionar frame»:
-                si el mayor contorno es menor, no se cuenta como movimiento. Menor = más sensible.
-            </p>
-        </div>
-        <div>
-            <label for="fps" class="field-label">FPS</label>
-            <select name="fps" id="fps" class="input border w-full">
-                <?= rf_cfg_select_rango(1, 30, $cfg["fps"]); ?>
-            </select>
-        </div>
-        <div>
-            <label for="maximo_videos" class="field-label">Máximo de vídeos</label>
-            <select name="maximo_videos" id="maximo_videos" class="input border w-full">
-                <?= rf_cfg_select_rango(20, 120, $cfg["maximo_videos"]); ?>
-            </select>
-        </div>
-        <div>
-            <label for="redimesionframe" class="field-label">Redimensionar frame</label>
-            <select name="redimesionframe" id="redimesionframe" class="input border w-full">
-                <?= rf_cfg_select_rango(1, 100, $cfg["redimesionframe"]); ?>
-            </select>
-        </div>
-        <div>
-            <label for="sensibilidad" class="field-label">Salto de frames (cada N)</label>
-            <select name="sensibilidad" id="sensibilidad" class="input border w-full">
-                <?= rf_cfg_select_rango(1, 15, $cfg["sensibilidad"]); ?>
-            </select>
-            <p class="text-xs text-gray-500 dark:text-gray-600 mt-1">
-                Se analiza 1 de cada N frames. Más alto = se analizan menos frames = menos sensible y
-                menos CPU (la ventana efectiva pasa a «Segundos a analizar» × N). Con 1 se analizan todos.
-            </p>
+        <div id="calibSegundosWrap">
+            <label for="calib_segundos" class="field-label">Duración del ritual (s)</label>
+            <input type="number" id="calib_segundos" name="calib_segundos" value="20" min="5" max="60" class="input border w-full">
         </div>
     </div>
 
-    <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 items-center">
-        <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="guardar()">Guardar cámara</button>
-        <span class="text-xs text-gray-500 dark:text-gray-600" data-lore="posicion-yunque">
-            La posición (X/Y) se ajusta arrastrando la cámara en «El Yunque».
-        </span>
+    <!-- ---- Modo "Esta cámara" ---- -->
+    <div id="calibPanelCamara" <?= $calib_modo === "general" ? 'style="display:none"' : ""; ?>>
+        <div class="form-section__title mt-6">
+            <span class="form-section__emoji" aria-hidden="true">📹</span>
+            Vista del probe (en vivo)
+        </div>
+        <div class="flex flex-wrap gap-4 mt-2">
+            <div class="calib-live" style="position:relative;flex:1 1 420px;min-width:320px">
+                <img id="calibImg" src="" alt="Vista del calibrador"
+                     style="width:100%;border-radius:8px;border:1px solid #333;background:#000">
+                <div id="calibEstadoRitual" class="text-xs mt-2" style="color:#9a9a9a">
+                    Elige un ritual y pulsa «Iniciar».
+                </div>
+            </div>
+            <div style="flex:1 1 280px;min-width:240px">
+                <div class="form-section__title" style="font-size:0.9rem">
+                    <span class="form-section__emoji" aria-hidden="true">📊</span> Métricas en vivo
+                </div>
+                <div id="calibMetrics" class="text-xs mt-2" style="line-height:1.7">
+                    — sin datos todavía —
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section__title mt-6">
+            <span class="form-section__emoji" aria-hidden="true">🧪</span> Rituales
+        </div>
+        <div class="flex flex-wrap gap-2 mt-2">
+            <button type="button" class="button text-white bg-theme-2 shadow-md calib-ritual" data-ritual="A"
+                    title="Mide a qué distancias/tamaños se detecta la cara">A · Alcance (detección de cara)</button>
+            <button type="button" class="button text-white bg-theme-2 shadow-md calib-ritual" data-ritual="B"
+                    title="Pasa rápido delante de la cámara: comprueba que el movimiento/captura no se pierde">B · Paso veloz (FPS)</button>
+        </div>
+
+        <div class="form-section__title mt-6">
+            <span class="form-section__emoji" aria-hidden="true">📋</span> Recomendación
+        </div>
+        <div id="calibRecomendaciones" class="text-xs mt-2" style="line-height:1.7">
+            — ejecuta un ritual para obtener una recomendación —
+        </div>
+
+        <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 items-center">
+            <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="TemplarIniciar()">▶ Iniciar ritual</button>
+            <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="TemplarAplicar()">Aplicar recomendación</button>
+            <button type="button" class="button text-white bg-theme-6 shadow-md" onclick="TemplarRestaurarFabrica()">Restaurar valores de fábrica</button>
+        </div>
+    </div>
+
+    <!-- ---- Modo "Configuración general" ---- -->
+    <div id="calibPanelGeneral" <?= $calib_modo === "general" ? "" : 'style="display:none"'; ?>>
+        <div class="form-section__title mt-6">
+            <span class="form-section__emoji" aria-hidden="true">🌐</span> Parámetros globales del algoritmo
+        </div>
+        <p class="text-xs text-gray-500 dark:text-gray-600 mb-2">
+            Valores del <code>.env</code> (fuera de git). El «↺» borra la línea para que aplique el
+            default del código (fábrica). Los rituales del modo «Esta cámara» también pueden
+            recomendar valores globales (RF_*) aquí.
+        </p>
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+                <thead>
+                    <tr style="text-align:left;border-bottom:1px solid #333">
+                        <th class="p-2">Parámetro</th><th class="p-2">Actual</th><th class="p-2">Fábrica</th><th class="p-2">Descripción</th><th class="p-2"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($globales_ui as $k => $g):
+                        $v_env = getenv($k);
+                        $actual = ($v_env !== false && $v_env !== "") ? $v_env : ("default (" . $g["factory"] . ")");
+                        $tiene_reco = isset($reco_glob[$k]); ?>
+                        <tr style="border-bottom:1px solid #2a2a2a">
+                            <td class="p-2" style="font-family:monospace"><?= $k; ?>
+                                <?php if ($tiene_reco): ?>
+                                    <span style="color:#2e9e44;font-weight:600" title="Recomendado por el calibrador">· recomendado: <?= htmlspecialchars((string)$reco_glob[$k]["recomendado"]); ?></span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="p-2" style="font-family:monospace"><?= htmlspecialchars((string)$actual); ?></td>
+                            <td class="p-2" style="font-family:monospace"><?= htmlspecialchars($g["factory"]); ?></td>
+                            <td class="p-2"><?= htmlspecialchars($g["desc"]); ?></td>
+                            <td class="p-2">
+                                <a href="?page=config&tab=camaras&sub=calibrar&accion=calibrar_restaurar_global&parametro=<?= $k; ?>&modo=general"
+                                   class="button button--sm bg-gray-700 text-white" title="Restaurar a fábrica">↺</a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 items-center">
+            <a href="?page=config&tab=camaras&sub=calibrar&accion=calibrar_restaurar_globales&modo=general"
+               class="button text-white bg-theme-6 shadow-md">Restaurar todos los globales</a>
+            <?php if ($camara_sel): ?>
+                <a href="?page=config&tab=camaras&sub=calibrar&accion=calibrar_aplicar_global&camara=<?= (int)$camara_sel["id"]; ?>&modo=general"
+                   class="button text-white bg-theme-1 shadow-md" title="Aplica las recomendaciones RF_* pendientes (de los rituales) al .env">Aplicar recomendaciones globales</a>
+            <?php endif; ?>
+            <span class="text-xs text-gray-500 dark:text-gray-600">
+                Los barridos offline (matching/cruces/face_every) llegarán en la Fase 2 del calibrador.
+            </span>
+        </div>
     </div>
 </div>
 

@@ -19,7 +19,7 @@ $es_admin = (($_SESSION["admin"] ?? 0) == 1);
 
 $tab_permitidos = ["camaras", "lineas", "plano"];
 $sub_per_tab = [
-    "camaras" => ["crear", "editar"],
+    "camaras" => ["crear", "editar", "calibrar"],
     "lineas"  => ["trazar", "editar"],
     "plano"   => [],
 ];

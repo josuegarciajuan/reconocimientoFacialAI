@@ -32,6 +32,8 @@ motor/revision/
 motor/backups/
 motor/calib/
 motor/llm_cache/
+# Datos runtime del calibrador guiado (Templar): jobs, frames anotados, resultados y recomendaciones
+motor/calibrador/
 # Informes de re-matching (reagrupar.py)
 motor/reagrupar_out/
 # Backups SQL generados por los scripts de backfill/reagrupar
