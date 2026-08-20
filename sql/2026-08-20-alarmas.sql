@@ -50,6 +50,8 @@ CREATE TABLE IF NOT EXISTS `alarmas` (
   `fecha` DATETIME NOT NULL,
   `severidad` ENUM('aviso','asedio') NOT NULL DEFAULT 'aviso'
       COMMENT 'aviso = primer movimiento; asedio = actividad sostenida/repetición',
+  `eventos` INT UNSIGNED NOT NULL DEFAULT 1
+      COMMENT 'disparos agrupados por cooldown; al superar el umbral escala a asedio',
   `origen` ENUM('camara','local') NOT NULL DEFAULT 'camara',
   `mensaje` VARCHAR(1024) DEFAULT NULL,
   `notificacion_vista` TINYINT NOT NULL DEFAULT 0,

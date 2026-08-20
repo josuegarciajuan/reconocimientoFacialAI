@@ -130,7 +130,6 @@ function alarma_disparar(int $local_id, ?int $camara_id, string $origen = "camar
     $cooldown  = max(1, (int)CONFIG_ALARMA_COOLDOWN_SEGS);
     $boost_seg = max(1, (int)CONFIG_ALARMA_BOOST_SEGS);
     $esc_ev    = max(1, (int)CONFIG_ALARMA_ESCALADA_EVENTOS);
-    $esc_segs  = max(1, (int)CONFIG_ALARMA_ESCALADA_SEGS);
 
     $camara_id = ($camara_id !== null && $camara_id > 0) ? (int)$camara_id : null;
     $cam = $camara_id ? DB::selectOne("SELECT descripcion FROM camaras WHERE id = ?", [$camara_id]) : null;
@@ -142,7 +141,7 @@ function alarma_disparar(int $local_id, ?int $camara_id, string $origen = "camar
 
     $corte_cooldown = date("Y-m-d H:i:s", time() - $cooldown);
     $reciente = DB::selectOne(
-        "SELECT id, severidad FROM alarmas
+        "SELECT id, severidad, eventos FROM alarmas
          WHERE local_id = ? AND fecha >= ? ORDER BY id DESC LIMIT 1",
         [$local_id, $corte_cooldown]
     );
@@ -150,26 +149,25 @@ function alarma_disparar(int $local_id, ?int $camara_id, string $origen = "camar
     $hasta = date("Y-m-d H:i:s", time() + $boost_seg);
 
     if ($reciente) {
-        // No duplicar: refrescar el modo asedio y escalar si procede.
-        DB::execute("UPDATE locales SET alarma_boost_hasta = ? WHERE id = ?", [$hasta, $local_id]);
+        // No duplicar: contar el evento y refrescar el modo asedio.
+        $eventos = (int)($reciente["eventos"] ?? 1) + 1;
         $escalada = false;
-        if ((string)$reciente["severidad"] === "aviso") {
-            $corte_esc = date("Y-m-d H:i:s", time() - $esc_segs);
-            $n = DB::selectOne(
-                "SELECT COUNT(*) AS n FROM alarmas WHERE local_id = ? AND fecha >= ?",
-                [$local_id, $corte_esc]
-            );
-            if ($n && (int)$n["n"] >= $esc_ev) {
-                DB::execute("UPDATE alarmas SET severidad = 'asedio' WHERE id = ?", [(int)$reciente["id"]]);
-                $escalada = true;
-            }
+        $nueva_sev = (string)$reciente["severidad"];
+        if ($nueva_sev === "aviso" && $eventos >= $esc_ev) {
+            $nueva_sev = "asedio";
+            $escalada = true;
         }
+        DB::execute(
+            "UPDATE alarmas SET eventos = ?, severidad = ? WHERE id = ?",
+            [$eventos, $nueva_sev, (int)$reciente["id"]]
+        );
+        DB::execute("UPDATE locales SET alarma_boost_hasta = ? WHERE id = ?", [$hasta, $local_id]);
         return ["ok" => true, "id" => (int)$reciente["id"], "nueva" => false, "escalada" => $escalada];
     }
 
     $id = DB::insert(
-        "INSERT INTO alarmas (local_id, camara_id, fecha, severidad, origen, mensaje)
-         VALUES (?, ?, NOW(), 'aviso', ?, ?)",
+        "INSERT INTO alarmas (local_id, camara_id, fecha, severidad, eventos, origen, mensaje)
+         VALUES (?, ?, NOW(), 'aviso', 1, ?, ?)",
         [$local_id, $camara_id, $origen, $mensaje]
     );
     DB::execute("UPDATE locales SET alarma_boost_hasta = ? WHERE id = ?", [$hasta, $local_id]);
