@@ -431,6 +431,17 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
         # pose-consciente (F2) sin cascada: se activa con zones_enabled
         if cfg.zones_enabled:
             result = match_group(embs, store, cfg, sharpness=best_sharp, pose=query_pose)
+        # F3 (autoaprendizaje): aunque no haya cascada, registrar features de la
+        # capa cara (score+confidence) y candidatos top-1/top-2. Sin esto,
+        # decisions.jsonl quedaba con layers={} y la calibración nunca tenía
+        # matriz de features (feedback.py::_features descartaba la decisión).
+        face_scores = _face_scores(embs, store, cfg, query_pose)
+        s1 = result.best_score
+        s2 = result.second_score
+        from motor.core.matching import face_confidence, select_candidates
+        face_layer = LayerScore(score=s1, confidence=face_confidence(s1, s2, best_sharp, cfg))
+        result.layer_scores = {"cara": face_layer}
+        result.candidates = select_candidates(face_scores, cfg)
 
     if result.verdict == "new" or result.person is None:
         person = random_code()
@@ -818,6 +829,32 @@ def _ram_available_gb() -> float:
     return 99.0
 
 
+def _apply_calib_weights(cfg, ruta: str) -> bool:
+    """Aplica los pesos-prior calibrados (motor/calib/calib_model.pkl) al Config.
+
+    Solo si RF_CALIB_APPLY=1 y el modelo dice weights_applied (calibrar.py lo
+    guarda versionado con cap anti-drift y validación held-out). El bucle de
+    autoaprendizaje re-pondera las capas; la decisión actual usa autoridad/veto
+    (no la media ponderada), así que estos pesos afinan el desempate/reporte.
+    """
+    if not getattr(cfg, "calib_apply", False):
+        return False
+    try:
+        from motor.core.calibration import CalibrationModel
+        model = CalibrationModel(os.path.join(ruta, cfg.calib_dir))
+        if not model.load():
+            return False
+        if not model.weights_applied or not model.weights:
+            return False
+        w = model.weights
+        cfg.w_cara = float(w.get("cara", cfg.w_cara))
+        cfg.w_torso = float(w.get("torso", cfg.w_torso))
+        cfg.w_llm = float(w.get("llm", cfg.w_llm))
+        return True
+    except Exception:  # noqa: BLE001 — un modelo corrupto degrada, no rompe
+        return False
+
+
 def _load_avg_1m() -> float:
     """Carga media de 1 minuto (loadavg); 0.0 si no se puede leer."""
     try:
@@ -866,11 +903,22 @@ def main() -> int:
     from motor.core.feedback import FeedbackCollector
     feedback = FeedbackCollector(args.ruta, args.local_id, enabled=cfg.feedback_enabled)
 
+    _apply_calib_weights(cfg, args.ruta)
+
     log(f"clasificador {args.local_id}/{args.camara_id} — face_enc_v2 con {len(store.persons())} personas"
         f" | cascada={cfg.cascade_enabled} torso={cfg.torso_enabled} zonas={cfg.zones_enabled}"
+        f" silueta={cfg.silueta_enabled}"
         f" vlm={cfg.vlm_enabled} openai={cfg.openai_enabled}")
+    _last_calib_check = 0.0
     while True:
         try:
+            # reload periódico de pesos calibrados (timer rf-calibra a las 05:10)
+            now = time.time()
+            if now - _last_calib_check > 60:
+                _last_calib_check = now
+                if _apply_calib_weights(cfg, args.ruta):
+                    log("[calib] pesos calibrados aplicados: "
+                        f"w_cara={cfg.w_cara:.3f} w_torso={cfg.w_torso:.3f} w_llm={cfg.w_llm:.3f}")
             # RAM-gate: con la memoria disponible escasa (p. ej. autotube
             # renderizando en la misma máquina) se duerme en vez de procesar;
             # evita el pico de RAM de los 12 clasificadores + procesa_video

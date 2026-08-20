@@ -221,6 +221,8 @@ class Config:
     calibration_enabled: bool = True
     calib_lr: float = 0.15              # cap al delta diario de pesos (anti-drift)
     calib_ewma_alpha: float = 0.30      # factor de olvido del EWMA de accuracy
+    calib_apply: bool = False           # aplicar calib_model.pkl al arranque/reload
+                                        # (off hasta validar; activar RF_CALIB_APPLY=1)
 
     # --- rutas runtime (gitignored: git = código, no datos) ---
     feedback_dir: str = "motor/feedback"
@@ -299,4 +301,5 @@ class Config:
         cfg.llm_min_conf = get_float(ruta, "RF_LLM_MIN_CONF", cfg.llm_min_conf)
         cfg.veto_conf = get_float(ruta, "RF_VETO_CONF", cfg.veto_conf)
         cfg.silueta_min_score = get_float(ruta, "RF_SILUETA_MIN_SCORE", cfg.silueta_min_score)
+        cfg.calib_apply = get_bool(ruta, "RF_CALIB_APPLY", cfg.calib_apply)
         return cfg
