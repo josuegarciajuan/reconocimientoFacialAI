@@ -456,18 +456,19 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
         os.remove(rep_item["path"])
 
     # refinar el diccionario (F1.2: admisión por cara — solo encodings que
-    # individualmente confirman contra la persona asignada)
+    # individualmente confirman contra la persona asignada). P2: se etiquetan
+    # con la proveniencia `foto_id` de la foto representativa de este sub-clúster.
     if result.verdict == "match":
-        _store_add(store, person, item_idxs, battery, cfg)
+        _store_add(store, person, item_idxs, battery, cfg, foto_id=foto_id)
     elif result.verdict == "new":
         # F1.3: el sub-clúster es internamente coherente (split_coherent_clusters):
         # identidad nueva creada solo con caras de la misma persona real.
-        _store_add(store, person, item_idxs, battery, cfg, new_person=True)
+        _store_add(store, person, item_idxs, battery, cfg, new_person=True, foto_id=foto_id)
     elif result.verdict == "uncertain" and enrich_on_uncertain and person != "":
         # F2 fix: el veredicto "uncertain" asigna persona pero NO enriquecía
         # la galería -> bucle de fragmentación (perfil↔frontal). Ahora sí, con
         # admisión por cara para no contaminar.
-        _store_add(store, person, item_idxs, battery, cfg)
+        _store_add(store, person, item_idxs, battery, cfg, foto_id=foto_id)
 
     # F1/F3: la capa torso necesita galería de apariencia por persona.
     if cfg.torso_enabled and person:
@@ -530,7 +531,7 @@ def torso_bbox_local(face, img, cfg):
 
 
 def _store_add(store: FaceStore, person: str, item_idxs, battery, cfg: Config,
-               new_person: bool = False) -> None:
+               new_person: bool = False, foto_id: str | None = None) -> None:
     """Añade encodings a la galería de `person` con CONTROL DE ADMISIÓN (F1.2).
 
     - new_person=True (verdict "new"): el sub-clúster ya es internamente
@@ -540,6 +541,10 @@ def _store_add(store: FaceStore, person: str, item_idxs, battery, cfg: Config,
       (pose-consciente si cfg.zones_enabled). Las caras que no confirmen NO
       entran en la galería: evita que una cara ajena agrupada por transitividad
       contamine la identidad y provoque falsos match posteriores (agregación max).
+
+    P2 (proveniencia): todos los encodings de este sub-clúster se etiquetan con
+    `foto_id` (el identificador_unico de la foto representativa) para que luego
+    "mover foto"/"separar" pueda quitarlos de forma EXACTA (move_by_source).
     """
     from motor.core.quality import face_sharpness as _fs, pose_label as _pl
     from motor.core.matching import best_cosine, scores_per_person_pose_aware
@@ -563,7 +568,7 @@ def _store_add(store: FaceStore, person: str, item_idxs, battery, cfg: Config,
                 quals.append(_fs(battery[idx]["img"], f))
                 poses.append(_pl(f, cfg.yaw_frontal, cfg.yaw_45, cfg.yaw_90, cfg.pitch_frontal))
     if encs:
-        store.add(person, encs, quals, poses)
+        store.add(person, encs, quals, poses, sources=[foto_id] * len(encs))
 
 
 def _copy_to_revision(ruta: str, local_id: str, camara_id: str,

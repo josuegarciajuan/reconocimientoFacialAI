@@ -1,13 +1,16 @@
 """Diccionario de identidad `face_enc_v2` — persistencia segura y concurrente.
 
 Formato (pickle):
-    {"version": 3, "schema": "face_enc_v2",
+    {"version": 4, "schema": "face_enc_v2",
      "persons": {
         <cod_interno>: {
             "encodings": [ndarray(512,) ...],
             "quality":   [float ...],       # sharpness en el momento de enrolar
             "poses":     [str ...],         # etiqueta de pose
             "added_at":  [float ...],       # timestamp
+            "sources":   [str|None ...],    # proveniencia: foto_id (identificador_unico)
+                                            # o "enroll:<cod>" que originó cada encoding
+                                            # (None = legado/backfill sin traza)
             "appearance": {                 # opcional (capa L1b, F1+)
                 "desc": [ [float...] ],     # descriptores de torso (144-d)
                 "ts":   [float ...],        # epoch de captura
@@ -16,10 +19,19 @@ Formato (pickle):
         }
      }}
 
+PROVENIENCIA (P1): cada encoding recuerda de qué foto salió. Eso permite a
+"mover foto"/"separar" quitar EXACTAMENTE lo que aportó esa foto de la persona
+equivocada (move_by_source) y llevarlo a la correcta, sin residuos ni guess por
+coseno. El `foto_id` es el mismo que el clasificador escribe en el nombre de la
+foto (`{nombre}_{foto_id}.jpg`) y que clasificadorV2.php guarda en
+`fotos.identificador_unico`.
+
 Reglas:
 - Lectura atómica vía os.replace (write-temp-then-rename) bajo FileLock.
 - Mutaciones con bloqueo de TODO el read-modify-write (evita pérdidas entre procesos).
 - Formato legado/desconocido NO se migra (re-enrolado desde cero, decisión de Fase 0).
+- V4 añade `sources` con relleno retrocompatible: personas antiguas sin `sources`
+  se leen con [None]*len(encodings) (se irán etiquetando con data nueva).
 - F6: snapshot()/merge_undoable()/restore_person() habilitan la reversibilidad
   (snapshot + journal + rollback) de fusiones y backfills.
 """
@@ -28,12 +40,12 @@ from __future__ import annotations
 import os
 import pickle
 import time
-from typing import Callable
+from typing import Callable, Iterable
 
 import numpy as np
 from filelock import FileLock
 
-VERSION = 3
+VERSION = 4
 SCHEMA = "face_enc_v2"
 
 # F1.4: umbral de similitud media para considerar un encoding "outlier" dentro
@@ -46,7 +58,17 @@ def _empty() -> dict:
 
 
 def _new_person() -> dict:
-    return {"encodings": [], "quality": [], "poses": [], "added_at": [], "appearance": None}
+    return {"encodings": [], "quality": [], "poses": [], "added_at": [],
+            "sources": [], "appearance": None}
+
+
+def _aligned_lists(p: dict, n: int) -> None:
+    """Rellena listas paralelas ausentes/shorts (retrocompat V3->V4 y defensa)."""
+    for k, filler in (("quality", 0.0), ("poses", ""), ("added_at", 0.0), ("sources", None)):
+        cur = p.get(k)
+        if not isinstance(cur, list) or len(cur) < n:
+            cur = (cur or []) + [filler] * (n - len(cur) if isinstance(cur, list) else n)
+            p[k] = cur[:n]
 
 
 class FaceStore:
@@ -66,6 +88,10 @@ class FaceStore:
             return _empty()
         if not isinstance(data, dict) or data.get("schema") != SCHEMA:
             return _empty()
+        # retrocompat V3->V4: rellenar `sources` (y listas paralelas) si faltan
+        for p in data.get("persons", {}).values():
+            if isinstance(p, dict) and isinstance(p.get("encodings"), list):
+                _aligned_lists(p, len(p["encodings"]))
         return data
 
     def _write(self, data: dict) -> None:
@@ -114,7 +140,7 @@ class FaceStore:
             mean_sim = (S.sum(axis=1) - 1.0) / np.maximum(1, n - 1)
             keep = np.where(mean_sim >= OUTLIER_COSINE)[0]
             if 0 < len(keep) < n:
-                for k in ("encodings", "quality", "poses", "added_at"):
+                for k in ("encodings", "quality", "poses", "added_at", "sources"):
                     p[k] = [p[k][i] for i in keep]
                 if p.get("appearance"):
                     n_app = len(p["appearance"]["desc"])
@@ -127,7 +153,7 @@ class FaceStore:
         # si sigue sobrando: conservar los más nítidos (comportamiento previo)
         if n > max_per_person:
             idx = sorted(range(n), key=lambda i: p["quality"][i], reverse=True)[:max_per_person]
-            for k in ("encodings", "quality", "poses", "added_at"):
+            for k in ("encodings", "quality", "poses", "added_at", "sources"):
                 p[k] = [p[k][i] for i in idx]
             if p.get("appearance"):
                 # apariencia alineada por índice (mismo crop); puede tener menos filas
@@ -138,15 +164,25 @@ class FaceStore:
                         p["appearance"][k] = [p["appearance"][k][i] for i in keep]
 
     def add(self, cod: str, encodings: list[np.ndarray],
-            qualities: list[float], poses: list[str]) -> None:
+            qualities: list[float], poses: list[str],
+            sources: Iterable[str | None] | None = None) -> None:
+        """Añade encodings a la galería de `cod`.
+
+        `sources`: proveniencia por encoding (foto_id / "enroll:<cod>" / None).
+        """
+        srcs = list(sources) if sources is not None else [None] * len(encodings)
+        if len(srcs) != len(encodings):
+            srcs = (srcs + [None] * len(encodings))[:len(encodings)]
+
         def _fn(data: dict) -> None:
             p = data["persons"].setdefault(cod, _new_person())
             now = time.time()
-            for e, q, po in zip(encodings, qualities, poses):
+            for e, q, po, s in zip(encodings, qualities, poses, srcs):
                 p["encodings"].append(np.asarray(e, dtype=np.float32))
                 p["quality"].append(float(q))
                 p["poses"].append(po)
                 p["added_at"].append(now)
+                p["sources"].append(s)
             self._prune(p, self.max_per_person)
         self._transaction(_fn)
 
@@ -181,12 +217,14 @@ class FaceStore:
         self._transaction(_fn)
 
     def merge(self, a: str, b: str) -> None:
-        """Mueve todas las caras de `b` a `a` y elimina `b` (juntar personas)."""
+        """Mueve todas las caras de `b` a `a` y elimina `b` (juntar personas).
+
+        P5: conserva la proveniencia (`sources`) de cada encoding al fusionar."""
         def _fn(data: dict) -> None:
             pa = data["persons"].setdefault(a, _new_person())
             pb = data["persons"].pop(b, None)
             if pb is not None:
-                for k in ("encodings", "quality", "poses", "added_at"):
+                for k in ("encodings", "quality", "poses", "added_at", "sources"):
                     pa[k] = pa[k] + pb[k]
                 if pb.get("appearance"):
                     if pa.get("appearance") is None:
@@ -216,7 +254,7 @@ class FaceStore:
             pa = data["persons"].setdefault(a, _new_person())
             pb = data["persons"].pop(b, None)
             if pb is not None:
-                for k in ("encodings", "quality", "poses", "added_at"):
+                for k in ("encodings", "quality", "poses", "added_at", "sources"):
                     pa[k] = pa[k] + pb[k]
                 if pb.get("appearance"):
                     if pa.get("appearance") is None:
@@ -255,13 +293,18 @@ class FaceStore:
             return pickle.load(fh)
 
     def reembed_person(self, cod: str, encodings: list[np.ndarray],
-                       qualities: list[float], poses: list[str]) -> None:
+                       qualities: list[float], poses: list[str],
+                       sources: Iterable[str | None] | None = None) -> None:
         """Sustituye los encodings de `cod` por los recalculados (backfill SR-before-embedding).
 
         Conserva `appearance` (capa L1b) tal cual; solo se reemplazan las listas
-        de cara (encodings/quality/poses/added_at) para que query y galería
-        queden en el mismo dominio (embeddings SR para caras pequeñas).
+        de cara (encodings/quality/poses/added_at/sources) para que query y
+        galería queden en el mismo dominio (embeddings SR para caras pequeñas).
         """
+        srcs = list(sources) if sources is not None else [None] * len(encodings)
+        if len(srcs) != len(encodings):
+            srcs = (srcs + [None] * len(encodings))[:len(encodings)]
+
         def _fn(data: dict) -> None:
             p = data["persons"].get(cod)
             if not p:
@@ -273,12 +316,13 @@ class FaceStore:
             p["quality"] = [float(q) for q in qualities]
             p["poses"] = list(poses)
             p["added_at"] = [now] * len(encodings)
+            p["sources"] = srcs
             self._prune(p, self.max_per_person)
         self._transaction(_fn)
 
     def remove_closest(self, cod: str, embedding: np.ndarray, min_cosine: float = 0.5) -> int:
         """Elimina de `cod` el encoding más parecido a `embedding` (si supera min_cosine).
-        Devuelve 1 si eliminó algo (B4: mover foto entre personas)."""
+        Devuelve 1 si eliminó algo (legacy; los flujos nuevos usan move_by_source)."""
         removed = [0]
 
         def _fn(data: dict) -> None:
@@ -289,9 +333,94 @@ class FaceStore:
             sims = encs @ np.asarray(embedding, dtype=np.float32)
             idx = int(np.argmax(sims))
             if float(sims[idx]) >= min_cosine:
-                for k in ("encodings", "quality", "poses", "added_at"):
+                for k in ("encodings", "quality", "poses", "added_at", "sources"):
                     p[k].pop(idx)
                 removed[0] = 1
 
         self._transaction(_fn)
         return removed[0]
+
+    # --- P3: separar por proveniencia (exacto) y por coseno (fallback legacy) ---
+
+    def person_sources(self, cod: str) -> list[str | None] | None:
+        """Lista de proveniencias de los encodings de `cod` (None si no existe)."""
+        p = self.person(cod)
+        if not p or not p.get("encodings"):
+            return None
+        _aligned_lists(p, len(p["encodings"]))
+        return list(p["sources"])
+
+    def move_by_source(self, src: str, dst: str, source_id: str) -> int:
+        """Mueve de `src` a `dst` TODOS los encodings con proveniencia == source_id.
+
+        P4: el corazón del "separar exacto": quita de la persona equivocada
+        exactamente lo que aportó una foto concreta (identificador_unico) y lo
+        lleva a la correcta, sin adivinar por coseno. Devuelve nº de encodings
+        movidos (0 si la fuente no tiene esa proveniencia).
+        """
+        moved = [0]
+
+        def _fn(data: dict) -> None:
+            ps = data["persons"].get(src)
+            if not ps or not ps.get("encodings"):
+                return
+            _aligned_lists(ps, len(ps["encodings"]))
+            idx = [i for i, s in enumerate(ps["sources"]) if s == source_id]
+            if not idx:
+                return
+            pd = data["persons"].setdefault(dst, _new_person())
+            for k in ("encodings", "quality", "poses", "added_at", "sources"):
+                pd[k].extend([ps[k][i] for i in idx])
+            keep = sorted(set(range(len(ps["encodings"]))) - set(idx))
+            for k in ("encodings", "quality", "poses", "added_at", "sources"):
+                ps[k] = [ps[k][i] for i in keep]
+            if ps.get("appearance"):
+                # apariencia alineada por índice (mismo crop); solo si sobra índice
+                n_app = len(ps["appearance"]["desc"])
+                if n_app:
+                    keep_app = [i for i in keep if i < n_app]
+                    for k in ("desc", "ts", "src"):
+                        ps["appearance"][k] = [ps["appearance"][k][i] for i in keep_app]
+            self._prune(pd, self.max_per_person)
+            moved[0] = len(idx)
+
+        self._transaction(_fn)
+        return moved[0]
+
+    def move_matching(self, src: str, dst: str, query_embs: list[np.ndarray],
+                      min_cosine: float = 0.45) -> int:
+        """Mueve de `src` a `dst` los encodings con mejor coseno >= min_cosine a
+        algún query. FALLBACK para encodings legacy (sources None) y para
+        re-embebidos nuevos. Devuelve nº movidos.
+        """
+        moved = [0]
+
+        def _fn(data: dict) -> None:
+            ps = data["persons"].get(src)
+            if not ps or not ps.get("encodings"):
+                return
+            encs = np.asarray(ps["encodings"], dtype=np.float32)
+            Q = np.asarray(query_embs, dtype=np.float32)
+            if Q.ndim == 1:
+                Q = Q[None, :]
+            sims = encs @ Q.T          # (n_enc, n_query)
+            idx = [int(i) for i in np.where(sims.max(axis=1) >= min_cosine)[0]]
+            if not idx:
+                return
+            pd = data["persons"].setdefault(dst, _new_person())
+            for k in ("encodings", "quality", "poses", "added_at", "sources"):
+                pd[k].extend([ps[k][i] for i in idx])
+            keep = sorted(set(range(len(ps["encodings"]))) - set(idx))
+            for k in ("encodings", "quality", "poses", "added_at", "sources"):
+                ps[k] = [ps[k][i] for i in keep]
+            if ps.get("appearance"):
+                n_app = len(ps["appearance"]["desc"])
+                if n_app:
+                    keep_app = [i for i in keep if i < n_app]
+                    for k in ("desc", "ts", "src"):
+                        ps["appearance"][k] = [ps["appearance"][k][i] for i in keep_app]
+            self._prune(pd, self.max_per_person)
+            moved[0] = len(idx)
+
+        self._transaction(_fn)
+        return moved[0]

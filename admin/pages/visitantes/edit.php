@@ -128,6 +128,18 @@ $num_cruces = $cruces_cnt ? (int)$cruces_cnt["n"] : 0;
                     <h2 class="font-medium text-base mr-auto">Listado Fotos</h2>
                 </div>
                 <div class="p-3 sm:p-5">
+                    <div class="flex flex-wrap items-center gap-2 mb-3 p-2 rounded bg-gray-100 dark:bg-dark-5">
+                        <span class="text-sm font-medium">Mover seleccionadas a:</span>
+                        <select id="separar_destino" class="input border">
+                            <option value="0">NUEVA PERSONA</option>
+                            <?php foreach ($personas_list as $p): ?>
+                                <?php $pn = ($p["nombre"] !== "") ? $p["nombre"] : $p["cod_interno"]; ?>
+                                <option value="<?= (int)$p["id"]; ?>"><?= htmlspecialchars($pn); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button class="button text-white bg-theme-1 shadow-md" onclick="rfSepararSeleccionadas()">Mover seleccionadas</button>
+                        <span class="text-xs text-gray-600 dark:text-gray-300" id="rf_sel_count"></span>
+                    </div>
                     <?php if (!$galeria): ?>
                     <div class="empty-state">
                         <div class="empty-state__title">Sin fotos todavía</div>
@@ -144,6 +156,9 @@ $num_cruces = $cruces_cnt ? (int)$cruces_cnt["n"] : 0;
                             $img = "./caras_procesadas/" . $fid . ".jpg";
                     ?>
                         <div class="box p-3">
+                            <label class="flex items-center gap-1 text-xs mb-1 cursor-pointer">
+                                <input type="checkbox" class="rf-foto-check" data-fid="<?= (int)$fid; ?>" onchange="rfActualizarConteo()"> seleccionar
+                            </label>
                             <div class="text-xs text-center text-gray-600 dark:text-gray-300 truncate mb-2"><?= htmlspecialchars($fecha); ?></div>
                             <img src="<?= htmlspecialchars($img); ?>" alt="Foto <?= $fid; ?> del <?= htmlspecialchars($fecha); ?>"
                                  onclick="verFoto('<?= $js_quote($img); ?>','<?= $js_quote($fecha); ?>')"
