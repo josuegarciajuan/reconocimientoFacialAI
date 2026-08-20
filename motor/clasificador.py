@@ -537,6 +537,9 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
             "layers": result.layer_scores,
             "query_hash": embedding_hash(embs[0]),
             "stem": rep_stem,
+            "pose": query_pose,
+            "sharpness": best_sharp,
+            "has_face": True,
         })
 
     # eliminar el resto de fotos del sub-clúster (ya procesadas)

@@ -26,8 +26,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 import numpy as np  # noqa: E402
 
 from motor.core.calibration import (FEATURE_NAMES, CalibrationModel,  # noqa: E402
-                                    logistic_fit, predict_proba,
-                                    update_prior_weights, validate_held_out)
+                                    layer_stats_by_situation, logistic_fit,
+                                    predict_proba, update_prior_weights,
+                                    validate_held_out)
 from motor.core.config import Config  # noqa: E402
 from motor.core.feedback import FeedbackCollector  # noqa: E402
 
@@ -77,14 +78,15 @@ def main() -> int:
 
     # 1. recoger la matriz etiquetada de TODOS los locales
     locals_dir = os.path.join(args.ruta, "motor/feedback")
-    Xs, ys = [], []
+    Xs, ys, situ = [], [], []
     if os.path.isdir(locals_dir):
         for lid in sorted(os.listdir(locals_dir)):
             fc = FeedbackCollector(args.ruta, lid, enabled=False)
-            X, y = fc.export_matrix()
+            X, y, s = fc.export_matrix_with_situations()
             if len(X):
                 Xs.append(X)
                 ys.append(y)
+                situ.extend(s)
     if not Xs:
         print("sin datos etiquetados (feedback): no se calibra todavía. "
               "Las acciones 'Unir'/'mover foto' del panel alimentan la matriz.")
@@ -96,6 +98,21 @@ def main() -> int:
     if len(y) < args.min_samples:
         print(f"insuficientes muestras (<{args.min_samples}): no se calibra.")
         return 0
+
+    # 1b. diagnóstico por SITUACIÓN (F4): fiabilidad por capa condicionada a la
+    # pose. No re-pondera todavía (requiere más etiquetas); informa de dónde
+    # cada capa acierta/falla (p. ej. LLM sobreconfiado en perfil).
+    stats_situ = layer_stats_by_situation(X, y, situ)
+    for sc, layers in sorted(stats_situ.items()):
+        partes = []
+        for layer in ("cara", "torso", "zona", "vlm", "openai"):
+            d = layers.get(layer)
+            if d and d["total"] >= 3:
+                acc = d["hits"] / d["total"]
+                partes.append(f"{layer}:{acc*100:.0f}% (n={d['total']}, "
+                              f"c_hit={d['conf_hit']:.2f}/c_fail={d['conf_fail']:.2f})")
+        if partes:
+            print(f"[situación {sc}] " + " | ".join(partes))
 
     # 2. entrenar + validar held-out
     idx = np.arange(len(y))

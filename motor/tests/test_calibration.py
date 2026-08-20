@@ -1,10 +1,36 @@
 """Tests de calibración (F3, §5): regresión logística, anti-drift, versionado."""
 import numpy as np
 
-from motor.core.calibration import (CalibrationModel, logistic_fit,
-                                    predict_proba, update_prior_weights,
+from motor.core.calibration import (CalibrationModel, layer_stats_by_situation,
+                                    logistic_fit, predict_proba,
+                                    situation_class, update_prior_weights,
                                     validate_held_out)
 
+
+def test_situation_class():
+    assert situation_class("pi") == "perfil"
+    assert situation_class("pd") == "perfil"
+    assert situation_class("m45i") == "angulos"
+    assert situation_class("arr") == "angulos"
+    assert situation_class("f") == "frontal"
+    assert situation_class(None) == "otro"
+
+
+def test_layer_stats_by_situation_groups_by_pose():
+    """Fiabilidad por capa condicionada a la situación (F4)."""
+    # 2 filas: una perfil genuina (acierto) y una frontal impostora (fallo)
+    X = np.array([
+        [0.5, 0.8, 0.4, 0.3, 0.4, 0.2, 0.5, 0.0, 0.5, 0.0],   # s_cara,c_cara,...
+        [0.4, 0.6, 0.3, 0.5, 0.4, 0.2, 0.5, 0.0, 0.5, 0.0],
+    ])
+    y = np.array([1, 0])
+    situ = ["pi", "f"]
+    stats = layer_stats_by_situation(X, y, situ)
+    assert set(stats) == {"perfil", "frontal"}
+    # la columna de confianza de cara (índice 1) acumula c_hit en perfil
+    assert stats["perfil"]["cara"]["hits"] == 1
+    assert stats["frontal"]["cara"]["hits"] == 0
+    assert stats["perfil"]["cara"]["conf_hit"] == 0.8
 
 def test_logistic_fit_separable():
     rng = np.random.default_rng(7)
