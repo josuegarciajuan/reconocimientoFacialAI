@@ -6,6 +6,7 @@
 
 require_once __DIR__ . "/../../../libs/db.php";
 require_once __DIR__ . "/../../../libs/fechas.php";
+require_once __DIR__ . "/../../../libs/etiquetas.php";
 
 $local_id = (int)$_SESSION["local_id"];
 
@@ -72,8 +73,7 @@ $js_quote = function ($s) {
         <thead>
             <tr>
                 <th class="border-b-2 text-center">IMAGEN</th>
-                <th class="border-b-2 text-center">COD_INTERNO</th>
-                <th class="border-b-2 text-center">NOMBRE</th>
+                <th class="border-b-2 text-center">PERSONA</th>
                 <th class="border-b-2 text-center">ESTANCIAS</th>
                 <th class="border-b-2 text-center">ACCIONES</th>
             </tr>
@@ -129,10 +129,8 @@ $js_quote = function ($s) {
                         </div>
                     </div>
                 </td>
-                <td class="border-b" align="center"><?= htmlspecialchars($cod_interno); ?></td>
                 <td class="border-b" align="center">
-                    <input type="text" class="input border w-full" value="<?= htmlspecialchars($nombre); ?>" onblur="cambiar_nombre(this.value,<?= $pid; ?>)" style="max-width:13rem">
-                    <span style="display:none" id="cargador<?= $pid; ?>"></span>
+                    <a class="text-theme-1 font-medium hover:underline" href="?page=visitantes&mode=editar&id=<?= $pid; ?>" title="Ver la ficha de la persona"><?= htmlspecialchars(persona_label($nombre, $cod_interno)); ?></a>
                 </td>
                 <td class="text-center border-b" align="center"><?= $veces; ?></td>
                 <td class="border-b">
@@ -181,6 +179,7 @@ $js_quote = function ($s) {
 <?php if (isset($_GET["unir"]) && $_GET["unir"] !== ""): ?>
 <?php
 $u = DB::selectOne("SELECT cod_interno, nombre FROM personas WHERE id = ?", [(int)$_GET["unir"]]);
+$u_label = persona_label($u["nombre"] ?? "", $u["cod_interno"] ?? "");
 $img_row = DB::selectOne(
     "SELECT f.id AS fid FROM fotos f JOIN estancias e ON e.id = f.estancia_id WHERE e.persona_id = ? ORDER BY f.id ASC LIMIT 1",
     [(int)$_GET["unir"]]
@@ -201,12 +200,11 @@ $candidatos = DB::select(
 
         <div class="flex flex-col sm:flex-row items-center gap-4">
             <img class="w-24 h-24 object-cover rounded cursor-pointer flex-none"
-                 alt="Foto de <?= htmlspecialchars($u["cod_interno"] ?? ""); ?>"
-                 onclick="verFoto('<?= $js_quote($imagen_unir); ?>','<?= $js_quote($u["cod_interno"] ?? ""); ?>')"
+                 alt="Foto de <?= htmlspecialchars($u_label); ?>"
+                 onclick="verFoto('<?= $js_quote($imagen_unir); ?>','<?= $js_quote($u_label); ?>')"
                  src="<?= htmlspecialchars($imagen_unir); ?>">
             <div class="text-center sm:text-left text-gray-600 dark:text-gray-300">
-                <div class="font-semibold"><?= htmlspecialchars($u["cod_interno"] ?? ""); ?></div>
-                <div><?= htmlspecialchars($u["nombre"] ?? ""); ?></div>
+                <div class="font-semibold"><?= htmlspecialchars($u_label); ?></div>
             </div>
         </div>
 
@@ -217,7 +215,7 @@ $candidatos = DB::select(
                 <select name="coneste" id="coneste" class="input border w-full">
                     <option value="">Selecciona un usuario</option>
                     <?php foreach ($candidatos as $cand): ?>
-                        <option value="<?= (int)$cand["id"]; ?>"><?= htmlspecialchars($cand["cod_interno"] . " - " . $cand["nombre"]); ?></option>
+                        <option value="<?= (int)$cand["id"]; ?>"><?= htmlspecialchars(persona_label($cand["nombre"], $cand["cod_interno"])); ?></option>
                     <?php endforeach; ?>
                 </select>
                 <button type="submit" class="button text-white bg-theme-1 shadow-md flex-none">Unir</button>
