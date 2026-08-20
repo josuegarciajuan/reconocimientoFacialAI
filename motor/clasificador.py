@@ -260,6 +260,25 @@ class _CascadeCtx:
         c = float(np.clip(0.6 * pconf + 0.4 * sil, 0.0, 1.0))
         return LayerScore(score=float(s_face), confidence=c, available=True)
 
+    # --- L1c (reenfoque): silueta geométrica como SCORE propio ---
+    # En perfil/ángulos raros es CO-AUTORIDAD: debe superar silueta_min_score
+    # para confirmar el acuerdo. Antes solo modulaba la confianza de zonas.
+    def silueta_score(self, cod: str) -> LayerScore:
+        from motor.core.zones import silhouette_descriptor, silhouette_sim
+        if not self.cfg.silueta_enabled:
+            return LayerScore(available=False)
+        if self.rep_face is None or getattr(self.rep_face, "landmarks", None) is None:
+            return LayerScore(available=False)
+        cand_face = self._candidate_face(cod)
+        if cand_face is None or getattr(cand_face, "landmarks", None) is None:
+            return LayerScore(available=False)
+        a = silhouette_descriptor(self.rep_face)
+        b = silhouette_descriptor(cand_face)
+        if not a.size or not b.size:
+            return LayerScore(available=False)
+        sil = silhouette_sim(a, b)
+        return LayerScore(score=float(sil), confidence=float(sil), available=True)
+
     def _candidate_face(self, cod: str):
         """Primera cara de la foto representativa del candidato (para silueta)."""
         from motor.core.photos import find_person_photos
@@ -391,6 +410,7 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     enrich_on_uncertain = cfg.zones_enabled
 
     if cfg.cascade_enabled:
+        from motor.core.router import Situation
         face_scores = _face_scores(embs, store, cfg, query_pose)
         ranked = sorted(face_scores.items(), key=lambda kv: kv[1], reverse=True)
         s1 = ranked[0][1] if ranked else 0.0
@@ -401,8 +421,11 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
         ctx = _CascadeCtx(ruta, local_id, camara_id, cfg, store, face_scores,
                           query_pose, rep_item["path"], torso_path, rep_item["img"], rep_face)
         cc = CascadeContext(torso=ctx.torso_score, zonas=ctx.zonas_score,
+                            silueta=ctx.silueta_score,
                             vlm=ctx.vlm_score, openai=ctx.openai_score)
-        result = run_cascade(face_scores, cc, cfg, face_layer)
+        situ = Situation(pose=query_pose, sharpness=best_sharp,
+                         has_face=True, has_torso=torso_path is not None)
+        result = run_cascade(face_scores, cc, cfg, face_layer, situation=situ)
     else:
         result = match_group(embs, store, cfg)
         # pose-consciente (F2) sin cascada: se activa con zones_enabled
@@ -669,7 +692,9 @@ def process_body_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
                              vlm=_body_vlm)
         face_layer = LayerScore(score=scores[best_cod].score,
                                 confidence=scores[best_cod].confidence)
-        result = run_cascade(face_scores, ctx, cfg, face_layer)
+        from motor.core.router import Situation
+        result = run_cascade(face_scores, ctx, cfg, face_layer,
+                             situation=Situation(has_face=False))
 
         if result.verdict == "match" and result.person is not None:
             # asignar: mover el crop al álbum de la persona (mismo contrato)

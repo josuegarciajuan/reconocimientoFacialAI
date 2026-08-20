@@ -1,27 +1,25 @@
-"""Fusión ponderada + escalada de la cascada (F3).
+"""Motor de decisión SITUACIONAL (reenfoque A+B) — motor/core/fusion.py
 
-Sustituye la decisión binaria actual por una CASCADA DE CAPAS:
-  L1a cara  -> s_cara, c_cara   (existente)
-  L1b torso -> s_torso, c_torso (si hay crop)
-  L1c zonas -> s_zona, c_zona   (si la cara fue el punto débil)
-  L2  VLM local (Ollama)        (si lo anterior no concluye)
-  L3  OpenAI gpt-4o-mini        (solo tras L2, en gris)
+Sustituye la fusión ponderada por un motor de EVIDENCIA con enrutado:
 
-FUSIÓN (siempre):
-  w_i = c_i * p_i          (confianza de instancia * peso-prior de la capa)
-  S   = Σ(w_i * s_i) / Σ(w_i)   (capa sin señal -> c_i=0 -> se redistribuye sola)
+  - AUTORIDAD: la capa de cara/perfil decide la identidad. Sin cara (F7),
+    torso+LLM mandan y NUNCA crean persona.
+  - ACUERDO: en perfil/ángulos, la silueta es co-autoridad: debe superar
+    `silueta_min_score` para confirmar "match"; si está y NO supera, el
+    veredicto es "uncertain" (la silueta débil no desmiente, solo no confirma).
+  - GATE DE IDENTIDAD: "new" <=> s1 < match_threshold. Las capas superiores
+    jamás crean personas.
+  - SUELO POR CARA: s1 >= secure_threshold NUNCA es "new" (mínimo "uncertain"),
+    independientemente de la confianza de instancia c_cara (fix del bug de la
+    media ponderada: una cara con coseno alto ya no se descarta por capas
+    débiles con confianza no calibrada).
+  - VETO: >=2 capas independientes (torso/vlm/openai) con c >= veto_conf y
+    s < gray_low degradan un match seguro a "uncertain" (nunca a "new").
+  - EARLY-EXIT: frontal nítida decide solo con la cara (sin capas caras).
+  - ZONA GRIS [match, secure): corroboración barato->caro; la primera capa
+    de apoyo que confirma (>= umbral) da "match"; si ninguna, "uncertain".
 
-ESCALADA (early-exit, no fallback ciego):
-  1. L1a -> candidatos top-1/top-2 + banda.
-  2. L1b (si hay crop) -> fusionar.
-  3. ¿Concluyente? FINALIZAR. Si no -> escalar.
-  4. L1c (si la cara fue el punto débil) -> re-fusionar.
-  5. L2 VLM local -> re-fusionar. 6. L3 OpenAI -> re-fusionar -> decisión final.
-  7. Gris tras L3 -> UNCERTAIN (cola de revisión manual). NUNCA duplicado en silencio.
-
-INVARIANTE DE SEGURIDAD: una capa cara con confianza alta NUNCA se degrada a
-"new" por las demás; solo puede matizarse a "uncertain" con evidencia contraria
-MUY fuerte, nunca a "new" directo.
+`fuse()` se conserva SOLO como helper de desempate/reporte (p. ej. reagrupar).
 """
 from __future__ import annotations
 
@@ -29,20 +27,22 @@ from dataclasses import dataclass, field
 
 from .config import Config
 from .matching import LayerScore, MatchResult, select_candidates
+from .router import Situation, route
 
 
 @dataclass
 class CascadeContext:
     """Proveedores de capas per-candidato. Cada callable(cod) -> LayerScore.
 
-    Los proveedores de capas caras ya disponibles devuelven el LayerScore sin
-    coste; los de capas caras (VLM/OpenAI) pueden devolver available=False si
-    no hay presupuesto/caché/RAM (degradación, nunca bloqueo).
+    Los proveedores de capas caras (VLM/OpenAI) pueden devolver available=False
+    si no hay presupuesto/caché/RAM (degradación, nunca bloqueo).
     """
-    torso: object = None        # callable(cod) -> LayerScore
-    zonas: object = None        # callable(cod) -> LayerScore
-    vlm: object = None          # callable(cod) -> LayerScore
-    openai: object = None       # callable(cod) -> LayerScore
+    torso: object = None        # callable(cod) -> LayerScore (apariencia ropa)
+    zonas: object = None        # callable(cod) -> LayerScore (pose-conf, legacy)
+    silueta: object = None      # callable(cod) -> LayerScore (geometría facial)
+    perfil: object = None       # callable(cod) -> LayerScore (reservado: re-embedding perfil)
+    vlm: object = None          # callable(cod) -> LayerScore (VLM local, L2)
+    openai: object = None       # callable(cod) -> LayerScore (OpenAI, L3)
 
     def layer(self, name: str, cod: str) -> LayerScore | None:
         prov = getattr(self, name, None)
@@ -58,7 +58,7 @@ class CascadeContext:
 
 
 def fuse(layers: dict[str, LayerScore], weights: dict[str, float]) -> tuple[float, float]:
-    """Fusión ponderada: devuelve (S, confianza agregada).
+    """Fusión ponderada (helper de desempate/reporte): (S, confianza agregada).
 
     S = Σ(c_i*p_i*s_i) / Σ(c_i*p_i). Capa sin señal (available=False o c=0)
     queda fuera y su peso se redistribuye automáticamente.
@@ -66,6 +66,7 @@ def fuse(layers: dict[str, LayerScore], weights: dict[str, float]) -> tuple[floa
     num = 0.0
     den = 0.0
     conf_avg = 0.0
+    n = 0
     for name, ls in layers.items():
         if not ls.available or ls.confidence <= 0.0:
             continue
@@ -73,110 +74,159 @@ def fuse(layers: dict[str, LayerScore], weights: dict[str, float]) -> tuple[floa
         num += w * ls.score
         den += w
         conf_avg += ls.confidence
+        n += 1
     if den <= 0.0:
         return 0.0, 0.0
     S = num / den
-    conf = conf_avg / len(layers) if layers else 0.0
+    conf = conf_avg / n if n else 0.0
     return float(S), float(conf)
 
 
-def _strong_opposite(layers: dict[str, LayerScore], cfg: Config) -> bool:
-    """Evidencia contraria MUY fuerte: torso+VLM (o VLM+openai) dicen claramente
-    distinta (score < gray_low) con confianza >= early_exit_conf."""
-    strong = [ls for ls in layers.values()
-              if ls.available and ls.confidence >= cfg.early_exit_conf and ls.score < cfg.gray_low]
-    return len(strong) >= 2
+def _result(verdict, person, s1, s2, face_scores, layers, cands) -> MatchResult:
+    confs = [ls.confidence for ls in layers.values()
+             if ls.available and ls.confidence > 0.0]
+    conf = float(sum(confs) / len(confs)) if confs else 0.0
+    return MatchResult(
+        verdict=verdict, person=person,
+        best_score=float(s1), second_score=float(s2),
+        scores=dict(face_scores), confidence=conf,
+        layer_scores=dict(layers), candidates=list(cands),
+    )
+
+
+def _weights(cfg: Config) -> dict[str, float]:
+    """Pesos-prior para el helper `fuse` (reporte/desempate, no decisión)."""
+    return {"cara": cfg.w_cara, "perfil": cfg.perfil_w, "silueta": cfg.silueta_w,
+            "torso": cfg.w_torso, "zonas": cfg.w_torso, "vlm": cfg.w_llm,
+            "openai": cfg.w_llm}
+
+
+def _escalation(plan, cfg: Config, ctx: CascadeContext) -> list[str]:
+    """Orden barato->caro de las capas de apoyo para la zona gris."""
+    order = list(plan.support)
+    if ctx.zonas is not None and "zonas" not in order:
+        order.append("zonas")
+    for name in ("torso", "vlm", "openai"):
+        if name in order:
+            continue
+        enabled = {"torso": cfg.torso_enabled, "vlm": cfg.vlm_enabled,
+                   "openai": cfg.openai_enabled}[name]
+        if enabled:
+            order.append(name)
+    return order
+
+
+def _agree_threshold(name: str, cfg: Config) -> float:
+    """Score mínimo de una capa de apoyo para corroborar "match" en gris."""
+    if name == "silueta":
+        return cfg.silueta_min_score
+    return cfg.gray_high
+
+
+def _decide_body(face_scores, ctx: CascadeContext, cfg: Config, top: str,
+                 face_layer: LayerScore, layers: dict, cands) -> MatchResult:
+    """F7 — sin cara (espaldas): torso/VLM corroboran; NUNCA "new"."""
+    for name in ("torso", "vlm", "openai"):
+        ls = ctx.layer(name, top)
+        if ls is None or not ls.available:
+            continue
+        layers[name] = ls
+    S, conf = fuse(layers, _weights(cfg))
+    if S >= cfg.gray_high and conf >= 0.35:
+        return _result("match", top, face_layer.score, 0.0, face_scores, layers, cands)
+    return _result("uncertain", None, face_layer.score, 0.0, face_scores, layers, cands)
+
+
+def decide_situational(face_scores: dict[str, float],
+                       ctx: CascadeContext,
+                       cfg: Config,
+                       face_layer: LayerScore,
+                       situation: Situation | None = None) -> MatchResult:
+    """Motor de decisión situacional.
+
+    face_scores : similitudes por persona de la capa cara (ya pose-consciente
+                  si cfg.zones_enabled).
+    ctx         : proveedores de las capas superiores (por candidato).
+    face_layer  : LayerScore de la capa cara (score=s1, confidence=c_cara).
+    situation   : pose/nitidez/presencia de cara y torso (None => default).
+    """
+    situation = situation or Situation()
+    plan = route(situation, cfg)
+
+    cands = select_candidates(face_scores, cfg)
+    if not cands:
+        return MatchResult(verdict="new", scores=dict(face_scores),
+                           confidence=face_layer.confidence,
+                           layer_scores={"cara": face_layer}, candidates=[])
+
+    top = cands[0]
+    s1 = float(face_scores[top])
+    s2 = float(max((v for k, v in face_scores.items() if k != top), default=0.0))
+    layers: dict[str, LayerScore] = {"cara": face_layer}
+
+    if not situation.has_face:
+        return _decide_body(face_scores, ctx, cfg, top, face_layer, layers, cands)
+
+    # --- ACUERDO de co-autoridad (silueta en perfil/ángulos) ---
+    for name in plan.co_authority:
+        ls = ctx.layer(name, top)
+        if ls is None:
+            continue
+        layers[name] = ls
+        if ls.available and ls.score < cfg.silueta_min_score:
+            # silueta no confirma: uncertain (nunca new si s1 >= match_threshold)
+            if s1 < cfg.match_threshold:
+                return _result("new", None, s1, s2, face_scores, layers, cands)
+            return _result("uncertain", top, s1, s2, face_scores, layers, cands)
+
+    # --- GATE DE IDENTIDAD: SOLO la capa de cara/perfil crea ---
+    if s1 < cfg.match_threshold:
+        return _result("new", None, s1, s2, face_scores, layers, cands)
+
+    # --- EARLY-EXIT: frontal nítida decide la cara sola (sin capas caras) ---
+    if plan.early_exit:
+        verdict = "match" if s1 >= cfg.secure_threshold else "uncertain"
+        return _result(verdict, top, s1, s2, face_scores, layers, cands)
+
+    # --- CORROBORACIÓN barato->caro (una sola pasada: veta o confirma) ---
+    # Cada capa de apoyo: score < gray_low y c >= veto_conf => VETO (evidencia
+    # contraria muy fuerte); score >= umbral de acuerdo => CONFIRMA (fin, sin
+    # llamar a capas más caras); en banda gris => neutra (se sigue escalando).
+    # El fallback depende del suelo por cara: secure sin 2 vetos => match;
+    # gris sin corroboración => uncertain. Las capas superiores NUNCA crean.
+    vetoes = 0
+    confirmado = False
+    for name in _escalation(plan, cfg, ctx):
+        ls = ctx.layer(name, top)
+        if ls is None or not ls.available:
+            continue
+        layers[name] = ls
+        if name in ("vlm", "openai") and ls.confidence < cfg.llm_min_conf:
+            continue
+        if ls.score < cfg.gray_low and ls.confidence >= cfg.veto_conf:
+            vetoes += 1
+            continue
+        if ls.score >= _agree_threshold(name, cfg):
+            confirmado = True
+            break
+    if vetoes >= 2:
+        return _result("uncertain", top, s1, s2, face_scores, layers, cands)
+    if confirmado:
+        return _result("match", top, s1, s2, face_scores, layers, cands)
+    if s1 >= cfg.secure_threshold:
+        # suelo por cara: sin 2 vetos, la cara decide (nunca new)
+        return _result("match", top, s1, s2, face_scores, layers, cands)
+    return _result("uncertain", top, s1, s2, face_scores, layers, cands)
 
 
 def run_cascade(face_scores: dict[str, float],
                 ctx: CascadeContext,
                 cfg: Config,
-                face_layer: LayerScore) -> MatchResult:
-    """Ejecuta la cascada de fusión sobre los candidatos de L1a.
+                face_layer: LayerScore,
+                situation: Situation | None = None) -> MatchResult:
+    """Wrapper retro-compatible: delega en el motor situacional.
 
-    face_scores : similitudes por persona de la capa cara (L1a).
-    ctx         : proveedores de las capas superiores (por candidato).
-    face_layer  : LayerScore de la capa cara (score=mejor coseno, confidence=c_cara).
+    Si no se pasa `situation` (p. ej. reagrupar.py), se usa el default
+    (pose None, frontal genérica) con autoridad "cara" + apoyo general.
     """
-    cands = select_candidates(face_scores, cfg)
-    if not cands:
-        return MatchResult(verdict="new", scores=dict(face_scores), confidence=face_layer.confidence,
-                           layer_scores={"cara": face_layer})
-
-    top = cands[0]
-    s1 = face_scores[top]
-    s2 = max((v for k, v in face_scores.items() if k != top), default=0.0)
-
-    layers: dict[str, LayerScore] = {"cara": face_layer}
-    weights = {"cara": cfg.w_cara, "torso": cfg.w_torso, "zona": cfg.w_torso,
-               "vlm": cfg.w_llm, "openai": cfg.w_llm}
-    # el slot LLM (0.25) se reparte entre vlm y openai: si solo una está, lleva el 0.25 entero;
-    # si están las dos, se reparten a medias (cada una contribuye su confianza).
-    weights["vlm"] = cfg.w_llm
-    weights["openai"] = cfg.w_llm
-
-    face_secure = (s1 >= cfg.secure_threshold and face_layer.confidence >= cfg.face_conf_secure_floor)
-    layer_order = ["torso", "zonas", "vlm", "openai"]
-
-    for name in layer_order:
-        # flags de fase: no llamar a capas deshabilitadas
-        if name == "torso" and not cfg.torso_enabled:
-            continue
-        if name == "zonas" and not cfg.zones_enabled:
-            continue
-        if name == "vlm" and not cfg.vlm_enabled:
-            continue
-        if name == "openai" and not cfg.openai_enabled:
-            continue
-        ls = ctx.layer(name, top)
-        if ls is None or not ls.available:
-            continue
-        layers[name] = ls
-
-        S, conf = fuse(layers, weights)
-
-        # EARLY-EXIT: capa con c_i ≈ 1 finaliza inmediatamente
-        max_c = max(x.confidence for x in layers.values() if x.available)
-        if max_c >= cfg.early_exit_conf:
-            if ls.score >= cfg.gray_high:
-                return _result("match", top, s1, s2, face_scores, layers, conf, cands)
-            if ls.score < cfg.gray_low and _strong_opposite(layers, cfg):
-                # evidencia contraria fortísima: matizar match seguro a uncertain
-                if face_secure:
-                    return _result("uncertain", top, s1, s2, face_scores, layers, conf, cands)
-                return _result("new", None, s1, s2, face_scores, layers, conf, cands)
-            # early-exit de nivel alto pero en banda gris: seguir escalando
-            continue
-
-        verdict = _decide(S, conf, cfg, face_secure)
-        if verdict != "escalate":
-            return _result(verdict, top if verdict in ("match", "uncertain") else None,
-                           s1, s2, face_scores, layers, conf, cands)
-
-    # tras todas las capas, decisión final con la fusión completa
-    S, conf = fuse(layers, weights)
-    verdict = _decide(S, conf, cfg, face_secure)
-    if verdict == "escalate":
-        verdict = "uncertain"        # sin más capas, la banda gris queda en uncertain
-    person = top if verdict in ("match", "uncertain") else None
-    if verdict == "new" and face_secure:
-        verdict = "uncertain"        # invariante: nunca new si la cara era segura
-        person = top
-    return _result(verdict, person, s1, s2, face_scores, layers, conf, cands)
-
-
-def _decide(S: float, conf: float, cfg: Config, face_secure: bool) -> str:
-    if S >= cfg.gray_high and conf >= 0.35:
-        return "match"
-    if S < cfg.gray_low and conf >= cfg.new_confidence_min:
-        return "new"
-    return "escalate" if conf < 0.95 else "uncertain"
-
-
-def _result(verdict, person, s1, s2, face_scores, layers, conf, cands) -> MatchResult:
-    return MatchResult(
-        verdict=verdict, person=person,
-        best_score=s1, second_score=s2,
-        scores=dict(face_scores), confidence=conf,
-        layer_scores=dict(layers), candidates=list(cands),
-    )
+    return decide_situational(face_scores, ctx, cfg, face_layer, situation)
