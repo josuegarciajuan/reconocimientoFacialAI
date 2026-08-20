@@ -91,9 +91,10 @@ function alarma_severidad_badge(string $sev): string
                 $video_html = "-";
                 if ($a["video_id"]) {
                     $video_id = (int)$a["video_id"];
-                    $poster = "video.php?id=" . $video_id . "&poster=1";
-                    $video_html = '<a href="video.php?id=' . $video_id . '" title="Ver vídeo de la alarma">'
-                        . '<img src="' . $poster . '" alt="Miniatura del vídeo" class="w-20 h-12 object-cover rounded border border-gray-600" loading="lazy" onerror="this.style.display=\'none\'">'
+                    $cam_titulo = $cam_label . " · " . ($a["fecha"] ?? "");
+                    $video_html = '<a href="javascript:;" title="Ver vídeo de la alarma" '
+                        . 'onclick="rfVideoModal(' . $video_id . ',\'../video.php?id=' . $video_id . '\',\'../video.php?id=' . $video_id . '&amp;poster=1\',\'' . htmlspecialchars($cam_titulo, ENT_QUOTES) . '\',0,0)">'
+                        . '<img src="../video.php?id=' . $video_id . '&poster=1" alt="Miniatura del vídeo" class="w-20 h-12 object-cover rounded border border-gray-600" loading="lazy" onerror="this.style.display=\'none\'">'
                         . '</a>';
                 }
                 $estado = ((int)($a["notificacion_vista"] ?? 0) === 0)
