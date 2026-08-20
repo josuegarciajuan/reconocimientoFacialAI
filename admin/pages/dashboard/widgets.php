@@ -12,6 +12,7 @@
 
 require_once __DIR__ . "/../../../libs/db.php";
 require_once __DIR__ . "/../../../libs/fechas.php";
+require_once __DIR__ . "/../../../libs/etiquetas.php";
 
 /* ---------------------------------------------------------------
  * Utilidades
@@ -184,7 +185,7 @@ function dash_rachas($local_id, $limite = 3) {
 /** Primera persona en cruzar hoy (el "alma madrugadora"). */
 function dash_madrugadora($local_id) {
     $r = DB::selectOne(
-        "SELECT p.cod_interno, p.nombre, MIN(e.fecha_ini) AS t
+        "SELECT p.id, p.cod_interno, p.nombre, MIN(e.fecha_ini) AS t
          FROM estancias e
          JOIN personas p ON p.id = e.persona_id
          JOIN camaras c ON c.id = e.camara_id
@@ -211,7 +212,7 @@ function dash_pico_hoy($local_id) {
 /** Cámara más activa hoy (el "vigía incansable"). */
 function dash_vigia($local_id) {
     $r = DB::selectOne(
-        "SELECT c.descripcion, COUNT(*) AS n
+        "SELECT c.id, c.descripcion, COUNT(*) AS n
          FROM estancias e JOIN camaras c ON c.id = e.camara_id
          WHERE c.local_id = ? AND DATE(e.fecha_ini) = CURDATE()
          GROUP BY e.camara_id ORDER BY n DESC LIMIT 1",
@@ -364,7 +365,7 @@ function dash_feed_html($local_id, $limite = 10) {
     $out = "";
     $i = 0;
     foreach ($rows as $r) {
-        $nombre = $r["nombre"] !== "" ? $r["nombre"] : $r["cod_interno"];
+        $nombre = persona_label($r["nombre"], $r["cod_interno"]);
         $fid = $foto_por_est[(int)$r["id"]] ?? 0;
         $img = "./caras_procesadas/" . $fid . ".jpg";
         if ((int)$r["puerta"] === 1)      { $tag = "entrada"; $tag_txt = "⚔️ Entrada"; }
@@ -376,9 +377,9 @@ function dash_feed_html($local_id, $limite = 10) {
             . ' onclick="verFoto(\'' . dash_js_quote($img) . '\',\'' . dash_js_quote($titulo) . '\')"'
             . ' onerror="this.onerror=null;this.src=\'./files/logo-sauron.png\';">'
             . '<div class="feed-item__body">'
-            . '<div class="feed-item__name">' . htmlspecialchars($r["cod_interno"] . " - " . $nombre)
+            . '<div class="feed-item__name">' . persona_link((int)$r["persona_id"], $nombre)
             . ' <span class="feed-item__tag feed-item__tag--' . $tag . '">' . $tag_txt . '</span></div>'
-            . '<div class="feed-item__meta">📷 ' . htmlspecialchars($r["cam"]) . ' · ' . dash_tiempo_relativo($r["fecha_ini"]) . '</div>'
+            . '<div class="feed-item__meta">📷 ' . camara_link((int)$r["camara_id"], $r["cam"]) . ' · ' . dash_tiempo_relativo($r["fecha_ini"]) . '</div>'
             . '</div>'
             . ($i === 0 ? '<span class="feed-item__dot" aria-hidden="true"></span>' : '')
             . '</div>';
@@ -410,12 +411,12 @@ function dash_dentro_html($local_id) {
         . ' <span class="inside-now__lbl">almas dentro</span></div>'
         . '<ul class="inside-now__list">';
     foreach ($dentro as $p) {
-        $nombre = $p["nombre"] !== "" ? $p["nombre"] : $p["cod_interno"];
+        $nombre = persona_label($p["nombre"], $p["cod_interno"]);
         $img = "./caras_procesadas/" . (int)$p["foto_id"] . ".jpg";
         $out .= '<li class="inside-now__li">'
             . '<img class="inside-now__avatar" src="' . htmlspecialchars($img) . '" alt="" loading="lazy"'
             . ' onerror="this.onerror=null;this.src=\'./files/logo-sauron.png\';">'
-            . '<span class="inside-now__name">' . htmlspecialchars($p["cod_interno"] . " - " . $nombre) . '</span>'
+            . '<span class="inside-now__name">' . persona_link((int)$p["id"], $nombre) . '</span>'
             . '<span class="inside-now__when">' . dash_tiempo_relativo($p["ultimo"]) . '</span>'
             . '</li>';
     }
@@ -441,12 +442,12 @@ function dash_falta_html($local_id) {
     $hora_esp = $loc && $loc["hora_entrada1"] ? substr($loc["hora_entrada1"], 0, 5) : "";
     $out = '<ul class="missing__list">';
     foreach ($falta as $p) {
-        $nombre = $p["nombre"] !== "" ? $p["nombre"] : $p["cod_interno"];
+        $nombre = persona_label($p["nombre"], $p["cod_interno"]);
         $img = "./caras_procesadas/" . (int)$p["foto_id"] . ".jpg";
         $out .= '<li class="missing__li">'
             . '<img class="missing__avatar" src="' . htmlspecialchars($img) . '" alt="" loading="lazy"'
             . ' onerror="this.onerror=null;this.src=\'./files/logo-sauron.png\';">'
-            . '<span class="missing__name">' . htmlspecialchars($p["cod_interno"] . " - " . $nombre) . '</span>'
+            . '<span class="missing__name">' . persona_link((int)$p["id"], $nombre) . '</span>'
             . '<span class="missing__when">' . ($hora_esp !== "" ? "🕐 esperado ~" . $hora_esp : "sin horario") . '</span>'
             . '</li>';
     }
@@ -480,7 +481,7 @@ function dash_fichajes_html($local_id) {
 
     $par = "odd";
     foreach ($rows as $r) {
-        $nombre  = ($r["nombre"] !== "") ? $r["nombre"] : $r["cod_interno"];
+        $nombre  = persona_label($r["nombre"], $r["cod_interno"]);
         $fid     = (int)($foto_por_persona[(int)$r["persona_id"]] ?? 0);
         $avatar  = "./caras_procesadas/" . $fid . ".jpg";
 
@@ -501,7 +502,7 @@ function dash_fichajes_html($local_id) {
             . '<div class="flex items-center gap-2">'
             . '<img class="img-thumb" src="' . htmlspecialchars($avatar) . '" alt="" loading="lazy"'
             . ' onerror="this.onerror=null;this.src=\'./files/logo-sauron.png\';">'
-            . '<span class="truncate">' . htmlspecialchars($r["cod_interno"] . " - " . $nombre) . '</span>'
+            . '<span class="truncate">' . persona_link((int)$r["persona_id"], $nombre) . '</span>'
             . '</div></td>'
             . '<td class="border-b text-center tnum">' . htmlspecialchars($entrada) . '</td>'
             . '<td class="border-b text-center tnum">' . htmlspecialchars($salida) . '</td>'

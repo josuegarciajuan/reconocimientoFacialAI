@@ -452,7 +452,7 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
                         <div class="kpi-chip"><div class="menu__emoji kpi-emoji">📹</div></div>
                         <div class="ml-auto"><span class="tendencia-pill tendencia-pill--flat">hoy</span></div>
                     </div>
-                    <div class="kpi-number mt-4 tnum" style="font-size:1.6rem;line-height:1.3"><?= htmlspecialchars($vigia["descripcion"] ?? "—"); ?></div>
+                    <div class="kpi-number mt-4 tnum" style="font-size:1.6rem;line-height:1.3"><?= $vigia ? camara_link((int)$vigia["id"], $vigia["descripcion"]) : "—"; ?></div>
                     <div class="kpi-label mt-1">El vigía incansable <span class="kpi-sub">· <?= $vigia ? (int)$vigia["n"] . " detecciones hoy" : "sin actividad"; ?></span></div>
                 </div>
             </div>
@@ -526,7 +526,7 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
                         <?php foreach ($cam_act as $i => $c): ?>
                         <li class="donut-legend__li">
                             <span class="donut-legend__dot" style="background:<?= $paleta[$i % 5]; ?>" aria-hidden="true"></span>
-                            <span class="donut-legend__name"><?= htmlspecialchars($c["descripcion"]); ?></span>
+                            <span class="donut-legend__name"><?= camara_link((int)$c["id"], $c["descripcion"]); ?></span>
                             <span class="donut-legend__val tnum"><?= (int)$c["n"]; ?></span>
                         </li>
                         <?php endforeach; ?>
@@ -687,7 +687,7 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
                             <span class="ranking__medal" aria-hidden="true"><?= $medalla; ?></span>
                             <img class="ranking__avatar" src="<?= htmlspecialchars($img); ?>" alt="" loading="lazy" onerror="this.onerror=null;this.src='./files/logo-sauron.png';">
                             <div class="ranking__info">
-                                <div class="ranking__name"><?= htmlspecialchars($r["cod_interno"] . " - " . ($r["nombre"] !== "" ? $r["nombre"] : $r["cod_interno"])); ?></div>
+                                <div class="ranking__name"><?= persona_link((int)$r["pid"], persona_label($r["nombre"], $r["cod_interno"])); ?></div>
                                 <div class="ranking__bar"><div class="ranking__fill" style="width:<?= $pct_barra; ?>%"></div></div>
                             </div>
                             <span class="ranking__val tnum"><?= (int)$r["n"]; ?> <small>visitas</small></span>
@@ -703,14 +703,14 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
                             <span class="premio__emoji" aria-hidden="true">🌅</span>
                             <div class="premio__info">
                                 <div class="premio__titulo">Alma madrugadora de hoy</div>
-                                <div class="premio__valor"><?= $madrugadora ? htmlspecialchars($madrugadora["cod_interno"] . " · " . ($madrugadora["nombre"] !== "" ? $madrugadora["nombre"] : $madrugadora["cod_interno"])) . " a las " . date("H:i", strtotime($madrugadora["t"])) : "Nadie ha llegado aún 🕊️"; ?></div>
+                                <div class="premio__valor"><?= $madrugadora ? persona_link((int)$madrugadora["id"], persona_label($madrugadora["nombre"], $madrugadora["cod_interno"])) . " a las " . date("H:i", strtotime($madrugadora["t"])) : "Nadie ha llegado aún 🕊️"; ?></div>
                             </div>
                         </li>
                         <li class="premio">
                             <span class="premio__emoji" aria-hidden="true">🏆</span>
                             <div class="premio__info">
                                 <div class="premio__titulo">El Visitante más Leal</div>
-                                <div class="premio__valor"><?= isset($ranking[0]) ? htmlspecialchars($ranking[0]["cod_interno"] . " · " . ($ranking[0]["nombre"] !== "" ? $ranking[0]["nombre"] : $ranking[0]["cod_interno"])) . " con " . (int)$ranking[0]["n"] . " visitas" : "—"; ?></div>
+                                <div class="premio__valor"><?= isset($ranking[0]) ? persona_link((int)$ranking[0]["pid"], persona_label($ranking[0]["nombre"], $ranking[0]["cod_interno"])) . " con " . (int)$ranking[0]["n"] . " visitas" : "—"; ?></div>
                             </div>
                         </li>
                         <li class="premio">
@@ -719,7 +719,7 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
                                 <div class="premio__titulo">Rachas de presencia (14 días)</div>
                                 <div class="premio__valor">
                                     <?php foreach ($rachas as $i => $r): ?>
-                                        <span class="premio__racha"><?= htmlspecialchars(($r["nombre"] !== "" ? $r["nombre"] : $r["cod_interno"])); ?> · <?= (int)$r["dias"]; ?> días</span><?= $i < count($rachas) - 1 ? ", " : ""; ?>
+                                        <span class="premio__racha"><?= persona_link((int)$r["pid"], persona_label($r["nombre"], $r["cod_interno"])); ?> · <?= (int)$r["dias"]; ?> días</span><?= $i < count($rachas) - 1 ? ", " : ""; ?>
                                     <?php endforeach; ?>
                                     <?php if (!$rachas): ?>—<?php endif; ?>
                                 </div>
