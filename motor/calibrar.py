@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Calibración diaria de la cascada (F3, §5) — motor/calibrar.py
+"""Calibración de la cascada por VOLUMEN de etiquetas (F3, §5) — motor/calibrar.py
 
-Flujo:
+El timer rf-calibra SOLO SONDEA (p. ej. cada 60 min); este script decide si
+calibrar según el VOLUMEN NUEVO de etiquetas desde la última ejecución efectiva
+(gate de 2 etapas: pre-filtro de líneas barato + matriz precisa).
+
+Flujo (cuando el gate da paso):
   1. Recoge la matriz etiquetada (feedback de acciones del panel: Unir/mover foto).
   2. Entrena regresión logística sobre (s_i, c_i) de las capas -> P(misma persona).
   3. VALIDA en held-out (TAR/FAR) ANTES de desplegar; si no mejora, no se aplica.
   4. Re-pondera los pesos-prior (update_prior_weights) con cap anti-drift.
   5. Guarda el modelo VERSIONADO (pickle + journal) en motor/calib/ -> reversible.
+  6. Persiste el progreso (motor/calib/last_labels.json) para el próximo gate.
 
-Uso (diario, p.ej. timer systemd rf-calibra):
+Uso (timer systemd rf-calibra):
     motor/venv/bin/python motor/calibrar.py --ruta /root/reconocimientoFacial
 
 Reglas anti-drift: solo etiquetas humanas (nunca las decisiones del propio
@@ -20,17 +25,37 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+import time
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import numpy as np  # noqa: E402
 
 from motor.core.calibration import (FEATURE_NAMES, CalibrationModel,  # noqa: E402
-                                    layer_stats_by_situation, logistic_fit,
-                                    predict_proba, update_prior_weights,
-                                    validate_held_out)
+                                    layer_stats_by_situation, load_progress,
+                                    logistic_fit, predict_proba,
+                                    update_prior_weights, update_progress,
+                                    validate_held_out, volume_gate)
 from motor.core.config import Config  # noqa: E402
 from motor.core.feedback import FeedbackCollector  # noqa: E402
+
+
+def _label_lines(ruta: str, locals_dir: str) -> int:
+    """Suma de líneas de labels.jsonl de todos los locales (pre-filtro barato).
+
+    No parsea decisions.jsonl: solo cuenta etiquetas humanas. El nº real de
+    muestras (len(y)) es <= esta suma, así que un delta por debajo del umbral
+    aquí garantiza que tampoco se supera con la matriz precisa.
+    """
+    total = 0
+    if not os.path.isdir(locals_dir):
+        return 0
+    for lid in sorted(os.listdir(locals_dir)):
+        p = os.path.join(locals_dir, lid, "labels.jsonl")
+        if os.path.exists(p):
+            with open(p, "rb") as fh:
+                total += sum(1 for _ in fh)
+    return total
 
 
 def _layer_stats(X: np.ndarray, y: np.ndarray) -> dict[str, dict]:
@@ -67,17 +92,39 @@ def _layer_stats(X: np.ndarray, y: np.ndarray) -> dict[str, dict]:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--ruta", default=os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-    ap.add_argument("--min-samples", type=int, default=20,
-                    help="mínimo de muestras etiquetadas para intentar calibrar")
+    ap.add_argument("--min-new", type=int, default=None,
+                    help="etiquetas NUEVAS desde la última calibración para disparar "
+                         "(por defecto: cfg.min_new_labels)")
+    ap.add_argument("--min-samples", type=int, default=None,
+                    help="mínimo TOTAL de muestras etiquetadas (por defecto: cfg.min_samples)")
+    ap.add_argument("--min-interval-min", type=int, default=None,
+                    help="cooldown mínimo entre calibraciones (por defecto: cfg.min_interval_min)")
     args = ap.parse_args()
 
     cfg = Config.from_env(args.ruta)
+    if args.min_new is not None:
+        cfg.min_new_labels = args.min_new
+    if args.min_samples is not None:
+        cfg.min_samples = args.min_samples
+    if args.min_interval_min is not None:
+        cfg.min_interval_min = args.min_interval_min
+
     calib_dir = os.path.join(args.ruta, cfg.calib_dir)
     model = CalibrationModel(calib_dir)
     model.load()
+    progress = load_progress(calib_dir)
 
-    # 1. recoger la matriz etiquetada de TODOS los locales
+    # ---- gate por VOLUMEN, etapa 1 (barata, sin parsear decisions.jsonl) ----
     locals_dir = os.path.join(args.ruta, "motor/feedback")
+    prev = progress.get("labeled") or 0
+    lines = _label_lines(args.ruta, locals_dir)
+    if lines - prev < cfg.min_new_labels:
+        print(f"[gate] solo {max(0, lines - prev)} línea(s) de etiquetas nuevas "
+              f"(<{cfg.min_new_labels}): no se calibra todavía. "
+              f"(última calibración: {progress.get('labeled') or 0} muestras)")
+        return 0
+
+    # ---- gate por VOLUMEN, etapa 2 (matriz precisa) ----
     Xs, ys, situ = [], [], []
     if os.path.isdir(locals_dir):
         for lid in sorted(os.listdir(locals_dir)):
@@ -95,8 +142,14 @@ def main() -> int:
     y = np.concatenate(ys)
     print(f"muestras etiquetadas: {len(y)} (genuinas={int((y == 1).sum())}, "
           f"impostoras={int((y == 0).sum())})")
-    if len(y) < args.min_samples:
-        print(f"insuficientes muestras (<{args.min_samples}): no se calibra.")
+
+    run, reason = volume_gate(progress, len(y), time.time(), cfg)
+    if not run:
+        print(f"[gate] no se calibra: {reason}")
+        # rotación detectada: el pre-filtro dio paso pero la matriz no respalda
+        if len(y) < prev:
+            print(f"[gate] labels rotados/reseteados: progreso reiniciado a {len(y)}")
+            update_progress(calib_dir, len(y))
         return 0
 
     # 1b. diagnóstico por SITUACIÓN (F4): fiabilidad por capa condicionada a la
@@ -155,6 +208,11 @@ def main() -> int:
     else:
         print(f"no se aplican los pesos (mejora insuficiente); modelo guardado igualmente en {path}")
     print(f"modelo: {path}")
+
+    # 6. progreso del gate por volumen: consumir las muestras ya usadas
+    # (aunque la validación no haya aplicado pesos, el modelo se reentrenó).
+    update_progress(calib_dir, int(len(y)))
+    print(f"[gate] progreso actualizado: {len(y)} muestras consumidas")
     return 0
 
 

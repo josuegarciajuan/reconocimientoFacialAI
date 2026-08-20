@@ -224,6 +224,12 @@ class Config:
     calib_apply: bool = False           # aplicar calib_model.pkl al arranque/reload
                                         # (off hasta validar; activar RF_CALIB_APPLY=1)
 
+    # --- disparador por VOLUMEN (auto-refinamiento, no horario) ---
+    # El timer rf-calibra solo SONDEA; calibrar.py decide con estos valores.
+    min_new_labels: int = 20            # etiquetas NUEVAS desde la última calibración
+    min_samples: int = 20               # mínimo TOTAL absoluto (primera vez)
+    min_interval_min: int = 60          # cooldown mínimo entre calibraciones
+
     # --- rutas runtime (gitignored: git = código, no datos) ---
     feedback_dir: str = "motor/feedback"
     revision_dir: str = "motor/revision"

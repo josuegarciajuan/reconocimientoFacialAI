@@ -50,6 +50,70 @@ def situation_class(pose: str | None) -> str:
     return "otro"
 
 
+# ---------------------------------------------------------------------------
+# Disparador por VOLUMEN de datos etiquetados (auto-refinamiento).
+# El timer solo SONDEA (p. ej. cada 60 min); calibrar.py decide con este gate
+# si hay suficientes etiquetas NUEVAS desde la última calibración efectiva.
+# ---------------------------------------------------------------------------
+
+PROGRESS_FILE = "last_labels.json"
+
+
+def load_progress(calib_dir: str) -> dict:
+    """Lee el progreso persistido: {"labeled": int|None, "ts": float|None}.
+
+    `labeled` = nº de muestras etiquetadas consumidas en la última calibración
+    efectiva; `ts` = epoch de esa ejecución. Sin estado => {None, None}.
+    """
+    path = os.path.join(calib_dir, PROGRESS_FILE)
+    if not os.path.exists(path):
+        return {"labeled": None, "ts": None}
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+        return {"labeled": int(data.get("labeled")), "ts": float(data.get("ts"))}
+    except (ValueError, OSError, TypeError):
+        return {"labeled": None, "ts": None}
+
+
+def update_progress(calib_dir: str, labeled: int) -> None:
+    """Persiste el progreso tras una calibración efectiva (datos, gitignored)."""
+    os.makedirs(calib_dir, exist_ok=True)
+    path = os.path.join(calib_dir, PROGRESS_FILE)
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump({"labeled": int(labeled), "ts": time.time()}, fh)
+
+
+def volume_gate(progress: dict, labeled: int, now: float, cfg: Config) -> tuple[bool, str]:
+    """Decide si calibrar según el VOLUMEN NUEVO de etiquetas (no el tiempo).
+
+    Reglas:
+      - Rotación: labeled < prev (labels.jsonl reseteado) => reset y saltar.
+      - Umbral: labeled - prev >= cfg.min_new_labels (etiquetas NUEVAS).
+      - Mínimo total: labeled >= cfg.min_samples (el absoluto, primera vez).
+      - Cooldown: si ya hubo calibración, respetar min_interval_min entre runs
+        (evita re-entrenar en ráfagas aunque lleguen muchas etiquetas juntas).
+
+    Devuelve (run, razón). La razón describe por qué NO se calibra (o "" si sí).
+    """
+    prev = progress.get("labeled")
+    last_ts = progress.get("ts")
+    if prev is None:
+        prev = 0
+    if labeled < prev:
+        return False, f"labels rotados/reseteados ({labeled} < {prev})"
+    new = labeled - prev
+    if new < cfg.min_new_labels:
+        return False, f"solo {new} etiquetas nuevas (<{cfg.min_new_labels})"
+    if labeled < cfg.min_samples:
+        return False, f"total {labeled} (<{cfg.min_samples})"
+    if prev > 0 and cfg.min_interval_min and last_ts is not None:
+        elapsed = now - last_ts
+        if elapsed < cfg.min_interval_min * 60.0:
+            return False, f"cooldown ({elapsed/60:.0f} min < {cfg.min_interval_min})"
+    return True, ""
+
+
 def layer_stats_by_situation(X: np.ndarray, y: np.ndarray, situ: list[str]) -> dict:
     """Fiabilidad por capa CONDICIONADA a la clase de situación.
 
