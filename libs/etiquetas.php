@@ -41,6 +41,24 @@ function camara_url($camara_id)
 }
 
 /**
+ * Etiqueta de cámara: antepone el prefijo "cam_" para que el nombre no se
+ * confunda con nombres de trabajadores (las cámaras están sobre los puestos).
+ * Idempotente: si la descripción ya empieza por "cam", se deja tal cual.
+ */
+function camara_label($descripcion, $camara_id = 0)
+{
+    $d = (string)$descripcion;
+    $t = trim($d);
+    if ($t === "" || $t === "—" || $t === "-") {
+        return $d !== "" ? $d : ($camara_id > 0 ? "cam_" . (int)$camara_id : "");
+    }
+    if (stripos($d, "cam") === 0) {
+        return $d;
+    }
+    return "cam_" . $d;
+}
+
+/**
  * Enlace a la ficha de una persona.
  * @param string $label  Texto ya unificado (persona_label) o null para usar $cod_interno.
  */
@@ -65,13 +83,14 @@ function persona_link($persona_id, $label = null, $cod_interno = "", $title = "V
 function camara_link($camara_id, $label = null, $title = "Ver la cámara en vivo")
 {
     $cid = (int)$camara_id;
-    if ($cid <= 0) {
-        return htmlspecialchars((string)($label ?? ""), ENT_QUOTES);
-    }
     if ($label === null) {
-        $label = "Cámara " . $cid;
+        $label = $cid > 0 ? "cam_" . $cid : "";
+    }
+    $label = camara_label($label, $cid);
+    if ($cid <= 0) {
+        return htmlspecialchars($label, ENT_QUOTES);
     }
     return '<a class="text-theme-1 font-medium hover:underline" href="' . camara_url($cid)
         . '" title="' . htmlspecialchars($title, ENT_QUOTES) . '">'
-        . htmlspecialchars((string)$label, ENT_QUOTES) . '</a>';
+        . htmlspecialchars($label, ENT_QUOTES) . '</a>';
 }

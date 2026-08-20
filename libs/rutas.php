@@ -10,6 +10,7 @@ require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/nodos.php";
 require_once __DIR__ . "/avatars.php";
 require_once __DIR__ . "/senderos_rutas.php";
+require_once __DIR__ . "/etiquetas.php";
 
 /** Cámaras de entrada (puerta) y salida de un local. */
 function camaras_puerta_salida($local_id) {
@@ -86,7 +87,7 @@ function construye_ruta($entrada, $camaras_salida) {
             "camara_id"  => $cam["id"],
             "x"          => $cam["x"],
             "y"          => $cam["y"],
-            "desc"       => $cam["descripcion"],
+            "desc"       => camara_label($cam["descripcion"]),
             "estancia_id"=> $inicio_id,
             "video_id"   => (int)($entrada["video_id"] ?? 0),
         ];
@@ -107,7 +108,7 @@ function construye_ruta($entrada, $camaras_salida) {
                 "camara_id"  => $cam2["id"],
                 "x"          => $cam2["x"],
                 "y"          => $cam2["y"],
-                "desc"       => $cam2["descripcion"],
+                "desc"       => camara_label($cam2["descripcion"]),
                 "estancia_id"=> (int)$e["id"],
                 "video_id"   => (int)($e["video_id"] ?? 0),
             ];

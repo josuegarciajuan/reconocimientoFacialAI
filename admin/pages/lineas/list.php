@@ -48,7 +48,7 @@ $lineas = DB::select("SELECT id, nombre FROM lineas WHERE " . $lineas_where, $li
             <select class="input border" id="camara">
                 <option value="-" <?php if (!$camara_filtro) { echo "selected='selected'"; } ?>>Todas</option>
                 <?php foreach ($camaras as $c): ?>
-                    <option value="<?= $c["id"]; ?>" <?php if ($camara_filtro === (int)$c["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars($c["descripcion"]); ?></option>
+                    <option value="<?= $c["id"]; ?>" <?php if ($camara_filtro === (int)$c["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars(camara_label($c["descripcion"])); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>

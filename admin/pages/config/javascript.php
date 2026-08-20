@@ -18,6 +18,7 @@ require_once __DIR__ . "/../../../libs/db.php";
 require_once __DIR__ . "/../../../libs/planos.php";
 require_once __DIR__ . "/../../../libs/lineas_plano.php";
 require_once __DIR__ . "/../../../libs/plano_estado.php";
+require_once __DIR__ . "/../../../libs/etiquetas.php";
 
 $local_id_js = (int)($_SESSION["local_id"] ?? 0);
 $plano_activo_url = plano_url($local_id_js);
@@ -39,7 +40,7 @@ foreach ($cams_estado as $c) {
         "id"              => (int)$c["id"],
         "x"               => (int)$c["x"],
         "y"               => (int)$c["y"],
-        "desc"            => $rf_utf8($c["descripcion"]),
+        "desc"            => camara_label($rf_utf8($c["descripcion"])),
         "colocada"        => (int)($c["colocada"] ?? 0),
         "num_lineas"      => (int)$c["num_lineas"],
         "num_lineas_plano"=> (int)$c["num_lineas_plano"],
