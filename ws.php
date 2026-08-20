@@ -166,15 +166,21 @@ switch ($accion) {
 
     case "alarma_estado":
         // Estado de vigilancia de una cámara (lo consulta guarda_movimientosV3.py).
-        // argv/GET: local_id, camara_id -> {"ok":bool,"armada":bool,"boost":bool}
-        $estado = alarma_estado((int)arg(2), (int)arg(3));
+        // Params: local_id, camara_id (HTTP GET o CLI argv) -> {"ok":bool,"armada":bool,"boost":bool}
+        $estado = alarma_estado(
+            (int)($_GET["local_id"] ?? arg(2) ?? 0),
+            (int)($_GET["camara_id"] ?? arg(3) ?? 0)
+        );
         echo json_encode($estado);
         exit;
 
     case "alarma_disparar":
         // Dispara una alarma (movimiento detectado estando armado).
-        // argv/GET: local_id, camara_id -> {"ok":bool,"id":int,"nueva":bool,"escalada":bool}
-        $disparo = alarma_disparar((int)arg(2), (int)arg(3));
+        // Params: local_id, camara_id (HTTP GET o CLI argv) -> {"ok":bool,"id":int,"nueva":bool,"escalada":bool}
+        $disparo = alarma_disparar(
+            (int)($_GET["local_id"] ?? arg(2) ?? 0),
+            (int)($_GET["camara_id"] ?? arg(3) ?? 0)
+        );
         echo json_encode($disparo);
         exit;
 
