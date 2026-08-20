@@ -46,3 +46,11 @@ def get_float(ruta: str | None, key: str, default: float) -> float:
         return float(load_env(ruta).get(key, str(default)))
     except (TypeError, ValueError):
         return default
+
+
+def get_bool(ruta: str | None, key: str, default: bool) -> bool:
+    """Lee un booleano del `.env` (acepta 1/0, true/false, yes/no, on/off, si/no)."""
+    raw = load_env(ruta).get(key)
+    if raw is None:
+        return default
+    return raw.strip().lower() in ("1", "true", "yes", "on", "si", "sí")

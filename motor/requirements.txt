@@ -23,9 +23,11 @@ paramiko==3.4.0
 pytest==7.4.4
 matplotlib==3.8.4
 
-# Super-resolución de caras (motor/core/superres.py) — OPCIONAL:
-# si falta, enhance() degrada a LANCZOS4+unsharp sin romper nada.
+# Super-resolución + restauración facial de caras (motor/core/superres.py y
+# motor/core/gfpgan.py) — OPCIONAL: si falta torch, enhance()/restore_face()
+# degradan sin romper nada (sin nueva dependencia basicsr; GFPGAN está portado
+# standalone con arquitectura "clean", solo torch).
 # Instalar SOLO CPU (sin CUDA), en este orden:
 #   motor/venv/bin/pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-# Los pesos (realesr-general-x4v3.pth / RealESRGAN_x4plus.pth) se descargan
-# solos a motor/models/ (gitignored) en el primer uso.
+# Los pesos (realesr-general-x4v3.pth / RealESRGAN_x4plus.pth / GFPGANv1.4.pth)
+# se descargan solos a motor/models/ (gitignored) en el primer uso.

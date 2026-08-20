@@ -5,10 +5,9 @@
 Aplica a lo ya capturado las mejoras de resolución y matching del pipeline
 (det_size 1280 + SR x4 con top-up + SR-before-embedding):
 
-  (a) --fotos   Sube de resolución las fotos de `admin/caras_procesadas/` cuyo
-                lado mayor es < `Config.sr_target_side` (512) vía `enhance()`
-                (Real-ESRGAN x4 + top-up LANCZOS4). Las que ya miden >= 512 se
-                dejan intactas (no se re-SR una imagen ya mejorada).
+  (a) --fotos   Restaura las fotos de `admin/caras_procesadas/` con GFPGAN
+                (SR x4 + prior facial): las fotos pixeladas del pipeline antiguo
+                (top-up LANCZOS4 a 512) pasan a caras naturales de 512 px.
 
   (b) --videos  Re-escanea `motor/videos_archivo/<local>/<cam>/*.mp4` con
                 `Config.det_size` (1280) para recuperar caras lejanas que el
@@ -45,12 +44,17 @@ from motor.core.config import Config                            # noqa: E402
 from motor.core.model import analyze                            # noqa: E402
 from motor.core.quality import face_sharpness, pose_label       # noqa: E402
 from motor.core.store import FaceStore                          # noqa: E402
-from motor.core.superres import enhance, enhance_embedding      # noqa: E402
+from motor.core.superres import enhance_embedding, restore_face   # noqa: E402
 from motor.procesa_video import guardar_cara                    # noqa: E402
 
 
 def reprocesar_fotos(ruta: str, cfg: Config) -> int:
-    """(a) Sube de resolución las fotos de admin/caras_procesadas < sr_target_side."""
+    """(a) Restaura las fotos de `admin/caras_procesadas/` con GFPGAN (SR + prior facial).
+
+    Convierte las fotos pixeladas (top-up LANCZOS4 a 512 del pipeline antiguo)
+    en caras naturales de 512 px. Si GFPGAN no está disponible, `restore_face`
+    devuelve la imagen sin cambios (no rompe nada).
+    """
     d = os.path.join(ruta, "admin/caras_procesadas")
     if not os.path.isdir(d):
         return 0
@@ -62,10 +66,7 @@ def reprocesar_fotos(ruta: str, cfg: Config) -> int:
         img = cv2.imread(p)
         if img is None:
             continue
-        h, w = img.shape[:2]
-        if max(h, w) >= cfg.sr_target_side:
-            continue
-        out = enhance(img, cfg)
+        out = restore_face(img, cfg)
         cv2.imwrite(p, out, [cv2.IMWRITE_JPEG_QUALITY, 95])
         n += 1
     return n

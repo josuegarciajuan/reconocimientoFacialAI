@@ -13,18 +13,21 @@ Los pesos se descargan automáticamente la 1ª vez a `motor/models/` (fuera de
 git: git = código, no datos). `enhance(img, cfg)` devuelve SIEMPRE BGR uint8:
 
 - Crop pequeño (lado mayor < cfg.sr_min_side): SR x4 nativo si hay modelo.
-- Sin modelo / falla / deshabilitado: fallback LANCZOS4 + unsharp.
-- Top-up final a cfg.sr_target_side (512): tras el SR x4 se sube con LANCZOS4
-  hasta ese lado mínimo, para que las caras lejanas no salgan con ~150-300 px.
-- Imagen ya grande (>= cfg.sr_target_side): intacta (no se toca lo que no lo
-  necesita).
+- Sin modelo / falla / deshabilitado: la imagen se deja intacta (sin reescalar).
+- YA NO se fuerza el top-up LANCZOS4 a cfg.sr_target_side (512): ese reescalado
+  artificial pixelaba las caras lejanas (~46 px -> 512 px, ~11x). La salida
+  queda al tamaño natural del SR x4.
+
+La restauración facial con prior generativo está en `restore_face()` (usa
+`motor/core/gfpgan.py`): SR x4 + GFPGAN para producir caras NATURALES de 512 px
+desde recortes pequeños, sin pixelado.
 
 Además `enhance_embedding(img, face, cfg)` aplica SR-before-embedding: para
 caras pequeñas (< cfg.sr_embed_min_face) recalcula el embedding ArcFace sobre
 el recorte super-resuelto, mejorando el matching (no solo el aspecto).
 
 Singleton lazy con lock (patrón motor/core/model.py). Importable sin torch
-(SR se degrada al fallback sin romper nada).
+(SR se degrada sin romper nada).
 
 Uso:
     from motor.core.config import Config
@@ -58,7 +61,7 @@ _models: dict[str, object] = {}    # nombre -> torch nn.Module cargado
 _sr_available: bool | None = None  # None = aún no comprobado
 
 # torch se importa de forma segura: si falta, el módulo sigue siendo importable
-# y `enhance()` degrada al fallback LANCZOS4+unsharp.
+# y `enhance()` deja la imagen sin tocar (nunca rompe).
 try:
     import torch
     import torch.nn as nn
@@ -274,7 +277,11 @@ def _sr_infer(model, img: np.ndarray) -> np.ndarray:
 
 
 def _fallback_upscale(img: np.ndarray, target_side: int) -> np.ndarray:
-    """LANCZOS4 + unsharp mask hasta alcanzar el lado mínimo (sin nueva dependencia)."""
+    """LANCZOS4 + unsharp mask hasta alcanzar el lado mínimo (sin nueva dependencia).
+
+    NO se usa en el pipeline actual: reescalar caras pequeñas hasta 512 px era
+    la causa del pixelado. Se conserva por si un caller externo la importa.
+    """
     h, w = img.shape[:2]
     if max(h, w) >= target_side:
         return img
@@ -309,29 +316,27 @@ def frame_face(img: np.ndarray, bbox, face_fill: float, min_pad: int) -> np.ndar
 
 
 def zoom_photo(img: np.ndarray, bbox, cfg) -> np.ndarray:
-    """Auto-zoom hacia la cara + SR + top-up (foto final de la persona).
+    """Auto-zoom hacia la cara + SR + restauración facial (GFPGAN).
 
     1. `frame_face`: reencuadre para que la cara ocupe ~cfg.face_fill del encuadre.
-    2. `enhance`: SR x4 (si la cara es pequeña) + top-up LANCZOS4 hasta
-       cfg.sr_target_side: las caras lejanas (~40 px nativos) acaban en fotos
-       de ~512 px en vez de ~160 px (SR x4 crudo), que es lo que se veía
-       "pixelado" en el panel.
+    2. `restore_face`: SR x4 (si la cara es pequeña) + GFPGAN (prior facial).
+       Una cara lejana de ~46 px acaba en una foto de 512 px NATURAL (reconstruida
+       por GFPGAN), no en un reescalado LANCZOS4 pixelado.
     Devuelve SIEMPRE BGR uint8.
     """
     z = frame_face(img, bbox, cfg.face_fill, cfg.face_min_pad)
-    return enhance(z, cfg)
+    return restore_face(z, cfg)
 
 
 def enhance(img: np.ndarray, cfg) -> np.ndarray:
-    """Mejora una imagen de cara. Devuelve SIEMPRE BGR uint8 (nunca None).
+    """Mejora una imagen de cara (SOLO SR genérico). Devuelve SIEMPRE BGR uint8.
 
     - Crop pequeño (lado mayor < cfg.sr_min_side): SR x4 nativo si hay modelo
-      (cfg.sr_model: "compact" | "x4plus"); si no, fallback LANCZOS4+unsharp.
-    - Después, top-up LANCZOS4+unsharp hasta que el lado mayor alcance al menos
-      cfg.sr_target_side (512): garantiza resolución útil de salida aunque la
-      cara nativa sea minúscula.
-    - Imagen ya grande (>= sr_target_side): intacta (no se toca lo que no lo
-      necesita).
+      (cfg.sr_model: "compact" | "x4plus"); si no, se deja intacto.
+    - YA NO se fuerza el top-up LANCZOS4 hasta cfg.sr_target_side: ese reescalado
+      artificial (46 px -> 512 px, ~11x) era la causa del pixelado/posterizado en
+      caras pequeñas. La salida queda al tamaño natural del SR (x4) y la
+      restauración facial (GFPGAN) se aplica aparte en `restore_face()`.
     """
     h, w = img.shape[:2]
     if h < 1 or w < 1:
@@ -343,7 +348,25 @@ def enhance(img: np.ndarray, cfg) -> np.ndarray:
                 img = _sr_infer(model, img)
             except Exception as e:  # noqa: BLE001
                 print(f"[superres] SR falló, fallback activo: {e}", flush=True)
-    return _fallback_upscale(img, cfg.sr_target_side)
+    return img
+
+
+def restore_face(img: np.ndarray, cfg) -> np.ndarray:
+    """Restauración facial completa para la foto final de la persona.
+
+    1. Si la cara es pequeña (< cfg.sr_min_side): SR genérico x4 (Real-ESRGAN).
+    2. GFPGAN (prior facial): produce una cara natural de 512x512 sin pixelado.
+
+    Devuelve SIEMPRE BGR uint8. Si GFPGAN no está disponible, devuelve el
+    resultado del SR genérico (nunca None, nunca rompe el pipeline).
+    """
+    img = enhance(img, cfg)
+    if cfg.sr_face_enabled:
+        from . import gfpgan  # import tardío: evita acoplar torch/gfpgan
+        out = gfpgan.restore(img, weight=cfg.sr_face_weight)
+        if out is not None:
+            return out
+    return img
 
 
 def enhance_embedding(img: np.ndarray, face, cfg) -> np.ndarray:

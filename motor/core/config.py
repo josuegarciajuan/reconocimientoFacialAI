@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .env import get, get_float, get_int
+from .env import get, get_bool, get_float, get_int
 
 
 @dataclass
@@ -75,11 +75,16 @@ class Config:
     sr_enabled: bool = True
     sr_model: str = "compact"      # "compact" (realesr-general-x4v3, ~2-5 s/cara, recomendado prod)
                                    # "x4plus" (RealESRGAN_x4plus, mejor calidad, ~30 s/cara en CPU)
-    sr_target_side: int = 512      # lado mínimo de salida (top-up LANCZOS4 tras SR x4)
+    sr_target_side: int = 512      # TOPE máximo de salida (ya no se reescala hasta aquí:
+                                   # el top-up LANCZOS4 a 512 pixelaba las caras pequeñas ~11x)
     sr_min_side: int = 320         # solo SR si el lado mayor del crop es < esto (caras pequeñas)
     # SR-before-embedding: caras con lado mayor < esto se super-resuelven ANTES de
     # recalcular el embedding ArcFace (mejora real del matching, no solo visual).
     sr_embed_min_face: int = 96
+
+    # --- restauración facial GFPGAN (motor/core/gfpgan.py) ---
+    sr_face_enabled: bool = True   # prior facial: caras naturales de 512 px sin pixelado
+    sr_face_weight: float = 0.5    # mezcla salida GFPGAN / entrada SR (identidad; None no aplica)
 
     # --- encuadre de la cara (auto-zoom hacia la cara en la foto guardada) ---
     face_fill: float = 0.70        # fracción del encuadre que debe ocupar la cara
@@ -203,6 +208,8 @@ class Config:
         cfg.sr_target_side = get_int(ruta, "RF_SR_TARGET_SIDE", cfg.sr_target_side)
         cfg.sr_min_side = get_int(ruta, "RF_SR_MIN_SIDE", cfg.sr_min_side)
         cfg.sr_embed_min_face = get_int(ruta, "RF_SR_EMBED_MIN_FACE", cfg.sr_embed_min_face)
+        cfg.sr_face_enabled = get_bool(ruta, "RF_SR_FACE_ENABLED", cfg.sr_face_enabled)
+        cfg.sr_face_weight = get_float(ruta, "RF_SR_FACE_WEIGHT", cfg.sr_face_weight)
         cfg.min_sharpness = get_float(ruta, "RF_MIN_SHARPNESS", cfg.min_sharpness)
         cfg.det_size = get_int(ruta, "RF_DET_SIZE", cfg.det_size)
         cfg.crop_det_size = get_int(ruta, "RF_CROP_DET_SIZE", cfg.crop_det_size)
