@@ -1,0 +1,9 @@
+[Unit]
+Description=RF Vigilancia de deriva — timer diario (03:10, hora local)
+
+[Timer]
+OnCalendar=*-*-* 03:10:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

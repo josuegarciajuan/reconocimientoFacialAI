@@ -120,6 +120,23 @@ switch ($accion) {
         echo json_encode($v);
         exit;
 
+    case "camaras_activas":
+        // Cámaras encendidas (sistema=0) para vigilar la deriva (motor/vigilar_deriva.py).
+        // Solo id + descripción + url_conexion (necesaria para capturar); nunca se loguea.
+        $local_id_f = (int) arg(2);
+        if ($local_id_f > 0) {
+            $valores = DB::select(
+                "SELECT id, descripcion, url_conexion FROM camaras WHERE sistema = 0 AND encendida = 1 AND local_id = ? ORDER BY id ASC",
+                [$local_id_f]
+            );
+        } else {
+            $valores = DB::select(
+                "SELECT id, descripcion, url_conexion FROM camaras WHERE sistema = 0 AND encendida = 1 ORDER BY id ASC"
+            );
+        }
+        echo json_encode($valores);
+        exit;
+
     case "listado_videos":
         // argv: local_id [camara_id] [desde] [hasta] [limite]
         $v_where = ["local_id = ?"];

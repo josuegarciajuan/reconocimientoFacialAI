@@ -9,6 +9,7 @@
  */
 
 require_once __DIR__ . "/../../../libs/db.php";
+require_once __DIR__ . "/../../../libs/calibracion.php";
 require_once __DIR__ . "/widgets.php";
 
 $local_id = (int)$_SESSION["local_id"];
@@ -52,6 +53,13 @@ $detalle_anomalias = [];
 if ($ciegas > 0)                { $anomalias++; $detalle_anomalias[] = "🔴 " . $ciegas . " cámara(s) apagada(s)"; }
 if ($aforo["pct"] >= 85)        { $anomalias++; $detalle_anomalias[] = "🔥 Aforo al " . $aforo["pct"] . "%"; }
 if ($prov_pasados > 0)          { $anomalias++; $detalle_anomalias[] = "⚖️ " . $prov_pasados . " fichaje(s) sin conciliar"; }
+
+/* Deriva (F3): cámaras posiblemente movidas (motor/vigilar_deriva.py, 1x/día). */
+$deriva_alertas = calib_deriva_alertas($local_id);
+foreach ($deriva_alertas as $da) {
+    $anomalias++;
+    $detalle_anomalias[] = "📐 «" . $da["descripcion"] . "» posiblemente movida (similitud " . $da["similitud"] . ")";
+}
 
 $pico = dash_pico_hoy($local_id);
 $vigia = dash_vigia($local_id);
