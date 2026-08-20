@@ -98,10 +98,14 @@ require_once __DIR__ . "/../../../../libs/etiquetas.php";
             </select>
         </div>
         <div>
-            <label for="dontCare" class="field-label">DontCare</label>
+            <label for="dontCare" class="field-label">Área mínima de movimiento (px²)</label>
             <select name="dontCare" id="dontCare" class="input border w-full">
                 <?= rf_cfg_select_rango(10, 2000, $cfg["dontCare"]); ?>
             </select>
+            <p class="text-xs text-gray-500 dark:text-gray-600 mt-1">
+                Área mínima del contorno (px²) sobre el frame redimensionado por «Redimensionar frame»:
+                si el mayor contorno es menor, no se cuenta como movimiento. Menor = más sensible.
+            </p>
         </div>
         <div>
             <label for="fps" class="field-label">FPS</label>
@@ -122,10 +126,14 @@ require_once __DIR__ . "/../../../../libs/etiquetas.php";
             </select>
         </div>
         <div>
-            <label for="sensibilidad" class="field-label">Sensibilidad</label>
+            <label for="sensibilidad" class="field-label">Salto de frames (cada N)</label>
             <select name="sensibilidad" id="sensibilidad" class="input border w-full">
                 <?= rf_cfg_select_rango(1, 15, $cfg["sensibilidad"]); ?>
             </select>
+            <p class="text-xs text-gray-500 dark:text-gray-600 mt-1">
+                Se analiza 1 de cada N frames. Más alto = se analizan menos frames = menos sensible y
+                menos CPU (la ventana efectiva pasa a «Segundos a analizar» × N). Con 1 se analizan todos.
+            </p>
         </div>
     </div>
 

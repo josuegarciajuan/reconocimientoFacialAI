@@ -73,7 +73,7 @@ while(true){
             $cmd.=$data["valores"][$i]["id"]." ";
             $cmd.=$segundos_analizar." "; //segundos a analizar para detectar un movimiento, ahora esta puesto a 3
             $cmd.=$porcentaje_mov." "; //% de frames con movimiento para que se considere movimiento, esta al 80%
-            $cmd.=$dontCare." ";  //el % area del frame que tiene que variar para considerar movimiento, esta a 500
+            $cmd.=$dontCare." ";  //área mínima del contorno en px² (SOBRE el frame redimensionado por redimesionframe): si el contorno de mayor área es menor, no se cuenta como movimiento
             $cmd.=$fps." "; //el numero de fps que captura
             $cmd.=$maximo_videos." "; //#tiempo en segundos maximo de grabado
             $cmd.=$redimesionframe." "; //es para que el video ocupe menos
@@ -115,11 +115,10 @@ while(true){
             //$redimesionframe." "; //es para que el video ocupe menos
             //No influye en nada en la sensibildiad de deteccion
             //
-            //$sensibilidad." "; //de cada cuantos frames se coge uno, conj un 1 se cogen todos con un 2 la mitad etc
-            //por lo que con un 1 se analizarian todos
-            //por lo que este numero mas alto ace q entre frame y se frame que se analiza ayan abido mas cambios
-            //por lo que se supone que cuanto mas alto mas sensibilidad
-            //jugar ponerle una tasa alta de FPS que detexte muchos pero que luego no los analice todos por ejemplo
+            //$sensibilidad." "; //se analiza 1 de cada N frames. MAS ALTO = MENOS frames
+            //analizados = MENOS sensible y MENOS CPU. La ventana efectiva de decisión
+            //pasa a segundos_analizar x N. Con 1 se analizan todos (default).
+            //Este parámetro NO hace "más sensible" al subirlo: solo ahorra CPU.
 
             /*
              * ESTA CONFIG ME GUSTA PARECE QUE VA BASTANTE FINO..
