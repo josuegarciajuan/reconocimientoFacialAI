@@ -15,6 +15,35 @@
     function mover_img(este,aeste){
         location.href="?page=visitantes&mode=editar&id=<?= $_GET["id"]; ?>&mover="+este+"&aeste="+aeste;
     }
+
+    // --- P4: separar en bloque (proveniencia exacta) ---
+    function rfActualizarConteo(){
+        var checks = document.querySelectorAll(".rf-foto-check:checked");
+        var el = document.getElementById("rf_sel_count");
+        if (el) { el.textContent = checks.length + " foto(s) seleccionada(s)"; }
+    }
+    function rfMostrarCargando(){
+        var d = document.getElementById("rf-cargando");
+        if (d) { return; }
+        d = document.createElement("div");
+        d.id = "rf-cargando";
+        d.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;" +
+            "display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:1.05rem";
+        d.textContent = "Aplicando corrección a la biblioteca…";
+        document.body.appendChild(d);
+    }
+    function rfSepararSeleccionadas(){
+        var checks = document.querySelectorAll(".rf-foto-check:checked");
+        if (checks.length === 0) { alert("Selecciona al menos una foto"); return; }
+        var destino = document.getElementById("separar_destino").value;
+        var ids = [];
+        checks.forEach(function(c){ ids.push(c.getAttribute("data-fid")); });
+        var ok = confirm("¿Mover " + ids.length + " foto(s) a la persona seleccionada?\n" +
+            "Se quitará de la biblioteca de esta persona exactamente lo que aportaron (sin residuos).");
+        if (!ok) { return; }
+        rfMostrarCargando();
+        location.href="?page=visitantes&mode=editar&id=<?= $_GET["id"]; ?>&separar=" + ids.join(",") + "&aeste=" + destino;
+    }
     
     
    function buscar1(){

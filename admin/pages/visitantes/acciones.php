@@ -18,7 +18,7 @@ function generar_codigo_persona() {
     return $codigo;
 }
 
-// --- unir dos personas ---
+// --- unir dos personas (P5: atómico BD+galería en Python, síncrono con carga) ---
 if (isset($_GET["este"]) and $_GET["este"] !== "") {
     $original = (int)$_GET["este"];
     $copia = (int)$_GET["coneste"];
@@ -26,60 +26,92 @@ if (isset($_GET["este"]) and $_GET["este"] !== "") {
     $o = DB::selectOne("SELECT cod_interno FROM personas WHERE id = ?", [$original]);
     $c = DB::selectOne("SELECT cod_interno FROM personas WHERE id = ?", [$copia]);
     if ($o && $c && $original !== $copia) {
-        DB::execute("UPDATE estancias SET persona_id = ? WHERE persona_id = ?", [$original, $copia]);
-
-        // face_enc_v2 (motor nuevo): el legacy juntar_personas.py escribía en face_enc
-        // y el clasificador volvía a separar la persona al siguiente evento.
+        // juntar_personas_v2.py hace TODO en una transacción: snapshot F6 (store+BD),
+        // merge de galería conservando `sources`, UPDATE estancias y DELETE personas.
         $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/juntar_personas_v2.py " . intval($_SESSION["local_id"])
              . " " . escapeshellarg($o["cod_interno"]) . " " . escapeshellarg($c["cod_interno"])
-             . " --ruta " . RUTA_PROYECTO . " > /dev/null 2>/dev/null &";
-        exec($cmd);
-
-        DB::execute("DELETE FROM personas WHERE id = ?", [$copia]);
+             . " --ruta " . RUTA_PROYECTO . " 2>&1";
+        $salida = shell_exec($cmd);
+        error_log("[unir] " . trim((string)$salida));
     }
 }
 
-// --- mover una foto a otra persona (o crear nueva) ---
+// --- mover UNA foto a otra persona (o crear nueva) — DB + galería con proveniencia ---
+function mover_foto_db($foto_id, $persona_destino) {
+    $foto = DB::selectOne("SELECT estancia_id FROM fotos WHERE id = ?", [$foto_id]);
+    if (!$foto) {
+        return null;
+    }
+    $estancia = DB::selectOne("SELECT persona_id, camara_id, fecha_ini, fecha_fin, notificacion_vista FROM estancias WHERE id = ?", [$foto["estancia_id"]]);
+    if (!$estancia) {
+        return null;
+    }
+    $pers_origen = DB::selectOne("SELECT cod_interno FROM personas WHERE id = ?", [(int)$estancia["persona_id"]]);
+    $cod_origen = $pers_origen ? $pers_origen["cod_interno"] : "";
+
+    if ($persona_destino === 0) {
+        $cam = DB::selectOne("SELECT local_id FROM camaras WHERE id = ?", [$estancia["camara_id"]]);
+        $local = $cam ? (int)$cam["local_id"] : (int)$_SESSION["local_id"];
+        $persona_destino = DB::insert("INSERT INTO personas (local_id, cod_interno) VALUES (?, ?)", [$local, generar_codigo_persona()]);
+    }
+
+    $pers_destino = DB::selectOne("SELECT cod_interno FROM personas WHERE id = ?", [$persona_destino]);
+    $cod_destino = $pers_destino ? $pers_destino["cod_interno"] : "";
+
+    $nueva_estancia = DB::insert(
+        "INSERT INTO estancias (persona_id, camara_id, fecha_ini, fecha_fin, notificacion_vista) VALUES (?, ?, ?, ?, ?)",
+        [$persona_destino, $estancia["camara_id"], $estancia["fecha_ini"], $estancia["fecha_fin"], $estancia["notificacion_vista"]]
+    );
+    DB::execute("UPDATE fotos SET estancia_id = ? WHERE id = ?", [$nueva_estancia, $foto_id]);
+
+    $restantes = DB::selectOne("SELECT COUNT(*) AS n FROM fotos WHERE estancia_id = ?", [$foto["estancia_id"]]);
+    if ($restantes && (int)$restantes["n"] === 0) {
+        DB::execute("DELETE FROM estancias WHERE id = ?", [$foto["estancia_id"]]);
+    }
+
+    return ["cod_origen" => $cod_origen, "cod_destino" => $cod_destino];
+}
+
 if (isset($_GET["mover"]) and $_GET["mover"] !== "") {
     $foto_id = (int)$_GET["mover"];
     $persona_destino = (int)$_GET["aeste"];
+    $cod = mover_foto_db($foto_id, $persona_destino);
 
-    $foto = DB::selectOne("SELECT estancia_id FROM fotos WHERE id = ?", [$foto_id]);
-    if ($foto) {
-        $estancia = DB::selectOne("SELECT persona_id, camara_id, fecha_ini, fecha_fin, notificacion_vista FROM estancias WHERE id = ?", [$foto["estancia_id"]]);
-        if ($estancia) {
-            $cod_origen = "";
-            $pers_origen = DB::selectOne("SELECT cod_interno FROM personas WHERE id = ?", [(int)$estancia["persona_id"]]);
-            if ($pers_origen) {
-                $cod_origen = $pers_origen["cod_interno"];
+    // B4/P4: re-encodear la foto movida y actualizar face_enc_v2 con PROVENIENCIA
+    // (motor/cambiar_foto.py usa move_by_source: quita de origen EXACTAMENTE lo
+    // que aportó esa foto y lo añade al destino).
+    if ($cod && $cod["cod_origen"] !== "" && $cod["cod_destino"] !== "") {
+        $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/cambiar_foto.py " . intval($_SESSION["local_id"]) . " " . $foto_id
+             . " " . escapeshellarg($cod["cod_origen"]) . " " . escapeshellarg($cod["cod_destino"])
+             . " --ruta " . RUTA_PROYECTO . " 2>&1";
+        $salida = shell_exec($cmd);
+        error_log("[mover] " . trim((string)$salida));
+    }
+}
+
+// --- separar VARIAS fotos (bulk) y llevarlas a otra persona (o nueva) — P4 ---
+if (isset($_GET["separar"]) and $_GET["separar"] !== "") {
+    $foto_ids = array_values(array_filter(array_map("intval", explode(",", $_GET["separar"])), fn($v) => $v > 0));
+    $persona_destino = (int)$_GET["aeste"];
+
+    if ($foto_ids) {
+        // agrupar por persona de origen (la UI las selecciona dentro de un mismo perfil).
+        // mover_foto_db ya crea la persona nueva si `aeste=0` y devuelve los cod_interno.
+        $grupos = [];   // cod_origen -> ["fotos" => [...], "destino" => cod_destino]
+        foreach ($foto_ids as $fid) {
+            $cod = mover_foto_db($fid, $persona_destino);
+            if ($cod && $cod["cod_origen"] !== "" && $cod["cod_destino"] !== "") {
+                $grupos[$cod["cod_origen"]]["fotos"][] = $fid;
+                $grupos[$cod["cod_origen"]]["destino"] = $cod["cod_destino"];
             }
-
-            if ($persona_destino === 0) {
-                $cam = DB::selectOne("SELECT local_id FROM camaras WHERE id = ?", [$estancia["camara_id"]]);
-                $local = $cam ? (int)$cam["local_id"] : (int)$_SESSION["local_id"];
-                $persona_destino = DB::insert("INSERT INTO personas (local_id, cod_interno) VALUES (?, ?)", [$local, generar_codigo_persona()]);
-            }
-
-            $pers_destino = DB::selectOne("SELECT cod_interno FROM personas WHERE id = ?", [$persona_destino]);
-            $cod_destino = $pers_destino ? $pers_destino["cod_interno"] : "";
-
-            $nueva_estancia = DB::insert(
-                "INSERT INTO estancias (persona_id, camara_id, fecha_ini, fecha_fin, notificacion_vista) VALUES (?, ?, ?, ?, ?)",
-                [$persona_destino, $estancia["camara_id"], $estancia["fecha_ini"], $estancia["fecha_fin"], $estancia["notificacion_vista"]]
-            );
-            DB::execute("UPDATE fotos SET estancia_id = ? WHERE id = ?", [$nueva_estancia, $foto_id]);
-
-            $restantes = DB::selectOne("SELECT COUNT(*) AS n FROM fotos WHERE estancia_id = ?", [$foto["estancia_id"]]);
-            if ($restantes && (int)$restantes["n"] === 0) {
-                DB::execute("DELETE FROM estancias WHERE id = ?", [$foto["estancia_id"]]);
-            }
-
-            // B4: re-encodear la foto movida y actualizar face_enc_v2 (motor/cambiar_foto.py)
-            if ($cod_origen !== "" && $cod_destino !== "") {
-                $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/cambiar_foto.py " . intval($_SESSION["local_id"]) . " " . $foto_id
-                     . " " . escapeshellarg($cod_origen) . " " . escapeshellarg($cod_destino) . " --ruta " . RUTA_PROYECTO . " > /dev/null 2>/dev/null &";
-                exec($cmd);
-            }
+        }
+        // por cada persona de origen: una sola pasada de galería con proveniencia
+        foreach ($grupos as $cod_origen => $g) {
+            $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/separar_personas.py " . intval($_SESSION["local_id"])
+                 . " " . escapeshellarg($cod_origen) . " " . escapeshellarg($g["destino"])
+                 . " --fotos " . implode(",", $g["fotos"]) . " --ruta " . RUTA_PROYECTO . " 2>&1";
+            $salida = shell_exec($cmd);
+            error_log("[separar] " . trim((string)$salida));
         }
     }
 }

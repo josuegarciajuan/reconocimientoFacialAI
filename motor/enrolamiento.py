@@ -66,7 +66,10 @@ def enroll(local_id: str, video_path: str, cod_interno: str, ruta: str,
     if encs:
         store = FaceStore(os.path.join(ruta, "motor/bbdd_reconocimiento", local_id, "face_enc_v2"),
                           max_per_person=cfg.max_encodings_per_person)
-        store.add(cod_interno, encs, quals, poses)
+        # P2: proveniencia sintética estable (las poses de enrolamiento no tienen
+        # fotos.id; se mueven con la persona al unir y nunca se separan por foto).
+        store.add(cod_interno, encs, quals, poses,
+                  sources=[f"enroll:{cod_interno}"] * len(encs))
     return len(encs)
 
 

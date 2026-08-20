@@ -161,7 +161,9 @@ $js_quote = function ($s) {
                             </div>
                         <?php else: ?>
                             <div class="accion-item">
-                                <a href="?page=visitantes&este=<?= (int)$_GET["unir"]; ?>&coneste=<?= $pid; ?>" data-tip="Fusionar esta persona con la seleccionada">Con este</a>
+                                <a href="?page=visitantes&este=<?= (int)$_GET["unir"]; ?>&coneste=<?= $pid; ?>"
+                                   onclick="return rfConfirmarUnir(<?= (int)$_GET["unir"]; ?>,<?= $pid; ?>)"
+                                   data-tip="Fusionar esta persona con la seleccionada">Con este</a>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -208,7 +210,7 @@ $candidatos = DB::select(
             </div>
         </div>
 
-        <form method="get" action="?page=visitantes" class="mt-4 pt-4 border-t border-gray-200 dark:border-dark-5">
+        <form method="get" action="?page=visitantes" class="mt-4 pt-4 border-t border-gray-200 dark:border-dark-5" onsubmit="return rfConfirmarUnirModal()">
             <input type="hidden" name="este" value="<?= $unir_id; ?>">
             <label class="field-label" for="coneste">Unir con</label>
             <div class="flex flex-col sm:flex-row gap-2">
@@ -229,5 +231,28 @@ $candidatos = DB::select(
             window.rfAbrirModal("modal-unir");
         }
     });
+
+    // P5: confirmación ligera + overlay de carga (la operación es síncrona)
+    function rfMostrarCargando(){
+        if (document.getElementById("rf-cargando")) { return; }
+        var d = document.createElement("div");
+        d.id = "rf-cargando";
+        d.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;" +
+            "display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:1.05rem";
+        d.textContent = "Aplicando corrección a la biblioteca…";
+        document.body.appendChild(d);
+    }
+    function rfConfirmarUnir(a, b){
+        if (!confirm("¿Unir ambas personas? Sus bibliotecas de caras se fusionarán.")) { return false; }
+        rfMostrarCargando();
+        return true;
+    }
+    function rfConfirmarUnirModal(){
+        var sel = document.getElementById("coneste");
+        if (!sel || sel.value === "") { alert("Selecciona un usuario"); return false; }
+        if (!confirm("¿Unir ambas personas? Sus bibliotecas de caras se fusionarán.")) { return false; }
+        rfMostrarCargando();
+        return true;
+    }
 </script>
 <?php endif; ?>
