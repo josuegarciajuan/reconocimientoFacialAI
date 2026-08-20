@@ -57,6 +57,18 @@ class CrossingConfig:
     var_threshold: float = 25.0           # MOG2 (más bajo = más sensible)
     detect_shadows: bool = False
 
+    @classmethod
+    def from_env(cls, ruta: str | None = None) -> "CrossingConfig":
+        """Config con los overrides del `.env` (RF_CRUCE_*), usados por el calibrador
+        (ritual D) y por procesa_video.py. Si faltan, se usan los defaults de la clase."""
+        from .core.env import get_float, get_int  # import tardío: mantiene el módulo puro
+
+        cfg = cls()
+        cfg.area_min = get_float(ruta, "RF_CRUCE_AREA_MIN", cfg.area_min)
+        cfg.min_track_frames = get_int(ruta, "RF_CRUCE_MIN_TRACK_FRAMES", cfg.min_track_frames)
+        cfg.var_threshold = get_float(ruta, "RF_CRUCE_VAR_THRESHOLD", cfg.var_threshold)
+        return cfg
+
 
 def signed_distance(line: Line, p: tuple[float, float]) -> float:
     """Distancia perpendicular con signo (px) del punto a la línea."""
