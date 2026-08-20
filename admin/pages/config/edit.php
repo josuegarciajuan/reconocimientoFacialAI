@@ -61,6 +61,12 @@ $salida_sel    = (int)($camara_sel["salida"] ?? 0);
 $encendida_sel = (int)($camara_sel["encendida"] ?? 0);
 $sistema_sel   = (int)($camara_sel["sistema"] ?? 0);
 
+/* Vigilancia (alarmas de inactividad) de la cámara seleccionada. */
+$alarma_heredar_sel      = (int)($camara_sel["alarma_heredar"] ?? 1);
+$alarma_24h_sel          = (int)($camara_sel["alarma_24h"] ?? 0);
+$alarma_hora_inicio_sel  = (string)($camara_sel["alarma_hora_inicio"] ?? "");
+$alarma_hora_fin_sel     = (string)($camara_sel["alarma_hora_fin"] ?? "");
+
 /**
  * Opciones 1..N con la selección actual marcada (preselección).
  * Si el valor guardado queda fuera del rango, se añade como opción

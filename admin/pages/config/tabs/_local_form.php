@@ -67,6 +67,40 @@ $val = function ($k, $d = "") use ($lf) {
     </div>
 </div>
 
+<div class="mt-5">
+    <h3 class="field-label">Vigilancia (alarmas de inactividad)</h3>
+    <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
+        Si está activa, cualquier movimiento fuera de este horario dispara una alarma en
+        «La Almenara». Marca «Actividad 24h» para que el local nunca alerte (todos los
+        casos quedan cubiertos). Las cámaras heredan este horario salvo que definan el suyo.
+    </p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+        <div class="sm:col-span-2 flex flex-wrap gap-x-4 gap-y-2">
+            <label for="alarma_activa" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+                <input type="checkbox" name="alarma_activa" id="alarma_activa" value="1" <?php if ((int)($lf["alarma_activa"] ?? 0) === 1) { echo "checked='checked'"; } ?>>
+                Vigilancia activada
+            </label>
+            <label for="alarma_24h" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+                <input type="checkbox" name="alarma_24h" id="alarma_24h" value="1" <?php if ((int)($lf["alarma_24h"] ?? 0) === 1) { echo "checked='checked'"; } ?>>
+                Actividad 24h (nunca alarmar)
+            </label>
+        </div>
+        <div>
+            <label for="alarma_hora_inicio" class="field-label">Inicio inactividad</label>
+            <input type="time" name="alarma_hora_inicio" id="alarma_hora_inicio" value="<?= $val("alarma_hora_inicio"); ?>" class="input border w-full">
+        </div>
+        <div>
+            <label for="alarma_hora_fin" class="field-label">Fin inactividad</label>
+            <input type="time" name="alarma_hora_fin" id="alarma_hora_fin" value="<?= $val("alarma_hora_fin"); ?>" class="input border w-full">
+        </div>
+        <div>
+            <label for="alarma_margen_min" class="field-label">Margen tras el cierre (min)</label>
+            <input type="number" name="alarma_margen_min" id="alarma_margen_min" min="0" step="5" value="<?= (int)($lf["alarma_margen_min"] ?? 0); ?>" class="input border w-full">
+            <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">Gracia para el último en salir.</p>
+        </div>
+    </div>
+</div>
+
 <div class="mt-5 flex justify-end">
     <button type="submit" class="button text-white bg-theme-1 shadow-md">Guardar fortaleza</button>
 </div>

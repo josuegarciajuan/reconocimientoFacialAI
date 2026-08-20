@@ -21,19 +21,30 @@ if (isset($_GET["submit"]) and $_GET["submit"] !== "") {
     $hora_salida2  = ($_POST["hora_salida2"] ?? "") !== "" ? $_POST["hora_salida2"] : null;
     $margen_fichaje_min = max(0, (int)($_POST["margen_fichaje_min"] ?? 30));
 
+    // Vigilancia (alarmas de inactividad)
+    $alarma_activa = (isset($_POST["alarma_activa"]) && (int)$_POST["alarma_activa"] === 1) ? 1 : 0;
+    $alarma_24h = (isset($_POST["alarma_24h"]) && (int)$_POST["alarma_24h"] === 1) ? 1 : 0;
+    $alarma_hora_inicio = ($_POST["alarma_hora_inicio"] ?? "") !== "" ? $_POST["alarma_hora_inicio"] : null;
+    $alarma_hora_fin    = ($_POST["alarma_hora_fin"] ?? "") !== "" ? $_POST["alarma_hora_fin"] : null;
+    $alarma_margen_min  = max(0, (int)($_POST["alarma_margen_min"] ?? 0));
+
     if (isset($_GET["id"]) and $_GET["id"] !== "") {
         $id = (int)$_GET["id"];
         DB::execute(
             "UPDATE locales SET nombre=?, url_logo=?, usuario=?, aforo_max=?,
-                    jornada_partida=?, hora_entrada1=?, hora_salida1=?, hora_entrada2=?, hora_salida2=?, margen_fichaje_min=?
+                    jornada_partida=?, hora_entrada1=?, hora_salida1=?, hora_entrada2=?, hora_salida2=?, margen_fichaje_min=?,
+                    alarma_activa=?, alarma_hora_inicio=?, alarma_hora_fin=?, alarma_24h=?, alarma_margen_min=?
              WHERE id=?",
-            [$nombre, $url_logo, $usuario, $aforo_max, $jornada_partida, $hora_entrada1, $hora_salida1, $hora_entrada2, $hora_salida2, $margen_fichaje_min, $id]
+            [$nombre, $url_logo, $usuario, $aforo_max, $jornada_partida, $hora_entrada1, $hora_salida1, $hora_entrada2, $hora_salida2, $margen_fichaje_min,
+             $alarma_activa, $alarma_hora_inicio, $alarma_hora_fin, $alarma_24h, $alarma_margen_min, $id]
         );
     } else {
         $id = DB::insert(
-            "INSERT INTO locales (nombre, url_logo, usuario, aforo_max, jornada_partida, hora_entrada1, hora_salida1, hora_entrada2, hora_salida2, margen_fichaje_min)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [$nombre, $url_logo, $usuario, $aforo_max, $jornada_partida, $hora_entrada1, $hora_salida1, $hora_entrada2, $hora_salida2, $margen_fichaje_min]
+            "INSERT INTO locales (nombre, url_logo, usuario, aforo_max, jornada_partida, hora_entrada1, hora_salida1, hora_entrada2, hora_salida2, margen_fichaje_min,
+                    alarma_activa, alarma_hora_inicio, alarma_hora_fin, alarma_24h, alarma_margen_min)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [$nombre, $url_logo, $usuario, $aforo_max, $jornada_partida, $hora_entrada1, $hora_salida1, $hora_entrada2, $hora_salida2, $margen_fichaje_min,
+             $alarma_activa, $alarma_hora_inicio, $alarma_hora_fin, $alarma_24h, $alarma_margen_min]
         );
 
         // scaffolding de carpetas (Fase 5: sustituir chmod 777 por permisos correctos)

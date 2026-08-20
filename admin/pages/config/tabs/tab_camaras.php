@@ -137,6 +137,35 @@ require_once __DIR__ . "/../../../../libs/etiquetas.php";
         </div>
     </div>
 
+    <!-- ---------- Vigilancia (alarmas de inactividad) ---------- -->
+    <div class="form-section__title mt-6">
+        <span class="form-section__emoji" aria-hidden="true">🚨</span>
+        Vigilancia (alarmas de inactividad)
+    </div>
+    <p class="text-xs text-gray-500 dark:text-gray-600 mb-4">
+        Fuera de este horario, el movimiento en esta cámara dispara una alarma en «La Almenara».
+        Por defecto hereda el horario del local; desmarca «Heredar» para definir uno propio.
+    </p>
+
+    <div class="form-grid">
+        <div class="sm:col-span-2 flex flex-wrap gap-x-4 gap-y-2">
+            <label for="alarma_heredar" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer" data-lore="alarma-heredar">
+                <input type="checkbox" name="alarma_heredar" id="alarma_heredar" value="1" style="accent-color:var(--mordor-oro)" <?= $alarma_heredar_sel === 1 ? "checked" : ""; ?>> Heredar horario del local
+            </label>
+            <label for="alarma_24h" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer" data-lore="alarma-24h">
+                <input type="checkbox" name="alarma_24h" id="alarma_24h" value="1" style="accent-color:var(--mordor-oro)" <?= $alarma_24h_sel === 1 ? "checked" : ""; ?>> Actividad 24h (esta cámara nunca alarma)
+            </label>
+        </div>
+        <div>
+            <label for="alarma_hora_inicio" class="field-label">Inicio inactividad (propio)</label>
+            <input type="time" name="alarma_hora_inicio" id="alarma_hora_inicio" value="<?= htmlspecialchars($alarma_hora_inicio_sel, ENT_QUOTES); ?>" class="input border w-full">
+        </div>
+        <div>
+            <label for="alarma_hora_fin" class="field-label">Fin inactividad (propio)</label>
+            <input type="time" name="alarma_hora_fin" id="alarma_hora_fin" value="<?= htmlspecialchars($alarma_hora_fin_sel, ENT_QUOTES); ?>" class="input border w-full">
+        </div>
+    </div>
+
     <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 items-center">
         <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="guardar()">Guardar cámara</button>
         <span class="text-xs text-gray-500 dark:text-gray-600" data-lore="posicion-yunque">
@@ -190,6 +219,16 @@ require_once __DIR__ . "/../../../../libs/etiquetas.php";
             <span class="text-xs text-gray-500 dark:text-gray-600 ml-2" data-lore="posicion-yunque">
                 Al crearla quedará sin posición; arrástrala al plano en «El Yunque».
             </span>
+        </div>
+
+        <div class="form-grid__full">
+            <span class="field-label">Vigilancia (alarmas de inactividad)</span>
+            <label for="alarma_heredar_nueva" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer" data-lore="alarma-heredar">
+                <input type="checkbox" name="alarma_heredar_nueva" id="alarma_heredar_nueva" value="1" style="accent-color:var(--mordor-oro)" checked> Heredar horario del local (por defecto)
+            </label>
+            <label for="alarma_24h_nueva" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer" data-lore="alarma-24h">
+                <input type="checkbox" name="alarma_24h_nueva" id="alarma_24h_nueva" value="1" style="accent-color:var(--mordor-oro)"> Actividad 24h (nunca alarma)
+            </label>
         </div>
     </div>
 </div>

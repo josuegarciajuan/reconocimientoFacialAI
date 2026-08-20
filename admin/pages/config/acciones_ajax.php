@@ -24,6 +24,8 @@ switch ($_GET["a"]) {
                 $c["encendida"], $c["url_conexion"], $c["sistema"], $c["ipcamlive_alias"], $c["url_desdeserver"],
                 $c["segundos_analizar"], $c["porcentaje_mov"], $c["dontCare"], $c["fps"],
                 $c["maximo_videos"], $c["redimesionframe"], $c["sensibilidad"],
+                $c["alarma_heredar"] ?? 1, $c["alarma_24h"] ?? 0,
+                $c["alarma_hora_inicio"] ?? "", $c["alarma_hora_fin"] ?? "",
             ]);
         }
         break;
