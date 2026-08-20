@@ -1717,3 +1717,40 @@ input:focus-visible {
   border-color: rgba(255, 90, 31, 0.7);
   box-shadow: 0 0 12px -3px rgba(255, 90, 31, 0.55);
 }
+
+/* --- "La Almenara": banner de alarma activa -------------------- */
+.banner-alarma {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 60, 20, 0.65);
+  background: linear-gradient(90deg, rgba(160, 20, 0, 0.92), rgba(120, 10, 0, 0.88));
+  color: #ffe3d6;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 0 18px -4px rgba(255, 60, 20, 0.7);
+  animation: banner-alarma-pulso 1.6s ease-in-out infinite;
+}
+.banner-alarma:hover,
+.banner-alarma:focus-visible {
+  filter: brightness(1.18);
+  color: #ffffff;
+}
+.banner-alarma__icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+.banner-alarma__cta {
+  margin-left: auto;
+  white-space: nowrap;
+  color: #ffd9a0;
+  font-weight: 700;
+}
+@keyframes banner-alarma-pulso {
+  0%, 100% { box-shadow: 0 0 10px -4px rgba(255, 60, 20, 0.5); }
+  50%      { box-shadow: 0 0 22px -2px rgba(255, 60, 20, 0.95); }
+}
