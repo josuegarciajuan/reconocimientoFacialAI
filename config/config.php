@@ -94,6 +94,7 @@ define("CONFIG_contourArea_MINIMO","1");
  *  detector.php  ->  procesa_videosV6.py  y  procesa_fotos_def_borrosaparteV2.py
  */
 define("CONFIG_LIMITE_RAM",85); //limite de ram ocupada para seguir procesando videos
+define("CONFIG_LIMITE_LOAD", env_or("RF_LIMITE_LOAD", "1.0")); //CPU-gate: difiere procesa_video/archiva si loadavg > nproc*ratio (protege capturadores)
 define("CONFIG_LIMITE_VIDEOS", env_or("RF_LIMITE_VIDEOS", "2")); //nº máx. de procesa_video simultáneos (cada uno ~1.5GB; 4 con autotube en la misma máquina provocaba OOM)
 define("CONFIG_REINTENTOS_VIDEO",3); //reintentos de un vídeo antes de descartarlo (F6: marcadores huérfanos)
 define("CONFIG_MARCADOR_HUERFANO_SEGS",300); //antigüedad mínima del marcador para considerar procesa_video muerto

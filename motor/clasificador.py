@@ -788,6 +788,25 @@ def _ram_available_gb() -> float:
     return 99.0
 
 
+def _load_avg_1m() -> float:
+    """Carga media de 1 minuto (loadavg); 0.0 si no se puede leer."""
+    try:
+        with open("/proc/loadavg", encoding="ascii") as fh:
+            return float(fh.read().split()[0])
+    except Exception:  # noqa: BLE001
+        return 0.0
+
+
+def _cpu_saturada(cfg) -> bool:
+    """True si la carga media supera nproc * max_load_ratio (sistema saturado)."""
+    try:
+        import os as _os
+        nproc = _os.cpu_count() or 1
+        return _load_avg_1m() > (nproc * cfg.max_load_ratio)
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("local_id")
@@ -827,6 +846,12 @@ def main() -> int:
             # evita el pico de RAM de los 12 clasificadores + procesa_video
             # que disparaba el OOM killer global (mataba rf o autotube).
             if _ram_available_gb() < cfg.ram_min_free_gb:
+                time.sleep(5)
+                continue
+            # CPU-gate: si la máquina está saturada (loadavg > nproc*ratio),
+            # difiere el procesado para no robar CPU a los capturadores en
+            # tiempo real (guarda_movimientosV3).
+            if _cpu_saturada(cfg):
                 time.sleep(5)
                 continue
             n = process_once(args.ruta, args.local_id, args.camara_id, cfg, store, feedback)
