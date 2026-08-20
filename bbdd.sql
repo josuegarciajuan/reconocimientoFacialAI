@@ -107,6 +107,7 @@ CREATE TABLE IF NOT EXISTS fotos(
   estancia_id int(11) default 0,
   nombre_real_antesconversion varchar(255),
   identificador_unico varchar(255),
+  generada_hq tinyint(1) NOT NULL DEFAULT 0,
   created timestamp DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id)
 );

@@ -57,7 +57,34 @@ function recorre_dir($path, $nivel) {
     closedir($dir);
 }
 
+function procesa_foto_hq($ruta, $elemento) {
+    // $elemento = "<nombre>.jpg.hq". El "<nombre>.jpg" es el
+    // `nombre_real_antesconversion` de la foto rápida ya publicada.
+    $base = substr($elemento, 0, -3);   // quita ".hq"
+    $foto = DB::selectOne(
+        "SELECT id FROM fotos WHERE nombre_real_antesconversion = ? LIMIT 1",
+        [$base]
+    );
+    if (!$foto) {
+        // la foto rápida aún no se ha ingerido: reintentar en la siguiente pasada
+        return;
+    }
+    $dest = "admin/caras_procesadas/" . (int)$foto["id"] . ".jpg";
+    if (is_file($ruta) && filesize($ruta) > 0) {
+        @rename($ruta, $dest);
+        DB::execute("UPDATE fotos SET generada_hq = 1 WHERE id = ?", [(int)$foto["id"]]);
+    }
+}
+
 function procesa_foto($ruta, $elemento) {
+    // Fase HQ: "<nombre>.jpg.hq" es la versión mejorada (x4plus) de una foto
+    // rápida ya publicada. Se aplica SOBREESCRIBIENDO la rápida (sin duplicar)
+    // y marca generada_hq=1 para que el panel la "autonitida" sin recargar.
+    if (substr($elemento, -3) === ".hq") {
+        procesa_foto_hq($ruta, $elemento);
+        return;
+    }
+
     $aux = explode("/", $ruta);
     // motor/caras/<local>/<cam>/<persona>/<foto>
     $n = count($aux);

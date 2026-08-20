@@ -127,6 +127,7 @@ CREATE TABLE `fotos` (
   `estancia_id` int(11) DEFAULT '0',
   `nombre_real_antesconversion` varchar(255) DEFAULT NULL,
   `identificador_unico` varchar(255) DEFAULT NULL,
+  `generada_hq` tinyint(1) NOT NULL DEFAULT '0',
   `created` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;

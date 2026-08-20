@@ -61,6 +61,7 @@ class Config:
 
     # --- procesa_video.py ---
     dedup_cosine: float = 0.97       # salta caras casi idénticas a las ya guardadas
+    face_every: int = 2              # muestreo: analiza 1 de cada N frames (más muestras MF-SR/HQ)
 
     # --- RAM-gate (clasificador.py) ---
     # Si la memoria disponible (MemAvailable) baja de este umbral, el clasificador
@@ -83,17 +84,35 @@ class Config:
     sr_embed_min_face: int = 96
 
     # --- super-resolución multi-frame (MF-SR) ---
-    # Para caras pequeñas (< sr_mf_min_face) en vez de un solo crop se alinean y
-    # fusionan (mediana) los K crops más nítidos de la misma cara capturados en
-    # frames consecutivos, antes del SR/GFPGAN. Reduce ruido/artefactos de
-    # compresión y gana resolución efectiva (la mayor mejora software de nitidez).
-    sr_mf_enabled: bool = True
+    # OFF por defecto: se prefiere un ÚNICO frame nítido y cercano (selección por
+    # nitidez x área) sobre la fusión de varios, que con alineación imperfecta
+    # puede dar ligero desenfoque. Se mantiene como opt-in (RF_SR_MF_ENABLED=1).
+    sr_mf_enabled: bool = False
     sr_mf_k: int = 8                # nº de crops a alinear/fusionar por cara
     sr_mf_min_face: int = 128       # solo fusionar si el lado mayor de la cara < esto
 
     # --- restauración facial GFPGAN (motor/core/gfpgan.py) ---
     sr_face_enabled: bool = True   # prior facial: caras naturales de 512 px sin pixelado
     sr_face_weight: float = 0.5    # mezcla salida GFPGAN / entrada SR (identidad; None no aplica)
+
+    # --- foto final de busto (display) ---
+    # La foto que se muestra en el panel se genera desde un crop de busto (torso
+    # real nítido) y solo la región de la cara se restaura con GFPGAN. La cara
+    # ocupa ~busto_face_fill del encuadre (vs 0.70 del auto-zoom anterior).
+    busto_enabled: bool = True
+    busto_face_fill: float = 0.40    # fracción del encuadre que ocupa la cara
+    busto_min_pad: int = 16          # pad mínimo (px) alrededor de la cara
+    busto_w_face: float = 3.0        # ancho del crop de busto en veces el ancho de la cara
+    busto_h_face: float = 4.5        # alto del crop de busto en veces el alto de la cara
+    busto_head_pad: float = 0.6      # margen sobre la cabeza (pelo) en veces el alto de la cara
+
+    # --- foto final HQ (progresiva): fast (compact) -> HQ (sr_model_photo) ---
+    # La foto rápida (compact) aparece al instante; si hq_enabled, un hilo de
+    # fondo genera la versión HQ (sr_model_photo) y el panel la "autonitida"
+    # sin recargar. Los embeddings/matching SIEMPRE usan `sr_model` (compact).
+    sr_model_photo: str = "x4plus"   # modelo SR de la foto final (HQ)
+    hq_enabled: bool = True          # generar la versión HQ progresiva
+    hq_max_workers: int = 1          # nº máx de trabajos HQ concurrentes (CPU)
 
     # --- encuadre de la cara (auto-zoom hacia la cara en la foto guardada) ---
     face_fill: float = 0.70        # fracción del encuadre que debe ocupar la cara
@@ -223,6 +242,12 @@ class Config:
         cfg.sr_mf_min_face = get_int(ruta, "RF_SR_MF_MIN_FACE", cfg.sr_mf_min_face)
         cfg.sr_face_enabled = get_bool(ruta, "RF_SR_FACE_ENABLED", cfg.sr_face_enabled)
         cfg.sr_face_weight = get_float(ruta, "RF_SR_FACE_WEIGHT", cfg.sr_face_weight)
+        cfg.sr_model_photo = get(ruta, "RF_SR_MODEL_PHOTO", cfg.sr_model_photo)
+        cfg.hq_enabled = get_bool(ruta, "RF_HQ_ENABLED", cfg.hq_enabled)
+        cfg.hq_max_workers = get_int(ruta, "RF_HQ_MAX_WORKERS", cfg.hq_max_workers)
+        cfg.busto_enabled = get_bool(ruta, "RF_BUSTO_ENABLED", cfg.busto_enabled)
+        cfg.busto_face_fill = get_float(ruta, "RF_BUSTO_FACE_FILL", cfg.busto_face_fill)
+        cfg.face_every = get_int(ruta, "RF_FACE_EVERY", cfg.face_every)
         cfg.min_sharpness = get_float(ruta, "RF_MIN_SHARPNESS", cfg.min_sharpness)
         cfg.det_size = get_int(ruta, "RF_DET_SIZE", cfg.det_size)
         cfg.crop_det_size = get_int(ruta, "RF_CROP_DET_SIZE", cfg.crop_det_size)

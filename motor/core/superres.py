@@ -394,11 +394,11 @@ def merge_frames(frames, ref_bbox, cfg, pad_ratio: float = 0.35) -> np.ndarray |
     return np.clip(fused, 0, 255).astype(np.uint8)
 
 
-def enhance(img: np.ndarray, cfg) -> np.ndarray:
+def enhance(img: np.ndarray, cfg, model: str | None = None) -> np.ndarray:
     """Mejora una imagen de cara (SOLO SR genérico). Devuelve SIEMPRE BGR uint8.
 
     - Crop pequeño (lado mayor < cfg.sr_min_side): SR x4 nativo si hay modelo
-      (cfg.sr_model: "compact" | "x4plus"); si no, se deja intacto.
+      (`model` si se indica, si no `cfg.sr_model`: "compact" | "x4plus").
     - YA NO se fuerza el top-up LANCZOS4 hasta cfg.sr_target_side: ese reescalado
       artificial (46 px -> 512 px, ~11x) era la causa del pixelado/posterizado en
       caras pequeñas. La salida queda al tamaño natural del SR (x4) y la
@@ -408,16 +408,16 @@ def enhance(img: np.ndarray, cfg) -> np.ndarray:
     if h < 1 or w < 1:
         return img
     if cfg.sr_enabled and max(h, w) < cfg.sr_min_side:
-        model = get_model(cfg.sr_model)
-        if model is not None:
+        m = get_model(model or cfg.sr_model)
+        if m is not None:
             try:
-                img = _sr_infer(model, img)
+                img = _sr_infer(m, img)
             except Exception as e:  # noqa: BLE001
                 print(f"[superres] SR falló, fallback activo: {e}", flush=True)
     return img
 
 
-def restore_face(img: np.ndarray, cfg) -> np.ndarray:
+def restore_face(img: np.ndarray, cfg, model: str | None = None) -> np.ndarray:
     """Restauración facial completa para la foto final de la persona.
 
     1. Si la cara es pequeña (< cfg.sr_min_side): SR genérico x4 (Real-ESRGAN).
@@ -426,13 +426,77 @@ def restore_face(img: np.ndarray, cfg) -> np.ndarray:
     Devuelve SIEMPRE BGR uint8. Si GFPGAN no está disponible, devuelve el
     resultado del SR genérico (nunca None, nunca rompe el pipeline).
     """
-    img = enhance(img, cfg)
+    img = enhance(img, cfg, model=model)
     if cfg.sr_face_enabled:
         from . import gfpgan  # import tardío: evita acoplar torch/gfpgan
         out = gfpgan.restore(img, weight=cfg.sr_face_weight)
         if out is not None:
             return out
     return img
+
+
+def _face_region_blend(img: np.ndarray, face_box, cfg) -> np.ndarray:
+    """Restaura SOLO la región de la cara y la funde con máscara feather.
+
+    `face_box` = (x1, y1, x2, y2) en coordenadas de `img`. El torso/contexto de
+    `img` queda con sus píxeles reales (sin SR/GFPGAN); solo la cara se restaura
+    (GFPGAN 512) y se redimensiona a su hueco, fundida con una máscara gaussiana.
+    """
+    h, w = img.shape[:2]
+    x1, y1, x2, y2 = (int(round(v)) for v in face_box)
+    x1, y1 = max(0, x1), max(0, y1)
+    x2, y2 = min(w, x2), min(h, y2)
+    if x2 - x1 < 8 or y2 - y1 < 8:
+        return img
+    if not cfg.sr_face_enabled:
+        return img
+    region = img[y1:y2, x1:x2]
+    from . import gfpgan  # import tardío: evita acoplar torch/gfpgan
+    restored = gfpgan.restore(region, weight=cfg.sr_face_weight)
+    if restored is None:
+        return img
+    restored = cv2.resize(restored, (x2 - x1, y2 - y1), interpolation=cv2.INTER_LINEAR)
+    # máscara gaussiana feather para fundir sin bordes duros
+    mask = np.ones((y2 - y1, x2 - x1), dtype=np.float32)
+    sigma = max(1.0, min(x2 - x1, y2 - y1) * 0.15)
+    mask = cv2.GaussianBlur(mask, (0, 0), sigmaX=sigma, sigmaY=sigma)[..., None]
+    out = img.copy()
+    blended = restored * mask + region * (1.0 - mask)
+    out[y1:y2, x1:x2] = np.clip(blended, 0, 255).astype(np.uint8)
+    return out
+
+
+def photo_busto(img: np.ndarray, bbox, cfg, model: str | None = None) -> np.ndarray:
+    """Foto final de BUSTO para el panel: torso real + cara restaurada.
+
+    1. Reencuadre natural (`busto_face_fill`) desde el crop de busto/frame.
+    2. SR ligero con `model` solo si el encuadre es pequeño.
+    3. GFPGAN únicamente en la región de la cara (`_face_region_blend`).
+
+    Devuelve SIEMPRE BGR uint8.
+    """
+    h, w = img.shape[:2]
+    x1, y1, x2, y2 = (int(round(v)) for v in bbox)
+    fw, fh = max(1, x2 - x1), max(1, y2 - y1)
+    crop_w = min(max(int(round(fw / cfg.busto_face_fill)), fw + 2 * cfg.busto_min_pad), w)
+    crop_h = min(max(int(round(fh / cfg.busto_face_fill)), fh + 2 * cfg.busto_min_pad), h)
+    cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
+    x1c = max(0, min(cx - crop_w // 2, w - crop_w))
+    y1c = max(0, min(cy - crop_h // 2, h - crop_h))
+    z = img[y1c:y1c + crop_h, x1c:x1c + crop_w]
+    if z.size == 0:
+        return img
+    # bbox de la cara dentro del encuadre z
+    fb = (x1 - x1c, y1 - y1c, x2 - x1c, y2 - y1c)
+    before = z.shape[:2]
+    z = enhance(z, cfg, model=model)
+    sy = z.shape[0] / max(1, before[0])
+    sx = z.shape[1] / max(1, before[1])
+    if sy != 1.0 or sx != 1.0:
+        fb = (int(fb[0] * sx), int(fb[1] * sy), int(fb[2] * sx), int(fb[3] * sy))
+    if cfg.sr_face_enabled:
+        z = _face_region_blend(z, fb, cfg)
+    return z
 
 
 def enhance_embedding(img: np.ndarray, face, cfg) -> np.ndarray:

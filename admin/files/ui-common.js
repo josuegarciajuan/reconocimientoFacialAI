@@ -236,6 +236,50 @@
   }
 
   /* ------------------------------------------------------------------ */
+  /* Fotos HQ progresivas: cuando la versión x4plus de una foto esté     */
+  /* lista, se recarga SOLO esa imagen (cache-buster) sin refrescar la   */
+  /* página. La imagen se "autonitida" ~35-40 s después de aparecer.     */
+  /* ------------------------------------------------------------------ */
+  function rfRefrescarFotosHQ(intervaloMs) {
+    intervaloMs = intervaloMs || 4000;
+    var re = /caras_procesadas\/(\d+)\.jpg/;
+
+    function tick() {
+      var imgs = doc.querySelectorAll('img[src*="caras_procesadas/"]');
+      var pendientes = {};
+      var i, m, fid;
+      for (i = 0; i < imgs.length; i++) {
+        var img = imgs[i];
+        if (img.getAttribute("data-hq") === "1") { continue; }
+        m = re.exec(img.getAttribute("src") || "");
+        if (!m) { continue; }
+        fid = m[1];
+        pendientes[fid] = pendientes[fid] || [];
+        pendientes[fid].push(img);
+      }
+      var fids = Object.keys(pendientes);
+      if (fids.length === 0) { return; }
+
+      $.get("./accionesAjax.php?a=8", { ids: fids.join(",") }, function (resp) {
+        var hq = (resp && resp.hq) ? resp.hq : [];
+        var j, k;
+        for (j = 0; j < hq.length; j++) {
+          var list = pendientes[String(hq[j])] || [];
+          for (k = 0; k < list.length; k++) {
+            var im = list[k];
+            var base = (im.getAttribute("src") || "").split("?")[0];
+            im.setAttribute("data-hq", "1");
+            im.src = base + "?v=" + Date.now();
+          }
+        }
+      }, "json");
+    }
+
+    tick();
+    setInterval(tick, intervaloMs);
+  }
+
+  /* ------------------------------------------------------------------ */
   /* Drawer lateral del panel (móvil <768px)                             */
   /* Hamburguesa (#panel-drawer-toggler) -> abre; cierra con el botón ✕, */
   /* el backdrop o la tecla Esc. Bloquea el scroll de fondo.             */
@@ -412,6 +456,7 @@
   win.rfCamModal = rfCamModal;
   win.rfVideoModal = rfVideoModal;
   win.rfRefrescarSnapshots = rfRefrescarSnapshots;
+  win.rfRefrescarFotosHQ = rfRefrescarFotosHQ;
   win.verFoto = rfLightbox; // alias legacy de los javascript.php de secciones
   win.rfTipInit = rfTipInit; // inicialización delegada (ver $(function) abajo)
 
@@ -421,6 +466,11 @@
     rfTipInit();
     if (doc.querySelectorAll(".cam-card__img[data-snapshot]").length > 0) {
       rfRefrescarSnapshots(15000);
+    }
+    // Fotos de caras: cuando su versión HQ (x4plus) esté lista, se "autonitidan"
+    // en el panel sin recargar la página (consulta cada ~4 s).
+    if (doc.querySelectorAll('img[src*="caras_procesadas/"]').length > 0) {
+      rfRefrescarFotosHQ(4000);
     }
   });
 })(window, document, jQuery);

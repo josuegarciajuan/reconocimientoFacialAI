@@ -115,6 +115,31 @@ def torso_bbox(face, frame_w: int, frame_h: int, cfg: Config):
     return (tx1, ty1, tx2, ty2)
 
 
+def busto_bbox(face, frame_w: int, frame_h: int, cfg: Config):
+    """Caja de BUSTO (cabeza + hombros) para la foto final de display.
+
+    A diferencia del crop de cara (tight, para embeddings) y del torso (solo
+    ropa, L1b), este incluye la cabeza (arriba) y algo de pecho: es la imagen
+    "de persona" que se muestra en el panel, con píxeles reales en el torso y
+    solo la cara restaurada. Devuelve (x1, y1, x2, y2) o None si no es viable.
+    """
+    x1, y1, x2, y2 = face.bbox
+    fw, fh = x2 - x1, y2 - y1
+    if fw <= 0 or fh <= 0:
+        return None
+    cx = (x1 + x2) / 2.0
+    w = fw * cfg.busto_w_face
+    h = fh * cfg.busto_h_face
+    top = y1 - fh * cfg.busto_head_pad
+    bx1 = max(0, int(cx - w / 2.0))
+    bx2 = min(frame_w, int(cx + w / 2.0))
+    by1 = max(0, int(top))
+    by2 = min(frame_h, int(top + h))
+    if (bx2 - bx1) < fw or (by2 - by1) < fh:
+        return None
+    return (bx1, by1, bx2, by2)
+
+
 def guardar_cara(ruta: str, local_id: str, camara_id: str, fichero: str, frame,
                  face, segs: float, cfg: Config, buffer: list) -> None:
     # dedup: si ya guardamos una cara casi idéntica hace poco, la saltamos
@@ -144,6 +169,17 @@ def guardar_cara(ruta: str, local_id: str, camara_id: str, fichero: str, frame,
     # PNG sin pérdidas: el crop es el input del SR/GFPGAN; guardarlo como JPEG
     # añadía una generación de compresión sobre caras ya muy pequeñas (~45 px).
     cv2.imwrite(os.path.join(out_dir, nombre + ".png"), crop)
+
+    # Foto de busto (display): contexto cabeza+hombros, mismo stem en <cam>_busto/.
+    # Se usa para la foto final que se muestra en el panel (torso real nítido).
+    if cfg.busto_enabled:
+        bb = busto_bbox(face, w, h, cfg)
+        if bb is not None:
+            busto = frame[bb[1]:bb[3], bb[0]:bb[2]]
+            if busto.size > 0:
+                busto_dir = os.path.join(ruta, "motor/caras/sinclasificar", local_id, f"{camara_id}_busto")
+                os.makedirs(busto_dir, exist_ok=True)
+                cv2.imwrite(os.path.join(busto_dir, nombre + ".png"), busto)
 
     # F1: crop de torso separado (mismo stem) para la capa L1b.
     # Si no hay torso visible (persona muy cerca / caja fuera), NO se guarda:
@@ -258,7 +294,7 @@ def main() -> int:
     ap.add_argument("camara_id")
     ap.add_argument("fichero")
     ap.add_argument("--ruta", default=os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-    ap.add_argument("--face-every", type=int, default=3)
+    ap.add_argument("--face-every", type=int, default=None)
     ap.add_argument("--min-sharpness", type=float, default=None)
     ap.add_argument("--dedup-cosine", type=float, default=0.97)
     args = ap.parse_args()
@@ -269,8 +305,9 @@ def main() -> int:
     if args.min_sharpness is not None:
         cfg.min_sharpness = args.min_sharpness
     cfg.dedup_cosine = args.dedup_cosine
+    face_every = args.face_every if args.face_every is not None else cfg.face_every
 
-    process_video(args.local_id, args.camara_id, args.fichero, args.ruta, cfg, args.face_every)
+    process_video(args.local_id, args.camara_id, args.fichero, args.ruta, cfg, face_every)
     return 0
 
 

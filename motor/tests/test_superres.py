@@ -181,3 +181,47 @@ def test_merge_frames_reduces_noise():
     single_std = float(np.std(noisy[0].astype(np.float32)))
     out_std = float(np.std(out.astype(np.float32)))
     assert out_std < single_std
+
+
+# ---------------------------------------------------------------- photo_busto
+
+def test_photo_busto_returns_valid():
+    """photo_busto devuelve BGR uint8 (sin SR/GFPGAN en CI)."""
+    from motor.core.superres import photo_busto
+    cfg = Config()
+    cfg.sr_enabled = False
+    cfg.sr_face_enabled = False
+    img = np.zeros((200, 200, 3), dtype=np.uint8)
+    out = photo_busto(img, (80, 90, 120, 140), cfg)
+    assert out is not None
+    assert out.dtype == np.uint8
+    assert out.ndim == 3 and out.shape[2] == 3
+
+
+def test_photo_busto_framing_wider_than_face():
+    """El encuadre de busto (face_fill ~0.40) es más amplio que la cara."""
+    from motor.core.superres import photo_busto
+    cfg = Config()
+    cfg.sr_enabled = False
+    cfg.sr_face_enabled = False
+    img = np.zeros((300, 300, 3), dtype=np.uint8)
+    bbox = (120, 130, 180, 200)          # cara 60x70
+    out = photo_busto(img, bbox, cfg)
+    fw, fh = 60, 70
+    exp_w = max(round(fw / cfg.busto_face_fill), fw + 2 * cfg.busto_min_pad)
+    exp_h = max(round(fh / cfg.busto_face_fill), fh + 2 * cfg.busto_min_pad)
+    # el encuadre resultante es >= cara / face_fill (más contexto, no un zoom tight)
+    assert out.shape[1] >= fw and out.shape[1] >= exp_w - 2
+    assert out.shape[0] >= fh and out.shape[0] >= exp_h - 2
+
+
+def test_photo_busto_face_region_blend_no_gfpgan():
+    """_face_region_blend con GFPGAN deshabilitado no altera el tamaño."""
+    from motor.core.superres import _face_region_blend
+    cfg = Config()
+    cfg.sr_enabled = False
+    cfg.sr_face_enabled = False
+    img = np.zeros((100, 100, 3), dtype=np.uint8)
+    out = _face_region_blend(img, (20, 20, 80, 80), cfg)
+    assert out is not None
+    assert out.shape == img.shape

@@ -235,12 +235,14 @@
   border-radius: 0.5rem;
 }
 
-/* Auto-zoom hacia la cara: las fotos de caras_procesadas ya llevan la cara
-   centrada (recorte simétrico), así que cover + object-position center
-   la amplía dentro del modal sin recortarla. */
+/* Fotos de caras_procesadas: se muestran a tamaño natural (contain) SIN
+   re-amplificar. Antes cover+height:72vh estiraba los 512px al ancho del modal
+   (hasta ~2x) y multiplicaba el pixelado de las caras. Ahora la foto se ve
+   completa y con su resolución real. */
 .modal__content .media-modal__img--zoom {
-  object-fit: cover;
-  height: 72vh;
+  object-fit: contain;
+  height: auto;
+  max-height: 72vh;
   object-position: center;
 }
 
