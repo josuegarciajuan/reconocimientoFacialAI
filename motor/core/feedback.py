@@ -32,6 +32,18 @@ def embedding_hash(emb: np.ndarray) -> str:
     return hashlib.sha256(np.asarray(emb, dtype=np.float32).tobytes()).hexdigest()
 
 
+def _ls_pair(v) -> tuple[float, float]:
+    """(score, confidence) de un LayerScore O de un dict {"s":..,"c":..}.
+
+    El clasificador pasa `result.layer_scores` (valores LayerScore); los tests
+    y el formato persistido usan dicts. Sin esto, log_decision crasheaba con
+    LayerScore (bug latente: antes layers siempre era {} y nunca se recorría).
+    """
+    if isinstance(v, dict):
+        return float(v.get("score", 0.0)), float(v.get("confidence", 0.0))
+    return float(getattr(v, "score", 0.0)), float(getattr(v, "confidence", 0.0))
+
+
 class FeedbackCollector:
     def __init__(self, ruta: str, local_id: str, enabled: bool = True):
         self.dir = os.path.join(ruta, "motor/feedback", str(local_id))
@@ -62,8 +74,9 @@ class FeedbackCollector:
             "top2": entry.get("top2"),
             "best": entry.get("best"),
             "second": entry.get("second"),
-            "layers": {k: {"s": float(v.get("score", 0.0)), "c": float(v.get("confidence", 0.0))}
-                       for k, v in (entry.get("layers") or {}).items()},
+            "layers": {k: {"s": s, "c": c}
+                       for k, v in (entry.get("layers") or {}).items()
+                       for s, c in [_ls_pair(v)]},
             "query_hash": entry.get("query_hash"),
             "stem": entry.get("stem"),
             # F4: situación del query para calibración condicionada a la pose.
