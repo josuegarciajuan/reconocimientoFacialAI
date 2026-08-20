@@ -125,6 +125,34 @@ def test_h264_writer_close_idempotente(tmp_path):
     assert w.close() is None  # segundo close: no-op
 
 
+def test_h264_writer_extension_tmp_publi_atomica(tmp_path):
+    """Regresión (fix moov-race + `-f mp4`): la publicación atómica escribe a
+    `*.tmp` y ffmpeg debe aceptarlo. Sin `-f mp4`, ffmpeg rechaza la extensión
+    .tmp ("Unable to find a suitable output format") y close() devuelve None:
+    el vídeo de movimiento se descartaba (peso=None) y no se capturaba nada."""
+    dst = str(tmp_path / "stream.tmp")  # como video_actual + '.tmp'
+    w = H264VideoWriter(dst, (W, H), FPS, CFG_FAST)
+    for i in range(N):
+        w.write(_frame(i))
+    peso = w.close()
+    assert peso is not None and peso > 0
+    assert duracion_video(dst) == pytest.approx(N / FPS, abs=0.2)
+
+
+def test_h264_writer_stderr_path_logs_ffmpeg(tmp_path):
+    """stderr_path: el stderr de ffmpeg se vuelca al fichero indicado, tanto en
+    éxito (banner/estadísticas) como en error (diagnóstico de vídeos
+    descartados)."""
+    log = str(tmp_path / "ffmpeg.log")
+    dst = str(tmp_path / "ok.mp4")
+    w = H264VideoWriter(dst, (W, H), FPS, CFG_FAST, stderr_path=log)
+    for i in range(N):
+        w.write(_frame(i))
+    assert w.close() is not None
+    assert os.path.exists(log)
+    assert os.path.getsize(log) > 0
+
+
 def test_remux_video_mp4(tmp_path):
     """Remux (stream copy) usado por archiva_video.py cuando la captura ya es MP4."""
     src = str(tmp_path / "origen.mp4")
