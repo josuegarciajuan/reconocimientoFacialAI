@@ -44,7 +44,7 @@ $js_quote = function ($s) {
             <select class="input border" id="camara">
                 <option value="-" <?php if (!$camara_filtro) { echo "selected='selected'"; } ?>>Todas</option>
                 <?php foreach ($camaras as $c): ?>
-                    <option value="<?= $c["id"]; ?>" <?php if ($camara_filtro === (int)$c["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars($c["descripcion"]); ?></option>
+                    <option value="<?= $c["id"]; ?>" <?php if ($camara_filtro === (int)$c["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars(camara_label($c["descripcion"])); ?></option>
                 <?php endforeach; ?>
             </select>
         </span>

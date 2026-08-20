@@ -8,6 +8,7 @@
  * Sub-acciones: Trazar (crear) / Corregir (editar) — resueltas en $sub.
  * Variables disponibles: $camaras, $lineas_edit.
  */
+require_once __DIR__ . "/../../../../libs/etiquetas.php";
 ?>
 
 <!-- ---------- Submenú de la pestaña ---------- -->
@@ -34,7 +35,7 @@
             <select id="editar_linea" name="editar_linea" class="input border w-full" onchange="TrazadorAbrirCorregir(this.value)">
                 <option value="-">Selecciona Línea</option>
                 <?php foreach ($lineas_edit as $l): ?>
-                    <option <?php if (isset($_GET["editar_linea"]) && $_GET["editar_linea"] == $l["id"] . "-" . $l["camara_id"]) { echo "selected='selected'"; } ?> value="<?= (int)$l["id"]; ?>-<?= (int)$l["camara_id"]; ?>"><?= htmlspecialchars($l["nombre"] . " - " . $l["descripcion"]); ?></option>
+                    <option <?php if (isset($_GET["editar_linea"]) && $_GET["editar_linea"] == $l["id"] . "-" . $l["camara_id"]) { echo "selected='selected'"; } ?> value="<?= (int)$l["id"]; ?>-<?= (int)$l["camara_id"]; ?>"><?= htmlspecialchars($l["nombre"] . " - " . camara_label($l["descripcion"])); ?></option>
                 <?php endforeach; ?>
             </select>
             <p class="text-xs text-gray-500 dark:text-gray-600 mt-2">
@@ -67,9 +68,9 @@
                 <span class="forge-cam-card__media">
                     <img src="fotos_camara/<?= (int)$c["id"]; ?>.png"
                          onerror="this.onerror=null;this.src=''"
-                         alt="Snapshot de <?= htmlspecialchars($c["descripcion"], ENT_QUOTES); ?>" loading="lazy">
+                         alt="Snapshot de <?= htmlspecialchars(camara_label($c["descripcion"]), ENT_QUOTES); ?>" loading="lazy">
                 </span>
-                <span class="forge-cam-card__name"><?= htmlspecialchars($c["descripcion"], ENT_QUOTES); ?></span>
+                <span class="forge-cam-card__name"><?= htmlspecialchars(camara_label($c["descripcion"]), ENT_QUOTES); ?></span>
             </button>
         <?php endforeach; ?>
         <?php if (!$camaras): ?>

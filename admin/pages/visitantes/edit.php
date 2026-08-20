@@ -106,7 +106,7 @@ $num_cruces = $cruces_cnt ? (int)$cruces_cnt["n"] : 0;
             <?php foreach ($camaras as $c): ?>
                 <div class="text-center rounded-md" style="padding:8px">
                     <div class="font-semibold text-theme-1 text-lg"><?= $counts[$c["id"]] ?? 0; ?></div>
-                    <div class="text-gray-600"><?= htmlspecialchars($c["descripcion"]); ?></div>
+                    <div class="text-gray-600"><?= htmlspecialchars(camara_label($c["descripcion"])); ?></div>
                 </div>
             <?php endforeach; ?>
         </div>
@@ -186,7 +186,7 @@ $num_cruces = $cruces_cnt ? (int)$cruces_cnt["n"] : 0;
                         <?php $ts_v = strtotime($v["fecha_ini"]); ?>
                         <?php $fecha_v = $ts_v ? date("d/m/Y H:i", $ts_v) : $v["fecha_ini"]; ?>
                         <div class="box p-3">
-                            <div class="text-xs text-center text-gray-600 dark:text-gray-300 truncate mb-2"><?= htmlspecialchars($fecha_v); ?> · <?= htmlspecialchars($v["camara_nombre"] ?? ""); ?></div>
+                            <div class="text-xs text-center text-gray-600 dark:text-gray-300 truncate mb-2"><?= htmlspecialchars($fecha_v); ?> · <?= htmlspecialchars(camara_label($v["camara_nombre"] ?? "")); ?></div>
                             <a href="javascript:;" title="Ver el vídeo del movimiento"
                                onclick="rfVideoModal(<?= (int)$v["id"]; ?>,'../video.php?id=<?= (int)$v["id"]; ?>','<?= $js_quote("../video.php?id=" . (int)$v["id"] . "&poster=1"); ?>','<?= $js_quote($nombre_pers . " · " . ($v["camara_nombre"] ?? "")); ?>',<?= $persona_id; ?>,'<?= $js_quote($nombre_pers); ?>')">
                                 <img src="<?= htmlspecialchars("../video.php?id=" . (int)$v["id"] . "&poster=1"); ?>"

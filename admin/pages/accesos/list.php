@@ -46,7 +46,7 @@ foreach ($videos as $v) {
             <select class="input border" id="camara">
                 <option value="-" <?php if (!$camara_filtro) { echo "selected='selected'"; } ?>>Todas</option>
                 <?php foreach ($camaras as $c): ?>
-                    <option value="<?= $c["id"]; ?>" <?php if ($camara_filtro === (int)$c["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars($c["descripcion"]); ?></option>
+                    <option value="<?= $c["id"]; ?>" <?php if ($camara_filtro === (int)$c["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars(camara_label($c["descripcion"])); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -155,7 +155,7 @@ foreach ($videos as $v) {
                 <td class="text-center border-b">
                     <?php if ($video_id > 0): ?>
                     <a href="javascript:;" title="Ver el vídeo del movimiento"
-                       onclick="rfVideoModal(<?= $video_id; ?>,'../video.php?id=<?= $video_id; ?>','<?= $js_quote("../video.php?id=" . $video_id . "&poster=1"); ?>','<?= $js_quote($nombre); ?> · <?= $js_quote($r["camara_nombre"]); ?>',<?= (int)$r["persona_id"]; ?>,'<?= $js_quote($nombre); ?>')">
+                       onclick="rfVideoModal(<?= $video_id; ?>,'../video.php?id=<?= $video_id; ?>','<?= $js_quote("../video.php?id=" . $video_id . "&poster=1"); ?>','<?= $js_quote($nombre); ?> · <?= $js_quote(camara_label($r["camara_nombre"])); ?>',<?= (int)$r["persona_id"]; ?>,'<?= $js_quote($nombre); ?>')">
                         <img alt="Miniatura del vídeo de <?= htmlspecialchars($nombre); ?>"
                              src="../video.php?id=<?= $video_id; ?>&poster=1"
                              onerror="this.onerror=null;this.outerHTML='<span class=\'text-theme-1 font-medium text-xs underline cursor-pointer\'>▶ Ver</span>';"

@@ -12,6 +12,7 @@
  */
 
 require_once __DIR__ . "/../../../libs/db.php";
+require_once __DIR__ . "/../../../libs/etiquetas.php";
 
 $local_id = (int)($_SESSION["local_id"] ?? 0);
 $camaras = DB::select("SELECT * FROM camaras WHERE local_id = ? AND sistema = 0 AND encendida = 1 ORDER BY orden ASC, descripcion ASC", [$local_id]);
@@ -93,7 +94,7 @@ $ph_uri = "data:image/svg+xml;base64," . base64_encode(
 <div class="cam-grid mt-5" id="cam-grid">
     <?php foreach ($camaras as $c):
         $camara_id = (int)$c["id"];
-        $descripcion = rf_utf8_normalizar((string)($c["descripcion"] ?? "Cámara " . $camara_id));
+        $descripcion = camara_label(rf_utf8_normalizar((string)($c["descripcion"] ?? "Cámara " . $camara_id)));
         $url_conexion = (string)($c["url_conexion"] ?? "");
 
         refrescar_snapshot($camara_id, $url_conexion);
@@ -315,7 +316,7 @@ if ($detalle):
         $det_stream .= "&token=" . urlencode($live_token);
     }
     $det_snap = "fotos_camara/" . $det_id . ".png";
-    $det_titulo = rf_utf8_normalizar((string)($detalle["descripcion"] ?? "Cámara"));
+    $det_titulo = camara_label(rf_utf8_normalizar((string)($detalle["descripcion"] ?? "Cámara")));
     $det_args = json_encode(
         [$det_id, $det_stream, $det_snap, $det_titulo],
         JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT

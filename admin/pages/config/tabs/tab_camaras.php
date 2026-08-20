@@ -7,6 +7,7 @@
  * 2026-08-19: se retiran "Alias IPCamlive" y "Origen de vídeo" (no aportan).
  * La posición X/Y ya no se edita aquí: se fija arrastrando la cámara en El Yunque.
  */
+require_once __DIR__ . "/../../../../libs/etiquetas.php";
 ?>
 
 <!-- ---------- Submenú de la pestaña ---------- -->
@@ -33,7 +34,7 @@
             <select id="camara" name="camara" class="input border w-full" onchange="seleccionar_camara()">
                 <option value="-" <?php if (!isset($_GET["camara"]) or $_GET["camara"] == "-") { echo "selected='selected'"; } ?>>Selecciona Cámara</option>
                 <?php foreach ($camaras as $c): ?>
-                    <option <?php if (isset($_GET["camara"]) && $_GET["camara"] == $c["id"]) { echo "selected='selected'"; } ?> value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars($c["descripcion"]); ?></option>
+                    <option <?php if (isset($_GET["camara"]) && $_GET["camara"] == $c["id"]) { echo "selected='selected'"; } ?> value="<?= (int)$c["id"]; ?>"><?= htmlspecialchars(camara_label($c["descripcion"])); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>

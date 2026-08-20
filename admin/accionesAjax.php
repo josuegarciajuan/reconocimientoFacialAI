@@ -98,15 +98,16 @@ switch ($_GET["a"]) {
             $return = "truee###";
             foreach ($rows as $r) {
                 $nombre = persona_label($r["nombre"], $r["cod_interno"]);
+                $cam_desc = camara_label($r["descripcion"]);
                 $mode = "-";
                 if ((int)$r["puerta"] === 1) {
-                    $mode = "Entrada al local por " . $r["descripcion"];
+                    $mode = "Entrada al local por " . $cam_desc;
                 } elseif ((int)$r["salida"] === 1) {
-                    $mode = "Salida del local por " . $r["descripcion"];
+                    $mode = "Salida del local por " . $cam_desc;
                 }
                 $foto = DB::selectOne("SELECT MIN(id) as mid FROM fotos WHERE estancia_id = ?", [(int)$r["id"]]);
                 $img = "./caras_procesadas/" . ($foto && $foto["mid"] ? $foto["mid"] : 0) . ".jpg";
-                $return .= (int)$r["persona_id"] . "///" . $nombre . "///" . (int)$r["camara_id"] . "///" . $r["descripcion"] . "///" . $mode . "///" . $img . "///" . $img . "///" . $r["created"] . "###";
+                $return .= (int)$r["persona_id"] . "///" . $nombre . "///" . (int)$r["camara_id"] . "///" . $cam_desc . "///" . $mode . "///" . $img . "///" . $img . "///" . $r["created"] . "###";
             }
         }
         echo $return;
