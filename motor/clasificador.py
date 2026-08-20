@@ -383,7 +383,8 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     out_dir = os.path.join(ruta, "motor/caras", local_id, camara_id, person)
     os.makedirs(out_dir, exist_ok=True)
     out_name = f"{nombre}_{foto_id}.jpg"
-    # Auto-zoom hacia la cara + super-resolución (solo visual; embeddings intactos)
+    # Auto-zoom hacia la cara + SR + restauración facial GFPGAN (solo visual;
+    # embeddings intactos).
     final_img = zoom_photo(rep_item["img"], rep_face.bbox, cfg)
     cv2.imwrite(os.path.join(out_dir, out_name), final_img, [cv2.IMWRITE_JPEG_QUALITY, 95])
     if os.path.exists(rep_item["path"]):
