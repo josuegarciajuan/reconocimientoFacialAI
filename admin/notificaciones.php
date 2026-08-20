@@ -81,3 +81,12 @@ $hay_notificaciones = $num_notificaciones > 0;
     </div>
 </div>
 <!-- END: Notifications -->
+
+<!-- BEGIN: Alarmas (La Almenara) -->
+<div class="intro-x dropdown relative mr-4 sm:mr-6" title="Alarmas de inactividad (La Almenara)" onclick="alarmas_leidas()">
+    <div id="campanita_alarmas" class="dropdown-toggle notification notification--light cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff3c14" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="feather feather-bell notification__icon dark:text-gray-300"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+        <span id="alarma_badge" class="notification-badge" style="display:none;background:#d41b16">0</span>
+    </div>
+</div>
+<!-- END: Alarmas -->

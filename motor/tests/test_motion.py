@@ -119,3 +119,71 @@ def test_hay_ahora_refleja_buffer():
             assert det.hay_ahora() is True
             break
     assert disparo
+
+
+# ------------------------------------------------- Modo asedio (boost, alarmas)
+
+def test_boost_sin_cambios_por_defecto():
+    # Sin valores de boost configurados, set_boost() no altera la detección.
+    cfg = MotionConfig(segundos_analizar=2, fps=10, porcentaje_mov=60, dontCare=200)
+    det = MotionDetector(cfg)
+    det.set_boost(True)
+    disparo = False
+    for i in range(30):
+        motion, hay = det.process(_con_rect(x=(i * 5) % 200))
+        if hay:
+            disparo = True
+            break
+    assert disparo
+
+
+def test_boost_baja_el_umbral_de_frames():
+    # Config normal: hace falta 60% del buffer (12/20). Con boost
+    # frames_con_movimiento_boost=1: UN frame con movimiento ya dispara.
+    cfg = MotionConfig(segundos_analizar=2, fps=10, porcentaje_mov=60,
+                       dontCare=200, frames_con_movimiento_boost=1)
+    det = MotionDetector(cfg)
+    det.set_boost(True)
+    det.process(_base())  # primer frame: inicializa prevFrame
+    # Un único frame con un rectángulo (contorno grande) debe disparar en boost
+    motion, hay = det.process(_con_rect(x=10))
+    assert motion == 1
+    assert hay is True
+
+
+def test_boost_baja_dontcare():
+    # Rectángulo pequeño que con dontCare normal se filtra, con boost se detecta.
+    def rect_pequeno(w=320, h=240, size=6):
+        f = np.zeros((h, w, 3), dtype=np.uint8)
+        cv2.rectangle(f, (10, 10), (10 + size, 10 + size), (255, 255, 255), -1)
+        return f
+
+    cfg = MotionConfig(dontCare=5000, threshold=21, blur=21, dilate=2,
+                       dontCare_boost=50, frames_con_movimiento_boost=1)
+    det = MotionDetector(cfg)
+    det.process(_base())
+    # Sin boost: contorno pequeño no supera dontCare=5000 -> motion 0
+    motion_off, _ = det.process(rect_pequeno())
+    assert motion_off == 0
+    # Con boost: dontCare_boost=50 -> el cambio base->rect (o rect->base) detecta
+    det.set_boost(True)
+    motion_on, hay = det.process(_base())  # el rect desaparece: mismo contorno
+    assert motion_on == 1
+    assert hay is True
+
+
+def test_boost_se_puede_desactivar():
+    cfg = MotionConfig(segundos_analizar=2, fps=10, porcentaje_mov=60,
+                       dontCare=200, frames_con_movimiento_boost=1)
+    det = MotionDetector(cfg)
+    det.set_boost(True)
+    det.process(_base())
+    motion_on, _ = det.process(_con_rect(x=10))
+    assert motion_on == 1
+    det.set_boost(False)
+    # Sin boost vuelve al umbral normal: un solo frame no dispara
+    det.motion_list = []
+    det.process(_base())
+    motion_off, hay = det.process(_con_rect(x=10))
+    assert motion_off == 1          # el contorno sigue siendo grande
+    assert hay is False             # pero el buffer (1 frame) no llega al 60%

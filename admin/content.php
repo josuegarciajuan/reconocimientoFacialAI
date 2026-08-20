@@ -39,6 +39,9 @@ switch($_GET["page"]){
     case "lineas":
         require_once "./pages/lineas/index.php";
         break;
+    case "alarmas":
+        require_once "./pages/alarmas/index.php";
+        break;
     default:
         require_once "./pages/dashboard/index.php";
         break;

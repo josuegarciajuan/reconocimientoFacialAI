@@ -20,6 +20,7 @@
 require_once("config/rutas.php");
 require_once("libs/db.php");
 require_once("libs/vinculos.php");
+require_once("libs/alarmas.php");
 
 $loop = max(1, (int)CONFIG_VINCULADOR_LOOP);
 $backfill_dias = (int)CONFIG_VINCULADOR_BACKFILL_DIAS;
@@ -45,6 +46,13 @@ while (true) {
         }
 
         vincular_incremental_local($local_id, $margen);
+
+        // Alarmas (La Almenara): asociar el vídeo de movimiento a cada alarma
+        // (misma cámara + solape temporal con margen). Idempotente.
+        $n_alarmas = alarma_vincular_pendientes($local_id, $margen);
+        if ($n_alarmas > 0) {
+            printf("[alarmas] local %d: %d alarma(s) enlazada(s) a vídeo\n", $local_id, $n_alarmas);
+        }
     }
     sleep($loop);
 }

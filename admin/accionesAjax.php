@@ -10,11 +10,33 @@
 require_once '../config/rutas.php';
 require_once '../libs/db.php';
 require_once '../libs/etiquetas.php';
+require_once '../libs/alarmas.php';
 require_once './pages/dashboard/widgets.php';
 
 $local_id = (int)($_SESSION["local_id"] ?? 0);
 
 switch ($_GET["a"]) {
+    case "9": // alarmas no vistas (La Almenara): banner/badge del panel
+        header("Content-Type: application/json; charset=utf-8");
+        $rows = DB::select(
+            "SELECT a.id, a.camara_id, a.fecha, a.severidad, a.video_id, c.descripcion AS camara_desc
+             FROM alarmas a
+             LEFT JOIN camaras c ON c.id = a.camara_id
+             WHERE a.local_id = ? AND a.notificacion_vista = 0
+             ORDER BY a.id DESC LIMIT 5",
+            [$local_id]
+        );
+        echo json_encode([
+            "ok" => true,
+            "total" => alarma_no_vistas_count($local_id),
+            "alarmas" => $rows,
+        ], JSON_UNESCAPED_UNICODE);
+        break;
+
+    case "10": // marcar alarmas como leídas
+        alarma_marcar_leidas($local_id);
+        echo "ok";
+        break;
     case "4": // dashboard: fragmentos en vivo (feed + dentro + falta)
         header("Content-Type: application/json; charset=utf-8");
         $dentro = dash_almas_dentro($local_id);

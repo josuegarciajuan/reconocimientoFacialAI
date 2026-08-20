@@ -2,6 +2,8 @@ import cv2, time
 from datetime import datetime
 import os
 import sys
+import json
+import urllib.request
 
 sys.path.append(".")
 from fifo import fifo
@@ -74,6 +76,7 @@ FTP_SERVER = sys.argv[12] if len(sys.argv) > 12 else "localhost"  # legacy, sin 
 FTP_USER = sys.argv[13] if len(sys.argv) > 13 else "-"
 FTP_PASS = sys.argv[14] if len(sys.argv) > 14 else "-"
 URL_CONEXION = sys.argv[15] if len(sys.argv) > 15 else (sys.argv[13] if len(sys.argv) > 13 else "")
+BASE_URL = sys.argv[16] if len(sys.argv) > 16 else "http://localhost/reconocimientoFacial/"
 
 # Umbrales globales del análisis (antes hardcodeados 21/21/2). Se leen de .env
 # (RF_MOV_*); si faltan, se usan estos defaults = valores legacy (sin cambio de
@@ -94,12 +97,18 @@ cfg_mov = MotionConfig(segundos_analizar=segundos_analizar,
                        dontCare=dontCare,
                        fps=int(FPS),
                        sensibilidad=SENSIBILIDAD,
-                       threshold=THRESHOLD, blur=BLUR, dilate=DILATE)
+                       threshold=THRESHOLD, blur=BLUR, dilate=DILATE,
+                       # Modo asedio (alarmas "La Almenara"): cualquier mínimo
+                       # movimiento cuenta (1 frame dispara) y el área mínima se
+                       # reduce a un tercio. Lo activa/desactiva detector.set_boost().
+                       dontCare_boost=max(1, int(dontCare / 3)),
+                       frames_con_movimiento_boost=1)
 frames_a_analizar = cfg_mov.frames_a_analizar      # tamaño del buffer de decisión
 frames_con_movimiento = cfg_mov.frames_con_movimiento  # nº de frames con mov para disparar
 detector = MotionDetector(cfg_mov)
 frames_antes=int(SEG_ANTES*FPS)    # pre-roll: frames previos al movimiento que se vuelcan al inicio
 frames_despues=int(SEG_DESPUES*FPS) # post-roll: frames posteriores al movimiento
+maximo_videos_boost = int(maximo_videos * 2)  # clips más largos en modo asedio
 
 
 printLog("frames_a_analizar:"+str(frames_a_analizar))
@@ -132,6 +141,51 @@ count_para=0
 siguegrabando=False
 count_sensibilidad=0
 writer=None   # H264VideoWriter activo (MP4 H.264 directo)
+time_inicio=0
+# Tope de seguridad del modo asedio: si el boost se prolongara (evento sostenido),
+# el vídeo continuo se corta igualmente en trozos para no generar ficheros sin fin.
+ASEDIO_TOPE_SEGS = max(120, int(maximo_videos * 4))
+
+# --- Vigilancia (alarmas "La Almenara") ---
+# El worker pregunta a ws.php (única fuente de verdad: BD + zona horaria del
+# servidor) si está armado y si el local está en modo asedio. Nunca bloquea la
+# captura: timeout corto y error tolerado (conserva el último estado conocido).
+alarma = {"armada": False, "boost": False}
+_last_estado = 0.0
+
+
+def alarma_estado_consulta():
+    global _last_estado
+    ahora = time.time()
+    if ahora - _last_estado < float(alarma_ttl()):
+        return
+    _last_estado = ahora
+    try:
+        url = (BASE_URL + "ws.php?accion=alarma_estado&local_id=" + str(LOCAL_ID)
+               + "&camara_id=" + str(CAMARA_ID))
+        with urllib.request.urlopen(url, timeout=2) as r:
+            data = json.loads(r.read().decode("utf-8", "replace"))
+        alarma["armada"] = bool(data.get("armada", False))
+        alarma["boost"] = bool(data.get("boost", False))
+    except Exception:
+        pass  # red/BD caída: conservar el último estado; no bloquear la captura
+
+
+def alarma_disparar():
+    try:
+        url = (BASE_URL + "ws.php?accion=alarma_disparar&local_id=" + str(LOCAL_ID)
+               + "&camara_id=" + str(CAMARA_ID))
+        with urllib.request.urlopen(url, timeout=2) as r:
+            r.read()
+    except Exception:
+        pass  # el siguiente ciclo reintentará; el vídeo ya se está grabando
+
+
+def alarma_ttl():
+    try:
+        return int(os.environ.get("RF_ALARMA_ESTADO_TTL", "3"))
+    except ValueError:
+        return 3
 
 
 while(True):
@@ -175,12 +229,34 @@ while(True):
         if DEBUG_FRAMES:
             printLog("Estado actual del movimiento:"+str(motion)+" haymovimiento:"+str(haymovimiento))
 
+        # --- Vigilancia (alarmas): consultar estado con throttle y disparar ---
+        alarma_estado_consulta()
+        if haymovimiento and alarma["armada"]:
+            if not alarma["boost"]:
+                printLog("ALARMA: movimiento en horario de inactividad -> disparo (modo asedio)")
+            alarma_disparar()
+            alarma["boost"] = True
+        detector.set_boost(alarma["boost"])
+
+        # modo asedio: grabar en continuo aunque no haya movimiento y no cortar
+        if alarma["boost"]:
+            if not grabando:
+                grabando = True
+                grabando_primera = True
+                printLog("Modo asedio: grabación continua activada")
+            elif parando:
+                if (time.time() - time_inicio) > ASEDIO_TOPE_SEGS:
+                    printLog("Modo asedio: tope de seguridad alcanzado, se permite el cierre")
+                else:
+                    parando = False
+                    count_para = 0
+
         if haymovimiento and grabando==False:
             grabando=True
             grabando_primera=True
             printLog ("Detecto movimiento, empiezo a grabar...")
 
-        if not haymovimiento and grabando:
+        if not haymovimiento and grabando and not alarma["boost"]:
             parando=True
             printLog ("Ya no hay moviemiento, paro de grabar...")
 
@@ -235,9 +311,13 @@ while(True):
                 writer.write(frame_original)
             time_elapsed = time.time() - time_inicio
             # key = cv2.waitKey(500)
-            if time_elapsed>maximo_videos:
-                parando=True            
-                printLog ("han pasdo mas de "+str(maximo_videos)+" segs, marco pa qe se pare..")
+            limite_grabado = maximo_videos_boost if alarma["boost"] else maximo_videos
+            if time_elapsed>limite_grabado:
+                # en modo asedio el parado se suprime (grabación continua); el
+                # tope de seguridad fuerza el cierre aunque siga el boost
+                if not alarma["boost"] or time_elapsed > ASEDIO_TOPE_SEGS:
+                    parando=True
+                    printLog ("han pasdo mas de "+str(limite_grabado)+" segs, marco pa qe se pare..")
 
 
 

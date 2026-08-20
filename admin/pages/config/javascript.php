@@ -867,11 +867,13 @@ function crear() {
     var puerta = document.getElementById("entrada1").checked ? 1 : 0;
     var salida = document.getElementById("salida1").checked ? 1 : 0;
     var encendida_nueva = document.getElementById("encendida_nueva").checked ? 1 : 0;
+    var alarma_24h_nueva = document.getElementById("alarma_24h_nueva") ? (document.getElementById("alarma_24h_nueva").checked ? 1 : 0) : 0;
 
     url_conexion = url_conexion.replace(/&/g, "--jos--");
 
     var uri = "?page=config&tab=camaras&sub=crear&accion=crear&nombre_nueva=" + encodeURIComponent(nombre_nueva)
         + "&puerta=" + puerta + "&salida=" + salida + "&encendida_nueva=" + encendida_nueva
+        + "&alarma_24h=" + alarma_24h_nueva
         + "&url_conexion=" + encodeURIComponent(url_conexion) + "&sistema=0";
     location.href = uri;
 }
@@ -894,6 +896,12 @@ function guardar() {
     var salida = document.getElementById("salida2").checked ? 1 : 0;
     var encendida = document.getElementById("encendida").checked ? 1 : 0;
 
+    /* Vigilancia (alarmas de inactividad) */
+    var alarma_heredar = document.getElementById("alarma_heredar").checked ? 1 : 0;
+    var alarma_24h = document.getElementById("alarma_24h").checked ? 1 : 0;
+    var alarma_hora_inicio = document.getElementById("alarma_hora_inicio").value || "";
+    var alarma_hora_fin = document.getElementById("alarma_hora_fin").value || "";
+
     url_conexion = url_conexion.replace(/&/g, "--jos--");
     url_desdeserver = url_desdeserver.replace(/&/g, "--jos--");
 
@@ -904,7 +912,10 @@ function guardar() {
         + "&url_desdeserver=" + encodeURIComponent(url_desdeserver) + "&sistema=0"
         + "&segundos_analizar=" + segundos_analizar + "&porcentaje_mov=" + porcentaje_mov
         + "&dontCare=" + dontCare + "&fps=" + fps + "&maximo_videos=" + maximo_videos
-        + "&redimesionframe=" + redimesionframe + "&sensibilidad=" + sensibilidad;
+        + "&redimesionframe=" + redimesionframe + "&sensibilidad=" + sensibilidad
+        + "&alarma_heredar=" + alarma_heredar + "&alarma_24h=" + alarma_24h
+        + "&alarma_hora_inicio=" + encodeURIComponent(alarma_hora_inicio)
+        + "&alarma_hora_fin=" + encodeURIComponent(alarma_hora_fin);
     location.href = uri;
 }
 
@@ -929,6 +940,13 @@ function seleccionar_camara() {
             document.getElementById("maximo_videos").value = res[15];
             document.getElementById("redimesionframe").value = res[16];
             document.getElementById("sensibilidad").value = res[17];
+            /* Vigilancia (alarmas de inactividad): posiciones 18-21 */
+            if (res[18] !== undefined) {
+                document.getElementById("alarma_heredar").checked = (res[18] == 1);
+                document.getElementById("alarma_24h").checked = (res[19] == 1);
+                document.getElementById("alarma_hora_inicio").value = res[20] || "";
+                document.getElementById("alarma_hora_fin").value = res[21] || "";
+            }
         }
     };
     ajax.send(null);

@@ -64,6 +64,13 @@
             </a>
         </li>
 
+        <li>
+            <a href="?page=alarmas" class="top-menu top-menu<?php if(isset($_GET["page"]) and $_GET["page"]=="alarmas"){ echo "--active"; } ?>">
+                <div class="menu__icon menu__emoji">🚨</div>
+                <div class="top-menu__title"> La Almenara </div>
+            </a>
+        </li>
+
         <li class="top-nav__sep" aria-hidden="true"></li>
 
         <li>

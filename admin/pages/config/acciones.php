@@ -22,14 +22,15 @@ switch ($_GET["accion"] ?? "") {
     case "crear":
         $url_conexion = str_replace("--jos--", "&", $_GET["url_conexion"] ?? "");
         $id = DB::insert(
-            "INSERT INTO camaras (local_id, descripcion, url_conexion, sistema, puerta, salida, encendida, ipcamlive_alias, segundos_analizar, porcentaje_mov, dontCare, fps, maximo_videos, redimesionframe, sensibilidad)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO camaras (local_id, descripcion, url_conexion, sistema, puerta, salida, encendida, ipcamlive_alias, segundos_analizar, porcentaje_mov, dontCare, fps, maximo_videos, redimesionframe, sensibilidad, alarma_heredar, alarma_24h)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)",
             [
                 (int)$_SESSION["local_id"], $_GET["nombre_nueva"], $url_conexion, 0,
                 (int)($_GET["puerta"] ?? 0), (int)($_GET["salida"] ?? 0), (int)($_GET["encendida_nueva"] ?? 0),
                 "-",
                 CONFIG_segundos_analizar, CONFIG_porcentaje_mov, CONFIG_dontCare, CONFIG_fps,
                 CONFIG_maximo_videos, CONFIG_redimesionframe, CONFIG_sensibilidad,
+                (int)($_GET["alarma_24h"] ?? 0),
             ]
         );
 
@@ -48,15 +49,22 @@ switch ($_GET["accion"] ?? "") {
     case "guardar":
         $url_conexion = str_replace("--jos--", "&", $_GET["url_conexion"] ?? "");
         $url_desdeserver = str_replace("--jos--", "&", $_GET["url_desdeserver"] ?? "");
+        // Vigilancia (alarmas de inactividad): por defecto se hereda del local
+        $alarma_heredar = (int)($_GET["alarma_heredar"] ?? 1);
+        $alarma_24h = (int)($_GET["alarma_24h"] ?? 0);
+        $alarma_hora_inicio = ($_GET["alarma_hora_inicio"] ?? "") !== "" ? $_GET["alarma_hora_inicio"] : null;
+        $alarma_hora_fin    = ($_GET["alarma_hora_fin"] ?? "") !== "" ? $_GET["alarma_hora_fin"] : null;
         DB::execute(
-            "UPDATE camaras SET local_id=?, descripcion=?, url_conexion=?, sistema=?, puerta=?, salida=?, encendida=?, ipcamlive_alias=?, url_desdeserver=?, segundos_analizar=?, porcentaje_mov=?, dontCare=?, fps=?, maximo_videos=?, redimesionframe=?, sensibilidad=? WHERE id=?",
+            "UPDATE camaras SET local_id=?, descripcion=?, url_conexion=?, sistema=?, puerta=?, salida=?, encendida=?, ipcamlive_alias=?, url_desdeserver=?, segundos_analizar=?, porcentaje_mov=?, dontCare=?, fps=?, maximo_videos=?, redimesionframe=?, sensibilidad=?, alarma_heredar=?, alarma_hora_inicio=?, alarma_hora_fin=?, alarma_24h=? WHERE id=?",
             [
                 (int)$_SESSION["local_id"], $_GET["nombre"], $url_conexion, 0,
                 (int)($_GET["puerta"] ?? 0), (int)($_GET["salida"] ?? 0), (int)($_GET["encendida"] ?? 0),
                 "-", $url_desdeserver,
                 (int)($_GET["segundos_analizar"] ?? 0), (int)($_GET["porcentaje_mov"] ?? 0), (int)($_GET["dontCare"] ?? 0),
                 (int)($_GET["fps"] ?? 0), (int)($_GET["maximo_videos"] ?? 0), (int)($_GET["redimesionframe"] ?? 0),
-                (int)($_GET["sensibilidad"] ?? 0), (int)$_GET["camara"],
+                (int)($_GET["sensibilidad"] ?? 0),
+                $alarma_heredar, $alarma_hora_inicio, $alarma_hora_fin, $alarma_24h,
+                (int)$_GET["camara"],
             ]
         );
         break;
@@ -137,10 +145,19 @@ switch ($_GET["accion"] ?? "") {
         $hora_salida2  = ($_POST["hora_salida2"] ?? "") !== "" ? $_POST["hora_salida2"] : null;
         $margen_fichaje_min = max(0, (int)($_POST["margen_fichaje_min"] ?? 30));
 
+        // Vigilancia (alarmas de inactividad)
+        $alarma_activa = (isset($_POST["alarma_activa"]) && (int)$_POST["alarma_activa"] === 1) ? 1 : 0;
+        $alarma_24h = (isset($_POST["alarma_24h"]) && (int)$_POST["alarma_24h"] === 1) ? 1 : 0;
+        $alarma_hora_inicio = ($_POST["alarma_hora_inicio"] ?? "") !== "" ? $_POST["alarma_hora_inicio"] : null;
+        $alarma_hora_fin    = ($_POST["alarma_hora_fin"] ?? "") !== "" ? $_POST["alarma_hora_fin"] : null;
+        $alarma_margen_min  = max(0, (int)($_POST["alarma_margen_min"] ?? 0));
+
         $id = DB::insert(
-            "INSERT INTO locales (nombre, url_logo, usuario, aforo_max, aforo_actual, jornada_partida, hora_entrada1, hora_salida1, hora_entrada2, hora_salida2, margen_fichaje_min)
-             VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)",
-            [$nombre, $url_logo, $usuario, $aforo_max, $jornada_partida, $hora_entrada1, $hora_salida1, $hora_entrada2, $hora_salida2, $margen_fichaje_min]
+            "INSERT INTO locales (nombre, url_logo, usuario, aforo_max, aforo_actual, jornada_partida, hora_entrada1, hora_salida1, hora_entrada2, hora_salida2, margen_fichaje_min,
+                    alarma_activa, alarma_hora_inicio, alarma_hora_fin, alarma_24h, alarma_margen_min)
+             VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [$nombre, $url_logo, $usuario, $aforo_max, $jornada_partida, $hora_entrada1, $hora_salida1, $hora_entrada2, $hora_salida2, $margen_fichaje_min,
+             $alarma_activa, $alarma_hora_inicio, $alarma_hora_fin, $alarma_24h, $alarma_margen_min]
         );
         if ($passw !== "") {
             DB::execute("UPDATE locales SET passw = ? WHERE id = ?", [password_hash($passw, PASSWORD_DEFAULT), $id]);
@@ -182,11 +199,20 @@ switch ($_GET["accion"] ?? "") {
         $hora_salida2  = ($_POST["hora_salida2"] ?? "") !== "" ? $_POST["hora_salida2"] : null;
         $margen_fichaje_min = max(0, (int)($_POST["margen_fichaje_min"] ?? 30));
 
+        // Vigilancia (alarmas de inactividad)
+        $alarma_activa = (isset($_POST["alarma_activa"]) && (int)$_POST["alarma_activa"] === 1) ? 1 : 0;
+        $alarma_24h = (isset($_POST["alarma_24h"]) && (int)$_POST["alarma_24h"] === 1) ? 1 : 0;
+        $alarma_hora_inicio = ($_POST["alarma_hora_inicio"] ?? "") !== "" ? $_POST["alarma_hora_inicio"] : null;
+        $alarma_hora_fin    = ($_POST["alarma_hora_fin"] ?? "") !== "" ? $_POST["alarma_hora_fin"] : null;
+        $alarma_margen_min  = max(0, (int)($_POST["alarma_margen_min"] ?? 0));
+
         DB::execute(
             "UPDATE locales SET nombre=?, url_logo=?, usuario=?, aforo_max=?,
-                    jornada_partida=?, hora_entrada1=?, hora_salida1=?, hora_entrada2=?, hora_salida2=?, margen_fichaje_min=?
+                    jornada_partida=?, hora_entrada1=?, hora_salida1=?, hora_entrada2=?, hora_salida2=?, margen_fichaje_min=?,
+                    alarma_activa=?, alarma_hora_inicio=?, alarma_hora_fin=?, alarma_24h=?, alarma_margen_min=?
              WHERE id=?",
-            [$nombre, $url_logo, $usuario, $aforo_max, $jornada_partida, $hora_entrada1, $hora_salida1, $hora_entrada2, $hora_salida2, $margen_fichaje_min, $id]
+            [$nombre, $url_logo, $usuario, $aforo_max, $jornada_partida, $hora_entrada1, $hora_salida1, $hora_entrada2, $hora_salida2, $margen_fichaje_min,
+             $alarma_activa, $alarma_hora_inicio, $alarma_hora_fin, $alarma_24h, $alarma_margen_min, $id]
         );
         if ($passw !== "") {
             DB::execute("UPDATE locales SET passw = ? WHERE id = ?", [password_hash($passw, PASSWORD_DEFAULT), $id]);

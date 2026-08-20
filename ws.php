@@ -11,6 +11,7 @@ ini_set('display_errors', '0');
 
 require_once("config/rutas.php");
 require_once("libs/db.php");
+require_once("libs/alarmas.php");
 
 // acción desde GET o argv[1]
 $accion = $_GET["accion"] ?? ($argv[1] ?? "");
@@ -162,6 +163,26 @@ switch ($accion) {
         $n = DB::execute("DELETE FROM videos WHERE id IN (" . $marks . ")", $ids);
         echo (string) $n;
         break;
+
+    case "alarma_estado":
+        // Estado de vigilancia de una cámara (lo consulta guarda_movimientosV3.py).
+        // Params: local_id, camara_id (HTTP GET o CLI argv) -> {"ok":bool,"armada":bool,"boost":bool}
+        $estado = alarma_estado(
+            (int)($_GET["local_id"] ?? arg(2) ?? 0),
+            (int)($_GET["camara_id"] ?? arg(3) ?? 0)
+        );
+        echo json_encode($estado);
+        exit;
+
+    case "alarma_disparar":
+        // Dispara una alarma (movimiento detectado estando armado).
+        // Params: local_id, camara_id (HTTP GET o CLI argv) -> {"ok":bool,"id":int,"nueva":bool,"escalada":bool}
+        $disparo = alarma_disparar(
+            (int)($_GET["local_id"] ?? arg(2) ?? 0),
+            (int)($_GET["camara_id"] ?? arg(3) ?? 0)
+        );
+        echo json_encode($disparo);
+        exit;
 
     default:
         $return["cod"] = "200";

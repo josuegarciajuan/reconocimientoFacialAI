@@ -35,6 +35,8 @@ class MotionConfig:
     threshold: int = 21             # umbral de diferencia de píxel (RF_MOV_THRESHOLD)
     blur: int = 21                  # kernel GaussianBlur (RF_MOV_BLUR)
     dilate: int = 2                 # iteraciones de dilate (RF_MOV_DILATE)
+    dontCare_boost: int | None = None                # área mínima en modo asedio (None = sin cambio)
+    frames_con_movimiento_boost: int | None = None   # frames para disparar en modo asedio (None = sin cambio)
 
     @property
     def frames_a_analizar(self) -> int:
@@ -91,11 +93,31 @@ class MotionDetector:
         self.cfg = cfg or MotionConfig()
         self.prevFrame = None
         self.motion_list: list = []      # buffer rodante (tamaño frames_a_analizar)
+        self.boost = False               # modo asedio: umbral fino (alarmas)
+
+    def set_boost(self, activo: bool) -> None:
+        """Activa/desactiva el modo asedio (alarmas "La Almenara").
+
+        En modo asedio el detector baja el área mínima (dontCare_boost) y el nº
+        de frames para disparar (frames_con_movimiento_boost): así cualquier
+        mínimo movimiento cuenta y la grabación continua es posible.
+        """
+        self.boost = bool(activo)
+
+    def _dontCare(self) -> int:
+        if self.boost and self.cfg.dontCare_boost is not None:
+            return self.cfg.dontCare_boost
+        return self.cfg.dontCare
+
+    def _frames_con_movimiento(self) -> int:
+        if self.boost and self.cfg.frames_con_movimiento_boost is not None:
+            return self.cfg.frames_con_movimiento_boost
+        return self.cfg.frames_con_movimiento
 
     def hay_ahora(self) -> bool:
         """Re-lectura del buffer actual (equivalente a `hay_movimiento(motion_list)`
         de guarda_movimientosV3.py en sus re-comprobaciones)."""
-        return hay_movimiento(self.motion_list, self.cfg.frames_con_movimiento)
+        return hay_movimiento(self.motion_list, self._frames_con_movimiento())
 
     def process(self, frame):
         """Analiza un frame (BGR, ya redimensionado). Devuelve `(motion, hay)`.
@@ -124,7 +146,7 @@ class MotionDetector:
         # supera dontCare?" (si el máximo no lo supera, ninguno lo hace).
         if cnts:
             max_area = max(cv2.contourArea(c) for c in cnts)
-            motion = 1 if max_area >= cfg.dontCare else 0
+            motion = 1 if max_area >= self._dontCare() else 0
         else:
             motion = 0
 
@@ -132,4 +154,4 @@ class MotionDetector:
         self.motion_list.append(motion)
         self.motion_list = self.motion_list[-cfg.frames_a_analizar:]
 
-        return motion, hay_movimiento(self.motion_list, cfg.frames_con_movimiento)
+        return motion, hay_movimiento(self.motion_list, self._frames_con_movimiento())

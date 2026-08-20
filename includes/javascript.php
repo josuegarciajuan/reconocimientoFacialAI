@@ -12,7 +12,44 @@
     
     $( document ).ready(function() {
         setInterval(comprueba_notificaciones,10000);
+        setInterval(comprueba_alarmas,10000);
     });
+
+   function comprueba_alarmas(){
+        ajax = nuevoAjax();
+        urlllamada="./accionesAjax.php?a=9";
+        ajax.open("GET", urlllamada, true);
+        ajax.onreadystatechange = function () {
+            if (ajax.readyState == 4) {
+                try {
+                    var r = JSON.parse(ajax.responseText);
+                    var banner = document.getElementById("banner_alarma");
+                    var badge = document.getElementById("alarma_badge");
+                    if (r && r.ok && r.total > 0) {
+                        if (banner) { banner.style.display = "flex"; }
+                        if (badge) { badge.style.display = "inline-flex"; badge.textContent = r.total > 9 ? "9+" : r.total; }
+                        var texto = document.getElementById("banner_alarma_texto");
+                        if (texto && r.alarmas && r.alarmas.length > 0) {
+                            var a = r.alarmas[0];
+                            texto.textContent = "🚨 Alarma " + (a.severidad === "asedio" ? "de asedio" : "sin revisar")
+                                + " · " + a.fecha;
+                        }
+                    } else {
+                        if (banner) { banner.style.display = "none"; }
+                        if (badge) { badge.style.display = "none"; }
+                    }
+                } catch(e) { /* respuesta no JSON: ignorar */ }
+            }
+        };
+        ajax.send(null);
+   }
+
+   function alarmas_leidas(){
+        ajax = nuevoAjax();
+        ajax.open("GET", "./accionesAjax.php?a=10", true);
+        ajax.send(null);
+        setTimeout(comprueba_alarmas, 300);
+   }
 
    function enterpressed_buscar(e,c){
     var code = (e.keyCode ? e.keyCode : e.which);

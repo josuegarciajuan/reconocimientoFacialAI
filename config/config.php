@@ -223,4 +223,18 @@ define("CONFIG_CONCILIADOR_MARGEN_DEFECTO", env_or("RF_CONCILIADOR_MARGEN_DEFECT
 define("CONFIG_VINCULADOR_LOOP", env_or("RF_VINCULADOR_LOOP", "60"));                  // segundos entre pasadas del vinculador
 define("CONFIG_VINCULADOR_BACKFILL_DIAS", env_or("RF_VINCULADOR_BACKFILL_DIAS", "30")); // días históricos con vínculo la 1ª vez por local
 define("CONFIG_VINCULO_MARGEN_SEGS", env_or("RF_VINCULO_MARGEN_SEGS", "30"));          // segundos de margen en el solape vídeo↔estancia/cruce
+
+/*
+ * alarmas ("La Almenara") -> libs/alarmas.php y guarda_movimientosV3.py
+ * Cooldown: no se crean dos alarmas del mismo local en menos de X segundos (el
+ * movimiento continuado refresca la ventana de asedio y puede escalar a "asedio").
+ * Boost: durante X segundos tras una alarma, todas las cámaras del local graban
+ * en continuo y bajan el umbral de detección (modo asedio).
+ */
+define("CONFIG_ALARMA_COOLDOWN_SEGS", env_or("RF_ALARMA_COOLDOWN_SEGS", "300"));    // segundos mínimos entre alarmas del mismo local
+define("CONFIG_ALARMA_BOOST_SEGS", env_or("RF_ALARMA_BOOST_SEGS", "60"));           // duración del modo asedio (grabación continua)
+define("CONFIG_ALARMA_ESCALADA_EVENTOS", env_or("RF_ALARMA_ESCALADA_EVENTOS", "3"));// eventos en la ventana para escalar aviso->asedio
+define("CONFIG_ALARMA_ESCALADA_SEGS", env_or("RF_ALARMA_ESCALADA_SEGS", "600"));    // ventana deslizante de la escalada (segundos)
+define("CONFIG_ALARMA_ESTADO_TTL", env_or("RF_ALARMA_ESTADO_TTL", "3"));            // cada cuántos segundos el worker consulta alarma_estado
+define("CONFIG_ALARMADOR_LOOP", env_or("RF_ALARMADOR_LOOP", "60"));                 // segundos entre pasadas del daemon alarmador.php
     
