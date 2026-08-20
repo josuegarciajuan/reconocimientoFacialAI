@@ -247,11 +247,13 @@ while (true) {
                     continue;
                 }
 
-                // CPU saturada: difiere el procesado (protege a los capturadores)
+                // CPU saturada: difiere el procesado (protege a los capturadores).
+                // `break` (no `continue`) para saltar al resto de cámaras y no
+                // quedarse iterando el backlog de vídeos de una sola cámara.
                 if (cpu_saturada()) {
                     echo "CPU saturada, difiero procesa_video...\n";
                     sleep(5);
-                    continue;
+                    break;
                 }
 
                 // RAM disponible
