@@ -144,6 +144,57 @@ def _celdas_cambiadas(today: np.ndarray, ref: np.ndarray, top: int = 3) -> list[
     return out
 
 
+def _decidir_dia(st: dict | None, today: np.ndarray, min_sim: float,
+                 hoy: str) -> tuple[dict, dict | None]:
+    """Actualiza el estado de deriva de una cámara con la firma de HOY (lógica pura).
+
+    Regla anti-falsa-alarma: avisa (alerta) solo si la similitud cae por debajo de
+    `min_sim` durante 2 DÍAS CONSECUTIVOS. La referencia EMA solo se actualiza en
+    días estables (un cambio temporal de un día no se "hornea" en la referencia).
+
+    Devuelve (nuevo_estado, alerta_evento|None).
+    """
+    if st is None or st.get("referencia") is None:
+        # Primer día: fijar referencia sin comparar (no se avisa).
+        return ({
+            "referencia": today.tolist(), "n_dias": 1,
+            "ultima_sim": None, "dias_bajos": 0, "alerta": False,
+            "fecha_referencia": hoy, "fecha_ultimo_check": hoy,
+        }, None)
+
+    ref = np.asarray(st["referencia"], dtype=np.float64)
+    sim = _sim(today, ref)
+    dias_bajos = int(st.get("dias_bajos", 0))
+    alerta = bool(st.get("alerta", False))
+    alerta_evento = None
+
+    if sim >= min_sim:
+        # Escena estable: actualizar EMA (solo en días buenos) y desactivar alerta.
+        ref_new = EMA_ALPHA * today + (1.0 - EMA_ALPHA) * ref
+        dias_bajos = 0
+        alerta = False
+    else:
+        dias_bajos += 1
+        if dias_bajos >= 2:
+            alerta = True
+            alerta_evento = {
+                "fecha": hoy, "similitud": round(sim, 3), "dias_bajos": dias_bajos,
+                "celdas": _celdas_cambiadas(today, ref),
+            }
+        ref_new = ref  # no se contamina la referencia con el día raro
+
+    nuevo = {
+        "referencia": ref_new.tolist(),
+        "n_dias": int(st.get("n_dias", 0)) + 1,
+        "ultima_sim": round(sim, 3),
+        "dias_bajos": dias_bajos,
+        "alerta": alerta,
+        "fecha_referencia": st.get("fecha_referencia"),
+        "fecha_ultimo_check": hoy,
+    }
+    return nuevo, alerta_evento
+
+
 def _leer(f: str) -> dict | None:
     try:
         with open(f) as fh:
@@ -207,53 +258,27 @@ def main() -> int:
         today = _descriptor(frames)
 
         f = os.path.join(deriva_dir, str(cam_id) + ".json")
-        st = _leer(f) or {}
-        ref = st.get("referencia")
+        st = _leer(f)
+        nuevo, alerta_evento = _decidir_dia(st, today, args.min_sim, hoy)
 
-        if ref is None:
-            # Primer día: fijar referencia sin comparar (no se avisa).
-            _escribir(f, {
-                "camara_id": cam_id, "referencia": today.tolist(), "n_dias": 1,
-                "ultima_sim": None, "dias_bajos": 0, "alerta": False,
-                "fecha_referencia": hoy, "fecha_ultimo_check": hoy,
-            })
-            print(f"[{cam_id}] referencia inicial fijada (n_dias=1)", flush=True)
-            continue
-
-        ref = np.asarray(ref, dtype=np.float64)
-        sim = _sim(today, ref)
-        dias_bajos = int(st.get("dias_bajos", 0))
-        alerta = bool(st.get("alerta", False))
-
-        if sim >= args.min_sim:
-            # Escena estable: actualizar EMA (solo en días buenos) y desactivar alerta.
-            ref_new = EMA_ALPHA * today + (1.0 - EMA_ALPHA) * ref
-            dias_bajos = 0
-            alerta = False
-            alertas.pop(str(cam_id), None)
-            print(f"[{cam_id}] similitud {sim:.3f} >= {args.min_sim}: ok, EMA actualizada", flush=True)
+        if alerta_evento is not None:
+            alertas[str(cam_id)] = alerta_evento
+            print(f"[{cam_id}] ALERTA: similitud {alerta_evento['similitud']} durante "
+                  f"{alerta_evento['dias_bajos']} días consecutivos; celdas más cambiadas: "
+                  f"{alerta_evento['celdas']}", flush=True)
         else:
-            dias_bajos += 1
-            if dias_bajos >= 2:
-                alerta = True
-                celdas = _celdas_cambiadas(today, ref)
-                alertas[str(cam_id)] = {
-                    "fecha": hoy, "similitud": round(sim, 3), "dias_bajos": dias_bajos,
-                    "celdas": celdas,
-                }
-                print(f"[{cam_id}] ALERTA: similitud {sim:.3f} durante {dias_bajos} días "
-                      f"consecutivos; celdas más cambiadas: {celdas}", flush=True)
+            # Sin evento de alerta hoy: limpiar cualquier alerta previa (escena estable).
+            alertas.pop(str(cam_id), None)
+            if st is None or st.get("referencia") is None:
+                print(f"[{cam_id}] referencia inicial fijada (n_dias=1)", flush=True)
+            elif nuevo["ultima_sim"] is not None and nuevo["ultima_sim"] < args.min_sim:
+                print(f"[{cam_id}] similitud {nuevo['ultima_sim']} < {args.min_sim} "
+                      f"(día {nuevo['dias_bajos']}/2), sin aviso todavía", flush=True)
             else:
-                print(f"[{cam_id}] similitud {sim:.3f} < {args.min_sim} (día {dias_bajos}/2), "
-                      "sin aviso todavía", flush=True)
-            ref_new = ref  # no se contamina la referencia con el día raro
+                print(f"[{cam_id}] similitud {nuevo['ultima_sim']} >= {args.min_sim}: ok, "
+                      "EMA actualizada", flush=True)
 
-        _escribir(f, {
-            "camara_id": cam_id, "referencia": ref_new.tolist(),
-            "n_dias": int(st.get("n_dias", 0)) + 1,
-            "ultima_sim": round(sim, 3), "dias_bajos": dias_bajos, "alerta": alerta,
-            "fecha_referencia": st.get("fecha_referencia"), "fecha_ultimo_check": hoy,
-        })
+        _escribir(f, nuevo)
 
     _escribir(alertas_path, alertas)
     print(f"alerta(s) activa(s): {len(alertas)}")
