@@ -173,6 +173,20 @@ switch ($_GET["a"]) {
 
         echo $labels . "---" . $datos1 . "---" . $datos2;
         break;
+
+    case "8": // fotos HQ: devuelve qué fotos ya tienen su versión HQ (x4plus) lista
+        header("Content-Type: application/json; charset=utf-8");
+        $ids = array_filter(array_map("intval", explode(",", (string)($_GET["ids"] ?? ""))));
+        $hq = [];
+        if ($ids) {
+            $marcas = str_repeat("?,", count($ids) - 1) . "?";
+            $rows = DB::select("SELECT id FROM fotos WHERE id IN ($marcas) AND generada_hq = 1", array_values($ids));
+            foreach ($rows as $r) {
+                $hq[] = (int)$r["id"];
+            }
+        }
+        echo json_encode(["ok" => true, "hq" => $hq], JSON_UNESCAPED_UNICODE);
+        break;
 }
 
 /** Nº de personas distintas que entraron (cámara puerta) en el rango. */

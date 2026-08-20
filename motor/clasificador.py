@@ -32,6 +32,7 @@ import os
 import random
 import shutil
 import sys
+import threading
 import time
 from datetime import datetime
 
@@ -45,14 +46,42 @@ from motor.core.matching import LayerScore, match_group, scores_per_person, scor
 from motor.core.model import analyze            # noqa: E402
 from motor.core.quality import face_sharpness, pose_label  # noqa: E402
 from motor.core.store import FaceStore          # noqa: E402
-from motor.core.superres import enhance_embedding, merge_frames, restore_face, zoom_photo  # noqa: E402
+from motor.core.superres import enhance_embedding, photo_busto  # noqa: E402
 
 ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 IMG_EXTS = (".jpg", ".jpeg", ".png")
 
+# Semáforo global de trabajos HQ (foto final x4plus): evita saturar la CPU
+# cuando varias cámaras generan HQ a la vez. Se crea de forma lazy con el
+# primer uso (lee cfg.hq_max_workers).
+_HQ_SEM: threading.Semaphore | None = None
+
 
 def log(*args):
     print(*args, flush=True)
+
+
+def _schedule_hq(out_path: str, img, bbox, cfg: Config) -> None:
+    """Genera la versión HQ (x4plus) de la foto final en un hilo de fondo y la
+    escribe a `<out_path>.hq`. clasificadorV2.php la ingesta como upgrade (sobre
+    la foto rápida ya publicada) y el panel la "autonitida" sin recargar."""
+    global _HQ_SEM
+    if _HQ_SEM is None:
+        _HQ_SEM = threading.Semaphore(max(1, int(cfg.hq_max_workers)))
+
+    def run() -> None:
+        try:
+            img_hq = photo_busto(img, bbox, cfg, model=cfg.sr_model_photo)
+            cv2.imwrite(out_path + ".hq", img_hq, [cv2.IMWRITE_JPEG_QUALITY, 95])
+        except Exception as e:  # noqa: BLE001
+            log(f"[hq] fallo generando HQ: {e}")
+        finally:
+            _HQ_SEM.release()
+
+    if _HQ_SEM.acquire(blocking=False):
+        threading.Thread(target=run, daemon=True).start()
+    else:
+        log("[hq] semáforo HQ lleno; se omite la versión HQ de esta foto")
 
 
 def random_code(n: int = 25) -> str:
@@ -298,7 +327,8 @@ class _CascadeCtx:
 
 
 def process_battery(battery, ruta: str, local_id: str, camara_id: str, cfg: Config,
-                    store: FaceStore, feedback=None, torso_map: dict[str, str] | None = None):
+                    store: FaceStore, feedback=None, torso_map: dict[str, str] | None = None,
+                    busto_map: dict[str, str] | None = None):
     # batería: lista de dicts {file, path, img, faces, ts}
     # aplanar caras -> (embedding, índice_item)
     face_list = []  # (emb, item_idx)
@@ -314,12 +344,13 @@ def process_battery(battery, ruta: str, local_id: str, camara_id: str, cfg: Conf
         # enlazaba caras ajenas y contaminaba la galería).
         for sub in split_coherent_clusters(cluster, face_list, battery, cfg):
             _process_subcluster(sub, face_list, battery, ruta, local_id, camara_id,
-                                cfg, store, feedback, torso_map)
+                                cfg, store, feedback, torso_map, busto_map)
 
 
 def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
                         camara_id: str, cfg: Config, store: FaceStore,
-                        feedback=None, torso_map: dict[str, str] | None = None) -> None:
+                        feedback=None, torso_map: dict[str, str] | None = None,
+                        busto_map: dict[str, str] | None = None) -> None:
     """Clasifica un sub-clúster coherente de caras y actualiza galería/álbum."""
     item_idxs = sorted({face_list[i][1] for i in sub})
     embs = [face_list[i][0] for i in sub]
@@ -329,14 +360,17 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     # tiene menos píxeles reales que una cercana algo menos nítida.
     best = None
     best_score = -1.0
+    best_sharp = 0.0
     for idx in item_idxs:
         it = battery[idx]
         for f in it["faces"]:
             fw = f.bbox[2] - f.bbox[0]
             fh = f.bbox[3] - f.bbox[1]
-            score = face_sharpness(it["img"], f) * (float(fw * fh) ** 0.5)
+            sh = face_sharpness(it["img"], f)
+            score = sh * (float(fw * fh) ** 0.5)
             if score > best_score:
                 best_score = score
+                best_sharp = sh
                 best = (idx, f)
     rep_item = battery[best[0]]
     rep_face = best[1]
@@ -347,6 +381,11 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     torso_path = None
     if torso_map:
         torso_path = torso_map.get(rep_stem)
+
+    # crop de busto compañero (mismo stem en <cam>_busto/) para la foto final de display
+    busto_path = None
+    if busto_map:
+        busto_path = busto_map.get(rep_stem)
 
     # F2 fix: en veredicto "uncertain" también se enriquece la galería
     enrich_on_uncertain = cfg.zones_enabled
@@ -387,26 +426,32 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     out_dir = os.path.join(ruta, "motor/caras", local_id, camara_id, person)
     os.makedirs(out_dir, exist_ok=True)
     out_name = f"{nombre}_{foto_id}.jpg"
-    # Auto-zoom hacia la cara + SR + restauración facial GFPGAN (solo visual;
-    # embeddings intactos).
-    # MF-SR: para caras pequeñas, fusionar los K crops más nítidos de la misma
-    # persona (sub-clúster) antes de SR/GFPGAN; reduce ruido y gana nitidez.
-    fw_rep = rep_face.bbox[2] - rep_face.bbox[0]
-    fh_rep = rep_face.bbox[3] - rep_face.bbox[1]
-    final_img = None
-    if cfg.sr_mf_enabled and max(fw_rep, fh_rep) < cfg.sr_mf_min_face:
-        frames = []
-        for idx in item_idxs:
-            it = battery[idx]
-            for f in it["faces"]:
-                frames.append((it["img"], f))
-        frames.sort(key=lambda x: face_sharpness(x[0], x[1]), reverse=True)
-        merged = merge_frames(frames[:cfg.sr_mf_k], rep_face.bbox, cfg)
-        if merged is not None:
-            final_img = restore_face(merged, cfg)
-    if final_img is None:
-        final_img = zoom_photo(rep_item["img"], rep_face.bbox, cfg)
-    cv2.imwrite(os.path.join(out_dir, out_name), final_img, [cv2.IMWRITE_JPEG_QUALITY, 95])
+    out_path = os.path.join(out_dir, out_name)
+
+    # Foto final: BUSTO (torso real + cara restaurada) para display. Internamente
+    # el matching usa los crops tight; aquí se genera la imagen que se muestra.
+    # Se prefiere el crop de busto (si existe); si no, el crop de cara tight.
+    photo_img = rep_item["img"]
+    photo_bbox = rep_face.bbox
+    if cfg.busto_enabled and busto_path and os.path.exists(busto_path):
+        b_img = cv2.imread(busto_path)
+        if b_img is not None:
+            b_faces = analyze(b_img, det_size=(cfg.crop_det_size, cfg.crop_det_size),
+                              min_score=cfg.min_det_score)
+            if b_faces:
+                bf = max(b_faces, key=lambda f: f.det_score)
+                photo_img = b_img
+                photo_bbox = bf.bbox
+
+    # Versión rápida (compact): aparece al instante en el panel.
+    final_img = photo_busto(photo_img, photo_bbox, cfg, model="compact")
+    cv2.imwrite(out_path, final_img, [cv2.IMWRITE_JPEG_QUALITY, 95])
+
+    # Versión HQ progresiva (sr_model_photo, p.ej. x4plus): se genera en un hilo
+    # de fondo y sobreescribe la foto ~35-40 s después; el panel la "autonitida".
+    if cfg.hq_enabled and cfg.sr_model_photo != "compact":
+        _schedule_hq(out_path, photo_img, photo_bbox, cfg)
+
     if os.path.exists(rep_item["path"]):
         os.remove(rep_item["path"])
 
@@ -468,6 +513,10 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     # consumir el crop de torso compañero (ya no hace falta)
     if torso_path and os.path.exists(torso_path):
         os.remove(torso_path)
+
+    # consumir el crop de busto compañero (ya no hace falta)
+    if busto_path and os.path.exists(busto_path):
+        os.remove(busto_path)
 
     log(f"[{result.verdict}] {len(item_idxs)} foto(s) -> {person} (best={result.best_score:.3f})")
 
@@ -694,6 +743,15 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
                 if not stem.endswith("_nocara"):      # F7: los body-only se tratan aparte
                     torso_map[stem] = os.path.join(torso_dir, f)
 
+    # mapa stem -> crop de busto compañero (foto final de display)
+    busto_map: dict[str, str] = {}
+    busto_dir = os.path.join(ruta, "motor/caras/sinclasificar", local_id, f"{camara_id}_busto")
+    if os.path.isdir(busto_dir):
+        for f in sorted(os.listdir(busto_dir)):
+            if f.lower().endswith(IMG_EXTS):
+                stem = f.rsplit(".", 1)[0]
+                busto_map[stem] = os.path.join(busto_dir, f)
+
     items.sort(key=lambda x: (x["ts"] is None, x["ts"] or 0))
 
     # agrupar en baterías
@@ -713,7 +771,7 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
 
     n = 0
     for bat in baterias:
-        process_battery(bat, ruta, local_id, camara_id, cfg, store, feedback, torso_map)
+        process_battery(bat, ruta, local_id, camara_id, cfg, store, feedback, torso_map, busto_map)
         n += 1
     return n
 
