@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS camaras(
 
   segundos_analizar int(11) default 3,
   porcentaje_mov int(11) default 80,
-  dontCare int(11) default 500,
+  dontCare int(11) default 220,
   fps int(11) default 15,
   maximo_videos int(11) default 60,
   redimesionframe int(11) default 60,

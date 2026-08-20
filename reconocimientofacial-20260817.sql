@@ -38,7 +38,7 @@ CREATE TABLE `camaras` (
   `created` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `segundos_analizar` int(11) DEFAULT '3',
   `porcentaje_mov` int(11) DEFAULT '80',
-  `dontCare` int(11) DEFAULT '500',
+  `dontCare` int(11) DEFAULT '220',
   `fps` int(11) DEFAULT '15',
   `maximo_videos` int(11) DEFAULT '60',
   `redimesionframe` int(11) DEFAULT '60',
