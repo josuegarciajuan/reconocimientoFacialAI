@@ -84,7 +84,7 @@ while(true){
             $cmd.=(FTP_USER !== "" ? FTP_USER : "-")." ";   // placeholder para no descolocar argv
             $cmd.=(FTP_PASS !== "" ? FTP_PASS : "-")." ";
             $cmd.="'".$cadena_conexion."' "; 
-            
+            $cmd.=URL_BASE_SERVER." ";   // argv 16: base URL del ws (alarmas: alarma_estado/alarma_disparar)
             echo "\n\ncmd1->".$cmd."\n\n";
             // B20: eliminado el exit; de depuración que mataba el proceso tras la 1ª cámara
            
