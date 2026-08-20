@@ -6,6 +6,7 @@
 
 require_once __DIR__ . "/../../../libs/db.php";
 require_once __DIR__ . "/../../../libs/fechas.php";
+require_once __DIR__ . "/../../../libs/etiquetas.php";
 
 $local_id = (int)$_SESSION["local_id"];
 $camara_filtro = (isset($_GET["camara"]) && $_GET["camara"] !== "" && $_GET["camara"] !== "-") ? (int)$_GET["camara"] : 0;
@@ -54,7 +55,7 @@ foreach ($videos as $v) {
             <select class="input border" id="persona_id">
                 <option value="-" <?php if (!$persona_filtro) { echo "selected='selected'"; } ?>>Todos</option>
                 <?php foreach ($personas as $p): ?>
-                    <option value="<?= $p["id"]; ?>" <?php if ($persona_filtro === (int)$p["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars($p["cod_interno"] . " - " . $p["nombre"]); ?></option>
+                    <option value="<?= $p["id"]; ?>" <?php if ($persona_filtro === (int)$p["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars(persona_label($p["nombre"], $p["cod_interno"])); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -140,7 +141,7 @@ foreach ($videos as $v) {
                 <td class="text-center border-b">
                     <a class="text-theme-1 font-medium hover:underline" href="?page=visitantes&mode=editar&id=<?= (int)$r["persona_id"]; ?>" title="Ver la ficha de la persona"><?= htmlspecialchars($nombre); ?></a>
                 </td>
-                <td class="text-center border-b"><?= htmlspecialchars($r["camara_nombre"]); ?></td>
+                <td class="text-center border-b"><?= camara_link((int)$r["camara_id"], $r["camara_nombre"]); ?></td>
                 <td class="text-center border-b">
                     <div class="flex sm:justify-center">
                         <?php if ($imagen1 !== ""): ?>

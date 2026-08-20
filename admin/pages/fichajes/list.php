@@ -9,6 +9,7 @@
 
 require_once __DIR__ . "/../../../libs/db.php";
 require_once __DIR__ . "/../../../libs/fechas.php";
+require_once __DIR__ . "/../../../libs/etiquetas.php";
 
 $local_id = (int)$_SESSION["local_id"];
 $persona_filtro = (isset($_GET["persona_id"]) && $_GET["persona_id"] !== "" && $_GET["persona_id"] !== "-") ? (int)$_GET["persona_id"] : 0;
@@ -36,7 +37,7 @@ $trabajadores = DB::select(
             <select class="input border" id="persona_id">
                 <option value="-" <?php if (!$persona_filtro) { echo "selected='selected'"; } ?>>Todos</option>
                 <?php foreach ($trabajadores as $t): ?>
-                    <option value="<?= $t["id"]; ?>" <?php if ($persona_filtro === (int)$t["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars($t["cod_interno"] . " - " . $t["nombre"]); ?></option>
+                    <option value="<?= $t["id"]; ?>" <?php if ($persona_filtro === (int)$t["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars(persona_label($t["nombre"], $t["cod_interno"])); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -81,7 +82,7 @@ $trabajadores = DB::select(
         if ($persona_filtro) { $where[] = "f.persona_id = ?"; $params[] = $persona_filtro; }
 
         $rows = DB::select(
-            "SELECT f.id AS fid, f.fecha, f.bloque, f.estado,
+            "SELECT f.id AS fid, f.persona_id, f.fecha, f.bloque, f.estado,
                     f.entrada_hora, f.entrada_camara_id, f.entrada_estancia_id,
                     f.salida_hora, f.salida_camara_id, f.salida_estancia_id,
                     p.cod_interno, p.nombre,
@@ -100,7 +101,7 @@ $trabajadores = DB::select(
         };
         $par = "odd";
         foreach ($rows as $r) {
-            $nombre = ($r["nombre"] !== "") ? $r["nombre"] : $r["cod_interno"];
+            $nombre = persona_label($r["nombre"], $r["cod_interno"]);
 
             $foto_entrada = "";
             if ($r["entrada_estancia_id"]) {
@@ -126,11 +127,11 @@ $trabajadores = DB::select(
                 : '<span class="px-2 py-1 rounded text-xs bg-amber-100 text-amber-800 dark:bg-amber-800 dark:text-amber-100">Provisional</span>';
         ?>
             <tr class="<?= $par; ?>">
-                <td class="text-center border-b"><?= htmlspecialchars($r["cod_interno"] . " - " . $nombre); ?></td>
+                <td class="text-center border-b"><?= persona_link((int)$r["persona_id"], $nombre); ?></td>
                 <td class="text-center border-b"><?= htmlspecialchars(date("d/m/Y", strtotime($r["fecha"]))); ?></td>
                 <td class="text-center border-b"><?= (int)$r["bloque"]; ?></td>
                 <td class="text-center border-b"><?= htmlspecialchars($entrada_fmt); ?></td>
-                <td class="text-center border-b"><?= htmlspecialchars($r["cam_entrada"] ?? "—"); ?></td>
+                <td class="text-center border-b"><?= (int)$r["entrada_camara_id"] > 0 ? camara_link((int)$r["entrada_camara_id"], $r["cam_entrada"] ?? "—") : "—"; ?></td>
                 <td class="text-center border-b">
                     <?php if ($foto_entrada !== ""): ?>
                     <img alt="Foto de entrada de <?= htmlspecialchars($nombre); ?>" onclick="verFoto('<?= $js_quote($foto_entrada); ?>','Entrada · <?= $js_quote($nombre); ?>')" onerror="this.style.display='none'" class="img-thumb cursor-pointer" src="<?= htmlspecialchars($foto_entrada); ?>">
@@ -139,7 +140,7 @@ $trabajadores = DB::select(
                     <?php endif; ?>
                 </td>
                 <td class="text-center border-b"><?= htmlspecialchars($salida_fmt); ?></td>
-                <td class="text-center border-b"><?= htmlspecialchars($r["cam_salida"] ?? "—"); ?></td>
+                <td class="text-center border-b"><?= (int)$r["salida_camara_id"] > 0 ? camara_link((int)$r["salida_camara_id"], $r["cam_salida"] ?? "—") : "—"; ?></td>
                 <td class="text-center border-b">
                     <?php if ($foto_salida !== ""): ?>
                     <img alt="Foto de salida de <?= htmlspecialchars($nombre); ?>" onclick="verFoto('<?= $js_quote($foto_salida); ?>','Salida · <?= $js_quote($nombre); ?>')" onerror="this.style.display='none'" class="img-thumb cursor-pointer" src="<?= htmlspecialchars($foto_salida); ?>">

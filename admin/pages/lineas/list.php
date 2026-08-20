@@ -6,6 +6,7 @@
 
 require_once __DIR__ . "/../../../libs/db.php";
 require_once __DIR__ . "/../../../libs/fechas.php";
+require_once __DIR__ . "/../../../libs/etiquetas.php";
 
 $local_id = (int)$_SESSION["local_id"];
 
@@ -73,7 +74,7 @@ $lineas = DB::select("SELECT id, nombre FROM lineas WHERE " . $lineas_where, $li
             <select class="input border" id="persona_id">
                 <option value="-" <?php if (!$persona_filtro) { echo "selected='selected'"; } ?>>Todas</option>
                 <?php foreach ($personas as $p): ?>
-                    <option value="<?= $p["id"]; ?>" <?php if ($persona_filtro === (int)$p["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars($p["cod_interno"] . " - " . $p["nombre"]); ?></option>
+                    <option value="<?= $p["id"]; ?>" <?php if ($persona_filtro === (int)$p["id"]) { echo "selected='selected'"; } ?>><?= htmlspecialchars(persona_label($p["nombre"], $p["cod_interno"])); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -119,7 +120,7 @@ $lineas = DB::select("SELECT id, nombre FROM lineas WHERE " . $lineas_where, $li
         $cruces = DB::select(
             "SELECT cl.id, cl.linea_id, cl.direccion, cl.identificador, cl.fecha,
                     cl.persona_id, cl.video_id,
-                    l.nombre AS linea_nombre, c.descripcion AS camara_nombre,
+                    l.nombre AS linea_nombre, c.descripcion AS camara_nombre, c.id AS camara_id,
                     p.nombre AS persona_nombre, p.cod_interno AS persona_cod,
                     v.poster AS video_poster, v.nombre AS video_nombre
              FROM cruces_lineas cl
@@ -152,7 +153,7 @@ $lineas = DB::select("SELECT id, nombre FROM lineas WHERE " . $lineas_where, $li
         ?>
             <tr class="<?= $par; ?>">
                 <td class="text-center border-b"><?= htmlspecialchars($fecha_fmt); ?></td>
-                <td class="text-center border-b"><?= htmlspecialchars($cr["camara_nombre"] ?? ""); ?></td>
+                <td class="text-center border-b"><?= camara_link((int)($cr["camara_id"] ?? 0), $cr["camara_nombre"] ?? ""); ?></td>
                 <td class="text-center border-b"><?= htmlspecialchars($cr["linea_nombre"] ?? ""); ?></td>
                 <td class="text-center border-b">
                     <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-gray-800 dark:bg-gray-900 text-gray-300 border border-gray-700 dark:border-gray-700">
