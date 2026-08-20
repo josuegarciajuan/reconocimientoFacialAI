@@ -240,7 +240,8 @@ while(True):
             # Fase 4c: layout con subdirectorio de cámara (motor/videos/<local>/<cam>/)
             os.makedirs('motor/videos/'+LOCAL_ID+'/'+CAMARA_ID, exist_ok=True)
             writer = H264VideoWriter('motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/'+video_tmp,
-                                     size, int(FPS), VideoConfig())
+                                     size, int(FPS), VideoConfig(),
+                                     stderr_path='motor/logs/ffmpeg_'+CAMARA_ID+'.log')
             time_inicio = time.time()
             printLog ("Se empieza a generar el siguiente video:"+video_actual)
 

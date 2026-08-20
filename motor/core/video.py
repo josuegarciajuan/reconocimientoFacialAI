@@ -132,21 +132,40 @@ class H264VideoWriter:
     """
 
     def __init__(self, dst: str, size: tuple[int, int], fps: int,
-                 cfg: VideoConfig | None = None):
+                 cfg: VideoConfig | None = None, stderr_path: str | None = None):
         cfg = cfg or VideoConfig()
         if size[0] <= 0 or size[1] <= 0:
             raise ValueError("size inválido")
         self.dst = dst
         self._proc = None
+        self._stderr_file = None
         os.makedirs(os.path.dirname(dst), exist_ok=True)
+        # `-f mp4` explícito: la publicación atómica escribe a `*.tmp` (fix
+        # moov-race) y ffmpeg, que infiere el muxer por la extensión, rechaza
+        # `.tmp` ("Unable to find a suitable output format") y aborta al
+        # arrancar. Sin `-f mp4` ningún vídeo de movimiento se llegaba a
+        # publicar (guarda_movimientosV3.py: "peso=None").
         cmd = [FFMPEG, "-y", "-f", "rawvideo", "-pix_fmt", "bgr24",
                "-s", f"{size[0]}x{size[1]}", "-r", str(fps), "-i", "-",
-               "-r", str(cfg.fps)] + _cmd_base(cfg) + ["-movflags", "+faststart", dst]
+               "-r", str(cfg.fps)] + _cmd_base(cfg) + ["-f", "mp4", "-movflags", "+faststart", dst]
         try:
+            stderr = subprocess.DEVNULL
+            if stderr_path:
+                # diagnóstico: volcar el stderr de ffmpeg a un log por cámara
+                # (antes DEVNULL ocultaba errores como el del muxer `.tmp`)
+                os.makedirs(os.path.dirname(stderr_path), exist_ok=True)
+                self._stderr_file = open(stderr_path, "ab")
+                stderr = self._stderr_file
             self._proc = subprocess.Popen(cmd, stdin=subprocess.PIPE,
-                                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                          stdout=subprocess.DEVNULL, stderr=stderr)
         except Exception:
             self._proc = None
+            if self._stderr_file is not None:
+                try:
+                    self._stderr_file.close()
+                except Exception:
+                    pass
+                self._stderr_file = None
 
     def write(self, frame) -> None:
         """Encola un frame BGR para el encoder. No-op si el proceso falló."""
@@ -159,30 +178,39 @@ class H264VideoWriter:
 
     def close(self, timeout: int = 600) -> int | None:
         """Cierra el encoder y devuelve el tamaño del MP4 (None si falla). Idempotente."""
-        if self._proc is None:
-            return None
-        proc, self._proc = self._proc, None
         try:
-            proc.stdin.close()
-        except Exception:
-            pass
-        try:
-            proc.wait(timeout=timeout)
-        except Exception:
+            if self._proc is None:
+                return None
+            proc, self._proc = self._proc, None
             try:
-                proc.kill()
+                proc.stdin.close()
             except Exception:
                 pass
+            try:
+                proc.wait(timeout=timeout)
+            except Exception:
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
+                return None
+            # Si ffmpeg salió con error, el MP4 está truncado (sin moov atom): devolver
+            # None para que guarda_movimientosV3.py DESCARTE el .tmp en vez de renombrarlo
+            # a .mp4 (antes se publicaba igual y archiva_video fallaba en bucle con
+            # "moov atom not found").
+            if proc.returncode != 0:
+                return None
+            if os.path.exists(self.dst) and os.path.getsize(self.dst) > 0:
+                return os.path.getsize(self.dst)
             return None
-        # Si ffmpeg salió con error, el MP4 está truncado (sin moov atom): devolver
-        # None para que guarda_movimientosV3.py DESCARTE el .tmp en vez de renombrarlo
-        # a .mp4 (antes se publicaba igual y archiva_video fallaba en bucle con
-        # "moov atom not found").
-        if proc.returncode != 0:
-            return None
-        if os.path.exists(self.dst) and os.path.getsize(self.dst) > 0:
-            return os.path.getsize(self.dst)
-        return None
+        finally:
+            # cerrar siempre el fd del log de stderr (si se abrió)
+            if self._stderr_file is not None:
+                try:
+                    self._stderr_file.close()
+                except Exception:
+                    pass
+                self._stderr_file = None
 
 
 def extraer_poster(src: str, dst_jpg: str, at: float = 0.0, timeout: int = 60) -> bool:
