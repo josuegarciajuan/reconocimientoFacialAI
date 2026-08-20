@@ -42,13 +42,21 @@
                             
                             
                             //$return.=$cod_interno." - (".$nombre.")///".$descripcion_camara."///".$mode."///".$imagen1."///".$imagen2."###";
+                            // Formato actual: persona_id///persona///camara_id///camara///mode///img1///img2///created
                             
-                            persona=vaux1[0];
-                            camara=vaux1[1];
-                            mode=vaux1[2];
-                            img1=vaux1[3];
-                            img2=vaux1[4];
-                            created=vaux1[5];
+                            persona_id=vaux1[0];
+                            persona=vaux1[1];
+                            camara_id=vaux1[2];
+                            camara=vaux1[3];
+                            mode=vaux1[4];
+                            img1=vaux1[5];
+                            img2=vaux1[6];
+                            created=vaux1[7];
+
+                            var camaraLink = (camara_id && camara_id != "0" && camara)
+                                ? '<a class="text-theme-1 hover:underline" href="?page=camaras&id='+camara_id+'">'+camara+'</a>'
+                                : camara;
+                            var modeHtml = mode.replace(camara, camaraLink);
 
                             html+='<div class="cursor-pointer relative flex items-center ">'
                                 html+='<div class="w-12 h-12 flex-none image-fit mr-1">'
@@ -57,10 +65,10 @@
                                 html+='</div>';
                                 html+='<div class="ml-2 overflow-hidden">';
                                     html+='<div class="flex items-center">';
-                                        html+='<a href="javascript:;" class="font-medium truncate mr-5">'+persona+'</a> ';
+                                        html+='<a href="?page=visitantes&mode=editar&id='+persona_id+'" class="font-medium truncate mr-5 text-theme-1 hover:underline">'+persona+'</a> ';
                                         html+='<div class="text-xs text-gray-500 ml-auto whitespace-no-wrap">'+created+'</div>';
                                     html+='</div>';
-                                    html+='<div class="w-full truncate text-gray-600">'+mode+'</div>';
+                                    html+='<div class="w-full truncate text-gray-600">'+modeHtml+'</div>';
                                 html+='</div>';
                             html+='</div>';
                             

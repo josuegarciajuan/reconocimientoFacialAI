@@ -9,6 +9,7 @@
 @session_start();
 require_once '../config/rutas.php';
 require_once '../libs/db.php';
+require_once '../libs/etiquetas.php';
 require_once './pages/dashboard/widgets.php';
 
 $local_id = (int)($_SESSION["local_id"] ?? 0);
@@ -85,7 +86,7 @@ switch ($_GET["a"]) {
     case "1": // notificaciones sin ver
         $return = "false";
         $rows = DB::select(
-            "SELECT e.id, e.camara_id, e.created, p.cod_interno, p.nombre, c.descripcion, c.puerta, c.salida
+            "SELECT e.id, e.camara_id, e.persona_id, e.created, p.cod_interno, p.nombre, c.descripcion, c.puerta, c.salida
              FROM estancias e
              JOIN personas p ON p.id = e.persona_id
              JOIN camaras c ON c.id = e.camara_id
@@ -96,7 +97,7 @@ switch ($_GET["a"]) {
         if ($rows) {
             $return = "truee###";
             foreach ($rows as $r) {
-                $nombre = $r["nombre"] !== "" ? $r["nombre"] : $r["cod_interno"];
+                $nombre = persona_label($r["nombre"], $r["cod_interno"]);
                 $mode = "-";
                 if ((int)$r["puerta"] === 1) {
                     $mode = "Entrada al local por " . $r["descripcion"];
@@ -105,7 +106,7 @@ switch ($_GET["a"]) {
                 }
                 $foto = DB::selectOne("SELECT MIN(id) as mid FROM fotos WHERE estancia_id = ?", [(int)$r["id"]]);
                 $img = "./caras_procesadas/" . ($foto && $foto["mid"] ? $foto["mid"] : 0) . ".jpg";
-                $return .= $r["cod_interno"] . " - (" . $nombre . ")///" . $r["descripcion"] . "///" . $mode . "///" . $img . "///" . $img . "///" . $r["created"] . "###";
+                $return .= (int)$r["persona_id"] . "///" . $nombre . "///" . (int)$r["camara_id"] . "///" . $r["descripcion"] . "///" . $mode . "///" . $img . "///" . $img . "///" . $r["created"] . "###";
             }
         }
         echo $return;
