@@ -222,6 +222,27 @@ def test_todo_gris_uncertain():
     assert res.verdict == "uncertain"
 
 
+# ------------------------------------------- confianza mínima de apoyo (min_layer_conf)
+
+def test_torso_caduco_no_confirma():
+    """Torso con score alto pero confianza baja (ropa caduca) NO corrobora."""
+    cfg = _cfg()
+    ctx = CascadeContext(torso=lambda cod: LayerScore(score=0.90, confidence=0.05))
+    res = run_cascade({"A": 0.33, "B": 0.30}, ctx, cfg,
+                      LayerScore(score=0.33, confidence=0.45),
+                      situation=Situation(pose=None, sharpness=60.0))
+    assert res.verdict == "uncertain"
+
+
+def test_torso_confiado_confirma():
+    cfg = _cfg()
+    ctx = CascadeContext(torso=lambda cod: LayerScore(score=0.90, confidence=0.80))
+    res = run_cascade({"A": 0.33, "B": 0.30}, ctx, cfg,
+                      LayerScore(score=0.33, confidence=0.45),
+                      situation=Situation(pose=None, sharpness=60.0))
+    assert res.verdict == "match"
+
+
 # --------------------------------------------------------- early-exit (ahorro)
 
 def test_early_exit_frontal_nitida_no_llama_capas_caras():

@@ -201,7 +201,12 @@ def decide_situational(face_scores: dict[str, float],
         if ls is None or not ls.available:
             continue
         layers[name] = ls
-        if name in ("vlm", "openai") and ls.confidence < cfg.llm_min_conf:
+        if name in ("vlm", "openai"):
+            if ls.confidence < cfg.llm_min_conf:
+                continue
+        elif name in ("torso", "zonas") and ls.confidence < cfg.min_layer_conf:
+            # torso/zonas caducos o poco fiables NO corroboran (su score alto
+            # no compensa una confianza baja, p. ej. ropa desactualizada).
             continue
         if ls.score < cfg.gray_low and ls.confidence >= cfg.veto_conf:
             vetoes += 1
