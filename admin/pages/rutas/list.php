@@ -12,6 +12,7 @@ require_once __DIR__ . "/../../../libs/rutas.php";
 require_once __DIR__ . "/../../../libs/trayectoria.php";
 require_once __DIR__ . "/../../../libs/planos.php";
 require_once __DIR__ . "/../../../libs/lineas_plano.php";
+require_once __DIR__ . "/../../../libs/etiquetas.php";
 
 // --- filtros (fechas corregidas) ---
 $desde_sql = rango_a_sql($_GET["desde"] ?? "", date("Y-m-d 00:00:00"));
@@ -56,7 +57,7 @@ $personas_opciones = DB::select(
                 <option value="-" <?php if (!isset($_GET["persona_id"]) || $_GET["persona_id"] === "-") { echo "selected='selected'"; } ?>>Todos</option>
                 <?php foreach ($personas_opciones as $p): ?>
                     <option value="<?= $p["id"]; ?>" <?php if (isset($_GET["persona_id"]) && $_GET["persona_id"] == $p["id"]) { echo "selected='selected'"; } ?>>
-                        <?= htmlspecialchars($p["cod_interno"] . " - " . $p["nombre"]); ?>
+                        <?= htmlspecialchars(persona_label($p["nombre"], $p["cod_interno"])); ?>
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -108,7 +109,7 @@ $personas_opciones = DB::select(
                     <td class="text-center border-b"><?= htmlspecialchars($fin_fmt); ?></td>
                     <td class="text-center border-b">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-1 sm:gap-2">
-                            <span><?= htmlspecialchars($r["nombre"]); ?></span>
+                            <span><?= persona_link((int)$r["persona_id"], $r["nombre"]); ?></span>
                             <img alt="Foto de <?= htmlspecialchars($r["nombre"]); ?>" onclick="verFoto('<?= $js_quote($r["imagen"]); ?>','<?= $js_quote($r["nombre"]); ?>')" onerror="this.style.display='none'" class="img-thumb cursor-pointer mx-auto sm:mx-0" src="<?= htmlspecialchars($r["imagen"]); ?>">
                         </div>
                     </td>

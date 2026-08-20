@@ -6,6 +6,7 @@
 
 require_once __DIR__ . "/../../../libs/db.php";
 require_once __DIR__ . "/../../../libs/avatars.php";
+require_once __DIR__ . "/../../../libs/etiquetas.php";
 
 $local_id = (int)($_SESSION["local_id"] ?? 0);
 $persona_id = (int)($_GET["id"] ?? 0);
@@ -67,7 +68,7 @@ $num_cruces = $cruces_cnt ? (int)$cruces_cnt["n"] : 0;
 ?>
 
 <div class="intro-y flex items-center mt-8">
-    <h2 class="text-lg font-medium mr-auto">Usuario: <?= htmlspecialchars($persona["cod_interno"] . " - " . $persona["nombre"]); ?></h2>
+    <h2 class="text-lg font-medium mr-auto">Usuario: <?= htmlspecialchars($nombre_pers); ?></h2>
 </div>
 
 <div class="intro-y box px-5 pt-5 mt-5">
@@ -187,7 +188,7 @@ $num_cruces = $cruces_cnt ? (int)$cruces_cnt["n"] : 0;
                         <div class="box p-3">
                             <div class="text-xs text-center text-gray-600 dark:text-gray-300 truncate mb-2"><?= htmlspecialchars($fecha_v); ?> · <?= htmlspecialchars($v["camara_nombre"] ?? ""); ?></div>
                             <a href="javascript:;" title="Ver el vídeo del movimiento"
-                               onclick="rfVideoModal(<?= (int)$v["id"]; ?>,'../video.php?id=<?= (int)$v["id"]; ?>','<?= $js_quote("../video.php?id=" . (int)$v["id"] . "&poster=1"); ?>','<?= $js_quote($persona["cod_interno"] . " · " . ($v["camara_nombre"] ?? "")); ?>',<?= $persona_id; ?>,'<?= $js_quote($nombre_pers); ?>')">
+                               onclick="rfVideoModal(<?= (int)$v["id"]; ?>,'../video.php?id=<?= (int)$v["id"]; ?>','<?= $js_quote("../video.php?id=" . (int)$v["id"] . "&poster=1"); ?>','<?= $js_quote($nombre_pers . " · " . ($v["camara_nombre"] ?? "")); ?>',<?= $persona_id; ?>,'<?= $js_quote($nombre_pers); ?>')">
                                 <img src="<?= htmlspecialchars("../video.php?id=" . (int)$v["id"] . "&poster=1"); ?>"
                                      alt="Vídeo del <?= htmlspecialchars($fecha_v); ?>"
                                      onerror="this.onerror=null;this.outerHTML='<div class=\'w-full flex items-center justify-center h-24 rounded bg-gray-800 dark:bg-gray-900 text-theme-1 font-medium text-xs\'>▶ Ver vídeo</div>';"

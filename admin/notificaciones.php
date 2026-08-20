@@ -5,6 +5,7 @@
  */
 
 require_once __DIR__ . "/../libs/db.php";
+require_once __DIR__ . "/../libs/etiquetas.php";
 
 $local_id = (int)($_SESSION["local_id"] ?? 0);
 
@@ -52,12 +53,12 @@ $hay_notificaciones = $num_notificaciones > 0;
                 <?php
             }
             foreach ($notis as $r) {
-                $nombre = ($r["nombre"] !== "") ? $r["nombre"] : $r["cod_interno"];
-                $mode = "";
+                $nombre = persona_label($r["nombre"], $r["cod_interno"]);
+                $mode_html = "";
                 if ((int)$r["puerta"] === 1) {
-                    $mode = "Entrada al local por " . $r["descripcion"];
+                    $mode_html = "Entrada al local por " . camara_link((int)$r["camara_id"], $r["descripcion"]);
                 } elseif ((int)$r["salida"] === 1) {
-                    $mode = "Salida del local por " . $r["descripcion"];
+                    $mode_html = "Salida del local por " . camara_link((int)$r["camara_id"], $r["descripcion"]);
                 }
                 $foto = DB::selectOne("SELECT MIN(id) AS mid FROM fotos WHERE estancia_id = ?", [(int)$r["id"]]);
                 $imagen = "./caras_procesadas/" . ($foto && $foto["mid"] ? $foto["mid"] : 0) . ".jpg";
@@ -69,10 +70,10 @@ $hay_notificaciones = $num_notificaciones > 0;
                     </div>
                     <div class="ml-2 overflow-hidden">
                         <div class="flex items-center">
-                            <a href="javascript:;" class="font-medium truncate mr-5"><?= htmlspecialchars($r["cod_interno"] . " - (" . $nombre . ")"); ?></a>
+                            <a class="font-medium truncate mr-5 text-theme-1 hover:underline" href="?page=visitantes&mode=editar&id=<?= (int)$r["persona_id"]; ?>" title="Ver la ficha de la persona"><?= htmlspecialchars($nombre); ?></a>
                             <div class="text-xs text-gray-500 ml-auto whitespace-no-wrap"><?= htmlspecialchars($r["created"]); ?></div>
                         </div>
-                        <div class="w-full truncate text-gray-600"><?= htmlspecialchars($mode); ?></div>
+                        <div class="w-full truncate text-gray-600"><?= $mode_html; ?></div>
                     </div>
                 </div>
             <?php } ?>
