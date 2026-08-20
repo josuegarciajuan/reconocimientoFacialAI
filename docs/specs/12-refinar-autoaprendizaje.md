@@ -89,3 +89,44 @@ Síntomas observados en producción:
   la calibración operativa debe seguir alimentándose con feedback real
   (`calibrar.py`) y el eval `--pose-aware`.
 - Revisar manualmente `ik8TjR1S…` (residuo de 2 caras) y decidir `--apply`.
+
+## Reenfoque A+B — motor de decisión situacional (2026-08-20)
+
+La fusión ponderada (media de capas) tenía un fallo estructural: una cara con
+coseno alto podía degradarse a "new" por capas débiles con confianza no
+calibrada (p. ej. LLM con `c≈0.9` y acierto real ~40%). Se sustituye por un
+motor de EVIDENCIA con enrutado (`motor/core/router.py` + `fusion.py`):
+
+- **Autoridad**: la capa de cara/perfil decide la identidad. Sin cara (F7),
+  torso+LLM mandan y NUNCA crean persona.
+- **Gate de identidad**: "new" <=> `s1 < match_threshold`. Las capas
+  superiores jamás crean personas.
+- **Suelo por cara**: `s1 >= secure_threshold` nunca es "new" (mínimo
+  "uncertain"), independiente de `c_cara` (fix del bug).
+- **Acuerdo**: en perfil/ángulos raros la silueta geométrica es co-autoridad
+  (`silueta_min_score`); si está y NO confirma → uncertain, no new.
+- **Veto**: ≥2 capas independientes (torso/vlm/openai) con `c >= veto_conf` y
+  `s < gray_low` degradan match a uncertain (nunca a new).
+- **Early-exit**: frontal nítida decide solo con la cara (sin capas caras).
+
+Pesos-prior realistas (solo desempate/reporte, la decisión usa autoridad/veto):
+`w_cara=0.70`, `w_torso=0.10`, `w_llm=0.10`, `perfil_w=0.60`, `silueta_w=0.30`.
+
+Autoaprendizaje reconectado:
+- El clasificador registra features L1a + candidatos aunque la cascada esté
+  apagada (fix: `decisions.jsonl` quedaba con `layers={}` y la calibración no
+  tenía matriz).
+- `RF_CALIB_APPLY=1` carga `calib_model.pkl` (pesos) al arranque y lo re-lee
+  por mtime cada 60 s (timer `rf-calibra` a las 05:10).
+- La calibración informa fiabilidad por capa CONDICIONADA a la situación
+  (`layer_stats_by_situation`): perfil/angulos/frontal/otro.
+
+Activación gradual: `RF_CASCADE_ENABLED=1` (y opcionales `RF_TORSO_ENABLED`,
+`RF_VLM_ENABLED`, `RF_OPENAI_ENABLED`) — ver `.env.example`.
+
+### Alcance 3 diferido (auditar umbrales)
+NO se recalibran `secure/match/margin` sobre `motor/eval/data`: el set está
+construido desde las capturas actuales (deficientes), calibrar ahí fijaría
+umbrales malos (circular). Queda pendiente hasta tener un set etiquetado
+limpio capturado con la detección mejorada. `motor/eval` se usa SOLO como
+diagnóstico relativo antes/después de activar capas.
