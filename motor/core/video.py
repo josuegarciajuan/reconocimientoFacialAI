@@ -41,7 +41,7 @@ ARCHIVO_DIR = os.path.join("motor", "videos_archivo")  # relativo a la raíz del
 class VideoConfig:
     """Parámetros de compresión. CRF constante = calidad perceptiva estable
     (las escenas estáticas pesan casi nada), preset más lento = fichero menor."""
-    crf: int = 26            # 18 ≈ casi sin pérdida ... 30 ≈ compresión fuerte
+    crf: int = 20            # 18 ≈ casi sin pérdida ... 30 ≈ compresión fuerte
     preset: str = "medium"   # ultrafast..veryslow (más lento -> más pequeño)
     fps: int = 10            # fps del archivo (conserva la duración)
     gop: int = 20            # intervalo de keyframes (~2 s a 10 fps)

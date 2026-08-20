@@ -328,6 +328,72 @@ def zoom_photo(img: np.ndarray, bbox, cfg) -> np.ndarray:
     return restore_face(z, cfg)
 
 
+def _align(src: np.ndarray, ref: np.ndarray) -> np.ndarray:
+    """Alinea `src` a `ref` con un warp afín (ECC). Fallback: devuelve `src` tal cual.
+
+    La mediana posterior ya suaviza ruido aunque la alineación falle; ECC solo
+    añade ganancia de resolución efectiva cuando hay desplazamiento sub-píxel.
+    """
+    if src.shape != ref.shape:
+        return src
+    try:
+        g_src = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY).astype(np.float32)
+        g_ref = cv2.cvtColor(ref, cv2.COLOR_BGR2GRAY).astype(np.float32)
+        warp = np.eye(2, 3, dtype=np.float32)
+        criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 20, 1e-4)
+        _, warp = cv2.findTransformECC(g_ref, g_src, warp,
+                                       cv2.MOTION_AFFINE, criteria)
+        out = cv2.warpAffine(src, warp, (src.shape[1], src.shape[0]),
+                             flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP)
+        return out
+    except cv2.error:
+        return src
+
+
+def merge_frames(frames, ref_bbox, cfg, pad_ratio: float = 0.35) -> np.ndarray | None:
+    """MF-SR: alinea y fusiona (mediana) los crops de la misma cara en N frames.
+
+    `frames`: lista de (img_bgr, Face) de la misma persona (mismo sub-clúster).
+    `ref_bbox`: bbox (x1,y1,x2,y2) de referencia en su propio frame.
+    Devuelve BGR uint8 del crop de cara fusionado (con margen), o None si no hay
+    al menos 2 crops válidos. El llamador aplica `restore_face` sobre la salida.
+    """
+    if not frames or len(frames) < 2:
+        return None
+
+    x1, y1, x2, y2 = (int(round(v)) for v in ref_bbox)
+    fw, fh = max(1, x2 - x1), max(1, y2 - y1)
+    pad = int(pad_ratio * max(fw, fh)) + 10
+
+    def crop_window(img, bbox):
+        h, w = img.shape[:2]
+        bx1, by1, bx2, by2 = (int(round(v)) for v in bbox)
+        cx, cy = (bx1 + bx2) // 2, (by1 + by2) // 2
+        half_w, half_h = fw // 2 + pad, fh // 2 + pad
+        x1c, x2c = max(0, cx - half_w), min(w, cx + half_w)
+        y1c, y2c = max(0, cy - half_h), min(h, cy + half_h)
+        return img[y1c:y2c, x1c:x2c]
+
+    ref_crop = crop_window(frames[0][0], ref_bbox)
+    if ref_crop.size == 0:
+        return None
+    th, tw = ref_crop.shape[:2]
+
+    aligned = [ref_crop.astype(np.float32)]
+    for img, face in frames[1:]:
+        crop = crop_window(img, face.bbox)
+        if crop.size == 0:
+            continue
+        if crop.shape[:2] != (th, tw):
+            crop = cv2.resize(crop, (tw, th), interpolation=cv2.INTER_LINEAR)
+        aligned.append(_align(crop, ref_crop).astype(np.float32))
+
+    if len(aligned) < 2:
+        return None
+    fused = np.median(np.stack(aligned, axis=0), axis=0)
+    return np.clip(fused, 0, 255).astype(np.uint8)
+
+
 def enhance(img: np.ndarray, cfg) -> np.ndarray:
     """Mejora una imagen de cara (SOLO SR genérico). Devuelve SIEMPRE BGR uint8.
 

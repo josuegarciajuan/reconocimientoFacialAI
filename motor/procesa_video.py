@@ -141,7 +141,9 @@ def guardar_cara(ruta: str, local_id: str, camara_id: str, fichero: str, frame,
     out_dir = os.path.join(ruta, "motor/caras/sinclasificar", local_id, camara_id)
     os.makedirs(out_dir, exist_ok=True)
     nombre = f"{fichero}_{segs:.6f}"
-    cv2.imwrite(os.path.join(out_dir, nombre + ".jpg"), crop)
+    # PNG sin pérdidas: el crop es el input del SR/GFPGAN; guardarlo como JPEG
+    # añadía una generación de compresión sobre caras ya muy pequeñas (~45 px).
+    cv2.imwrite(os.path.join(out_dir, nombre + ".png"), crop)
 
     # F1: crop de torso separado (mismo stem) para la capa L1b.
     # Si no hay torso visible (persona muy cerca / caja fuera), NO se guarda:
