@@ -11,6 +11,7 @@
 
 require_once __DIR__ . "/../../../libs/db.php";
 require_once __DIR__ . "/../../../libs/planos.php";
+require_once __DIR__ . "/../../../libs/calibracion.php";
 
 $extensiones = plano_extensiones();
 
@@ -239,4 +240,106 @@ switch ($_GET["accion"] ?? "") {
             DB::execute("UPDATE lineas SET x1=?, y1=?, x2=?, y2=? WHERE id=?", [$x1, $y1, $x2, $y2, $linea_id]);
         }
         break;
+
+    /* ================= La Forja · Templar — calibrador ================= */
+
+    /* Aplica las recomendaciones pendientes de una cámara (por_camara del JSON del probe).
+     * GET: camara, parametro (opcional: solo ese). El resto queda pendiente. */
+    case "calibrar_aplicar":
+        $camara_id = (int)($_GET["camara"] ?? 0);
+        $parametro = (string)($_GET["parametro"] ?? "");
+        $camara = DB::selectOne("SELECT id, local_id FROM camaras WHERE id = ? AND local_id = ?", [$camara_id, $local_id]);
+        if (!$camara) {
+            echo "Cámara no encontrada.";
+            break;
+        }
+        $reco = calib_recomendaciones_camara($camara_id);
+        if (!$reco) {
+            echo "No hay recomendaciones pendientes para esta cámara.";
+            break;
+        }
+        $params = [];
+        foreach ($reco as $k => $v) {
+            if ($parametro !== "" && $k !== $parametro) {
+                continue;
+            }
+            if (array_key_exists("recomendado", $v)) {
+                $params[$k] = $v["recomendado"];
+            }
+        }
+        calib_aplicar_parametros($local_id, $camara_id, $params);
+        header("Location: ?page=config&tab=camaras&sub=editar&camara=" . $camara_id);
+        exit;
+
+    /* Restaura los 7 parámetros de una cámara a los valores de fábrica (CONFIG_*). */
+    case "calibrar_restaurar_camara":
+        $camara_id = (int)($_GET["camara"] ?? 0);
+        $camara = DB::selectOne("SELECT id, local_id FROM camaras WHERE id = ? AND local_id = ?", [$camara_id, $local_id]);
+        if ($camara) {
+            calib_restaurar_camara($local_id, $camara_id);
+        }
+        header("Location: ?page=config&tab=camaras&sub=editar&camara=" . $camara_id);
+        exit;
+
+    /* Restaura un único parámetro de una cámara a su valor de fábrica. */
+    case "calibrar_restaurar_parametro":
+        $camara_id = (int)($_GET["camara"] ?? 0);
+        $parametro = (string)($_GET["parametro"] ?? "");
+        $camara = DB::selectOne("SELECT id, local_id FROM camaras WHERE id = ? AND local_id = ?", [$camara_id, $local_id]);
+        if ($camara) {
+            $factory = [];
+            foreach (calib_parametros() as $k => $meta) {
+                if ($k === $parametro) {
+                    $factory[$k] = $meta["factory"];
+                }
+            }
+            if ($factory) {
+                calib_aplicar_parametros($local_id, $camara_id, $factory);
+            }
+        }
+        header("Location: ?page=config&tab=camaras&sub=editar&camara=" . $camara_id);
+        exit;
+
+    /* Restaura las variables globales RF_* del .env a sus valores de fábrica
+     * (borra la línea para que aplique el default del código). Con copia de seguridad. */
+    case "calibrar_restaurar_globales":
+        $tocadas = calib_restaurar_globales($local_id);
+        header("Location: ?page=config&tab=camaras&sub=calibrar&modo=general");
+        exit;
+
+    /* Restaura UNA variable global del .env a fábrica (borra solo esa línea). */
+    case "calibrar_restaurar_global":
+        $k = (string)($_GET["parametro"] ?? "");
+        if (preg_match('/^RF_[A-Z0-9_]+$/', $k)) {
+            $env = RUTA_PROYECTO . ".env";
+            if (is_file($env)) {
+                $lineas = file($env, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                $resto = [];
+                $antes = null;
+                foreach ($lineas as $l) {
+                    $l = rtrim($l);
+                    if (preg_match('/^' . preg_quote($k, "/") . '\s*=/', $l)) {
+                        $antes = trim(explode("=", $l, 2)[1] ?? "", "\"'");
+                    } else {
+                        $resto[] = $l;
+                    }
+                }
+                if ($antes !== null) {
+                    @copy($env, $env . ".bak." . date("Ymd_His"));
+                    @file_put_contents($env, implode("\n", $resto) . "\n");
+                    calib_journal($local_id, 0, "global", $k, $antes, "(default)");
+                }
+            }
+        }
+        header("Location: ?page=config&tab=camaras&sub=calibrar&modo=general");
+        exit;
+
+    /* Aplica al .env las recomendaciones globales (RF_*) pendientes de la cámara. */
+    case "calibrar_aplicar_global":
+        $camara_id = (int)($_GET["camara"] ?? 0);
+        if ($camara_id > 0) {
+            calib_aplicar_globales($local_id, $camara_id);
+        }
+        header("Location: ?page=config&tab=camaras&sub=calibrar&modo=general");
+        exit;
 }

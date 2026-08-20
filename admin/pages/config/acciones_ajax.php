@@ -427,6 +427,85 @@ switch ($_GET["a"]) {
         echo json_encode(["ok" => true]);
         break;
 
+    /* ---------- Templar · calibrador guiado ---------- */
+
+    case "20": // iniciar ritual del calibrador (GET: camara, ritual A|B, segundos)
+        $cam_id = (int)($_GET["camara"] ?? 0);
+        $ritual = in_array($_GET["ritual"] ?? "", ["A", "B"], true) ? $_GET["ritual"] : "";
+        $seg = max(5, min(60, (int)($_GET["segundos"] ?? 20)));
+        $cam = DB::selectOne("SELECT * FROM camaras WHERE id = ?", [$cam_id]);
+        if (!$cam || $ritual === "" || trim((string)$cam["url_conexion"]) === "") {
+            http_response_code(400);
+            echo json_encode(["ok" => false, "error" => "cámara/ritual inválidos o sin URL"]);
+            break;
+        }
+        $job = substr(bin2hex(random_bytes(6)), 0, 12);
+        $url = str_replace("'", "", (string)$cam["url_conexion"]);
+        $parametros = implode(",", [
+            (int)$cam["segundos_analizar"], (int)$cam["porcentaje_mov"], (int)$cam["dontCare"],
+            (int)$cam["fps"], (int)$cam["redimesionframe"], (int)$cam["sensibilidad"],
+        ]);
+        $det = getenv("RF_DET_SIZE") ?: "1280";
+        $sharp = getenv("RF_MIN_SHARPNESS") ?: "55";
+        $sr = getenv("RF_SR_EMBED_MIN_FACE") ?: "96";
+
+        $dir_jobs = rtrim(RUTA_PROYECTO, "/") . "/motor/calibrador/jobs";
+        if (!is_dir($dir_jobs)) { @mkdir($dir_jobs, 0777, true); }
+        @file_put_contents($dir_jobs . "/" . $job . ".json", json_encode([
+            "camara_id" => $cam_id, "ritual" => $ritual, "segundos" => $seg,
+            "iniciado" => date("Y-m-d H:i:s"),
+        ]));
+
+        $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/calibrador.py "
+             . (int)$cam_id . " '" . $url . "' " . $ritual . " " . $job . " " . $seg
+             . " --ruta '" . RUTA_PROYECTO . "'"
+             . " --parametros '" . $parametros . "'"
+             . " --det-size " . (int)$det . " --min-sharpness " . (float)$sharp
+             . " --sr-embed-min-face " . (int)$sr
+             . " > /dev/null 2>&1 &";
+        exec($cmd);
+        echo json_encode(["ok" => true, "job" => $job]);
+        break;
+
+    case "21": // estado/resultado de un ritual (GET: job)
+        $job = (string)($_GET["job"] ?? "");
+        if (!preg_match('/^[a-f0-9]{12}$/', $job)) {
+            http_response_code(400);
+            echo json_encode(["ok" => false, "estado" => "error", "error" => "job inválido"]);
+            break;
+        }
+        $base = rtrim(RUTA_PROYECTO, "/") . "/motor/calibrador";
+        $res = $base . "/resultados/" . $job . ".json";
+        if (is_file($res)) {
+            header("Content-Type: application/json; charset=utf-8");
+            echo (string) file_get_contents($res);
+            break;
+        }
+        if (is_file($base . "/frames/" . $job . ".jpg")) {
+            echo json_encode(["ok" => true, "estado" => "corriendo"]);
+            break;
+        }
+        echo json_encode(["ok" => true, "estado" => "pendiente"]);
+        break;
+
+    case "22": // frame anotado del ritual (GET: job) -> image/jpeg
+        $job = (string)($_GET["job"] ?? "");
+        if (!preg_match('/^[a-f0-9]{12}$/', $job)) {
+            http_response_code(400);
+            echo "job inválido";
+            break;
+        }
+        $f = rtrim(RUTA_PROYECTO, "/") . "/motor/calibrador/frames/" . $job . ".jpg";
+        if (is_file($f)) {
+            header("Content-Type: image/jpeg");
+            header("Cache-Control: no-store");
+            readfile($f);
+        } else {
+            http_response_code(404);
+            echo "sin frame todavía";
+        }
+        break;
+
     default:
         break;
 }
