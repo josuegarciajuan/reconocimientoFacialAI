@@ -11,6 +11,8 @@ from fifo import fifo
 # y genera la miniatura. FTP legacy ya no se usa (el vídeo se queda local).
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from motor.core.video import H264VideoWriter, VideoConfig  # noqa: E402
+from motor.core.env import get_int  # noqa: E402
+from motor.core.motion import MotionConfig, MotionDetector  # noqa: E402
 
 #os.system('Xvfb :1 -screen 0 1600x1200x16  &')    # create virtual display with size 1600x1200 and 16 bit color. Color can be changed to 24 or 8
 #os.environ['DISPLAY']=':1.0'    # tell X clients to use our virtual DISPLAY :1.0
@@ -33,22 +35,6 @@ def printLog(*args, **kwargs):
     
     with open('motor/logs/guarda_movimientosV2_'+CAMARA_ID+'.out','a') as file:
         print(*args, **kwargs, file=file)
-
-
-def hay_movimiento(the_motion_list):
-    num=0
-    for m in the_motion_list:
-        if m==1:
-            num=num+1
-    retorno=False        
-    if DEBUG_FRAMES:
-        printLog("dentro de hay_movimiento, numero de frames q ha habido mov:"+str(num)+"<- y para considerarse este es el limite(frames_con_movimiento):("+str(frames_con_movimiento)+")")
-    # if num>=frames_con_movimiento and motion_list[-1]==1:
-    if num>=frames_con_movimiento:
-        retorno=True
-        if DEBUG_FRAMES:
-            printLog("Si hay movimiento si")
-    return retorno  
 
 
 
@@ -74,7 +60,9 @@ dontCare = int(sys.argv[5]) #Area of the detected contour, below this value it's
 FPS = float(sys.argv[6])
 maximo_videos=int(sys.argv[7]) #tiempo en segundos maximo de grabado
 REDIMENSIONFRAME=float(sys.argv[8])
-SENSIBILIDAD=int(sys.argv[9]) #CUANTO MAS BAJO menos sensible
+SENSIBILIDAD=int(sys.argv[9]) #analizar 1 de cada N frames. MAS ALTO = se analizan MENOS frames
+                              #= MENOS sensible y MENOS CPU (la ventana efectiva pasa a
+                              #segundos_analizar x N). Con 1 se analizan todos (default).
 
 # Orden de argv (capturador.php): 1-9 como arriba, 10=seg_antes, 11=seg_despues,
 # 12=FTP_SERVER, 13=FTP_USER, 14=FTP_PASS, 15=URL_CONEXION (Jos_Thread añade un
@@ -87,15 +75,31 @@ FTP_USER = sys.argv[13] if len(sys.argv) > 13 else "-"
 FTP_PASS = sys.argv[14] if len(sys.argv) > 14 else "-"
 URL_CONEXION = sys.argv[15] if len(sys.argv) > 15 else (sys.argv[13] if len(sys.argv) > 13 else "")
 
+# Umbrales globales del análisis (antes hardcodeados 21/21/2). Se leen de .env
+# (RF_MOV_*); si faltan, se usan estos defaults = valores legacy (sin cambio de
+# comportamiento). CRF: calidad prioritaria -> 20 (no 26: a 10 fps y caras
+# pequeñas, 26 degrada el detalle que alimenta SR/GFPGAN). Sobreducible con
+# RF_VIDEO_CRF en .env.
+THRESHOLD = get_int(None, "RF_MOV_THRESHOLD", 21)
+BLUR = get_int(None, "RF_MOV_BLUR", 21)
+DILATE = get_int(None, "RF_MOV_DILATE", 2)
+CRF = get_int(None, "RF_VIDEO_CRF", 20)
+
 printLog("seg_antes=" + str(SEG_ANTES) + " seg_despues=" + str(SEG_DESPUES))
 printLog("url=" + URL_CONEXION)
 
 tiempo_espera_fps=int(1000/FPS)   # en 1000 ms / numero Fotogramas por segundo  =>  tiempo espera entre fotogramas
-frames_a_analizar=int(segundos_analizar*FPS)  #cada X frames es 1 segundo
-frames_con_movimiento=round(frames_a_analizar*porcentaje_mov/100)
+cfg_mov = MotionConfig(segundos_analizar=segundos_analizar,
+                       porcentaje_mov=porcentaje_mov,
+                       dontCare=dontCare,
+                       fps=int(FPS),
+                       sensibilidad=SENSIBILIDAD,
+                       threshold=THRESHOLD, blur=BLUR, dilate=DILATE)
+frames_a_analizar = cfg_mov.frames_a_analizar      # tamaño del buffer de decisión
+frames_con_movimiento = cfg_mov.frames_con_movimiento  # nº de frames con mov para disparar
+detector = MotionDetector(cfg_mov)
 frames_antes=int(SEG_ANTES*FPS)    # pre-roll: frames previos al movimiento que se vuelcan al inicio
 frames_despues=int(SEG_DESPUES*FPS) # post-roll: frames posteriores al movimiento
-prevFrame = None  #Initialize the first frame in the video stream
 
 
 printLog("frames_a_analizar:"+str(frames_a_analizar))
@@ -115,10 +119,10 @@ width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 size = (width, height) if width > 0 and height > 0 else None
 
-motion_list = [ None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None   ]
 
 grabando=False
 parando=False
+haymovimiento=False
 num_video=1
 grabando_primera=False
 video_actual=""
@@ -154,10 +158,6 @@ while(True):
     if count_sensibilidad==SENSIBILIDAD:
         count_sensibilidad=0
 
-        #Blur for better results (solo cuando se analiza este frame; antes se hacía
-        #en TODOS los frames y saturaba CPU innecesariamente)
-        output = cv2.GaussianBlur(frame, (21, 21), 0)
-
         #tratamiento del buffer de los últimos frames_antes (pre-roll)
         last_frames.apilar(frame_original)
         frames_i=frames_i+1
@@ -165,55 +165,16 @@ while(True):
              last_frames.desapilar()
              frames_i=frames_i-1
 
-
-        #If the prevFrame is None, initialize it
-        if prevFrame is None:
-            prevFrame = output
-            continue
-
-
-        #Compute the absolute difference between the current frame and prev frame
-        frameDelta = cv2.absdiff(prevFrame, output) 
-
-
-        #Convert to gray to detect contours
-        frameDelta = cv2.cvtColor(frameDelta, cv2.COLOR_BGR2GRAY)
-        thresh = cv2.threshold(frameDelta, 21, 255, cv2.THRESH_BINARY)[1]
-
-        #Dilate the thresholded image to fill in holes, then find contours
-        #on thresholded image
-        thresh = cv2.dilate(thresh, None, iterations=2)
-        cnts, hier = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
-        cnts_sorted = sorted(cnts, key = cv2.contourArea, reverse = True)[:1]
-
-
-        #comprobar si ha habido movimiento
-        motion = 0
-        #Loop over the contours
-        for c in cnts_sorted:
-            #If the contour is too small, ignore it
-            if cv2.contourArea(c) < dontCare:
-                continue
-
-            # compute the bounding box for the contour, draw it on the frame,
-            # and update the text
-            (x, y, w, h) = cv2.boundingRect(c)
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            i+=1
-            if DEBUG_FRAMES:
-                printLog ('Detected something' + str(i))
-            #print ('Area: ' + str(cv2.contourArea(c)))
-            # printLog ('-->' + str(cv2.contourArea(c)))
-
-            motion = 1
-
-
-        motion_list.append(motion)
-        motion_list = motion_list[-frames_a_analizar:]
+        # Análisis de movimiento (motor/core/motion.py): absdiff + umbral +
+        # contorno máximo. Devuelve (motion, hay); motion es None si este frame
+        # no se analizó (primer frame o gate de sensibilidad). El blur se aplica
+        # SOLO cuando se analiza (saturar CPU en todos los frames no aportaba).
+        motion, haymovimiento_nuevo = detector.process(frame)
+        if motion is not None:
+            haymovimiento = haymovimiento_nuevo
         if DEBUG_FRAMES:
-            printLog("Estado actual del movimiento:"+str(motion))
+            printLog("Estado actual del movimiento:"+str(motion)+" haymovimiento:"+str(haymovimiento))
 
-        haymovimiento=hay_movimiento(motion_list)
         if haymovimiento and grabando==False:
             grabando=True
             grabando_primera=True
@@ -225,7 +186,7 @@ while(True):
 
         if parando:
             printLog ("estoy parando!")
-            if hay_movimiento(motion_list):
+            if detector.hay_ahora():
                 printLog ("Estaba parando pero, sigue habiendo movimiento, así que sigo grabando..!")
                 count_para=0
                 parando=False
@@ -247,7 +208,7 @@ while(True):
             # Fase 4c: layout con subdirectorio de cámara (motor/videos/<local>/<cam>/)
             os.makedirs('motor/videos/'+LOCAL_ID+'/'+CAMARA_ID, exist_ok=True)
             writer = H264VideoWriter('motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/'+video_tmp,
-                                     size, int(FPS), VideoConfig(),
+                                     size, int(FPS), VideoConfig(crf=CRF),
                                      stderr_path='motor/logs/ffmpeg_'+CAMARA_ID+'.log')
             time_inicio = time.time()
             printLog ("Se empieza a generar el siguiente video:"+video_actual)
@@ -316,7 +277,7 @@ while(True):
             printLog("Se marca siguegrabando como false")
             siguegrabando=False
 
-            if hay_movimiento(motion_list):
+            if detector.hay_ahora():
                 printLog ("Sigue habiendo movimiento, lo marco para que cree otro video y siga grabando..")
                 grabando=True
                 grabando_primera=True
@@ -328,11 +289,5 @@ while(True):
         # headless: sin imshow
         # if cv2.waitKey(1) & 0xFF == ord('q'):
         #     break
-
-        # BUG FIX (motion-prevframe): prevFrame debe actualizarse AL FINAL de cada
-        # iteración analizada, para que el absdiff compare contra el frame ANTERIOR
-        # y no contra sí mismo (antes se hacía al inicio → diff siempre 0 → nunca
-        # detectaba movimiento → nunca grababa vídeos).
-        prevFrame = output
 
 cap.release()
