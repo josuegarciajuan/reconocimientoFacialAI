@@ -47,7 +47,7 @@ function limpiar_marcadores_archiva_huerfanos(int $local_id, array $cams_local):
         if ($cam_id <= 0 || !isset($cams[$cam_id])) { continue; }
         $marker = $dir_aux . "/" . $el;
         $rc = [];
-        exec("pgrep -f \"[a]rchiva_video.py " . $local_id . " " . $cam_id . " '" . $video . "'\" > /dev/null 2>&1; echo $?", $rc);
+        exec("pgrep -f \"[a]rchiva_video.py " . $local_id . " " . $cam_id . " " . $video . "\" > /dev/null 2>&1; echo $?", $rc);
         $vivo = (isset($rc[0]) && trim($rc[0]) === "0");
         if ($vivo) { continue; }
         $fuente = RUTA_PROYECTO . "motor/videos/" . $local_id . "/" . $cam_id . "/" . $video;
@@ -141,7 +141,7 @@ while (true) {
                     if (file_exists($marker_arch)) {
                         // marker huérfano: proceso muerto y marker viejo -> limpiar para reintentar
                         $rc_arch = [];
-                        exec("pgrep -f \"[a]rchiva_video.py " . $local_id . " " . $cam_id . " '" . $video . "'\" > /dev/null 2>&1; echo $?", $rc_arch);
+                        exec("pgrep -f \"[a]rchiva_video.py " . $local_id . " " . $cam_id . " " . $video . "\" > /dev/null 2>&1; echo $?", $rc_arch);
                         $vivo_arch = (isset($rc_arch[0]) && trim($rc_arch[0]) === "0");
                         $video_arch_ya_no_existe = !file_exists($dir_videos . $video);
                         if (!$vivo_arch && $video_arch_ya_no_existe) {
@@ -171,7 +171,7 @@ while (true) {
                         exec("echo '" . date("Y-m-d H:i:s") . "' > " . $marker_arch);
                         $log_arch = RUTA_PROYECTO . "motor/logs/archiva_video_" . $cam_id . ".log";
                         $cmd_arch = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/archiva_video.py " . $local_id . " " . $cam_id
-                            . " '" . $video . "' --ruta " . RUTA_PROYECTO
+                            . " " . $video . " --ruta " . RUTA_PROYECTO
                             . " --crf " . CONFIG_VIDEO_CRF . " --fps " . CONFIG_VIDEO_FPS_ARCHIVO
                             . " --preset " . CONFIG_VIDEO_PRESET
                             . " >> " . $log_arch . " 2>&1 &";
@@ -189,7 +189,7 @@ while (true) {
                     // [p]rocesa: el corchete evita que pgrep se auto-matchee con el shell
                     // que lanza este comando (contenía el patrón literal -> siempre "vivo").
                     $rc_out = [];
-                    exec("pgrep -f \"[p]rocesa_video.py " . $local_id . " " . $cam_id . " '" . $video . "'\" > /dev/null 2>&1; echo $?", $rc_out);
+                    exec("pgrep -f \"[p]rocesa_video.py " . $local_id . " " . $cam_id . " " . $video . "\" > /dev/null 2>&1; echo $?", $rc_out);
                     $vivo = (isset($rc_out[0]) && trim($rc_out[0]) === "0");
                     $antiguedad = time() - @filemtime($marker);
                     $video_ya_no_existe = !file_exists($dir_videos . $video);
@@ -236,7 +236,7 @@ while (true) {
 
                 // F6: log de procesa_video.py (antes /dev/null -> errores invisibles)
                 $log = RUTA_PROYECTO . "motor/logs/procesa_video_" . $cam_id . ".log";
-                $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/procesa_video.py " . $local_id . " " . $cam_id . " '" . $video . "' --ruta " . RUTA_PROYECTO . " >> " . $log . " 2>&1 &";
+                $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/procesa_video.py " . $local_id . " " . $cam_id . " " . $video . " --ruta " . RUTA_PROYECTO . " >> " . $log . " 2>&1 &";
                 echo $cmd . "\n";
                 exec($cmd);
                 $numero_videos++;
