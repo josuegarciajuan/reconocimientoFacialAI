@@ -131,6 +131,12 @@ def busto_bbox(face, frame_w: int, frame_h: int, cfg: Config):
     w = fw * cfg.busto_w_face
     h = fh * cfg.busto_h_face
     top = y1 - fh * cfg.busto_head_pad
+    # Cara pegada al borde superior (top < 0): la cabeza quedaría recortada y el
+    # crop degeneraba en una tira estrecha. Se ancla arriba y se compensa la
+    # altura hacia abajo (head_pad + h_face) para conservar el busto completo.
+    if top < 0:
+        top = 0
+        h = fh * (cfg.busto_h_face + cfg.busto_head_pad)
     bx1 = max(0, int(cx - w / 2.0))
     bx2 = min(frame_w, int(cx + w / 2.0))
     by1 = max(0, int(top))
