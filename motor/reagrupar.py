@@ -129,8 +129,11 @@ def evaluar_par(store: FaceStore, embs: dict[str, np.ndarray], resolver: RepReso
     NOTA: en el matching POR PARES no existe el concepto de "segundo candidato"
     para el margen (ambas galerías son el par); la confianza de la capa cara usa
     nivel absoluto + nitidez de la foto representativa (s_other=0).
-    Se activan las capas CARA+ZONAS (las que aplican aquí) manteniendo los
-    umbrales y pesos-prior CONFIGURADOS; torso/VLM/OpenAI quedan fuera."""
+    Se activa la cascada (CARA autoridad + silueta/zonas de apoyo) con los
+    umbrales CONFIGURADOS; torso/VLM/OpenAI quedan fuera. La capa `zonas` se
+    calcula SOLO para el reporte (c_zona): desde 2026-08-21 ya no participa en
+    la decisión (re-reporta s_face, evidencia circular; la banda gris la
+    resuelve secure_threshold o revision)."""
     import copy
     cfg = copy.copy(cfg)                 # no mutar el Config compartido
     cfg.cascade_enabled = True
@@ -148,6 +151,8 @@ def evaluar_par(store: FaceStore, embs: dict[str, np.ndarray], resolver: RepReso
         zonas=lambda cod: zona_score_pair(store, resolver, cfg, cod_a, cod, s_face),
     )
     result = run_cascade(face_scores, ctx, cfg, face_layer)
+    # reporte: c_zona se conserva aunque zonas ya no decide (evidencia circular)
+    result.layer_scores["zonas"] = zona_score_pair(store, resolver, cfg, cod_a, cod_b, s_face)
     S, conf = 0.0, 0.0
     # S de la fusión real (cara + zona) para el reporte
     layers = result.layer_scores

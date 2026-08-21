@@ -9,13 +9,21 @@ Sustituye la fusión ponderada por un motor de EVIDENCIA con enrutado:
     veredicto es "uncertain" (la silueta débil no desmiente, solo no confirma).
   - GATE DE IDENTIDAD: "new" <=> s1 < match_threshold. Las capas superiores
     jamás crean personas.
+  - BANDA BAJA (2026-08-21): s1 en [new_low_floor, match_threshold) no crea
+    "new" en silencio: si >= `low_band_min_agreements` capas de apoyo (torso/
+    vlm/openai) coinciden FUERTE (>= gray_high con su confianza mínima), se
+    asocia a top1 (anti-fragmentación de perfiles/espaldas: ArcFace cae a
+    ~0.15-0.25 en poses extremas de personas conocidas). Un ÚNICO acuerdo LLM
+    con c >= veto_conf también basta (p.ej. si un LLM está caído).
   - SUELO POR CARA: s1 >= secure_threshold NUNCA es "new" (mínimo "uncertain"),
     independientemente de la confianza de instancia c_cara (fix del bug de la
     media ponderada: una cara con coseno alto ya no se descarta por capas
     débiles con confianza no calibrada).
   - VETO: >=2 capas independientes (torso/vlm/openai) con c >= veto_conf y
     s < gray_low degradan un match seguro a "uncertain" (nunca a "new").
-  - EARLY-EXIT: frontal nítida decide solo con la cara (sin capas caras).
+  - EARLY-EXIT: frontal nítida decide sola con la cara SOLO si el margen
+    top1-top2 >= `early_exit_min_margin` (si el 2º candidato está cerca, la
+    cara sola no es concluyente y se corrobora, pudiendo las capas vetar).
   - ZONA GRIS [match, secure): corroboración barato->caro; la primera capa
     de apoyo que confirma (>= umbral) da "match"; si ninguna, "uncertain".
 
@@ -102,10 +110,13 @@ def _weights(cfg: Config) -> dict[str, float]:
 
 
 def _escalation(plan, cfg: Config, ctx: CascadeContext) -> list[str]:
-    """Orden barato->caro de las capas de apoyo para la zona gris."""
+    """Orden barato->caro de las capas de apoyo para la zona gris.
+
+    SOLO capas con EVIDENCIA INDEPENDIENTE: silueta geométrica, torso/ropa y
+    LLMs. Se excluye `zonas` (legacy): su score re-reporta s_face (la misma
+    capa de cara), así que no puede corroborar ni vetar sin ser circular.
+    """
     order = list(plan.support)
-    if ctx.zonas is not None and "zonas" not in order:
-        order.append("zonas")
     for name in ("torso", "vlm", "openai"):
         if name in order:
             continue
@@ -181,10 +192,36 @@ def decide_situational(face_scores: dict[str, float],
 
     # --- GATE DE IDENTIDAD: SOLO la capa de cara/perfil crea ---
     if s1 < cfg.match_threshold:
+        # BANDA BAJA (anti-fragmentación): coseno bajo contra TODO puede ser una
+        # pose extrema de una persona conocida (perfil/espaldas) donde ArcFace
+        # pierde discriminación (genuino ~0.15-0.25). Antes de crear "new" en
+        # silencio, si las capas de apoyo coinciden FUERTE con top1, se asocia
+        # (la identidad la sigue decidiendo la cara: esto NO crea, solo asocia).
+        if s1 >= cfg.new_low_floor:
+            acuerdos = 0
+            acuerdo_llm_fuerte = False
+            for name in _escalation(plan, cfg, ctx):
+                ls = ctx.layer(name, top)
+                if ls is None or not ls.available:
+                    continue
+                layers[name] = ls
+                umbral = cfg.llm_min_conf if name in ("vlm", "openai") else cfg.min_layer_conf
+                if ls.confidence < umbral:
+                    continue
+                if ls.score >= cfg.gray_high:
+                    acuerdos += 1
+                    if name in ("vlm", "openai") and ls.confidence >= cfg.veto_conf:
+                        acuerdo_llm_fuerte = True
+            if acuerdos >= cfg.low_band_min_agreements or acuerdo_llm_fuerte:
+                return _result("match", top, s1, s2, face_scores, layers, cands)
         return _result("new", None, s1, s2, face_scores, layers, cands)
 
-    # --- EARLY-EXIT: frontal nítida decide la cara sola (sin capas caras) ---
-    if plan.early_exit:
+    # --- EARLY-EXIT: frontal nítida decide sola SOLO con margen limpio ---
+    # Con el 2º candidato cerca (margen < early_exit_min_margin) el coseno de
+    # cara no es concluyente aunque s1 >= secure: se corrobora para que las
+    # capas de apoyo puedan VETAR un impostor (falso merge) en vez de decidir
+    # la cara sola sobre una evidencia ambigua.
+    if plan.early_exit and (s1 - s2) >= cfg.early_exit_min_margin:
         verdict = "match" if s1 >= cfg.secure_threshold else "uncertain"
         return _result(verdict, top, s1, s2, face_scores, layers, cands)
 

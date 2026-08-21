@@ -72,11 +72,15 @@ def test_match_group_aggregates(tmp_path):
 
 
 def test_default_thresholds_calibrated():
-    """Los umbrales por defecto deben ser los calibrados con datos reales (2026-08-18):
-    coseno genuino de videovigilancia ~0.32-0.38. Si alguien los sube, los pares reales
-    (p. ej. KaiZA3↔nRLmEs = 0.385) vuelven a fragmentarse."""
+    """Umbrales por defecto (calibrados 2026-08-18 + ajuste 2026-08-21):
+    el coseno genuino de videovigilancia es ~0.32-0.38, por lo que secure NO puede
+    subirse sin romper los pares reales (KaiZA3↔nRLmEs = 0.385). El 0.45 actual
+    (antes 0.40) NO fragmenta: la banda [match, secure) se resuelve con
+    corroboración de capas (torso/VLM/OpenAI) o revision, y el early-exit frontal
+    cubre los casos limpios. El falso merge a 0.409/0.512 (impostores) ya no pasa
+    como "seguro" sin oposición (fix 2026-08-21)."""
     cfg = Config()
-    assert cfg.secure_threshold == 0.40
+    assert cfg.secure_threshold == 0.45
     assert cfg.match_threshold == 0.30
     assert cfg.margin == 0.03
     assert cfg.group_threshold == 0.30
