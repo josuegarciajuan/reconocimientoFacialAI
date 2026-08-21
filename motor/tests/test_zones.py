@@ -37,6 +37,19 @@ def test_pose_compatible():
     assert pose_compatible(None, "f")        # sin etiqueta: no descartar
 
 
+def test_pose_compatible_other_universal():
+    """fix 2026-08-21: 'other' (giro suave / pose ambigua) nunca descarta."""
+    assert pose_compatible("other", "f")
+    assert pose_compatible("other", "arr")
+    assert pose_compatible("other", "aba")
+    assert pose_compatible("other", "m45i")
+    assert pose_compatible("other", "pi")
+    assert pose_compatible("other", "pd")
+    assert pose_compatible("other", "other")
+    assert pose_compatible("f", "other")     # simetría
+    assert pose_compatible("pi", "other")
+
+
 def test_pose_confidence_values():
     assert pose_confidence("f", "f") == 1.0
     assert pose_confidence("f", "m45d") == 0.6
