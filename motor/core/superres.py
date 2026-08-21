@@ -496,6 +496,15 @@ def photo_busto(img: np.ndarray, bbox, cfg, model: str | None = None) -> np.ndar
         fb = (int(fb[0] * sx), int(fb[1] * sy), int(fb[2] * sx), int(fb[3] * sy))
     if cfg.sr_face_enabled:
         z = _face_region_blend(z, fb, cfg)
+    # Tamaño mínimo de DISPLAY: la UI no debe reescalar fotos finales diminutas
+    # (p. ej. bustos degenerados o caras muy lejanas). Upscale moderado LANCZOS4
+    # SOLO hasta 512 px; no toca embeddings ni el SR interno.
+    _MIN_DISPLAY_SIDE = 512
+    _zh, _zw = z.shape[:2]
+    if max(_zh, _zw) < _MIN_DISPLAY_SIDE:
+        _s = _MIN_DISPLAY_SIDE / max(_zh, _zw)
+        z = cv2.resize(z, (max(1, int(round(_zw * _s))), max(1, int(round(_zh * _s)))),
+                       interpolation=cv2.INTER_LANCZOS4)
     return z
 
 
