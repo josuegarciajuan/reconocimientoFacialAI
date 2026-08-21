@@ -82,6 +82,8 @@ class FeedbackCollector:
             # F4: situación del query para calibración condicionada a la pose.
             "situation": {
                 "pose": entry.get("pose"),
+                "yaw": entry.get("yaw"),
+                "pitch": entry.get("pitch"),
                 "sharpness": float(entry.get("sharpness", 0.0) or 0.0),
                 "has_face": bool(entry.get("has_face", True)),
             },

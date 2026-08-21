@@ -44,43 +44,68 @@ def pose_compatible(q_pose: str | None, g_pose: str | None) -> bool:
 
 
 def silhouette_descriptor(face) -> np.ndarray:
-    """Descriptor geométrico de la silueta facial a partir de landmarks (106 pts).
+    """Descriptor geométrico de la silueta facial.
 
-    Distancias entre pares de landmarks estables, normalizadas por la distancia
-    inter-pupilar (aprox. escala) -> vector invariante a escala y rotación plana.
-    Si no hay landmarks, devuelve un vector vacío (capa sin señal geométrica).
+    Prioridad: landmarks completos (106 pts) -> pares de distancias estables
+    normalizadas por la distancia inter-pupilar. Si no hay landmarks suficientes
+    (p. ej. poses arr/aba extremas donde el modelo 106 falla), FALLBACK a los 5
+    keypoints de detección (kps: ojos/nariz/boca) con el mismo esquema de
+    normalización: así la capa de silueta sigue disponible en las poses donde
+    más se necesita (antes devolvía vector vacío y la co-autoridad se saltaba).
+    Si no hay ni landmarks ni kps, devuelve un vector vacío (capa sin señal).
     """
     lm = getattr(face, "landmarks", None)
-    if lm is None or len(lm) < 20:
-        return np.zeros(0, dtype=np.float32)
-    lm = np.asarray(lm, dtype=np.float32)
-    # pares de índices del modelo 106 (aproximaciones estables):
-    # ojo izq ~ 33/34, ojo der ~ 87/88 (buffalo_l 106pts: ojo izq ~33, ojo der ~87)
-    pairs = [
-        (33, 87),   # inter-pupilar (referencia de escala)
-        (8, 98),    # mentón -> frente alta
-        (52, 88),   # nariz -> ojo der
-        (52, 33),   # nariz -> ojo izq
-        (61, 72),   # boca ancho
-        (33, 52),   # ojo izq -> nariz
-        (87, 52),   # ojo der -> nariz
-        (33, 8),    # ojo izq -> mentón
-        (87, 8),    # ojo der -> mentón
-        (33, 98),   # ojo izq -> frente
-        (87, 98),   # ojo der -> frente
-        (4, 103),   # ancho frontal (sienes)
-    ]
-    out = []
-    for (i, j) in pairs:
-        d = float(np.linalg.norm(lm[i] - lm[j]))
-        out.append(d)
-    v = np.asarray(out, dtype=np.float32)
-    scale = v[0] if v[0] > 1e-6 else 1.0
-    v = v / scale
-    n = np.linalg.norm(v)
-    if n > 0:
-        v = v / n
-    return v
+    if lm is not None and len(lm) >= 20:
+        lm = np.asarray(lm, dtype=np.float32)
+        # pares de índices del modelo 106 (aproximaciones estables):
+        # ojo izq ~ 33/34, ojo der ~ 87/88 (buffalo_l 106pts: ojo izq ~33, ojo der ~87)
+        pairs = [
+            (33, 87),   # inter-pupilar (referencia de escala)
+            (8, 98),    # mentón -> frente alta
+            (52, 88),   # nariz -> ojo der
+            (52, 33),   # nariz -> ojo izq
+            (61, 72),   # boca ancho
+            (33, 52),   # ojo izq -> nariz
+            (87, 52),   # ojo der -> nariz
+            (33, 8),    # ojo izq -> mentón
+            (87, 8),    # ojo der -> mentón
+            (33, 98),   # ojo izq -> frente
+            (87, 98),   # ojo der -> frente
+            (4, 103),   # ancho frontal (sienes)
+        ]
+        out = []
+        for (i, j) in pairs:
+            d = float(np.linalg.norm(lm[i] - lm[j]))
+            out.append(d)
+        v = np.asarray(out, dtype=np.float32)
+        scale = v[0] if v[0] > 1e-6 else 1.0
+        v = v / scale
+        n = np.linalg.norm(v)
+        if n > 0:
+            v = v / n
+        return v
+
+    kps = getattr(face, "kps", None)
+    if kps is not None and len(kps) >= 5:
+        kps = np.asarray(kps, dtype=np.float32)
+        eye_l, eye_r, nose, mouth_l, mouth_r = kps[0], kps[1], kps[2], kps[3], kps[4]
+        scale = float(np.linalg.norm(eye_r - eye_l))
+        if scale < 1e-6:
+            return np.zeros(0, dtype=np.float32)
+        mouth_c = 0.5 * (mouth_l + mouth_r)
+        v = np.asarray([
+            float(np.linalg.norm(nose - eye_l)),
+            float(np.linalg.norm(nose - eye_r)),
+            float(np.linalg.norm(nose - mouth_c)),
+            float(np.linalg.norm(mouth_r - mouth_l)),
+            float(np.linalg.norm(mouth_l - eye_l)),
+            float(np.linalg.norm(mouth_r - eye_r)),
+        ], dtype=np.float32) / scale
+        n = np.linalg.norm(v)
+        if n > 1e-9:
+            v = v / n
+        return v
+    return np.zeros(0, dtype=np.float32)
 
 
 def silhouette_sim(a_desc: np.ndarray, b_desc: np.ndarray) -> float:

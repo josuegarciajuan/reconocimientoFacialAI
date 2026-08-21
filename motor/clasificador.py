@@ -251,9 +251,9 @@ class _CascadeCtx:
         poses = (p.get("poses") or [None] * len(p.get("encodings", []))) if p else []
         pconf = max((pose_confidence(self.query_pose, po) for po in poses), default=0.6)
         sil = 0.5
-        if self.rep_face is not None and getattr(self.rep_face, "landmarks", None) is not None:
+        if self.rep_face is not None:
             cand_face = self._candidate_face(cod)
-            if cand_face is not None and getattr(cand_face, "landmarks", None) is not None:
+            if cand_face is not None:
                 a = silhouette_descriptor(self.rep_face)
                 b = silhouette_descriptor(cand_face)
                 sil = silhouette_sim(a, b) if a.size and b.size else 0.5
@@ -263,14 +263,17 @@ class _CascadeCtx:
     # --- L1c (reenfoque): silueta geométrica como SCORE propio ---
     # En perfil/ángulos raros es CO-AUTORIDAD: debe superar silueta_min_score
     # para confirmar el acuerdo. Antes solo modulaba la confianza de zonas.
+    # El descriptor usa landmarks 106 o, si faltan (arr/aba extremas), el
+    # fallback a keypoints 5-punto (zones.silhouette_descriptor): la capa
+    # sigue disponible donde más se necesita.
     def silueta_score(self, cod: str) -> LayerScore:
         from motor.core.zones import silhouette_descriptor, silhouette_sim
         if not self.cfg.silueta_enabled:
             return LayerScore(available=False)
-        if self.rep_face is None or getattr(self.rep_face, "landmarks", None) is None:
+        if self.rep_face is None:
             return LayerScore(available=False)
         cand_face = self._candidate_face(cod)
-        if cand_face is None or getattr(cand_face, "landmarks", None) is None:
+        if cand_face is None:
             return LayerScore(available=False)
         a = silhouette_descriptor(self.rep_face)
         b = silhouette_descriptor(cand_face)
@@ -538,6 +541,8 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
             "query_hash": embedding_hash(embs[0]),
             "stem": rep_stem,
             "pose": query_pose,
+            "yaw": float(rep_face.yaw),
+            "pitch": float(rep_face.pitch),
             "sharpness": best_sharp,
             "has_face": True,
         })

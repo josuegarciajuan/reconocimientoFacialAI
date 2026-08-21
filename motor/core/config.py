@@ -37,7 +37,11 @@ class Config:
 
     # --- matching (similitud coseno, embeddings L2-normalizados) ---
     # Calibrado 2026-08-18 con datos reales: genuino ~0.32-0.38, impostor p95 ~0.36.
-    secure_threshold: float = 0.40   # >= esto: match seguro
+    # 0.40 -> 0.45 (2026-08-21): el suelo por cara en 0.40 dejaba pasar impostores
+    # (falso merge documentado: calvo+chica a 0.409/0.512). La banda [0.30, 0.45)
+    # ahora exige corroboración de capas de apoyo o revision; el early-exit frontal
+    # se reserva para márgenes top1-top2 limpios (ver early_exit_min_margin).
+    secure_threshold: float = 0.45   # >= esto: match seguro
     match_threshold: float = 0.30    # >= esto: match si la diferencia con el 2º >= margin
     margin: float = 0.03             # separación frente al 2º para evitar confusión
     group_threshold: float = 0.30    # intra-batería: >= esto = misma persona en la escena
@@ -152,19 +156,38 @@ class Config:
     openai_enabled: bool = False
 
     # --- umbrales operativos (calibrados 2026-08-18, sin tocar; override .env) ---
-    secure_threshold: float = 0.40      # s1 >= esto: match seguro (NUNCA new)
+    secure_threshold: float = 0.45      # s1 >= esto: match seguro (NUNCA new)
     match_threshold: float = 0.30       # s1 >= esto: match si margen/confirmación
     margin: float = 0.03                # separación top1-top2 (decisión binaria L1a)
     gray_low: float = 0.28              # s < esto con confianza alta => evidencia en contra
     gray_high: float = 0.42             # confirmación: capa de apoyo >= esto corrobora
     escalate_band: float = 0.05         # candidatos a >= top1 - banda ("podría-ser-la-misma")
 
+    # --- banda baja (anti-fragmentación de perfiles/espaldas, 2026-08-21) ---
+    # Una cara con coseno < match_threshold contra TODO puede ser una pose extrema
+    # de una persona conocida (perfil/espaldas: ArcFace cae a ~0.15-0.25). Antes de
+    # crear "new" en silencio, si s1 >= new_low_floor las capas de apoyo (torso/
+    # vlm/openai) que coincidan FUERTE (>= gray_high) asocian a top1. El veredicto
+    # sigue exigiéndose a la capa de cara (solo asocia, nunca crea desde apoyo).
+    new_low_floor: float = 0.15         # s1 < esto => "new" directo sin corroboración
+    low_band_min_agreements: int = 2    # capas independientes que deben coincidir
+
+    # --- early-exit frontal: margen mínimo top1-top2 ---
+    # Con margen pequeño (2º candidato cerca, p.ej. 0.512 vs 0.467) el coseno de
+    # cara no es concluyente aunque s1 >= secure: se corrobora con las capas de
+    # apoyo (que pueden VETAR el match de un impostor) en vez de decidir solo.
+    early_exit_min_margin: float = 0.06
+
     # --- confianza mínima para VOTAR por capa ---
     # Una capa solo aporta evidencia si su confianza de instancia supera su
     # umbral; por debajo se ignora (su señal se considera no fiable, no en contra).
     min_layer_conf: float = 0.70        # apoyo general (silueta/torso)
     llm_min_conf: float = 0.85          # LLM: más estricto (sobreconfianza sin calibrar)
-    veto_conf: float = 0.90             # contradicción FUERTE (s < gray_low y c >= esto)
+    # 0.90 -> 0.85 (2026-08-21): con 0.90 el veto (2 capas con s<gray_low y c>=esto)
+    # era casi inalcanzable y los impostores "seguros" por cara pasaban sin oposición
+    # (falso merge). Sigue exigiendo 2 capas independientes; solo se baja el listón
+    # de confianza de la contradicción.
+    veto_conf: float = 0.85             # contradicción FUERTE (s < gray_low y c >= esto)
 
     # --- acuerdo por silueta (perfil / ángulos raros) ---
     silueta_min_score: float = 0.50     # silueta >= esto confirma el acuerdo; < bloquea
@@ -310,5 +333,8 @@ class Config:
         cfg.llm_min_conf = get_float(ruta, "RF_LLM_MIN_CONF", cfg.llm_min_conf)
         cfg.veto_conf = get_float(ruta, "RF_VETO_CONF", cfg.veto_conf)
         cfg.silueta_min_score = get_float(ruta, "RF_SILUETA_MIN_SCORE", cfg.silueta_min_score)
+        cfg.new_low_floor = get_float(ruta, "RF_NEW_LOW_FLOOR", cfg.new_low_floor)
+        cfg.low_band_min_agreements = get_int(ruta, "RF_LOW_BAND_AGREEMENTS", cfg.low_band_min_agreements)
+        cfg.early_exit_min_margin = get_float(ruta, "RF_EARLY_EXIT_MIN_MARGIN", cfg.early_exit_min_margin)
         cfg.calib_apply = get_bool(ruta, "RF_CALIB_APPLY", cfg.calib_apply)
         return cfg
