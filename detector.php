@@ -61,29 +61,6 @@ function limpiar_marcadores_archiva_huerfanos(int $local_id, array $cams_local):
     closedir($d);
 }
 
-/**
- * CPU-gate: true si la carga media de 1 min (loadavg) supera nproc * ratio.
- * Cuando la máquina está saturada, el detector difiere el lanzamiento de
- * procesa_video/archiva (Tier 2/3) para no robar CPU a los capturadores en
- * tiempo real (guarda_movimientosV3, Tier 1 intocable).
- */
-function cpu_saturada(float $ratio = CONFIG_LIMITE_LOAD): bool {
-    $load = 0.0;
-    $loadavg = @file_get_contents("/proc/loadavg");
-    if ($loadavg !== false) {
-        $parts = explode(" ", trim($loadavg));
-        if (isset($parts[0]) && is_numeric($parts[0])) {
-            $load = (float)$parts[0];
-        }
-    }
-    $nproc = 1;
-    $cpuinfo = @file_get_contents("/proc/cpuinfo");
-    if ($cpuinfo !== false) {
-        $nproc = max(1, (int)substr_count($cpuinfo, "processor\t"));
-    }
-    return $load > ($nproc * $ratio);
-}
-
 while (true) {
 
     $locales = DB::select("SELECT id FROM locales WHERE id > 0 ORDER BY id ASC");
@@ -245,15 +222,6 @@ while (true) {
 
                 if ($numero_videos >= CONFIG_LIMITE_VIDEOS) {
                     continue;
-                }
-
-                // CPU saturada: difiere el procesado (protege a los capturadores).
-                // `break` (no `continue`) para saltar al resto de cámaras y no
-                // quedarse iterando el backlog de vídeos de una sola cámara.
-                if (cpu_saturada()) {
-                    echo "CPU saturada, difiero procesa_video...\n";
-                    sleep(5);
-                    break;
                 }
 
                 // RAM disponible
