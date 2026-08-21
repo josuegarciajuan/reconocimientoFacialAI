@@ -71,8 +71,11 @@ def _schedule_hq(out_path: str, img, bbox, cfg: Config) -> None:
 
     def run() -> None:
         try:
+            t0 = time.time()
             img_hq = photo_busto(img, bbox, cfg, model=cfg.sr_model_photo)
             cv2.imwrite(out_path + ".hq", img_hq, [cv2.IMWRITE_JPEG_QUALITY, 95])
+            log(f"[hq] {os.path.basename(out_path)}.hq generado "
+                f"({img_hq.shape[1]}x{img_hq.shape[0]}) en {time.time() - t0:.1f}s")
         except Exception as e:  # noqa: BLE001
             log(f"[hq] fallo generando HQ: {e}")
         finally:
@@ -481,8 +484,11 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
                 photo_bbox = bf.bbox
 
     # Versión rápida (compact): aparece al instante en el panel.
+    t_foto = time.time()
     final_img = photo_busto(photo_img, photo_bbox, cfg, model="compact")
     cv2.imwrite(out_path, final_img, [cv2.IMWRITE_JPEG_QUALITY, 95])
+    log(f"[foto] {out_name} guardada ({final_img.shape[1]}x{final_img.shape[0]}) "
+        f"en {time.time() - t_foto:.1f}s")
 
     # Versión HQ progresiva (sr_model_photo, p.ej. x4plus): se genera en un hilo
     # de fondo y sobreescribe la foto ~35-40 s después; el panel la "autonitida".
