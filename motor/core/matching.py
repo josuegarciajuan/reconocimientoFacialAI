@@ -53,10 +53,14 @@ def scores_per_person(query: np.ndarray, store: FaceStore) -> dict[str, float]:
 
 def scores_per_person_pose_aware(query: np.ndarray, store: FaceStore,
                                  cfg: Config, pose: str | None) -> dict[str, float]:
-    """Similitudes por persona comparando SOLO encodings de pose comparable.
+    """Similitudes por persona con matching pose-consciente y FALLBACK global.
 
-    La galería puede tener 0 encodings comparables para una persona: en ese caso
-    esa persona se descarta del ranking pose-consciente (score 0).
+    Con pose conocida, se compara SOLO contra encodings de pose comparable
+    (discriminación perfil/frontal). Si una persona NO tiene NI UN encoding
+    comparable, se cae al coseno GLOBAL (`best_cosine`): la galería nunca
+    queda invisible en el ranking. Antes devolvía 0.0 y ocultaba a la persona
+    correcta cuando la pose del query era nueva para ella (fragmentación de
+    identidades, fix 2026-08-21).
     """
     out: dict[str, float] = {}
     for cod in store.persons():
@@ -69,7 +73,7 @@ def scores_per_person_pose_aware(query: np.ndarray, store: FaceStore,
         if mask.any():
             out[cod] = float(np.max(encs[mask] @ query))
         else:
-            out[cod] = 0.0
+            out[cod] = best_cosine(query, encs)   # fallback: no ocultar la galería
     return out
 
 

@@ -152,8 +152,9 @@ def test_decide_exposes_confidence():
     assert r.confidence > 0.5
 
 
-def test_pose_aware_skips_incompatible(tmp_path):
-    """Pose-aware: un query de perfil no compara contra encodings frontales."""
+def test_pose_aware_fallback_when_no_compatible(tmp_path):
+    """fix 2026-08-21: sin encodings de pose compatible, la persona NO queda
+    invisible: se cae al coseno global (la galería correcta nunca puntúa 0)."""
     base = np.zeros(512, dtype=np.float64)
     base[0] = 1.0
     cfg = Config()
@@ -165,6 +166,23 @@ def test_pose_aware_skips_incompatible(tmp_path):
     q /= np.linalg.norm(q)
     full = {c: float(np.max(store.person_encodings(c) @ q)) for c in store.persons()}
     pa = scores_per_person_pose_aware(q, store, cfg, "pi")
-    # pose-aware descarta la persona frontal (sin encodings de perfil compatibles)
-    assert pa["F"] == 0.0
-    assert full["F"] > 0.0
+    # persona frontal sin encodings de perfil: fallback al coseno global (no 0.0)
+    assert pa["F"] == full["F"]
+    assert pa["F"] > 0.0
+    # persona con pose compatible: se mantiene el ranking pose-aware
+    assert pa["P"] == full["P"]
+
+
+def test_pose_aware_other_query_no_compatible_ok(tmp_path):
+    """fix 2026-08-21: query 'other' (pose ambigua) ve TODAS las galerías
+    (pose_compatible universal), ninguna queda en 0 solo por la etiqueta."""
+    base = np.zeros(512, dtype=np.float64)
+    base[0] = 1.0
+    cfg = Config()
+    store = FaceStore(str(tmp_path / "other_pose"), max_per_person=10)
+    store.add("F", [base.astype(np.float32)], [80.0], ["f"])
+
+    q = (0.8 * base + 0.2 * np.roll(base, 1)).astype(np.float32)
+    q /= np.linalg.norm(q)
+    pa = scores_per_person_pose_aware(q, store, cfg, "other")
+    assert pa["F"] > 0.0

@@ -32,6 +32,12 @@ def pose_compatible(q_pose: str | None, g_pose: str | None) -> bool:
     """¿Pueden ser la misma persona q_pose y g_pose? (comparabilidad de zonas)."""
     if q_pose is None or g_pose is None:
         return True                      # sin etiqueta: no descartamos
+    if q_pose == "other" or g_pose == "other":
+        # "other" = banda ambigua (giro suave ~15-22.5° o pose degenerada):
+        # tratarla como pose desconocida -> NO descartar. Antes era huérfana
+        # (incompatible con todo) y ocultaba la galería correcta, fragmentando
+        # identidades (fix 2026-08-21: misma persona vista f/other).
+        return True
     if q_pose == g_pose:
         return True
     if q_pose in FRONTAL_CLASSES and g_pose in FRONTAL_CLASSES:
