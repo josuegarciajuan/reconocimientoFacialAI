@@ -6,7 +6,7 @@ Description=RF Calibración por volumen — sondeo cada 60 min (auto-refinamient
 # pocas etiquetas el sondeo es barato (salida inmediata).
 
 [Timer]
-OnCalendar=*-*-* *:0/60:00
+OnCalendar=*-*-* *:00:00
 Persistent=true
 
 [Install]
