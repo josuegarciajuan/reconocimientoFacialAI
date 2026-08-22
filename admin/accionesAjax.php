@@ -210,6 +210,30 @@ switch ($_GET["a"]) {
         }
         echo json_encode(["ok" => true, "hq" => $hq], JSON_UNESCAPED_UNICODE);
         break;
+
+    case "11": // encendido/apagado global del motor (solo superadmin)
+        header("Content-Type: application/json; charset=utf-8");
+        if ((int)($_SESSION["admin"] ?? 0) !== 1) {
+            echo json_encode(["ok" => false, "error" => "sin permisos"], JSON_UNESCAPED_UNICODE);
+            break;
+        }
+        $accion = (string)($_GET["accion_power"] ?? "");
+        if (!in_array($accion, ["off", "on"], true)) {
+            echo json_encode(["ok" => false, "error" => "acción inválida"], JSON_UNESCAPED_UNICODE);
+            break;
+        }
+        $script = RUTA_PROYECTO . "deploy/rf_power.sh";
+        if (!is_file($script)) {
+            echo json_encode(["ok" => false, "error" => "script de control no encontrado"], JSON_UNESCAPED_UNICODE);
+            break;
+        }
+        $out = @shell_exec("sudo -n " . escapeshellarg($script) . " " . $accion . " 2>&1");
+        echo json_encode([
+            "ok"      => true,
+            "estado"  => $accion === "on" ? "on" : "off",
+            "salida"  => trim((string)$out),
+        ], JSON_UNESCAPED_UNICODE);
+        break;
 }
 
 /** Nº de personas distintas que entraron (cámara puerta) en el rango. */

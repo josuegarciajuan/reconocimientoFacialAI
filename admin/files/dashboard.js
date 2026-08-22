@@ -182,4 +182,45 @@
   }
   setTimeout(dashRefrescaDaemons, 10000);
   setInterval(dashRefrescaDaemons, 60000);
+
+  /* ----------------------------------------------------------
+   * Apagar / Encender el Ojo (motor de visión completo)
+   * -------------------------------------------------------- */
+  function dashSetPowerState(estado) {
+    var btn = document.getElementById("power-btn");
+    if (!btn) { return; }
+    btn.setAttribute("data-estado", estado);
+    btn.classList.remove("power-btn--on", "power-btn--off");
+    btn.classList.add("power-btn--" + estado);
+    var lbl = document.getElementById("power-btn-label");
+    if (lbl) { lbl.textContent = (estado === "on") ? "Apagar el Ojo" : "Encender el Ojo"; }
+  }
+
+  function dashPowerToggle() {
+    var btn = document.getElementById("power-btn");
+    if (!btn) { return; }
+    var estado = btn.getAttribute("data-estado");
+    var target = (estado === "on") ? "off" : "on";
+    var verb = (target === "off") ? "apagar" : "encender";
+    if (!window.confirm("¿Seguro que quieres " + verb + " todo el motor de visión? (captura, detector, clasificador, live…)")) {
+      return;
+    }
+    btn.disabled = true;
+    dashAjaxGet("accionesAjax.php?a=11&accion_power=" + target, function (r) {
+      btn.disabled = false;
+      if (!r || r.ok !== true) {
+        if (window.rfToast) { rfToast("⚠️ No se ha podido " + verb + " el sistema", "err"); }
+        return;
+      }
+      dashSetPowerState(r.estado);
+      if (window.rfToast) {
+        var msg = (target === "off") ? "🔴 Motor apagado · " : "🟢 Motor encendido · ";
+        rfToast(msg + (r.salida || ""), "ok");
+      }
+      dashRefrescaDaemons();
+    });
+  }
+
+  var powerBtn = document.getElementById("power-btn");
+  if (powerBtn) { powerBtn.addEventListener("click", dashPowerToggle); }
 })();

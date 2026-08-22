@@ -1754,3 +1754,79 @@ input:focus-visible {
   0%, 100% { box-shadow: 0 0 10px -4px rgba(255, 60, 20, 0.5); }
   50%      { box-shadow: 0 0 22px -2px rgba(255, 60, 20, 0.95); }
 }
+
+/* --- Botón Apagar / Encender el Ojo (motor de visión) ---------- */
+.power-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--mordor-ceniza);
+  font-family: "Cinzel", serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: filter 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+}
+.power-btn:hover,
+.power-btn:focus-visible {
+  filter: brightness(1.2);
+  box-shadow: 0 0 14px -4px rgba(201, 162, 39, 0.55);
+}
+.power-btn:active {
+  transform: scale(0.97);
+}
+.power-btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+.power-btn__led {
+  width: 9px;
+  height: 9px;
+  border-radius: 9999px;
+  flex: 0 0 auto;
+}
+
+/* Encendido (on) -> botón de apagar, LED verde pulsante */
+.power-btn--on .power-btn__led {
+  background: #7fa86b;
+  animation: power-led-on 1.8s ease-in-out infinite;
+}
+.power-btn--on {
+  border-color: rgba(125, 168, 107, 0.5);
+}
+
+/* Apagado (off) -> botón de encender, LED rojo/brasas */
+.power-btn--off .power-btn__led {
+  background: var(--mordor-brasa);
+  animation: power-led-off 1.6s ease-in-out infinite;
+}
+.power-btn--off {
+  border-color: rgba(255, 90, 31, 0.55);
+  box-shadow: 0 0 16px -6px rgba(255, 90, 31, 0.55);
+}
+
+@keyframes power-led-on {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(125, 168, 107, 0.5); }
+  50%      { opacity: 0.5; box-shadow: 0 0 6px 1px rgba(125, 168, 107, 0.6); }
+}
+@keyframes power-led-off {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 90, 31, 0.5); }
+  50%      { opacity: 0.45; box-shadow: 0 0 8px 2px rgba(255, 90, 31, 0.65); }
+}
+
+/* Variante compacta para el hub "Un Anillo" */
+.power-btn--hub {
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 0.55rem;
+  font-size: 0.68rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .power-btn__led { animation: none; }
+}

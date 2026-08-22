@@ -1,0 +1,5 @@
+# Control de encendido/apagado del motor de reconocimiento facial.
+# Permite al panel web (www-data) apagar/encender el motor ÚNICAMENTE a través
+# de este script (sin argumentos arbitrarios ni acceso a systemctl general).
+# Ver deploy/rf_power.sh y deploy/install_power_ctl.sh.
+www-data ALL=(root) NOPASSWD: /root/reconocimientoFacial/deploy/rf_power.sh
