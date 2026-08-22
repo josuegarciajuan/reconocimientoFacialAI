@@ -96,6 +96,7 @@ define("CONFIG_contourArea_MINIMO","1");
 define("CONFIG_LIMITE_RAM",85); //limite de ram ocupada para seguir procesando videos
 define("CONFIG_LIMITE_LOAD", env_or("RF_LIMITE_LOAD", "1.0")); //CPU-gate: difiere procesa_video/archiva si loadavg > nproc*ratio (protege capturadores)
 define("CONFIG_LIMITE_VIDEOS", env_or("RF_LIMITE_VIDEOS", "2")); //nº máx. de procesa_video simultáneos (cada uno ~1.5GB; 4 con autotube en la misma máquina provocaba OOM)
+define("CONFIG_CLASIF_CAMS_POR_PROC", env_or("RF_CLASIF_CAMS_POR_PROC", "2")); //nº de cámaras por proceso clasificador (pool: 8 cámaras / 2 = 4 procesos -> ~mitad de RAM de modelos)
 define("CONFIG_REINTENTOS_VIDEO",3); //reintentos de un vídeo antes de descartarlo (F6: marcadores huérfanos)
 define("CONFIG_MARCADOR_HUERFANO_SEGS",300); //antigüedad mínima del marcador para considerar procesa_video muerto
 define("CONFIG_TIEMPOPROCESODECLISIFICARCARAS",60*10);  //en segs tiempo max q puede estar el proceso de procesar caras, luego se reinicia

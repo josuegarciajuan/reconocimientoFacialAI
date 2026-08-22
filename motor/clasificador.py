@@ -882,6 +882,12 @@ def main() -> int:
     ap.add_argument("--min-sharpness", type=float, default=None)
     args, _desconocidos = ap.parse_known_args()  # tolera el token final de Jos_Thread
 
+    # camara_id admite una lista separada por comas (pool): un único proceso
+    # atiende varias cámaras en round-robin para reducir el nº de procesos y la
+    # RAM total de modelos. detector.php agrupa las cámaras en chunks y pasa
+    # "13,14,17" como camara_id; el token final de Jos_Thread se ignora.
+    cameras = [c.strip() for c in str(args.camara_id).split(",") if c.strip()]
+
     cfg = Config.from_env(args.ruta)
     if args.secure is not None:
         cfg.secure_threshold = args.secure
@@ -900,11 +906,12 @@ def main() -> int:
 
     _apply_calib_weights(cfg, args.ruta)
 
-    log(f"clasificador {args.local_id}/{args.camara_id} — face_enc_v2 con {len(store.persons())} personas"
+    log(f"clasificador {args.local_id}/[{','.join(cameras)}] — face_enc_v2 con {len(store.persons())} personas"
         f" | cascada={cfg.cascade_enabled} torso={cfg.torso_enabled} zonas={cfg.zones_enabled}"
         f" silueta={cfg.silueta_enabled}"
         f" vlm={cfg.vlm_enabled} openai={cfg.openai_enabled}")
     _last_calib_check = 0.0
+    cam_idx = 0
     while True:
         try:
             # reload periódico de pesos calibrados (timer rf-calibra a las 05:10)
@@ -921,11 +928,13 @@ def main() -> int:
             if _ram_available_gb() < cfg.ram_min_free_gb:
                 time.sleep(5)
                 continue
-            n = process_once(args.ruta, args.local_id, args.camara_id, cfg, store, feedback)
-            nb = process_body_once(args.ruta, args.local_id, args.camara_id, cfg, store)
+            cam = cameras[cam_idx % len(cameras)]
+            n = process_once(args.ruta, args.local_id, cam, cfg, store, feedback)
+            nb = process_body_once(args.ruta, args.local_id, cam, cfg, store)
             if n or nb:
-                log(f"procesadas {n} batería(s) de caras, {nb} de cuerpos")
-            if args.once:
+                log(f"[{cam}] procesadas {n} batería(s) de caras, {nb} de cuerpos")
+            cam_idx += 1
+            if args.once and cam_idx >= len(cameras):
                 return 0
             time.sleep(1)
         except KeyboardInterrupt:
