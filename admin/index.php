@@ -86,7 +86,7 @@ $power_estado = dash_power_estado();
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cinzel:wght@500;600;700;800&family=Cinzel+Decorative:wght@700;900&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="./files/app.css">
-        <link rel="stylesheet" href="./files/custom.css?v=5">
+        <link rel="stylesheet" href="./files/custom.css?v=6">
         <link rel="stylesheet" href="./files/sections.css?v=20260819b">
         <?php if (($_GET["page"] ?? "dash") === "dash"): ?>
         <link rel="stylesheet" href="./files/dashboard.css?v=20260819">
@@ -1789,12 +1789,12 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
         <script src="./files/app.js"></script>
         <script src="./files/sauron-eye.js"></script>
         <script src="./files/ui-common.js"></script>
-        <script src="./files/ring-hub.js?v=20260819"></script>
+        <script src="./files/ring-hub.js?v=20260823"></script>
         <!-- Lore: glosario temático + motor de bocadillos -->
         <script>window.RF_GLOSARIO = <?= rf_glosario_json(); ?>;</script>
         <script src="./files/lore.js"></script>
         <?php if (($_GET["page"] ?? "dash") === "dash"): ?>
-        <script src="./files/dashboard.js?v=20260819"></script>
+        <script src="./files/dashboard.js?v=20260823"></script>
         <?php endif; ?>
         <?php
         require_once("../includes/javascript.php");
