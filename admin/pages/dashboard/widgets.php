@@ -333,6 +333,14 @@ function dash_daemons() {
     return $lista;
 }
 
+/**
+ * Estado global del motor ("on"/"off") según el centinela principal
+ * (rf-capturador). Es lo que mueve el botón Apagar/Encender el Ojo.
+ */
+function dash_power_estado() {
+    return dash_daemon_estado("rf-capturador") === "active" ? "on" : "off";
+}
+
 /* ---------------------------------------------------------------
  * Render de fragmentos (usados por list.php y por el AJAX)
  * ------------------------------------------------------------- */

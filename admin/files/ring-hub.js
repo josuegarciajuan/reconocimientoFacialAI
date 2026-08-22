@@ -172,6 +172,47 @@
   });
 
   /* ----------------------------------------------------------
+   * Apagar / Encender el Ojo (motor de visión completo)
+   * -------------------------------------------------------- */
+  function powerSetState(estado) {
+    var b = doc.getElementById("ring-hub-power");
+    if (!b) { return; }
+    b.setAttribute("data-estado", estado);
+    b.classList.remove("power-btn--on", "power-btn--off");
+    b.classList.add("power-btn--" + estado);
+    var lbl = doc.getElementById("ring-hub-power-label");
+    if (lbl) { lbl.textContent = (estado === "on") ? "Apagar el Ojo" : "Encender el Ojo"; }
+  }
+
+  function powerToggle() {
+    var b = doc.getElementById("ring-hub-power");
+    if (!b) { return; }
+    var estado = b.getAttribute("data-estado");
+    var target = (estado === "on") ? "off" : "on";
+    var verb = (target === "off") ? "apagar" : "encender";
+    if (!win.confirm("¿Seguro que quieres " + verb + " todo el motor de visión? (captura, detector, clasificador, live…)")) {
+      return;
+    }
+    b.disabled = true;
+    ajaxGet("accionesAjax.php?a=11&accion_power=" + target, function (r) {
+      b.disabled = false;
+      if (!r || r.ok !== true) {
+        if (win.rfToast) { win.rfToast("⚠️ No se ha podido " + verb + " el sistema", "err"); }
+        return;
+      }
+      powerSetState(r.estado);
+      if (win.rfToast) {
+        var msg = (target === "off") ? "🔴 Motor apagado · " : "🟢 Motor encendido · ";
+        win.rfToast(msg + (r.salida || ""), "ok");
+      }
+      refrescaDaemons();
+    });
+  }
+
+  var powerBtn = doc.getElementById("ring-hub-power");
+  if (powerBtn) { powerBtn.addEventListener("click", powerToggle); }
+
+  /* ----------------------------------------------------------
    * Arranque: estado inicial del semáforo + polling
    * -------------------------------------------------------- */
   refrescaEstado();

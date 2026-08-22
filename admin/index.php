@@ -51,6 +51,11 @@ if (!$local) {
     $local = [];
 }
 
+// Control de encendido/apagado global (botón "Apagar/Encender el Ojo")
+require_once __DIR__ . '/pages/dashboard/widgets.php';
+$es_admin_power = (int)($_SESSION["admin"] ?? 0) === 1;
+$power_estado = dash_power_estado();
+
 ?>
 <!DOCTYPE html>
 <html lang="es" class="dark"><!-- BEGIN: Head --><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style>.gm-style .gm-style-mtc label,.gm-style .gm-style-mtc div{font-weight:400}
@@ -1763,6 +1768,14 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
 
                 <div class="ring-hub__daemons">
                     <div class="ring-hub__section-title">Los Seis Centinelas <span class="ring-hub__hint">· en vivo</span></div>
+                    <?php if ($es_admin_power): ?>
+                    <button type="button" class="power-btn power-btn--<?= $power_estado; ?> power-btn--hub" id="ring-hub-power"
+                            data-estado="<?= $power_estado; ?>" aria-pressed="true"
+                            title="Apagar o encender todo el motor de visión (captura, detector, clasificador…)">
+                        <span class="power-btn__led" aria-hidden="true"></span>
+                        <span class="power-btn__label" id="ring-hub-power-label"><?= $power_estado === "on" ? "Apagar el Ojo" : "Encender el Ojo"; ?></span>
+                    </button>
+                    <?php endif; ?>
                     <div class="ring-hub__daemons-grid" id="ring-hub-daemons"><div class="ring-hub__daemons-hint">Revisando los centinelas…</div></div>
                 </div>
             </div>

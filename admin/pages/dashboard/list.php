@@ -13,6 +13,7 @@ require_once __DIR__ . "/../../../libs/calibracion.php";
 require_once __DIR__ . "/widgets.php";
 
 $local_id = (int)$_SESSION["local_id"];
+$es_admin = (int)($_SESSION["admin"] ?? 0) === 1;
 
 /* ---------------------------------------------------------------
  * Datos del dashboard
@@ -785,8 +786,16 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
      ================================================================ -->
 <div class="col-span-12 mt-8">
     <div class="intro-y box p-5">
-        <div class="flex items-center">
+        <div class="flex items-center gap-3 flex-wrap">
             <h2 class="text-lg font-medium truncate">⚙️ Los Seis Centinelas</h2>
+            <?php if ($es_admin): $power = dash_power_estado(); ?>
+            <button type="button" class="power-btn power-btn--<?= $power; ?>" id="power-btn"
+                    data-estado="<?= $power; ?>" aria-pressed="true"
+                    title="Apagar o encender todo el motor de visión (captura, detector, clasificador…)">
+                <span class="power-btn__led" aria-hidden="true"></span>
+                <span class="power-btn__label" id="power-btn-label"><?= $power === "on" ? "Apagar el Ojo" : "Encender el Ojo"; ?></span>
+            </button>
+            <?php endif; ?>
             <span class="ml-auto text-xs text-gray-500 dark:text-gray-500" id="daemons-updated">estado de los procesos · se refresca solo</span>
         </div>
         <div class="daemons mt-4" id="daemons-grid">
