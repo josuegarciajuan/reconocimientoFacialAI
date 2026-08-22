@@ -70,21 +70,35 @@ while (true) {
         $cams = DB::select("SELECT id FROM camaras WHERE local_id = ? AND encendida = 1 ORDER BY id ASC", [$local_id]);
         // limpia marcadores de archivado huérfanos ANTES de contar slots disponibles
         limpiar_marcadores_archiva_huerfanos($local_id, $cams);
-        foreach ($cams as $cam) {
-            $cam_id = (int)$cam["id"];
 
-            // --- clasificador de caras (proceso largo por cámara) ---
-            $nombre_clasif = "clasif_" . $local_id . "_" . $cam_id;
+        // --- clasificadores de caras (pool: N cámaras por proceso para acotar RAM) ---
+        // Un único clasificador.py atiende varias cámaras en round-robin
+        // (camara_id separadas por comas). Con 8 cámaras y RF_CLASIF_CAMS_POR_PROC=2
+        // se lanzan 4 procesos en vez de 8 -> ~mitad de RAM de modelos (cada
+        // proceso carga el stack insightface completo).
+        $cam_ids = [];
+        foreach ($cams as $cam) {
+            $cam_ids[] = (int)$cam["id"];
+        }
+        $cams_por_proc = max(1, (int)CONFIG_CLASIF_CAMS_POR_PROC);
+        $grupos_clasif = array_chunk($cam_ids, $cams_por_proc);
+        foreach ($grupos_clasif as $gidx => $grupo) {
+            $nombre_clasif = "clasif_" . $local_id . "_g" . $gidx;
             $running = isset($threads[$nombre_clasif]) && $threads[$nombre_clasif]->isrunning();
             if (!$running) {
                 if (isset($threads[$nombre_clasif])) {
                     $threads[$nombre_clasif]->stop();
                 }
-                $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/clasificador.py " . $local_id . " " . $cam_id . " --ruta " . RUTA_PROYECTO;
-                echo "Lanzando clasificador: " . $cmd . "\n";
+                $cam_list = implode(",", $grupo);
+                $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/clasificador.py " . $local_id . " " . $cam_list . " --ruta " . RUTA_PROYECTO;
+                echo "Lanzando clasificador (cámaras " . $cam_list . "): " . $cmd . "\n";
                 $threads[$nombre_clasif] = new Jos_Thread($nombre_clasif, $cmd, true);
                 $threads[$nombre_clasif]->start();
             }
+        }
+
+        foreach ($cams as $cam) {
+            $cam_id = (int)$cam["id"];
 
             // --- vídeos completos a procesar ---
             $dir_videos = RUTA_PROYECTO . "motor/videos/" . $local_id . "/" . $cam_id . "/";
