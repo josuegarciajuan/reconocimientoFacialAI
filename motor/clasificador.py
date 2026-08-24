@@ -28,11 +28,11 @@ Uso (una pasada, para tests/calibración):
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import random
 import shutil
 import sys
-import threading
 import time
 from datetime import datetime
 
@@ -51,40 +51,39 @@ from motor.core.superres import enhance_embedding, photo_busto  # noqa: E402
 ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 IMG_EXTS = (".jpg", ".jpeg", ".png")
 
-# Semáforo global de trabajos HQ (foto final x4plus): evita saturar la CPU
-# cuando varias cámaras generan HQ a la vez. Se crea de forma lazy con el
-# primer uso (lee cfg.hq_max_workers).
-_HQ_SEM: threading.Semaphore | None = None
+# Cola de foto HQ para el worker único (motor/photo_worker.py): el clasificador
+# YA NO carga GFPGAN/RealESRGAN-x4plus (refactor RAM: los modelos pesados viven
+# en UN solo proceso rf-photo, no en N clasificadores de cámara).
 
 
 def log(*args):
     print(*args, flush=True)
 
 
-def _schedule_hq(out_path: str, img, bbox, cfg: Config) -> None:
-    """Genera la versión HQ (x4plus) de la foto final en un hilo de fondo y la
-    escribe a `<out_path>.hq`. clasificadorV2.php la ingesta como upgrade (sobre
-    la foto rápida ya publicada) y el panel la "autonitida" sin recargar."""
-    global _HQ_SEM
-    if _HQ_SEM is None:
-        _HQ_SEM = threading.Semaphore(max(1, int(cfg.hq_max_workers)))
+def _queue_hq(out_path: str, img, bbox, cfg: Config, ruta: str,
+              local_id: str, camara_id: str, foto_id: str) -> None:
+    """Encola la generación HQ (x4plus + GFPGAN) al worker único de foto.
 
-    def run() -> None:
-        try:
-            t0 = time.time()
-            img_hq = photo_busto(img, bbox, cfg, model=cfg.sr_model_photo)
-            cv2.imwrite(out_path + ".hq", img_hq, [cv2.IMWRITE_JPEG_QUALITY, 95])
-            log(f"[hq] {os.path.basename(out_path)}.hq generado "
-                f"({img_hq.shape[1]}x{img_hq.shape[0]}) en {time.time() - t0:.1f}s")
-        except Exception as e:  # noqa: BLE001
-            log(f"[hq] fallo generando HQ: {e}")
-        finally:
-            _HQ_SEM.release()
-
-    if _HQ_SEM.acquire(blocking=False):
-        threading.Thread(target=run, daemon=True).start()
-    else:
-        log("[hq] semáforo HQ lleno; se omite la versión HQ de esta foto")
+    El worker lee el crop fuente (PNG lossless) + bbox desde
+    `motor/photo_queue/<local>/<cam>/` y escribe `<out_path>.hq`; el panel lo
+    "autonitida" sin recargar (mismo contrato que el hilo HQ anterior:
+    clasificadorV2.php ingesta `*.hq` como upgrade de la foto rápida).
+    """
+    try:
+        qdir = os.path.join(ruta, "motor/photo_queue", local_id, camara_id)
+        os.makedirs(qdir, exist_ok=True)
+        src_path = os.path.join(qdir, foto_id + ".png")
+        cv2.imwrite(src_path, img, [cv2.IMWRITE_PNG_COMPRESSION, 3])
+        job = {
+            "src": src_path,
+            "out": out_path,          # el worker escribe out_path + ".hq"
+            "bbox": [int(round(v)) for v in bbox],
+            "ts": time.time(),
+        }
+        with open(os.path.join(qdir, foto_id + ".json"), "w", encoding="utf-8") as fh:
+            json.dump(job, fh)
+    except Exception as e:  # noqa: BLE001
+        log(f"[hq] fallo encolando HQ: {e}")
 
 
 def random_code(n: int = 25) -> str:
@@ -483,17 +482,20 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
                 photo_img = b_img
                 photo_bbox = bf.bbox
 
-    # Versión rápida (compact): aparece al instante en el panel.
+    # Versión rápida (compact, SIN GFPGAN): aparece al instante en el panel.
+    # La restauración facial (GFPGAN) y la versión HQ (x4plus) las genera el
+    # worker único (photo_worker.py) desde la cola: los modelos pesados ya no
+    # se cargan en N clasificadores (ahorro de RAM del refactor).
     t_foto = time.time()
-    final_img = photo_busto(photo_img, photo_bbox, cfg, model="compact")
+    final_img = photo_busto(photo_img, photo_bbox, cfg, model="compact", restore=False)
     cv2.imwrite(out_path, final_img, [cv2.IMWRITE_JPEG_QUALITY, 95])
     log(f"[foto] {out_name} guardada ({final_img.shape[1]}x{final_img.shape[0]}) "
         f"en {time.time() - t_foto:.1f}s")
 
-    # Versión HQ progresiva (sr_model_photo, p.ej. x4plus): se genera en un hilo
-    # de fondo y sobreescribe la foto ~35-40 s después; el panel la "autonitida".
+    # Versión HQ progresiva (sr_model_photo, p.ej. x4plus): el worker único la
+    # genera y sobreescribe la foto ~35-40 s después; el panel la "autonitida".
     if cfg.hq_enabled and cfg.sr_model_photo != "compact":
-        _schedule_hq(out_path, photo_img, photo_bbox, cfg)
+        _queue_hq(out_path, photo_img, photo_bbox, cfg, ruta, local_id, camara_id, foto_id)
 
     if os.path.exists(rep_item["path"]):
         os.remove(rep_item["path"])

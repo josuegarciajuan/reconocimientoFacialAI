@@ -4,7 +4,7 @@
 set -euo pipefail
 
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
-SERVICES=(rf-capturador rf-detector rf-clasificador rf-panel-control rf-live rf-conciliador rf-vinculador rf-alarmador rf-vigilar-deriva rf-calibra)
+SERVICES=(rf-capturador rf-detector rf-clasificador rf-panel-control rf-live rf-conciliador rf-vinculador rf-alarmador rf-vigilar-deriva rf-calibra rf-photo)
 TIMERS=(rf-calibra rf-vigilar-deriva)
 
 echo "==> Copiando unidades systemd desde $DIR/deploy/systemd"

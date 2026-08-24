@@ -1,0 +1,26 @@
+[Unit]
+Description=RF Photo worker — generación HQ de fotos (x4plus + GFPGAN, singleton)
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+WorkingDirectory=/root/reconocimientoFacial
+ExecStart=/root/reconocimientoFacial/motor/venv/bin/python /root/reconocimientoFacial/motor/photo_worker.py --ruta /root/reconocimientoFacial
+Restart=always
+RestartSec=5
+User=root
+# Prioridad de CPU BAJA (diferible): la foto HQ llega ~40 s después, no es tiempo real.
+Nice=10
+# Hilos de CPU para x4plus/GFPGAN (único proceso torch pesado del motor):
+# 4 hilos mantienen la cola HQ al día sin monopolizar los cores de autotube.
+# (OMP_NUM_THREADS controla OpenMP; RF_TORCH_THREADS lo aplica torch en
+# motor/core/superres.py y gfpgan.py.)
+Environment=OMP_NUM_THREADS=4
+Environment=RF_TORCH_THREADS=4
+# Tope de memoria del cgroup (GFPGAN ~348 MB + RealESRGAN x4plus + torch):
+# protege a los demás servicios de la máquina (autotube) si la RAM escasea.
+MemoryMax=4G
+
+[Install]
+WantedBy=multi-user.target

@@ -51,6 +51,15 @@ except Exception:  # noqa: BLE001
     F = None
     _TORCH_OK = False
 
+if _TORCH_OK:
+    # Hilos de inferencia por proceso, configurables (RF_TORCH_THREADS, ver
+    # motor/core/superres.py): default 1 para no sobresuscribir CPU con
+    # autotube; el worker único de foto (rf-photo) lo sube.
+    try:
+        torch.set_num_threads(max(1, int(os.environ.get("RF_TORCH_THREADS", "1"))))
+    except Exception:  # noqa: BLE001
+        pass
+
 
 # ======================================================================
 # StyleGAN2 "clean" (sin extensiones CUDA compiladas) — motor/core/gfpgan.py

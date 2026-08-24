@@ -36,6 +36,8 @@ motor/llm_cache/
 motor/calibrador/
 # Informes de re-matching (reagrupar.py)
 motor/reagrupar_out/
+# Cola del worker único de foto HQ (motor/photo_worker.py)
+motor/photo_queue/
 # Backups SQL generados por los scripts de backfill/reagrupar
 motor/backup_*.sql
 aux/

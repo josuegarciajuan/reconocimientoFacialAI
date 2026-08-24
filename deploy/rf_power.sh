@@ -20,7 +20,7 @@
 
 set -u
 
-SERVICES=(rf-capturador rf-detector rf-clasificador rf-live rf-panel-control rf-conciliador rf-vinculador rf-alarmador)
+SERVICES=(rf-capturador rf-detector rf-clasificador rf-live rf-panel-control rf-conciliador rf-vinculador rf-alarmador rf-photo)
 TIMERS=(rf-calibra.timer rf-reap.timer rf-vigilar-deriva.timer)
 
 # Procesos hijos del motor (visión/streaming) a purgar para liberar RAM residual.
@@ -29,6 +29,7 @@ VISION_PATTERNS=(
   "procesa_video.py"
   "archiva_video.py"
   "clasificador.py"
+  "photo_worker.py"
   "pose.py"
   "mjpeg-stream.js"
 )
