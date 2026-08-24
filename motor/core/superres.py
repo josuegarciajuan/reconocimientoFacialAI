@@ -73,6 +73,17 @@ except Exception:  # noqa: BLE001
     F = None
     _TORCH_OK = False
 
+if _TORCH_OK:
+    # Hilos de inferencia por proceso, configurables (RF_TORCH_THREADS):
+    #  - Default 1: evita la sobresuscripción OpenMP/torch cuando varios daemons
+    #    del motor + autotube comparten CPU (menos RAM y menos contención).
+    #  - El worker único de foto (rf-photo) lo sube (p.ej. 4) porque es el único
+    #    proceso con x4plus/GFPGAN: sin cola de HQ atascada en CPU de 1 hilo.
+    try:
+        torch.set_num_threads(max(1, int(os.environ.get("RF_TORCH_THREADS", "1"))))
+    except Exception:  # noqa: BLE001
+        pass
+
 
 if _TORCH_OK:
 
@@ -466,14 +477,17 @@ def _face_region_blend(img: np.ndarray, face_box, cfg) -> np.ndarray:
     return out
 
 
-def photo_busto(img: np.ndarray, bbox, cfg, model: str | None = None) -> np.ndarray:
+def photo_busto(img: np.ndarray, bbox, cfg, model: str | None = None,
+                restore: bool = True) -> np.ndarray:
     """Foto final de BUSTO para el panel: torso real + cara restaurada.
 
     1. Reencuadre natural (`busto_face_fill`) desde el crop de busto/frame.
     2. SR ligero con `model` solo si el encuadre es pequeño.
     3. GFPGAN únicamente en la región de la cara (`_face_region_blend`).
 
-    Devuelve SIEMPRE BGR uint8.
+    `restore=False` genera la foto "rápida" SIN GFPGAN (refactor RAM: la
+    restauración facial queda para el worker único motor/photo_worker.py, que
+    sí llama con restore=True y genera `<out>.hq`). Devuelve SIEMPRE BGR uint8.
     """
     h, w = img.shape[:2]
     x1, y1, x2, y2 = (int(round(v)) for v in bbox)
@@ -494,7 +508,7 @@ def photo_busto(img: np.ndarray, bbox, cfg, model: str | None = None) -> np.ndar
     sx = z.shape[1] / max(1, before[1])
     if sy != 1.0 or sx != 1.0:
         fb = (int(fb[0] * sx), int(fb[1] * sy), int(fb[2] * sx), int(fb[3] * sy))
-    if cfg.sr_face_enabled:
+    if cfg.sr_face_enabled and restore:
         z = _face_region_blend(z, fb, cfg)
     # Tamaño mínimo de DISPLAY: la UI no debe reescalar fotos finales diminutas
     # (p. ej. bustos degenerados o caras muy lejanas). Upscale moderado LANCZOS4

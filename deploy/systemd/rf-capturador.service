@@ -13,7 +13,10 @@ User=root
 # Prioridad de CPU MÁXIMA (Tier 1, captura en tiempo real): los
 # guarda_movimientosV3 hijos heredan Nice=-10 frente a clasificación/procesado.
 Nice=-10
-# Tope de memoria del cgroup (capturador + 12 guarda_movimientosV3 + ffmpeg):
+# Hilos OpenMP/opencv fijos: los 8 guarda_movimientosV3 + ffmpeg no deben
+# sobresuscribir los 10 cores que comparten con autotube.
+Environment=OMP_NUM_THREADS=1
+# Tope de memoria del cgroup (capturador + 8 guarda_movimientosV3 + ffmpeg):
 # protege a los demás servicios de la máquina (autotube) si la RAM escasea.
 MemoryMax=5G
 # Logs a journald (rotación gestionada por el sistema)
