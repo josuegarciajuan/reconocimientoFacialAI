@@ -10,25 +10,30 @@ require_once __DIR__ . '/../libs/alarmas.php';
 require_once __DIR__ . '/../libs/rutas.php';
 
 header('Content-Type: application/json; charset=UTF-8');
-if (empty($_SESSION['user']) || empty($_SESSION['local_id'])) {
-    http_response_code(401);
-    echo json_encode(['error' => 'No autorizado']);
+$table = (string)($_GET['table'] ?? '');
+$request = datatables_request($_GET);
+
+function dt_json(array $request, int $total, int $filtered, array $data, ?string $error = null): never
+{
+    $response = datatables_response($request['draw'], $total, $filtered, $data);
+    if ($error !== null) {
+        $response['error'] = $error;
+    }
+    echo datatables_encode($response);
     exit;
 }
 
-$table = (string)($_GET['table'] ?? '');
-$request = datatables_request($_GET);
+if (empty($_SESSION['user']) || empty($_SESSION['local_id'])) {
+    http_response_code(401);
+    dt_json($request, 0, 0, [], 'No autorizado');
+}
+
 $local = (int)$_SESSION['local_id'];
 $esc = static fn($v): string => datatables_html((string)$v);
 $like = trim((string)($_GET['search']['value'] ?? ''));
 $offset = $request['start']; $limit = $request['length'];
 
-function dt_json(array $request, int $total, int $filtered, array $data): never
-{
-    echo json_encode(datatables_response($request['draw'], $total, $filtered, $data), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    exit;
-}
-
+try {
 if ($table === 'visitantes') {
     $where = ['e.camara_id IN (SELECT id FROM camaras WHERE local_id = ?)']; $params = [$local];
     $from = 'estancias e JOIN personas p ON p.id=e.persona_id';
@@ -67,7 +72,7 @@ if ($table === 'fichajes') {
 }
 
 if ($table === 'lineas') {
-    $where=['c.local_id=?','cl.fecha>=?','cl.fecha<=?'];$params=[$local,(string)($_GET['desde']??date('Y-m-d 00:00:00')),(string)($_GET['hasta']??date('Y-m-d 23:59:59'))];foreach([['camara','c.id'],['linea','cl.linea_id'],['trayectoria','cl.direccion'],['persona_id','cl.persona_id']] as $f){if(!empty($_GET[$f[0]])&&$_GET[$f[0]]!=='-'){$where[]=$f[1].'=?';$params[]=(int)$_GET[$f[0]];}}$w=implode(' AND ',$where);$base='cruces_lineas cl LEFT JOIN lineas l ON l.id=cl.linea_id LEFT JOIN camaras c ON c.id=l.camara_id LEFT JOIN personas p ON p.id=cl.persona_id';$total=(int)(DB::selectOne('SELECT COUNT(*) n FROM '.$base.' WHERE c.local_id=?',[$local])['n']??0);$filtered=(int)(DB::selectOne('SELECT COUNT(*) n FROM '.$base.' WHERE '.$w,$params)['n']??0);$rows=DB::select('SELECT cl.*,l.nombre linea_nombre,c.id camara_id,c.descripcion camara,p.nombre persona_nombre,p.cod_interno FROM '.$base.' WHERE '.$w.' ORDER BY cl.created DESC LIMIT '.$limit.' OFFSET '.$offset,$params);$data=[];foreach($rows as $r){$data[]=[ $esc($r['fecha']),camara_link((int)$r['camara_id'],$r['camara']),$esc($r['linea_nombre']),((int)$r['direccion']===1?'← ':'→ ').((int)$r['direccion']===1?'Derecha a Izquierda':'Izquierda a Derecha'),$r['persona_id']?persona_link((int)$r['persona_id'],persona_label($r['persona_nombre'],$r['persona_cod'])):'—',$r['video_id']?'▶ Ver':'—','—'];}dt_json($request,$total,$filtered,$data);
+    $where=['c.local_id=?','cl.fecha>=?','cl.fecha<=?'];$params=[$local,(string)($_GET['desde']??date('Y-m-d 00:00:00')),(string)($_GET['hasta']??date('Y-m-d 23:59:59'))];foreach([['camara','c.id'],['linea','cl.linea_id'],['trayectoria','cl.direccion'],['persona_id','cl.persona_id']] as $f){if(!empty($_GET[$f[0]])&&$_GET[$f[0]]!=='-'){$where[]=$f[1].'=?';$params[]=(int)$_GET[$f[0]];}}$w=implode(' AND ',$where);$base='cruces_lineas cl LEFT JOIN lineas l ON l.id=cl.linea_id LEFT JOIN camaras c ON c.id=l.camara_id LEFT JOIN personas p ON p.id=cl.persona_id';$total=(int)(DB::selectOne('SELECT COUNT(*) n FROM '.$base.' WHERE c.local_id=?',[$local])['n']??0);$filtered=(int)(DB::selectOne('SELECT COUNT(*) n FROM '.$base.' WHERE '.$w,$params)['n']??0);$rows=DB::select('SELECT cl.*,l.nombre linea_nombre,c.id camara_id,c.descripcion camara,p.nombre persona_nombre,p.cod_interno FROM '.$base.' WHERE '.$w.' ORDER BY cl.created DESC LIMIT '.$limit.' OFFSET '.$offset,$params);$data=[];foreach($rows as $r){$data[]=[ $esc($r['fecha']),camara_link((int)$r['camara_id'],$r['camara']),$esc($r['linea_nombre']),((int)$r['direccion']===1?'← ':'→ ').((int)$r['direccion']===1?'Derecha a Izquierda':'Izquierda a Derecha'),$r['persona_id']?persona_link((int)$r['persona_id'],persona_label($r['persona_nombre'],$r['cod_interno'])):'—',$r['video_id']?'▶ Ver':'—','—'];}dt_json($request,$total,$filtered,$data);
 }
 
 if ($table === 'locales') {
@@ -92,4 +97,9 @@ if ($table === 'rutas') {
     [$puertas,$salidas]=camaras_puerta_salida($local);$where=['e.camara_id IN ('.implode(',',array_map('intval',$puertas)).')','e.fecha_ini>=?','e.fecha_ini<=?'];$params=[(string)($_GET['desde']??date('Y-m-d 00:00:00')),(string)($_GET['hasta']??date('Y-m-d 23:59:59'))];if(!empty($_GET['persona_id'])&&$_GET['persona_id']!=='-'){$where[]='e.persona_id=?';$params[]=(int)$_GET['persona_id'];}$w=implode(' AND ',$where);$total=(int)(DB::selectOne('SELECT COUNT(*) n FROM estancias e WHERE '.$w,$params)['n']??0);$rows=DB::select('SELECT e.* FROM estancias e WHERE '.$w.' ORDER BY e.fecha_ini ASC LIMIT '.$limit.' OFFSET '.$offset,$params);$data=[];foreach($rows as $e){$r=construye_ruta($e,$salidas);$data[]=[$esc($r['inicio']),$esc($r['fin']),persona_link((int)$r['persona_id'],$r['nombre']),(int)$r['num_camaras'],$esc($r['tiempo']),'<a href="javascript:;" onclick="abrirCamino('.(int)$r['inicio_id'].')">▶ Ver camino</a>'];}dt_json($request,$total,$total,$data);
 }
 
-http_response_code(400); echo json_encode(['error' => 'Listado no soportado']);
+dt_json($request, 0, 0, [], 'Listado no soportado');
+} catch (Throwable $exception) {
+    error_log('DataTables endpoint failed for table ' . $table . ': ' . $exception->getMessage());
+    http_response_code(500);
+    dt_json($request, 0, 0, [], 'No se pudo cargar el listado');
+}
