@@ -27,7 +27,9 @@ def _e(k: int, noise: float = 0.0, seed: int = 0) -> np.ndarray:
 
 
 def _face(emb: np.ndarray, seed: int = 0) -> Face:
-    return Face(bbox=(0, 0, 10, 10), det_score=0.99,
+    # bbox realista (lado 60) para cumplir el nuevo invariante face_min_side=52:
+    # las caras diminutas se descartan (B4) antes de admitirse en la galería.
+    return Face(bbox=(0, 0, 60, 60), det_score=0.99,
                 embedding=emb.astype(np.float32), pose=(0.0, 0.0, 0.0))
 
 

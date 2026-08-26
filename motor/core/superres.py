@@ -508,12 +508,15 @@ def photo_busto(img: np.ndarray, bbox, cfg, model: str | None = None,
     sx = z.shape[1] / max(1, before[1])
     if sy != 1.0 or sx != 1.0:
         fb = (int(fb[0] * sx), int(fb[1] * sy), int(fb[2] * sx), int(fb[3] * sy))
-    if cfg.sr_face_enabled and restore:
+    # A3 gate (2026-08-26): GFPGAN SOLO si la cara original (antes del SR) tiene
+    # lado mayor >= cfg.face_restore_min_side. Las caras diminutas (< umbral) se
+    # dejan con el SR genérico (píxel real) en vez de que GFPGAN alucine rasgos.
+    if cfg.sr_face_enabled and restore and max(fw, fh) >= cfg.face_restore_min_side:
         z = _face_region_blend(z, fb, cfg)
-    # Tamaño mínimo de DISPLAY: la UI no debe reescalar fotos finales diminutas
-    # (p. ej. bustos degenerados o caras muy lejanas). Upscale moderado LANCZOS4
-    # SOLO hasta 512 px; no toca embeddings ni el SR interno.
-    _MIN_DISPLAY_SIDE = 512
+    # A5 top-up de DISPLAY: la UI no debe reescalar fotos finales diminutas.
+    # Upscale LANCZOS4 SOLO hasta cfg.min_display_side (default 384; antes 512,
+    # que pixelaba caras lejanas ~11x). No toca embeddings ni el SR interno.
+    _MIN_DISPLAY_SIDE = getattr(cfg, "min_display_side", 384)
     _zh, _zw = z.shape[:2]
     if max(_zh, _zw) < _MIN_DISPLAY_SIDE:
         _s = _MIN_DISPLAY_SIDE / max(_zh, _zw)
@@ -541,6 +544,13 @@ def enhance_embedding(img: np.ndarray, face, cfg) -> np.ndarray:
 
     fw = face.bbox[2] - face.bbox[0]
     fh = face.bbox[3] - face.bbox[1]
+    # B3 flag (2026-08-26): poder desactivar el SR-before-embedding. Real-ESRGAN
+    # general "plastifica" y puede distorsionar la identidad en crops pequeños
+    # (el propio comentario del módulo lo admite). La validación (motor/eval)
+    # decide si conviene (True) o si el embedding sobre el crop nativo rinde más
+    # (False). Default True = comportamiento actual.
+    if not getattr(cfg, "sr_embed_enabled", True):
+        return face.embedding
     if max(fw, fh) >= cfg.sr_embed_min_face:
         return face.embedding
     kps = getattr(face, "kps", None)

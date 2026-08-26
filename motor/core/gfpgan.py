@@ -585,8 +585,24 @@ def restore(img_bgr: np.ndarray, model=None, weight: float | None = 0.5) -> np.n
         model = get_gfpgan()
     if model is None:
         return None
-    inp = cv2.resize(img_bgr, (512, 512), interpolation=cv2.INTER_LINEAR)
-    t = _img_to_tensor(inp)
+    # A2 (2026-08-26): preservar proporción en vez de estirar a 512x512.
+    # Estirar caras angulares/perfiles a cuadrado distorsionaba rasgos (efecto
+    # "fantasma"). Ahora se reescala al lado largo = 512 y se encaja en un
+    # canvas 512x512 con borde reflejado (patrón habitual de GFPGAN); tras la
+    # inferencia se recorta la zona real para devolver el MISMO aspect-ratio
+    # que la entrada (el llamador la reescala a su hueco sin deformarla).
+    h, w = img_bgr.shape[:2]
+    if h < 1 or w < 1:
+        return None
+    long_side = max(h, w)
+    scale = 512.0 / long_side
+    nw, nh = max(1, int(round(w * scale))), max(1, int(round(h * scale)))
+    resized = cv2.resize(img_bgr, (nw, nh), interpolation=cv2.INTER_LINEAR)
+    top = (512 - nh) // 2
+    left = (512 - nw) // 2
+    canvas = cv2.copyMakeBorder(resized, top, 512 - nh - top, left, 512 - nw - left,
+                                cv2.BORDER_REFLECT_101)
+    t = _img_to_tensor(canvas)
     try:
         with torch.no_grad():
             out, _ = model(t, return_rgb=False)
@@ -594,6 +610,8 @@ def restore(img_bgr: np.ndarray, model=None, weight: float | None = 0.5) -> np.n
         print(f"[gfpgan] inferencia fallida: {e}", flush=True)
         return None
     restored = _tensor_to_img(out)
+    # recortar la zona real (la del rostro) y devolver con la proporción original
+    restored_crop = restored[top:top + nh, left:left + nw]
     if weight is not None and 0.0 < weight < 1.0:
-        restored = cv2.addWeighted(restored, weight, inp, 1.0 - weight, 0)
-    return restored
+        restored_crop = cv2.addWeighted(restored_crop, weight, resized, 1.0 - weight, 0)
+    return restored_crop
