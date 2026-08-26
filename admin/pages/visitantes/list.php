@@ -23,6 +23,10 @@ $buscador = trim($_GET["buscador"] ?? "");
 // cámaras del local (para el select y para el contador "todas")
 $camaras = DB::select("SELECT id, descripcion FROM camaras WHERE local_id = ?", [$local_id]);
 $camaras_ids = array_column($camaras, "id");
+$camaras_por_id = [];
+foreach ($camaras as $camara) {
+    $camaras_por_id[(int)$camara["id"]] = (string)$camara["descripcion"];
+}
 
 // escapado para atributos onclick (patrón ui-common: verFoto('url','titulo'))
 $js_quote = function ($s) {
@@ -74,6 +78,7 @@ $js_quote = function ($s) {
             <tr>
                 <th class="border-b-2 text-center">IMAGEN</th>
                 <th class="border-b-2 text-center">PERSONA</th>
+                <th class="border-b-2 text-center">ÚLTIMA VISTA</th>
                 <th class="border-b-2 text-center">ESTANCIAS</th>
                 <th class="border-b-2 text-center">ACCIONES</th>
             </tr>
@@ -92,13 +97,34 @@ $js_quote = function ($s) {
             $params[] = "%" . $buscador . "%";
             $params[] = "%" . $buscador . "%";
         }
+
+        // La cámara se obtiene dentro de la misma consulta para conservar los filtros
+        // activos y evitar una consulta adicional por cada persona.
+        $ultima_where = ["a2.persona_id = a.persona_id", "c2.local_id = u.local_id"];
+        $ultima_params = [];
+        if ($desde !== "") { $ultima_where[] = "a2.fecha_ini >= ?"; $ultima_params[] = $desde_sql; }
+        if ($hasta !== "") { $ultima_where[] = "a2.fecha_ini <= ?"; $ultima_params[] = $hasta_sql; }
+        if ($camara_filtro) { $ultima_where[] = "a2.camara_id = ?"; $ultima_params[] = $camara_filtro; }
+        if ($trabajador_filtro) { $ultima_where[] = "u.trabajador = 1"; }
+        if ($buscador !== "") {
+            $ultima_where[] = "(u.nombre LIKE ? OR u.cod_interno LIKE ?)";
+            $ultima_params[] = "%" . $buscador . "%";
+            $ultima_params[] = "%" . $buscador . "%";
+        }
         $sql_main = "SELECT a.persona_id, MAX(a.fecha_ini) AS ultima_aparicion
+                         , (SELECT a2.camara_id
+                            FROM estancias a2
+                            JOIN camaras c2 ON c2.id = a2.camara_id
+                            WHERE " . implode(" AND ", $ultima_where) . "
+                            ORDER BY a2.fecha_ini DESC, a2.id DESC
+                            LIMIT 1) AS ultima_camara_id
                      FROM estancias a
                      JOIN personas u ON u.id = a.persona_id
+                     JOIN camaras c ON c.id = a.camara_id AND c.local_id = u.local_id
                      WHERE " . implode(" AND ", $where) . "
                      GROUP BY a.persona_id
                      ORDER BY MAX(a.fecha_ini) DESC";
-        $persona_ids = DB::select($sql_main, $params);
+        $persona_ids = DB::select($sql_main, array_merge($ultima_params, $params));
 
         $par = "odd";
         foreach ($persona_ids as $prow) {
@@ -107,6 +133,11 @@ $js_quote = function ($s) {
             $pers = DB::selectOne("SELECT cod_interno, nombre, trabajador FROM personas WHERE id = ?", [$pid]);
             $cod_interno = $pers ? $pers["cod_interno"] : $pid;
             $nombre = $pers ? $pers["nombre"] : "";
+
+            $ultima_camara_id = (int)($prow["ultima_camara_id"] ?? 0);
+            $ultima_fecha = (string)($prow["ultima_aparicion"] ?? "");
+            $ultima_ts = strtotime($ultima_fecha);
+            $ultima_fecha_fmt = $ultima_ts ? date("d/m/Y H:i:s", $ultima_ts) : $ultima_fecha;
 
             // imagen (primera foto de la persona)
             $img_row = DB::selectOne(
@@ -136,6 +167,12 @@ $js_quote = function ($s) {
                 </td>
                 <td class="border-b" align="center">
                     <a class="text-theme-1 font-medium hover:underline" href="?page=visitantes&mode=editar&id=<?= $pid; ?>" title="Ver la ficha de la persona"><?= htmlspecialchars(persona_label($nombre, $cod_interno)); ?></a>
+                </td>
+                <td class="text-center border-b" data-order="<?= $ultima_ts ? (int)$ultima_ts : 0; ?>">
+                    <?php if ($ultima_camara_id > 0): ?>
+                        <?= camara_link($ultima_camara_id, $camaras_por_id[$ultima_camara_id] ?? null); ?><br>
+                    <?php endif; ?>
+                    <?= htmlspecialchars($ultima_fecha_fmt); ?>
                 </td>
                 <td class="text-center border-b" align="center"><?= $veces; ?></td>
                 <td class="border-b">
