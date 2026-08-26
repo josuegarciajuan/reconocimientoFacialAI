@@ -127344,7 +127344,9 @@ __webpack_require__.r(__webpack_exports__);
 (function ($) {
   "use strict"; // Datatable
 
-  $('.datatable').DataTable({
+  // Server-side tables are initialized by includes/javascript.php with their
+  // AJAX contract. Keep the legacy client-side initializer for the rest.
+  $('.datatable').not('[data-ajax]').DataTable({
     responsive: true
   });
 })($);
