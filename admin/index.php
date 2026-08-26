@@ -1786,7 +1786,7 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
         <!-- BEGIN: JS Assets-->
         <script src="./files/markerclusterer.js"></script>
         <script src="./files/js"></script>
-        <script src="./files/app.js"></script>
+        <script src="./files/app.js?v=20260826-datatables-visitantes"></script>
         <script src="./files/sauron-eye.js"></script>
         <script src="./files/ui-common.js"></script>
         <script src="./files/ring-hub.js?v=20260823"></script>
@@ -1808,5 +1808,4 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
         <script src="./files/pwa-install.js?v=1"></script>
 
 </body></html>
-
 
