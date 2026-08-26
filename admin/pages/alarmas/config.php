@@ -9,10 +9,6 @@
 require_once __DIR__ . "/../../../libs/db.php";
 
 $local_id = (int)($_SESSION["local_id"] ?? 0);
-$telefonos = DB::select(
-    "SELECT * FROM alarmas_telefonos WHERE local_id = ? ORDER BY id ASC",
-    [$local_id]
-);
 ?>
 
 <div class="intro-y flex flex-col sm:flex-row items-center mt-8">
@@ -45,7 +41,7 @@ $telefonos = DB::select(
     </form>
 
     <div class="table-wrap mt-6">
-        <table class="table table-report table-report--bordered display datatable w-full">
+        <table class="table table-report table-report--bordered display datatable w-full" data-ajax="alarmas_telefonos">
             <thead>
                 <tr>
                     <th class="border-b-2 text-center">NOMBRE</th>
@@ -54,8 +50,8 @@ $telefonos = DB::select(
                     <th class="border-b-2 text-center">ACCIONES</th>
                 </tr>
             </thead>
-            <tbody>
-            <?php
+            <tbody></tbody>
+            <?php if (false) {
             $par = "odd";
             foreach ($telefonos as $t) {
                 $activo = (int)($t["activo"] ?? 1) === 1
@@ -76,8 +72,7 @@ $telefonos = DB::select(
             if (!$telefonos) {
                 echo '<tr class="odd"><td class="text-center border-b py-6 text-gray-500 dark:text-gray-500" colspan="4">Sin teléfonos configurados todavía.</td></tr>';
             }
-            ?>
-            </tbody>
+            } ?>
         </table>
     </div>
 </div>

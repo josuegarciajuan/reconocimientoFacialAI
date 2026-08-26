@@ -73,7 +73,7 @@ $js_quote = function ($s) {
 
 <div class="intro-y datatable-wrapper box p-5 mt-5">
     <div class="table-wrap">
-    <table class="table table-report table-report--bordered display datatable w-full">
+    <table class="table table-report table-report--bordered display datatable w-full" data-ajax="visitantes" data-filters="camara,desde,hasta,buscador">
         <thead>
             <tr>
                 <th class="border-b-2 text-center">IMAGEN</th>
@@ -83,8 +83,8 @@ $js_quote = function ($s) {
                 <th class="border-b-2 text-center">ACCIONES</th>
             </tr>
         </thead>
-        <tbody>
-        <?php
+        <tbody></tbody>
+        <?php /* Las filas se sirven por AJAX; no se precargan registros. */ if (false) {
         // consulta principal (ids de persona)
         $where = ["u.local_id = ?"];
         $params = [$local_id];
@@ -214,8 +214,7 @@ $js_quote = function ($s) {
         <?php
             $par = ($par === "odd") ? "pair" : "odd";
         }
-        ?>
-        </tbody>
+        } ?>
     </table>
     </div>
 </div>

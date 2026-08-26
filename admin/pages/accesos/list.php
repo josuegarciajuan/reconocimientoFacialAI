@@ -27,15 +27,8 @@ $personas = DB::select(
     [$local_id]
 );
 
-// vídeos de movimiento del local en el rango (para enlazar "Ver vídeo" por estancia)
-$videos = DB::select(
-    "SELECT id, camara_id, fecha_ini, fecha_fin, poster FROM videos WHERE local_id = ? AND fecha_ini BETWEEN ? AND ? ORDER BY fecha_ini ASC",
-    [$local_id, $desde_sql, $hasta_sql]
-);
+// Los vídeos se resolverán únicamente para la página solicitada por el endpoint AJAX.
 $videos_por_cam = [];
-foreach ($videos as $v) {
-    $videos_por_cam[(int)$v["camara_id"]][] = $v;
-}
 ?>
 
 <div class="intro-y flex flex-col sm:flex-row items-center mt-8">
@@ -73,7 +66,7 @@ foreach ($videos as $v) {
 </div>
 
 <div class="intro-y datatable-wrapper box p-5 mt-5 table-wrap">
-    <table class="table table-report table-report--bordered display datatable w-full">
+        <table class="table table-report table-report--bordered display datatable w-full" data-ajax="accesos" data-filters="camara,persona_id,desde,hasta">
         <thead>
             <tr>
                 <th class="border-b-2 text-center">HORA</th>
@@ -84,8 +77,8 @@ foreach ($videos as $v) {
                 <th class="border-b-2 text-center">TIEMPO</th>
             </tr>
         </thead>
-        <tbody>
-        <?php
+         <tbody></tbody>
+         <?php if (false) {
         $where = ["e.fecha_ini >= ?", "e.fecha_ini <= ?"];
         $params = [$desde_sql, $hasta_sql];
         if ($camara_filtro) { $where[] = "e.camara_id = ?"; $params[] = $camara_filtro; }
@@ -170,7 +163,6 @@ foreach ($videos as $v) {
         <?php
             $par = ($par === "odd") ? "pair" : "odd";
         }
-        ?>
-        </tbody>
+         } ?>
     </table>
 </div>

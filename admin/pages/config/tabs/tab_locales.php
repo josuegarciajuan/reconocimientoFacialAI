@@ -6,8 +6,6 @@
 
 require_once __DIR__ . "/../../../../libs/db.php";
 
-$fortalezas = DB::select("SELECT * FROM locales ORDER BY id ASC");
-
 /* Local a editar (sub=editar). */
 $local_edit = null;
 if ($sub === "editar") {
@@ -69,7 +67,7 @@ if ($sub === "editar") {
     </p>
 
     <div class="table-wrap">
-        <table class="table table-report table-report--bordered display datatable w-full">
+        <table class="table table-report table-report--bordered display datatable w-full" data-ajax="config_locales">
             <thead>
                 <tr>
                     <th class="border-b-2 text-center">LOGO</th>
@@ -81,8 +79,8 @@ if ($sub === "editar") {
                     <th class="border-b-2 text-center">ACCIONES</th>
                 </tr>
             </thead>
-            <tbody>
-            <?php
+            <tbody></tbody>
+            <?php if (false) {
             $par = "odd";
             foreach ($fortalezas as $l) {
                 $camaras  = DB::selectOne("SELECT COUNT(*) AS n FROM camaras WHERE local_id = ?", [(int)$l["id"]]);
@@ -113,8 +111,7 @@ if ($sub === "editar") {
             if (!$fortalezas) {
                 echo '<tr class="odd"><td class="text-center border-b py-4 text-gray-500 dark:text-gray-500" colspan="7">No hay fortalezas dadas de alta todavía.</td></tr>';
             }
-            ?>
-            </tbody>
+            } ?>
         </table>
     </div>
 </div>

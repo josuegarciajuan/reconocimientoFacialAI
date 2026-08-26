@@ -12,7 +12,6 @@ require_once __DIR__ . "/../../../libs/alarmas.php";
 
 $local_id = (int)($_SESSION["local_id"] ?? 0);
 
-$alarmas = alarma_listado($local_id, 100);
 
 // Totales del día para el resumen
 $hoy = date("Y-m-d 00:00:00");
@@ -70,7 +69,7 @@ function alarma_severidad_badge(string $sev): string
     </div>
 
     <div class="table-wrap">
-        <table class="table table-report table-report--bordered display datatable w-full">
+        <table class="table table-report table-report--bordered display datatable w-full" data-ajax="alarmas">
             <thead>
                 <tr>
                     <th class="border-b-2 text-center">FECHA</th>
@@ -80,8 +79,8 @@ function alarma_severidad_badge(string $sev): string
                     <th class="border-b-2 text-center">ESTADO</th>
                 </tr>
             </thead>
-            <tbody>
-            <?php
+            <tbody></tbody>
+            <?php if (false) {
             $par = "odd";
             foreach ($alarmas as $a) {
                 $cam_label = $a["camara_id"] ? camara_label($a["camara_desc"] ?? "", (int)$a["camara_id"]) : "Local (cualquier cámara)";
@@ -115,8 +114,7 @@ function alarma_severidad_badge(string $sev): string
                 echo '<tr class="odd"><td class="text-center border-b py-6 text-gray-500 dark:text-gray-500" colspan="5">'
                    . 'La Almenara está en calma: ninguna alarma registrada. Configura la vigilancia en «La Forja» → Fortalezas o Cámaras.</td></tr>';
             }
-            ?>
-            </tbody>
+            } ?>
         </table>
     </div>
 </div>

@@ -26,8 +26,9 @@ if (isset($_GET["persona_id"]) && $_GET["persona_id"] !== "" && $_GET["persona_i
 }
 
 $local_id = intval($_SESSION["local_id"]);
-list($rutas_data, $num_puerta) = obtener_rutas($local_id, $desde_sql, $hasta_sql, $persona_filtro);
-$rutas_json = json_encode($rutas_data, JSON_UNESCAPED_UNICODE);
+$rutas_data = [];
+$num_puerta = count(camaras_puerta_salida($local_id)[0]);
+$rutas_json = '[]';
 
 // --- plano de fondo (activo: imagen subida o croquis dibujado) ---
 $plano_url = plano_url($local_id);
@@ -75,7 +76,7 @@ $personas_opciones = DB::select(
 </div>
 
 <div class="intro-y datatable-wrapper box p-5 mt-5 table-wrap">
-    <table class="table table-report table-report--bordered display datatable w-full">
+    <table class="table table-report table-report--bordered display datatable w-full" data-ajax="rutas" data-filters="persona_id,desde,hasta">
         <thead>
             <tr>
                 <th class="border-b-2 text-center">INICIO</th>
@@ -86,7 +87,8 @@ $personas_opciones = DB::select(
                 <th class="border-b-2 text-center">ACCIONES</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody></tbody>
+        <?php if (false) { ?>
         <?php if ($num_puerta === 0): ?>
             <tr><td colspan="6" class="text-center py-8 text-gray-500 dark:text-gray-500">No hay cámaras de entrada (puerta) configuradas en este local.</td></tr>
         <?php elseif (count($rutas_data) === 0): ?>
@@ -125,7 +127,7 @@ $personas_opciones = DB::select(
                 <?php $par = ($par === "odd") ? "pair" : "odd"; ?>
             <?php endforeach; ?>
         <?php endif; ?>
-        </tbody>
+        <?php } ?>
     </table>
 </div>
 

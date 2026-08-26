@@ -59,7 +59,7 @@ $trabajadores = DB::select(
         del día por cámara de puerta; salida = última por cámara de salida). <strong>Provisional</strong> = día en
         curso (la salida aún puede cambiar); <strong>Conciliado</strong> = día cerrado con salida definitiva.
     </p>
-    <table class="table table-report table-report--bordered display datatable w-full">
+    <table class="table table-report table-report--bordered display datatable w-full" data-ajax="fichajes" data-filters="persona_id,desde,hasta">
         <thead>
             <tr>
                 <th class="border-b-2 text-center">TRABAJADOR</th>
@@ -75,8 +75,8 @@ $trabajadores = DB::select(
                 <th class="border-b-2 text-center">ESTADO</th>
             </tr>
         </thead>
-        <tbody>
-        <?php
+        <tbody></tbody>
+        <?php if (false) {
         $where = ["f.local_id = ?", "f.fecha >= ?", "f.fecha <= ?"];
         $params = [$local_id, $desde_fecha, $hasta_fecha];
         if ($persona_filtro) { $where[] = "f.persona_id = ?"; $params[] = $persona_filtro; }
@@ -157,7 +157,6 @@ $trabajadores = DB::select(
         if (!$rows) {
             echo '<tr class="odd"><td class="text-center border-b py-4 text-gray-500 dark:text-gray-500" colspan="11">Sin fichajes en el rango. El conciliador los genera automáticamente (provisionales durante el día).</td></tr>';
         }
-        ?>
-        </tbody>
+        } ?>
     </table>
 </div>
