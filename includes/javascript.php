@@ -12,9 +12,9 @@
     
     function rfInitServerSideDataTables(root) {
         var scope = $(root || document);
-        var tables = scope.is('.datatable[data-ajax]')
+        var tables = scope.is('.datatable[data-datatable-source]')
             ? scope
-            : scope.find('.datatable[data-ajax]');
+            : scope.find('.datatable[data-datatable-source]');
 
         tables.each(function () {
             var table = $(this);
@@ -28,7 +28,7 @@
                 processing: true,
                 pageLength: 100,
                 ajax: { url: './datatables.php', data: function (d) {
-                    d.table = table.data('ajax');
+                    d.table = table.data('datatable-source');
                     Object.keys(filters).forEach(function (id) { d[id] = filters[id](); });
                     var worker = document.getElementById('trabajador');
                     if (worker) { d.trabajador = worker.checked ? 1 : 0; }

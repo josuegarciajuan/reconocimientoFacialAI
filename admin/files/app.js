@@ -127346,7 +127346,7 @@ __webpack_require__.r(__webpack_exports__);
 
   // Server-side tables are initialized by includes/javascript.php with their
   // AJAX contract. Keep the legacy client-side initializer for the rest.
-  $('.datatable').not('[data-ajax]').DataTable({
+  $('.datatable').not('[data-datatable-source]').DataTable({
     responsive: true
   });
 })($);

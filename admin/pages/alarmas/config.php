@@ -41,7 +41,7 @@ $local_id = (int)($_SESSION["local_id"] ?? 0);
     </form>
 
     <div class="table-wrap mt-6">
-        <table class="table table-report table-report--bordered display datatable w-full" data-ajax="alarmas_telefonos">
+        <table class="table table-report table-report--bordered display datatable w-full" data-datatable-source="alarmas_telefonos">
             <thead>
                 <tr>
                     <th class="border-b-2 text-center">NOMBRE</th>

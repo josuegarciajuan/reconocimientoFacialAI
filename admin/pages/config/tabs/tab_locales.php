@@ -67,7 +67,7 @@ if ($sub === "editar") {
     </p>
 
     <div class="table-wrap">
-        <table class="table table-report table-report--bordered display datatable w-full" data-ajax="config_locales">
+        <table class="table table-report table-report--bordered display datatable w-full" data-datatable-source="config_locales">
             <thead>
                 <tr>
                     <th class="border-b-2 text-center">LOGO</th>

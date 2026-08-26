@@ -16,7 +16,7 @@ require_once __DIR__ . "/../../../libs/db.php";
 </div>
 
 <div class="intro-y datatable-wrapper box p-5 mt-5">
-    <table class="table table-report table-report--bordered display datatable w-full" data-ajax="locales">
+        <table class="table table-report table-report--bordered display datatable w-full" data-datatable-source="locales">
         <thead>
             <tr>
                 <th class="border-b-2 text-center">LOGO</th>

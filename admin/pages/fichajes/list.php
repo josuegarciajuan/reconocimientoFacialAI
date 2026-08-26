@@ -59,7 +59,7 @@ $trabajadores = DB::select(
         del día por cámara de puerta; salida = última por cámara de salida). <strong>Provisional</strong> = día en
         curso (la salida aún puede cambiar); <strong>Conciliado</strong> = día cerrado con salida definitiva.
     </p>
-    <table class="table table-report table-report--bordered display datatable w-full" data-ajax="fichajes" data-filters="persona_id,desde,hasta">
+        <table class="table table-report table-report--bordered display datatable w-full" data-datatable-source="fichajes" data-filters="persona_id,desde,hasta">
         <thead>
             <tr>
                 <th class="border-b-2 text-center">TRABAJADOR</th>

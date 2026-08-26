@@ -66,7 +66,7 @@ $videos_por_cam = [];
 </div>
 
 <div class="intro-y datatable-wrapper box p-5 mt-5 table-wrap">
-        <table class="table table-report table-report--bordered display datatable w-full" data-ajax="accesos" data-filters="camara,persona_id,desde,hasta">
+        <table class="table table-report table-report--bordered display datatable w-full" data-datatable-source="accesos" data-filters="camara,persona_id,desde,hasta">
         <thead>
             <tr>
                 <th class="border-b-2 text-center">HORA</th>

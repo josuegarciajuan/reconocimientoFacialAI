@@ -3,12 +3,13 @@ declare(strict_types=1);
 
 $bundle = file_get_contents(__DIR__ . '/../admin/files/app.js');
 $serverSide = file_get_contents(__DIR__ . '/../includes/javascript.php');
+$visitantes = file_get_contents(__DIR__ . '/../admin/pages/visitantes/list.php');
 
-if ($bundle === false || $serverSide === false) {
+if ($bundle === false || $serverSide === false || $visitantes === false) {
     throw new RuntimeException('No se pudieron leer los inicializadores de DataTables');
 }
 
-if (strpos($bundle, "$('.datatable').not('[data-ajax]')") === false) {
+if (strpos($bundle, "$('.datatable').not('[data-datatable-source]')") === false) {
     throw new RuntimeException('El bundle debe excluir las tablas server-side');
 }
 
@@ -24,6 +25,14 @@ foreach (['serverSide: true', 'processing: true', 'pageLength: 100', "url: './da
 
 if (strpos($serverSide, 'isDataTable') === false) {
     throw new RuntimeException('El inicializador server-side debe ser idempotente');
+}
+
+if (strpos($visitantes, 'data-datatable-source="visitantes"') === false) {
+    throw new RuntimeException('La tabla de visitantes debe declarar su fuente sin usar data-ajax');
+}
+
+if (strpos($visitantes, 'data-ajax=') !== false) {
+    throw new RuntimeException('data-ajax es una opción reservada por DataTables y sobrescribe la URL configurada');
 }
 
 echo "datatables_initialization_test.php: OK\n";
