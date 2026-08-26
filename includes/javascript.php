@@ -10,9 +10,15 @@
 
 <script>
     
-    $( document ).ready(function() {
-        $('.datatable[data-ajax]').each(function () {
+    function rfInitServerSideDataTables(root) {
+        var scope = $(root || document);
+        var tables = scope.is('.datatable[data-ajax]')
+            ? scope
+            : scope.find('.datatable[data-ajax]');
+
+        tables.each(function () {
             var table = $(this);
+            if ($.fn.dataTable.isDataTable(this)) { return; }
             var filters = {};
             (table.data('filters') || '').split(',').forEach(function (id) {
                 if (id) { filters[id] = function () { var el = document.getElementById(id); return el ? el.value : ''; }; }
@@ -30,6 +36,13 @@
                 order: [[0, 'desc']],
                 responsive: true
             });
+        });
+    }
+
+    $( document ).ready(function() {
+        rfInitServerSideDataTables();
+        $(document).on('rf:content-loaded', function (event, root) {
+            rfInitServerSideDataTables(root);
         });
         setInterval(comprueba_notificaciones,10000);
         setInterval(comprueba_alarmas,10000);

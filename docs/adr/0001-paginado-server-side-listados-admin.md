@@ -38,3 +38,13 @@ construcción completa continúa disponible para el reproductor bajo demanda.
   específicas adicionales.
 - Los selectores de filtros siguen cargando sus opciones completas, al no ser
   tablas DataTables.
+
+## Nota de inicialización
+
+El bundle histórico `admin/files/app.js` también contenía una inicialización
+global de `.datatable`. Como no existe la fuente de compilación del bundle en
+este repositorio, se conservó su inicializador para tablas cliente, pero se
+excluyen explícitamente las tablas con `data-ajax`. El inicializador mantenible
+de `includes/javascript.php` es el único responsable de esas tablas, comprueba
+`isDataTable` antes de crear una instancia y se puede volver a ejecutar tras
+insertar contenido mediante el evento `rf:content-loaded`.
