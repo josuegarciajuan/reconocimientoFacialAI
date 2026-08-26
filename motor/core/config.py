@@ -31,7 +31,14 @@ class Config:
     # 80 -> 55: las caras lejanas (pocos px) tienen varianza de Laplaciano baja
     # y con 80 se descartaban antes de poder aplicar SR. 55 sigue filtrando
     # desenfoque real pero admite caras pequeñas aprovechables.
-    min_sharpness: float = 55.0      # varianza Laplaciano mínima (vigilancia)
+    # 55 -> 70 (2026-08-26): la clasificación fallaba porque se decidía sobre
+    # caras borrosas/pequeñas con embeddings ruidosos. 70 filtra el desenfoque
+    # real que produce falsos match/new (ver NFR-ACC).
+    min_sharpness: float = 70.0      # varianza Laplaciano mínima (vigilancia)
+    # Tamaño mínimo (lado mayor, px) de la cara para ser admitida en matching/
+    # galería. Por debajo, la cara tiene tan poca información que el embedding
+    # ArcFace es poco fiable -> se descarta (nopasafiltros) en vez de decidir.
+    face_min_side: int = 52
     frontal_yaw_tol: float = 35.0
     frontal_pitch_tol: float = 25.0
 
@@ -90,6 +97,9 @@ class Config:
     sr_target_side: int = 512      # TOPE máximo de salida (ya no se reescala hasta aquí:
                                    # el top-up LANCZOS4 a 512 pixelaba las caras pequeñas ~11x)
     sr_min_side: int = 320         # solo SR si el lado mayor del crop es < esto (caras pequeñas)
+    min_display_side: int = 384    # A5 top-up de DISPLAY: solo se reescala (LANCZOS4) la foto
+                                   # final hasta este lado si quedó menor (antes 512: pixelaba
+                                   # caras diminutas ~11x; 384 es un upscale más suave).
     # SR-before-embedding: caras con lado mayor < esto se super-resuelven ANTES de
     # recalcular el embedding ArcFace (mejora real del matching, no solo visual).
     sr_embed_min_face: int = 96
@@ -104,7 +114,14 @@ class Config:
 
     # --- restauración facial GFPGAN (motor/core/gfpgan.py) ---
     sr_face_enabled: bool = True   # prior facial: caras naturales de 512 px sin pixelado
-    sr_face_weight: float = 0.5    # mezcla salida GFPGAN / entrada SR (identidad; None no aplica)
+    sr_face_weight: float = 0.30   # mezcla salida GFPGAN / entrada SR (identidad; None no aplica)
+                                   # 0.70 -> 0.30 (2026-08-26): 0.70 sobre-restauraba y producía
+                                   # el efecto "fantasma"/ceroso en gafas y caras pequeñas.
+    # A3 gate: SOLO se restaura la cara con GFPGAN si su lado mayor ORIGINAL (en
+    # el crop de entrada, antes del SR) es >= este umbral. Las caras diminutas
+    # (< umbral) se dejan con el SR genérico (píxel real) en vez de dejar que
+    # GFPGAN alucine rasgos: menos "fantasma", identidad más honesta.
+    face_restore_min_side: int = 96
 
     # --- foto final de busto (display) ---
     # La foto que se muestra en el panel se genera desde un crop de busto (torso
@@ -121,9 +138,20 @@ class Config:
     # La foto rápida (compact) aparece al instante; si hq_enabled, un hilo de
     # fondo genera la versión HQ (sr_model_photo) y el panel la "autonitida"
     # sin recargar. Los embeddings/matching SIEMPRE usan `sr_model` (compact).
-    sr_model_photo: str = "x4plus"   # modelo SR de la foto final (HQ)
+    sr_model_photo: str = "compact"  # modelo SR de la foto final (HQ)
+                                   # x4plus -> compact (2026-08-26): con la máquina a
+                                   # loadavg ~50, x4plus (~30-45 s/cara) no terminaba y las
+                                   # fotos se quedaban en la versión "rápida" pixelada para
+                                   # siempre. compact (realesr-general-x4v3, ~2-5 s/cara)
+                                   # termina siempre y es el MISMO modelo del embedding.
     hq_enabled: bool = True          # generar la versión HQ progresiva
     hq_max_workers: int = 1          # nº máx de trabajos HQ concurrentes (CPU)
+
+    # --- SR-before-embedding (superres.enhance_embedding) ---
+    # Flag para poder desactivar el re-embedding sobre crop SR (que el propio
+    # código documenta como "plastificante"). Default True (comportamiento
+    # actual); la validación (motor/eval) decide si conviene dejarlo o no.
+    sr_embed_enabled: bool = True
 
     # --- encuadre de la cara (auto-zoom hacia la cara en la foto guardada) ---
     face_fill: float = 0.70        # fracción del encuadre que debe ocupar la cara
@@ -309,6 +337,10 @@ class Config:
         cfg.busto_face_fill = get_float(ruta, "RF_BUSTO_FACE_FILL", cfg.busto_face_fill)
         cfg.face_every = get_int(ruta, "RF_FACE_EVERY", cfg.face_every)
         cfg.min_sharpness = get_float(ruta, "RF_MIN_SHARPNESS", cfg.min_sharpness)
+        cfg.face_min_side = get_int(ruta, "RF_FACE_MIN_SIDE", cfg.face_min_side)
+        cfg.face_restore_min_side = get_int(ruta, "RF_FACE_RESTORE_MIN_SIDE", cfg.face_restore_min_side)
+        cfg.sr_embed_enabled = get_bool(ruta, "RF_SR_EMBED_ENABLED", cfg.sr_embed_enabled)
+        cfg.min_display_side = get_int(ruta, "RF_MIN_DISPLAY_SIDE", cfg.min_display_side)
         cfg.det_size = get_int(ruta, "RF_DET_SIZE", cfg.det_size)
         cfg.crop_det_size = get_int(ruta, "RF_CROP_DET_SIZE", cfg.crop_det_size)
         cfg.face_fill = get_float(ruta, "RF_FACE_FILL", cfg.face_fill)

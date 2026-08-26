@@ -603,6 +603,12 @@ def _store_add(store: FaceStore, person: str, item_idxs, battery, cfg: Config,
     encs, quals, poses = [], [], []
     for idx in item_idxs:
         for f in battery[idx]["faces"]:
+            # B4 (2026-08-26): higiene de galería — nunca admitir un encoding
+            # de una cara demasiado pequeña aunque pase admission_cosine: su
+            # embedding es poco fiable y con la agregación MAX puede arrastrar
+            # el score de la persona. (La nitidez ya está filtrada aguas arriba.)
+            if max(f.bbox[2] - f.bbox[0], f.bbox[3] - f.bbox[1]) < cfg.face_min_side:
+                continue
             if new_person:
                 admit = True
             elif gal_encs is None or len(gal_encs) == 0:
@@ -777,7 +783,15 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
         if not faces:
             shutil.move(p, os.path.join(notienecaras, f))
             continue
-        focused = [fc for fc in faces if face_sharpness(img, fc) >= cfg.min_sharpness]
+        # B2 (2026-08-26): además de nitidez, exigir un tamaño mínimo de cara.
+        # Una cara diminuta (< cfg.face_min_side) tiene tan poca información que
+        # el embedding ArcFace es poco fiable y causaba falsos match/new. Se
+        # descarta (nopasafiltros) en vez de decidir con datos pobres.
+        focused = [
+            fc for fc in faces
+            if face_sharpness(img, fc) >= cfg.min_sharpness
+            and max(fc.bbox[2] - fc.bbox[0], fc.bbox[3] - fc.bbox[1]) >= cfg.face_min_side
+        ]
         if not focused:
             shutil.move(p, os.path.join(nopasafiltros, f))
             continue
