@@ -91,7 +91,7 @@ $lineas = DB::select("SELECT id, nombre FROM lineas WHERE " . $lineas_where, $li
 </div>
 
 <div class="intro-y datatable-wrapper box p-5 mt-5 table-wrap">
-    <table class="table table-report table-report--bordered display datatable w-full" data-ajax="lineas" data-filters="camara,linea,trayectoria,persona_id,desde,hasta">
+        <table class="table table-report table-report--bordered display datatable w-full" data-datatable-source="lineas" data-filters="camara,linea,trayectoria,persona_id,desde,hasta">
         <thead>
             <tr>
                 <th class="border-b-2 text-center">HORA</th>

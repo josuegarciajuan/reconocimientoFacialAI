@@ -69,7 +69,7 @@ function alarma_severidad_badge(string $sev): string
     </div>
 
     <div class="table-wrap">
-        <table class="table table-report table-report--bordered display datatable w-full" data-ajax="alarmas">
+        <table class="table table-report table-report--bordered display datatable w-full" data-datatable-source="alarmas">
             <thead>
                 <tr>
                     <th class="border-b-2 text-center">FECHA</th>
