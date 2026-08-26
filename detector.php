@@ -138,7 +138,9 @@ while (true) {
                 while (($el = readdir($dir)) !== false) {
                     if ($el === "." || $el === "..") { continue; }
                     if (strpos($el, "procesar") !== false) { continue; }
-                    if (strpos($el, "archiva_") === 0) { $numero_archiva++; }
+                    // Solo los marcadores de proceso ocupan slots; los contadores
+                    // auxiliares `archiva_*.intentos` no representan procesos vivos.
+                    if (strpos($el, "archiva_") === 0 && substr($el, -4) === ".txt") { $numero_archiva++; }
                     elseif (preg_match('/\.(avi|mp4)\.txt$/', $el)) { $numero_videos++; }
                 }
             }

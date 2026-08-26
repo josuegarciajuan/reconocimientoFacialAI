@@ -12,7 +12,7 @@ from fifo import fifo
 # sin AVI intermedio. El orquestador archiva_video.py lo mueve a videos_archivo/
 # y genera la miniatura. FTP legacy ya no se usa (el vídeo se queda local).
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from motor.core.video import H264VideoWriter, VideoConfig  # noqa: E402
+from motor.core.video import H264VideoWriter, VideoConfig, write_frame_safe  # noqa: E402
 from motor.core.env import get_int  # noqa: E402
 from motor.core.motion import MotionConfig, MotionDetector  # noqa: E402
 
@@ -308,7 +308,7 @@ while(True):
                 printLog ("Grabando...")
 
             if writer is not None:
-                writer.write(frame_original)
+                write_frame_safe(writer, frame_original, printLog)
             time_elapsed = time.time() - time_inicio
             # key = cv2.waitKey(500)
             limite_grabado = maximo_videos_boost if alarma["boost"] else maximo_videos
