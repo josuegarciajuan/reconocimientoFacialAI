@@ -26,6 +26,19 @@ function datatables_response(int $draw, int $total, int $filtered, array $data):
         'recordsFiltered' => max(0, $filtered), 'data' => array_values($data)];
 }
 
+/** Codifica respuestas también cuando MySQL entrega texto latin1 mal formado para UTF-8. */
+function datatables_encode(array $response): string
+{
+    $json = json_encode(
+        $response,
+        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE
+    );
+    if ($json === false) {
+        throw new RuntimeException('No se pudo serializar la respuesta DataTables');
+    }
+    return $json;
+}
+
 function datatables_html(string $value): string
 {
     return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');

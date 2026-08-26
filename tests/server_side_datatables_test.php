@@ -25,4 +25,9 @@ assert_same('p.id', datatables_order('invalido', ['0' => 'p.id']), 'columna desc
 $response = datatables_response(3, 20, 5, [['id' => 1]]);
 assert_same(['draw' => 3, 'recordsTotal' => 20, 'recordsFiltered' => 5, 'data' => [['id' => 1]],], $response, 'contrato DataTables inválido');
 
+$json = datatables_encode(datatables_response(1, 1, 1, [["nombre" => "\xB1"]]));
+if (json_decode($json, true) === null || strpos($json, '�') === false) {
+    throw new RuntimeException('La respuesta debe seguir siendo JSON válido con texto latin1 inválido');
+}
+
 echo "server_side_datatables_test.php: OK\n";
