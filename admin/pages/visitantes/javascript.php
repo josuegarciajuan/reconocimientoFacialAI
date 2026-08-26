@@ -47,21 +47,27 @@
     
     
    function buscar1(){
-       
-       camara=document.getElementById("camara").value;
-       desde=document.getElementById("desde").value;
-       hasta=document.getElementById("hasta").value;
-       trabajador=document.getElementById("trabajador");
-       
-       aux=0;
-       if(document.getElementById("trabajador").checked){
-        aux=1;
+       var camara = document.getElementById("camara").value;
+       var desde = document.getElementById("desde").value;
+       var hasta = document.getElementById("hasta").value;
+       var trabajador = document.getElementById("trabajador").checked ? 1 : 0;
+       var buscador = document.getElementById("buscador");
+       var params = [
+           "page=visitantes",
+           "buscar=1",
+           "camara=" + encodeURIComponent(camara),
+           "trabajador=" + trabajador
+       ];
+
+       // No enviar fechas vacías evita convertirlas accidentalmente en un rango.
+       if (desde.trim() !== "") { params.push("desde=" + encodeURIComponent(desde)); }
+       if (hasta.trim() !== "") { params.push("hasta=" + encodeURIComponent(hasta)); }
+       if (buscador && buscador.value.trim() !== "") {
+           params.push("buscador=" + encodeURIComponent(buscador.value.trim()));
        }
-       cmd='?page=visitantes&buscar=1&camara='+camara+'&desde='+desde+'&hasta='+hasta+'&trabajador='+aux;
-       //alert(cmd);
-       
-       location.href=cmd;
-       
+
+       location.href = "?" + params.join("&");
+
    } 
    
    function cambiar_nombre(valor,persona_id){
