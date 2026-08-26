@@ -91,7 +91,7 @@ $lineas = DB::select("SELECT id, nombre FROM lineas WHERE " . $lineas_where, $li
 </div>
 
 <div class="intro-y datatable-wrapper box p-5 mt-5 table-wrap">
-    <table class="table table-report table-report--bordered display datatable w-full">
+    <table class="table table-report table-report--bordered display datatable w-full" data-ajax="lineas" data-filters="camara,linea,trayectoria,persona_id,desde,hasta">
         <thead>
             <tr>
                 <th class="border-b-2 text-center">HORA</th>
@@ -103,8 +103,8 @@ $lineas = DB::select("SELECT id, nombre FROM lineas WHERE " . $lineas_where, $li
                 <th class="border-b-2 text-center">FOTOS</th>
             </tr>
         </thead>
-        <tbody>
-        <?php
+        <tbody></tbody>
+        <?php if (false) {
         $where = ["cl.fecha >= ?", "cl.fecha <= ?"];
         $params = [$desde_sql, $hasta_sql];
 
@@ -191,7 +191,6 @@ $lineas = DB::select("SELECT id, nombre FROM lineas WHERE " . $lineas_where, $li
         <?php
             $par = ($par === "odd") ? "pair" : "odd";
         }
-        ?>
-        </tbody>
+        } ?>
     </table>
 </div>

@@ -6,7 +6,6 @@
 
 require_once __DIR__ . "/../../../libs/db.php";
 
-$locales = DB::select("SELECT * FROM locales ORDER BY id ASC");
 ?>
 
 <div class="intro-y flex flex-col sm:flex-row items-center mt-8">
@@ -17,7 +16,7 @@ $locales = DB::select("SELECT * FROM locales ORDER BY id ASC");
 </div>
 
 <div class="intro-y datatable-wrapper box p-5 mt-5">
-    <table class="table table-report table-report--bordered display datatable w-full">
+    <table class="table table-report table-report--bordered display datatable w-full" data-ajax="locales">
         <thead>
             <tr>
                 <th class="border-b-2 text-center">LOGO</th>
@@ -29,8 +28,8 @@ $locales = DB::select("SELECT * FROM locales ORDER BY id ASC");
                 <th class="border-b-2 text-center">ACCIONES</th>
             </tr>
         </thead>
-        <tbody>
-        <?php
+        <tbody></tbody>
+        <?php if (false) {
         $par = "odd";
         foreach ($locales as $l) {
             $camaras = DB::selectOne("SELECT COUNT(*) AS n FROM camaras WHERE local_id = ?", [(int)$l["id"]]);
@@ -58,7 +57,6 @@ $locales = DB::select("SELECT * FROM locales ORDER BY id ASC");
         <?php
             $par = ($par === "odd") ? "pair" : "odd";
         }
-        ?>
-        </tbody>
+        } ?>
     </table>
 </div>

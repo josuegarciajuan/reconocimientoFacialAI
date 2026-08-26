@@ -11,6 +11,26 @@
 <script>
     
     $( document ).ready(function() {
+        $('.datatable[data-ajax]').each(function () {
+            var table = $(this);
+            var filters = {};
+            (table.data('filters') || '').split(',').forEach(function (id) {
+                if (id) { filters[id] = function () { var el = document.getElementById(id); return el ? el.value : ''; }; }
+            });
+            table.DataTable({
+                serverSide: true,
+                processing: true,
+                pageLength: 100,
+                ajax: { url: './datatables.php', data: function (d) {
+                    d.table = table.data('ajax');
+                    Object.keys(filters).forEach(function (id) { d[id] = filters[id](); });
+                    var worker = document.getElementById('trabajador');
+                    if (worker) { d.trabajador = worker.checked ? 1 : 0; }
+                }},
+                order: [[0, 'desc']],
+                responsive: true
+            });
+        });
         setInterval(comprueba_notificaciones,10000);
         setInterval(comprueba_alarmas,10000);
     });
