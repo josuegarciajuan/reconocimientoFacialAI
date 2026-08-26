@@ -166,7 +166,6 @@ class H264VideoWriter:
                 except Exception:
                     pass
                 self._stderr_file = None
-
     def write(self, frame) -> None:
         """Encola un frame BGR para el encoder. No-op si el proceso falló."""
         if self._proc is None or frame is None:
@@ -211,6 +210,17 @@ class H264VideoWriter:
                 except Exception:
                     pass
                 self._stderr_file = None
+
+
+def write_frame_safe(writer, frame, on_error=None) -> bool:
+    """Escribe un frame sin propagar fallos del encoder al bucle de captura."""
+    try:
+        writer.write(frame)
+        return True
+    except Exception as exc:
+        if on_error is not None:
+            on_error("excepción escribiendo frame: " + str(exc))
+        return False
 
 
 def extraer_poster(src: str, dst_jpg: str, at: float = 0.0, timeout: int = 60) -> bool:
