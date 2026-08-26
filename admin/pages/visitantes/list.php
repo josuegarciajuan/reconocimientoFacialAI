@@ -10,11 +10,11 @@ require_once __DIR__ . "/../../../libs/etiquetas.php";
 
 $local_id = (int)$_SESSION["local_id"];
 
-// filtros
-$desde_sql = rango_a_sql($_GET["desde"] ?? "", date("Y-m-d 00:00:00"));
-$hasta_sql = rango_a_sql($_GET["hasta"] ?? "", date("Y-m-d 23:59:59"));
-$desde = $_GET["desde"] ?? (date("n/d") . " 12:01 AM");
-$hasta = $_GET["hasta"] ?? (date("n/d") . " 12:59 PM");
+// filtros: las fechas son opcionales; sin ellas se muestran todas las estancias.
+$desde = trim((string)($_GET["desde"] ?? ""));
+$hasta = trim((string)($_GET["hasta"] ?? ""));
+$desde_sql = $desde !== "" ? rango_a_sql($desde, date("Y-m-d 00:00:00")) : null;
+$hasta_sql = $hasta !== "" ? rango_a_sql($hasta, date("Y-m-d 23:59:59")) : null;
 
 $camara_filtro = (isset($_GET["camara"]) && $_GET["camara"] !== "" && $_GET["camara"] !== "-") ? (int)$_GET["camara"] : 0;
 $trabajador_filtro = (isset($_GET["trabajador"]) && $_GET["trabajador"] == 1);
@@ -83,8 +83,8 @@ $js_quote = function ($s) {
         // consulta principal (ids de persona)
         $where = ["u.local_id = ?"];
         $params = [$local_id];
-        $where[] = "a.fecha_ini >= ?"; $params[] = $desde_sql;
-        $where[] = "a.fecha_ini <= ?"; $params[] = $hasta_sql;
+        if ($desde !== "") { $where[] = "a.fecha_ini >= ?"; $params[] = $desde_sql; }
+        if ($hasta !== "") { $where[] = "a.fecha_ini <= ?"; $params[] = $hasta_sql; }
         if ($camara_filtro) { $where[] = "a.camara_id = ?"; $params[] = $camara_filtro; }
         if ($trabajador_filtro) { $where[] = "u.trabajador = 1"; }
         if ($buscador !== "") {
@@ -92,7 +92,12 @@ $js_quote = function ($s) {
             $params[] = "%" . $buscador . "%";
             $params[] = "%" . $buscador . "%";
         }
-        $sql_main = "SELECT DISTINCT a.persona_id FROM estancias a JOIN personas u ON u.id = a.persona_id WHERE " . implode(" AND ", $where) . " ORDER BY a.persona_id DESC";
+        $sql_main = "SELECT a.persona_id, MAX(a.fecha_ini) AS ultima_aparicion
+                     FROM estancias a
+                     JOIN personas u ON u.id = a.persona_id
+                     WHERE " . implode(" AND ", $where) . "
+                     GROUP BY a.persona_id
+                     ORDER BY MAX(a.fecha_ini) DESC";
         $persona_ids = DB::select($sql_main, $params);
 
         $par = "odd";
@@ -157,7 +162,7 @@ $js_quote = function ($s) {
                         <?php endif; ?>
                         <?php if (!isset($_GET["unir"])): ?>
                             <div class="accion-item">
-                                <a href="?page=visitantes&unir=<?= $pid; ?>&camara=<?= $camara_filtro; ?>&desde=<?= urlencode($desde); ?>&hasta=<?= urlencode($hasta); ?>&trabajador=<?= $trabajador_filtro ? 1 : 0; ?>" data-tip="Unir esta persona con otra para fusionar identidades">Unir</a>
+                    <a href="?page=visitantes&unir=<?= $pid; ?>&camara=<?= $camara_filtro; ?>&desde=<?= urlencode($desde); ?>&hasta=<?= urlencode($hasta); ?>&trabajador=<?= $trabajador_filtro ? 1 : 0; ?>&buscador=<?= urlencode($buscador); ?>" data-tip="Unir esta persona con otra para fusionar identidades">Unir</a>
                             </div>
                         <?php else: ?>
                             <div class="accion-item">
