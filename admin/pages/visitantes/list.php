@@ -73,7 +73,7 @@ $js_quote = function ($s) {
 
 <div class="intro-y datatable-wrapper box p-5 mt-5">
     <div class="table-wrap">
-    <table class="table table-report table-report--bordered display datatable w-full" data-datatable-source="visitantes" data-filters="camara,desde,hasta,buscador">
+    <table class="table table-report table-report--bordered display datatable w-full" data-datatable-source="visitantes" data-filters="camara,desde,hasta,buscador" data-empty-filters="desde,hasta">
         <thead>
             <tr>
                 <th class="border-b-2 text-center">IMAGEN</th>

@@ -127344,8 +127344,69 @@ __webpack_require__.r(__webpack_exports__);
 (function ($) {
   "use strict"; // Datatable
 
-  // Server-side tables are initialized by includes/javascript.php with their
-  // AJAX contract. Keep the legacy client-side initializer for the rest.
+  // Keep the DataTables API and its jQuery instance together. The application
+  // bundle scopes jQuery, so initialising these tables from an inline script
+  // would use a different jQuery instance without the DataTables plugin.
+  window.rfInitServerSideDataTables = function (root) {
+    var scope = $(root || document);
+    var tables = scope.is('.datatable[data-datatable-source]') ? scope : scope.find('.datatable[data-datatable-source]');
+    tables.each(function () {
+      var table = $(this);
+      if ($.fn.dataTable.isDataTable(this)) {
+        return;
+      }
+
+      var filters = {};
+      var emptyFilters = {};
+      (table.data('empty-filters') || '').split(',').forEach(function (id) {
+        if (id) {
+          emptyFilters[id] = true;
+        }
+      });
+      var query = new URLSearchParams(window.location.search);
+      (table.data('filters') || '').split(',').forEach(function (id) {
+        if (id) {
+          filters[id] = function () {
+            if (emptyFilters[id] && !query.has(id)) {
+              return '';
+            }
+            var el = document.getElementById(id);
+            return el ? el.value : '';
+          };
+        }
+      });
+
+      table.DataTable({
+        serverSide: true,
+        processing: true,
+        pageLength: 100,
+        ajax: {
+          url: './datatables.php',
+          data: function data(d) {
+            d.table = table.data('datatable-source');
+            Object.keys(filters).forEach(function (id) {
+              d[id] = filters[id]();
+            });
+            var worker = document.getElementById('trabajador');
+            if (worker) {
+              d.trabajador = worker.checked ? 1 : 0;
+            }
+          }
+        },
+        order: [[0, 'desc']],
+        responsive: true
+      });
+    });
+  };
+
+  $(function () {
+    window.rfInitServerSideDataTables();
+    $(document).on('rf:content-loaded', function (event, root) {
+      window.rfInitServerSideDataTables(root);
+    });
+  });
+
+  // Keep the legacy client-side initializer for the rest.
   $('.datatable').not('[data-datatable-source]').DataTable({
     responsive: true
   });

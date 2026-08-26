@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/../libs/db.php';
 
 /**
  * Ejecuta visitantes por HTTP con la misma cookie de sesión que usa el panel.
@@ -40,6 +41,14 @@ try {
     }
     if (($response['recordsTotal'] ?? 0) > 0 && $response['data'] === []) {
         throw new RuntimeException('Visitantes informó registros pero no devolvió filas');
+    }
+
+    $compatible = DB::selectOne(
+        'SELECT e.persona_id FROM estancias e JOIN camaras c ON c.id = e.camara_id WHERE c.local_id = ? LIMIT 1',
+        [1]
+    );
+    if ($compatible !== null && $response['data'] === []) {
+        throw new RuntimeException('Visitantes debe devolver una fila cuando existe una estancia compatible con el local');
     }
 } finally {
     proc_terminate($process);
