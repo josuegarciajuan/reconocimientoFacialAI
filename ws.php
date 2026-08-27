@@ -62,6 +62,23 @@ switch ($accion) {
                                   $accion === "nombreunico" ? "cod_interno" : "identificador_unico");
         exit;
 
+    case "listado_fotos_persona":
+        // Barrido de fotos cruzadas (motor/detectar_fotos_cruzadas.py): por cada
+        // foto del local, la persona asignada en BD (vía estancia) + cod_interno.
+        // Solo lectura; JSON. Uso: php ws.php listado_fotos_persona <local_id>
+        $local_id = (string) arg(2);
+        $rows = DB::select(
+            "SELECT f.id AS foto_id, e.persona_id, p.cod_interno, e.camara_id
+             FROM fotos f
+             JOIN estancias e ON e.id = f.estancia_id
+             JOIN personas p ON p.id = e.persona_id
+             WHERE p.local_id = ?
+             ORDER BY f.id",
+            [$local_id]
+        );
+        echo json_encode($rows);
+        exit;
+
     case "listado_lineas":
         $camara_id = (int) arg(2);
         $ids = array_column(DB::select("SELECT id FROM lineas WHERE camara_id = ?", [$camara_id]), "id");
