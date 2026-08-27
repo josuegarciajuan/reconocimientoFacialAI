@@ -147,7 +147,7 @@ def busto_bbox(face, frame_w: int, frame_h: int, cfg: Config):
 
 
 def guardar_cara(ruta: str, local_id: str, camara_id: str, fichero: str, frame,
-                 face, segs: float, cfg: Config, buffer: list) -> None:
+                 face, segs: float, cfg: Config, buffer: list, face_idx: int = 0) -> None:
     # dedup: si ya guardamos una cara casi idéntica hace poco, la saltamos
     for b in buffer:
         if float(face.embedding @ b) > cfg.dedup_cosine:
@@ -171,7 +171,12 @@ def guardar_cara(ruta: str, local_id: str, camara_id: str, fichero: str, frame,
 
     out_dir = os.path.join(ruta, "motor/caras/sinclasificar", local_id, camara_id)
     os.makedirs(out_dir, exist_ok=True)
-    nombre = f"{fichero}_{segs:.6f}"
+    # A (2 caras en el mismo frame): el nombre incluye el índice de la cara en el
+    # frame. Sin él, dos caras del mismo frame muestreado escribían el MISMO
+    # nombre y la segunda sobrescribía la primera (crop tight y busto), perdiendo
+    # una identidad y dejando bustos con la cara equivocada. El índice se aplica
+    # por igual a tight/busto/torso para que los stems sigan casando.
+    nombre = f"{fichero}_{segs:.6f}_{face_idx}"
     # PNG sin pérdidas: el crop es el input del SR/GFPGAN; guardarlo como JPEG
     # añadía una generación de compresión sobre caras ya muy pequeñas (~45 px).
     cv2.imwrite(os.path.join(out_dir, nombre + ".png"), crop)
@@ -268,8 +273,8 @@ def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,
         # caras (muestreo para no saturar CPU)
         if frame_idx % face_every == 0:
             faces = analyze(frame, det_size=(cfg.det_size, cfg.det_size), min_score=cfg.min_det_score)
-            for f in faces:
-                guardar_cara(ruta, local_id, camara_id, fichero, frame, f, ts, cfg, buffer)
+            for fi, f in enumerate(faces):
+                guardar_cara(ruta, local_id, camara_id, fichero, frame, f, ts, cfg, buffer, face_idx=fi)
                 caras += 1
 
             # F7: personas SIN cara (de espaldas) -> crop de cuerpo

@@ -133,6 +133,11 @@ class Config:
     busto_w_face: float = 3.0        # ancho del crop de busto en veces el ancho de la cara
     busto_h_face: float = 4.5        # alto del crop de busto en veces el alto de la cara
     busto_head_pad: float = 0.6      # margen sobre la cabeza (pelo) en veces el alto de la cara
+    # B (2 caras en el mismo busto): el crop de busto puede contener a OTRA
+    # persona. Para la foto final se elige la cara con mayor coseno contra la
+    # persona del sub-clúster (no la de mayor det_score); si ninguna supera este
+    # umbral se cae al crop tight (cara correcta garantizada).
+    display_face_min_cosine: float = 0.6
 
     # --- foto final HQ (progresiva): fast (compact) -> HQ (sr_model_photo) ---
     # La foto rápida (compact) aparece al instante; si hq_enabled, un hilo de
@@ -335,6 +340,7 @@ class Config:
         cfg.hq_max_workers = get_int(ruta, "RF_HQ_MAX_WORKERS", cfg.hq_max_workers)
         cfg.busto_enabled = get_bool(ruta, "RF_BUSTO_ENABLED", cfg.busto_enabled)
         cfg.busto_face_fill = get_float(ruta, "RF_BUSTO_FACE_FILL", cfg.busto_face_fill)
+        cfg.display_face_min_cosine = get_float(ruta, "RF_DISPLAY_FACE_MIN_COS", cfg.display_face_min_cosine)
         cfg.face_every = get_int(ruta, "RF_FACE_EVERY", cfg.face_every)
         cfg.min_sharpness = get_float(ruta, "RF_MIN_SHARPNESS", cfg.min_sharpness)
         cfg.face_min_side = get_int(ruta, "RF_FACE_MIN_SIDE", cfg.face_min_side)

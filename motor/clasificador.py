@@ -51,6 +51,15 @@ from motor.core.superres import enhance_embedding, photo_busto  # noqa: E402
 ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 IMG_EXTS = (".jpg", ".jpeg", ".png")
 
+# C (idempotencia): hash del embedding representativo ya consumido en esta
+# sesión del daemon. Si el MISMO rostro (mismo crop re-leído o re-escrito) se
+# vuelve a procesar en una pasada posterior, se salta: antes generaba una foto
+# duplicada del mismo stem y un segundo match con score 1.0 (autocoincidencia
+# tras autoenriquecer la galería con la primera pasada). Se usa el hash de la
+# cara (no el stem) para no descartar a una 2ª persona legítima que en crops
+# legacy pudiera compartir stem.
+_PROCESSED_FACES: set[str] = set()
+
 # Cola de foto HQ para el worker único (motor/photo_worker.py): el clasificador
 # YA NO carga GFPGAN/RealESRGAN-x4plus (refactor RAM: los modelos pesados viven
 # en UN solo proceso rf-photo, no en N clasificadores de cámara).
@@ -187,6 +196,47 @@ def _face_scores(embs: list[np.ndarray], store: FaceStore, cfg: Config,
         for cod, s in sp.items():
             agg.setdefault(cod, []).append(s)
     return {cod: float(np.max(v)) for cod, v in agg.items()}
+
+
+def select_display_face(b_faces, ref_emb, min_cos: float):
+    """Cara del crop de BUSTO que mejor coincide con la persona del sub-clúster.
+
+    El crop de busto (ancho 3x la cara) puede contener a OTRA persona cuando dos
+    personas están juntas en el frame. Antes se elegía `max(det_score)` (la cara
+    más grande), que podía ser la persona EQUIVOCADA (foto 723 mostraba al
+    acompañante aunque el match por embeddings era correcto). Ahora se elige la
+    cara con MAYOR COSENO contra el embedding representativo del sub-clúster; si
+    ninguna supera `min_cos`, devuelve None y el llamador cae al crop tight
+    (que muestra SIEMPRE la cara correcta).
+    """
+    from motor.core.matching import cosine  # noqa: E402
+    best, best_s = None, -1.0
+    for f in b_faces:
+        s = cosine(f.embedding, ref_emb)
+        if s > best_s:
+            best, best_s = f, s
+    if best is not None and best_s >= min_cos:
+        return best
+    return None
+
+
+def dedup_faces_near_duplicates(faces: list, img, cfg: Config) -> list:
+    """Elimina detecciones casi idénticas del MISMO rostro dentro de un crop.
+
+    C (2 caras en el mismo crop): RetinaFace puede devolver 2 cajas casi iguales
+    sobre la misma cara. Sin este dedup, el mismo stem generaba DOS sub-clústeres
+    con el mismo embedding -> 2 fotos del mismo crop, la 2ª con score 1.0
+    (autocoincidencia tras autoenriquecer la galería) y una foto display de la
+    persona equivocada. Se conserva la más nítida de cada rostro distinto.
+    """
+    if len(faces) <= 1:
+        return list(faces)
+    from motor.core.matching import cosine  # noqa: E402
+    keep: list = []
+    for fc in sorted(faces, key=lambda x: face_sharpness(img, x), reverse=True):
+        if all(cosine(fc.embedding, k.embedding) < cfg.dedup_cosine for k in keep):
+            keep.append(fc)
+    return keep
 
 
 class _CascadeCtx:
@@ -376,6 +426,7 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
                         feedback=None, torso_map: dict[str, str] | None = None,
                         busto_map: dict[str, str] | None = None) -> None:
     """Clasifica un sub-clúster coherente de caras y actualiza galería/álbum."""
+    from motor.core.feedback import embedding_hash  # noqa: E402 (guarda C de idempotencia)
     item_idxs = sorted({face_list[i][1] for i in sub})
     embs = [face_list[i][0] for i in sub]
 
@@ -410,6 +461,25 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     busto_path = None
     if busto_map:
         busto_path = busto_map.get(rep_stem)
+
+    # C (idempotencia): si este MISMO rostro (mismo embedding representativo) ya
+    # se procesó en esta sesión, el crop es un duplicado re-leído/re-escrito. Se
+    # consumen sus ficheros y se salta: antes producía una 2ª foto del mismo crop
+    # y un match con score 1.0 (autocoincidencia tras autoenriquecer la galería).
+    rep_hash = embedding_hash(embs[0]) if embs else None
+    if rep_hash is not None and rep_hash in _PROCESSED_FACES:
+        for _idx in item_idxs:
+            _p = battery[_idx]["path"]
+            if os.path.exists(_p):
+                os.remove(_p)
+        if torso_path and os.path.exists(torso_path):
+            os.remove(torso_path)
+        if busto_path and os.path.exists(busto_path):
+            os.remove(busto_path)
+        log(f"[skip] rostro ya procesado en esta sesión: {rep_stem}")
+        return
+    if rep_hash is not None:
+        _PROCESSED_FACES.add(rep_hash)
 
     # F2 fix: en veredicto "uncertain" también se enriquece la galería
     enrich_on_uncertain = cfg.zones_enabled
@@ -470,6 +540,11 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     # Foto final: BUSTO (torso real + cara restaurada) para display. Internamente
     # el matching usa los crops tight; aquí se genera la imagen que se muestra.
     # Se prefiere el crop de busto (si existe); si no, el crop de cara tight.
+    # B (2 caras en el mismo busto): se elige la cara del busto con mayor coseno
+    # contra la persona del sub-clúster (no la de mayor det_score, que podía ser
+    # la persona equivocada). Si el busto no contiene una cara de esa persona
+    # (coseno < display_face_min_cosine), se cae al crop tight: la foto final
+    # muestra SIEMPRE la cara correcta.
     photo_img = rep_item["img"]
     photo_bbox = rep_face.bbox
     if cfg.busto_enabled and busto_path and os.path.exists(busto_path):
@@ -477,8 +552,8 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
         if b_img is not None:
             b_faces = analyze(b_img, det_size=(cfg.crop_det_size, cfg.crop_det_size),
                               min_score=cfg.min_det_score)
-            if b_faces:
-                bf = max(b_faces, key=lambda f: f.det_score)
+            bf = select_display_face(b_faces, rep_face.embedding, cfg.display_face_min_cosine)
+            if bf is not None:
                 photo_img = b_img
                 photo_bbox = bf.bbox
 
@@ -795,6 +870,9 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
         if not focused:
             shutil.move(p, os.path.join(nopasafiltros, f))
             continue
+        # C (2 caras en el mismo crop): dedup de detecciones casi idénticas del
+        # MISMO rostro dentro del crop (ver dedup_faces_near_duplicates).
+        focused = dedup_faces_near_duplicates(focused, img, cfg)
         # SR-before-embedding: las caras pequeñas (< sr_embed_min_face) recalculan
         # su embedding sobre el recorte super-resuelto -> matching más fiable.
         for fc in focused:
