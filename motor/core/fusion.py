@@ -205,11 +205,17 @@ def decide_situational(face_scores: dict[str, float],
             acuerdos_sin_atributos = 0
             acuerdo_atributos = False
             acuerdo_llm_fuerte = False
+            apoyo_positivo = False
             for name in _escalation(plan, cfg, ctx):
                 ls = ctx.layer(name, top)
                 if ls is None or not ls.available:
                     continue
                 layers[name] = ls
+                # Una señal positiva pero aún no suficientemente fiable para
+                # autoasignar no desaparece: junto a una silueta co-autora
+                # válida obliga revisión en vez de fragmentar la identidad.
+                if ls.score >= cfg.gray_high:
+                    apoyo_positivo = True
                 umbral = cfg.llm_min_conf if name in ("vlm", "openai") else cfg.min_layer_conf
                 if ls.confidence < umbral:
                     continue
@@ -225,6 +231,12 @@ def decide_situational(face_scores: dict[str, float],
                     or acuerdo_llm_fuerte
                     or (acuerdo_atributos and acuerdos_sin_atributos >= 1)):
                 return _result("match", top, s1, s2, face_scores, layers, cands)
+            silueta_valida = any(
+                name == "silueta" and ls.available and ls.score >= cfg.silueta_min_score
+                for name, ls in layers.items()
+            )
+            if silueta_valida and apoyo_positivo:
+                return _result("review", top, s1, s2, face_scores, layers, cands)
         return _result("new", None, s1, s2, face_scores, layers, cands)
 
     # --- EARLY-EXIT: frontal nítida decide sola SOLO con margen limpio ---

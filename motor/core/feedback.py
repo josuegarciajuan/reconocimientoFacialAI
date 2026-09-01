@@ -44,6 +44,18 @@ def _ls_pair(v) -> tuple[float, float]:
     return float(getattr(v, "score", 0.0)), float(getattr(v, "confidence", 0.0))
 
 
+def _ls_record(v) -> dict:
+    """Representación de una capa que conserva disponibilidad y diagnóstico."""
+    s, c = _ls_pair(v)
+    if isinstance(v, dict):
+        available = bool(v.get("available", True))
+        reason = str(v.get("reason", ""))
+    else:
+        available = bool(getattr(v, "available", True))
+        reason = str(getattr(v, "reason", ""))
+    return {"s": s, "c": c, "available": available, "reason": reason}
+
+
 class FeedbackCollector:
     def __init__(self, ruta: str, local_id: str, enabled: bool = True):
         self.dir = os.path.join(ruta, "motor/feedback", str(local_id))
@@ -74,9 +86,8 @@ class FeedbackCollector:
             "top2": entry.get("top2"),
             "best": entry.get("best"),
             "second": entry.get("second"),
-            "layers": {k: {"s": s, "c": c}
-                       for k, v in (entry.get("layers") or {}).items()
-                       for s, c in [_ls_pair(v)]},
+            "layers": {k: _ls_record(v)
+                       for k, v in (entry.get("layers") or {}).items()},
             "query_hash": entry.get("query_hash"),
             "stem": entry.get("stem"),
             # F4: situación del query para calibración condicionada a la pose.

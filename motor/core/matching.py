@@ -21,11 +21,12 @@ class LayerScore:
     score: float = 0.0
     confidence: float = 0.0
     available: bool = True
+    reason: str = ""
 
 
 @dataclass
 class MatchResult:
-    verdict: str                        # "match" | "uncertain" | "new"
+    verdict: str                        # "match" | "uncertain" | "review" | "new"
     person: str | None = None
     best_score: float = 0.0
     second_score: float = 0.0
