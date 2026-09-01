@@ -52,6 +52,11 @@ def enroll(local_id: str, video_path: str, cod_interno: str, ruta: str,
         if sh < cfg.enrollment_min_sharpness:
             continue
         pl = pose_label(face, cfg.yaw_frontal, cfg.yaw_45, cfg.yaw_90, cfg.pitch_frontal)
+        # Solo se enrolan las poses permitidas (min_poses): se descartan los
+        # perfiles 90° (pi/pd, "casi de espaldas") y las poses degeneradas
+        # (`other`), que ensuciaban la galería y daban baja tasa de acierto.
+        if pl not in cfg.min_poses:
+            continue
         buckets[pl].append((sh, face.embedding))
     cap.release()
 
