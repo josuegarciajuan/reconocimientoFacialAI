@@ -59,7 +59,7 @@ def _empty() -> dict:
 
 def _new_person() -> dict:
     return {"encodings": [], "quality": [], "poses": [], "added_at": [],
-            "sources": [], "appearance": None}
+            "sources": [], "appearance": None, "attributes": None}
 
 
 def _aligned_lists(p: dict, n: int) -> None:
@@ -205,6 +205,24 @@ class FaceStore:
             return None
         return p["appearance"]
 
+    def add_attributes(self, cod: str, attrs: dict, ts: float | None = None,
+                       src: str = "") -> None:
+        """Store structured visible attributes separately from embeddings."""
+        def _fn(data: dict) -> None:
+            p = data["persons"].setdefault(cod, _new_person())
+            if p.get("attributes") is None:
+                p["attributes"] = {"values": [], "ts": [], "src": []}
+            p["attributes"]["values"].append(dict(attrs))
+            p["attributes"]["ts"].append(float(ts if ts is not None else time.time()))
+            p["attributes"]["src"].append(src)
+        self._transaction(_fn)
+
+    def person_attributes(self, cod: str) -> dict | None:
+        p = self.person(cod)
+        if not p or not p.get("attributes"):
+            return None
+        return p["attributes"]
+
     def remove(self, cod: str) -> None:
         def _fn(data: dict) -> None:
             data["persons"].pop(cod, None)
@@ -231,6 +249,11 @@ class FaceStore:
                         pa["appearance"] = {"desc": [], "ts": [], "src": []}
                     for k in ("desc", "ts", "src"):
                         pa["appearance"][k] = pa["appearance"][k] + pb["appearance"][k]
+                if pb.get("attributes"):
+                    if pa.get("attributes") is None:
+                        pa["attributes"] = {"values": [], "ts": [], "src": []}
+                    for k in ("values", "ts", "src"):
+                        pa["attributes"][k] = pa["attributes"][k] + pb["attributes"][k]
                 self._prune(pa, self.max_per_person)
         self._transaction(_fn)
 
@@ -261,6 +284,11 @@ class FaceStore:
                         pa["appearance"] = {"desc": [], "ts": [], "src": []}
                     for k in ("desc", "ts", "src"):
                         pa["appearance"][k] = pa["appearance"][k] + pb["appearance"][k]
+                if pb.get("attributes"):
+                    if pa.get("attributes") is None:
+                        pa["attributes"] = {"values": [], "ts": [], "src": []}
+                    for k in ("values", "ts", "src"):
+                        pa["attributes"][k] = pa["attributes"][k] + pb["attributes"][k]
                 self._prune(pa, self.max_per_person)
             self._write(data)
         moved = 0

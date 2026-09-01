@@ -7,7 +7,7 @@ from motor.core.matching import LayerScore
 
 
 def _make_cfg(tmp_path, **over):
-    cfg = Config(openai_enabled=True, llm_api_key="sk-test-no-real",
+    cfg = Config(openai_enabled=True, external_provider_allowed=True, llm_api_key="sk-test-no-real",
                  llm_model="gpt-4o-mini", llm_daily_budget=10,
                  openai_timeout_s=5.0, openai_retries=0)
     for k, v in over.items():
@@ -43,6 +43,15 @@ def test_openai_parses_json(monkeypatch, tmp_path):
     ls = client.compare(_img(tmp_path, "a.jpg"), _img(tmp_path, "b.jpg"))
     assert isinstance(ls, LayerScore)
     assert ls.available and abs(ls.score - 0.95) < 1e-9
+
+
+def test_openai_requires_explicit_external_privacy_opt_in(monkeypatch, tmp_path):
+    cfg = _make_cfg(tmp_path, external_provider_allowed=False)
+    client = OpenAICompare(cfg, str(tmp_path))
+    def fail_network(*args, **kwargs):
+        raise AssertionError("network must remain disabled")
+    monkeypatch.setattr("requests.post", fail_network)
+    assert not client.compare(_img(tmp_path, "a.jpg"), _img(tmp_path, "b.jpg")).available
 
 
 def test_openai_budget_exhausted_degrades(monkeypatch, tmp_path):

@@ -43,6 +43,26 @@ $js_quote = function ($s) {
 
 // galería de fotos (estancias + fotos)
 $galeria = [];  // [{fecha_ini, fecha_fin, fotos: [ids]}]
+$audit_by_foto = [];
+$audit_rows = DB::select(
+    "SELECT fa.foto_id, fa.classification, fa.classification_phase, fa.attributes_json
+     FROM foto_audits fa JOIN fotos f ON f.id = fa.foto_id
+     JOIN estancias e ON e.id = f.estancia_id WHERE e.persona_id = ? ORDER BY fa.id DESC",
+    [$persona_id]
+);
+foreach ($audit_rows as $ar) {
+    $audit_by_foto[(int)$ar["foto_id"]][] = $ar;
+}
+$audit_events_by_foto = [];
+$event_rows = DB::select(
+    "SELECT foto_id, event_type, from_person_code, to_person_code, event_at
+     FROM foto_audit_events WHERE foto_id IN
+     (SELECT f.id FROM fotos f JOIN estancias e ON e.id = f.estancia_id WHERE e.persona_id = ?)
+     ORDER BY id ASC", [$persona_id]
+);
+foreach ($event_rows as $event) {
+    $audit_events_by_foto[(int)$event["foto_id"]][] = $event;
+}
 $estancias = DB::select("SELECT * FROM estancias WHERE persona_id = ? ORDER BY id ASC", [$persona_id]);
 foreach ($estancias as $e) {
     $fotos = array_column(DB::select("SELECT id FROM fotos WHERE estancia_id = ? ORDER BY id ASC", [(int)$e["id"]]), "id");
@@ -159,10 +179,26 @@ $num_cruces = $cruces_cnt ? (int)$cruces_cnt["n"] : 0;
                             <label class="flex items-center gap-1 text-xs mb-1 cursor-pointer">
                                 <input type="checkbox" class="rf-foto-check" data-fid="<?= (int)$fid; ?>" onchange="rfActualizarConteo()"> seleccionar
                             </label>
-                            <div class="text-xs text-center text-gray-600 dark:text-gray-300 truncate mb-2"><?= htmlspecialchars($fecha); ?></div>
+                             <div class="text-xs text-center text-gray-600 dark:text-gray-300 truncate mb-2"><?= htmlspecialchars($fecha); ?></div>
                             <img src="<?= htmlspecialchars($img); ?>" alt="Foto <?= $fid; ?> del <?= htmlspecialchars($fecha); ?>"
                                  onclick="verFoto('<?= $js_quote($img); ?>','<?= $js_quote($fecha); ?>')"
                                  class="w-full object-cover rounded cursor-pointer" style="aspect-ratio:1/1">
+                            <?php if (isset($audit_by_foto[(int)$fid]) || isset($audit_events_by_foto[(int)$fid])): ?>
+                                <div class="text-xs mt-2 text-gray-600 dark:text-gray-300">
+                                    <?php foreach (($audit_by_foto[(int)$fid] ?? []) as $audit): ?>
+                                        <div>Clasificación <?= $audit["classification_phase"] === "post_move" ? "post-move" : "original"; ?>: <b><?= htmlspecialchars($audit["classification"]); ?></b></div>
+                                        <?php $attrs = json_decode((string)$audit["attributes_json"], true); ?>
+                                        <?php if (is_array($attrs) && is_array($attrs["attributes"] ?? null)): ?>
+                                            <div class="mt-1">Apariencia visible: <?= htmlspecialchars(json_encode($attrs["attributes"], JSON_UNESCAPED_UNICODE)); ?></div>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                    <?php foreach (($audit_events_by_foto[(int)$fid] ?? []) as $event): ?>
+                                        <div>Movimiento (append-only): <b><?= htmlspecialchars($event["event_type"]); ?></b>
+                                            · <?= htmlspecialchars((string)$event["event_at"]); ?>
+                                            · <?= htmlspecialchars((string)$event["from_person_code"]); ?> → <?= htmlspecialchars((string)$event["to_person_code"]); ?></div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
                             <label class="field-label mt-3" for="mover_<?= $fid; ?>">Mover imagen</label>
                             <select id="mover_<?= $fid; ?>" class="input border w-full mt-1" onchange="mover_img(<?= (int)$fid; ?>,this.value)">
                                 <option>Mover Imagen</option>

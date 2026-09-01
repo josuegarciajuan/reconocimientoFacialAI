@@ -46,6 +46,7 @@ class CascadeContext:
     si no hay presupuesto/caché/RAM (degradación, nunca bloqueo).
     """
     torso: object = None        # callable(cod) -> LayerScore (apariencia ropa)
+    attributes: object = None   # callable(cod) -> LayerScore (visible attrs; report-only)
     zonas: object = None        # callable(cod) -> LayerScore (pose-conf, legacy)
     silueta: object = None      # callable(cod) -> LayerScore (geometría facial)
     perfil: object = None       # callable(cod) -> LayerScore (reservado: re-embedding perfil)
@@ -106,7 +107,7 @@ def _weights(cfg: Config) -> dict[str, float]:
     """Pesos-prior para el helper `fuse` (reporte/desempate, no decisión)."""
     return {"cara": cfg.w_cara, "perfil": cfg.perfil_w, "silueta": cfg.silueta_w,
             "torso": cfg.w_torso, "zonas": cfg.w_torso, "vlm": cfg.w_llm,
-            "openai": cfg.w_llm}
+            "openai": cfg.w_llm, "attributes": cfg.attributes_weight}
 
 
 def _escalation(plan, cfg: Config, ctx: CascadeContext) -> list[str]:
@@ -124,6 +125,8 @@ def _escalation(plan, cfg: Config, ctx: CascadeContext) -> list[str]:
                    "openai": cfg.openai_enabled}[name]
         if enabled:
             order.append(name)
+    if cfg.attributes_enabled and "attributes" not in order:
+        order.append("attributes")
     return order
 
 
@@ -199,6 +202,8 @@ def decide_situational(face_scores: dict[str, float],
         # (la identidad la sigue decidiendo la cara: esto NO crea, solo asocia).
         if s1 >= cfg.new_low_floor:
             acuerdos = 0
+            acuerdos_sin_atributos = 0
+            acuerdo_atributos = False
             acuerdo_llm_fuerte = False
             for name in _escalation(plan, cfg, ctx):
                 ls = ctx.layer(name, top)
@@ -210,9 +215,15 @@ def decide_situational(face_scores: dict[str, float],
                     continue
                 if ls.score >= cfg.gray_high:
                     acuerdos += 1
+                    if name == "attributes":
+                        acuerdo_atributos = True
+                    else:
+                        acuerdos_sin_atributos += 1
                     if name in ("vlm", "openai") and ls.confidence >= cfg.veto_conf:
                         acuerdo_llm_fuerte = True
-            if acuerdos >= cfg.low_band_min_agreements or acuerdo_llm_fuerte:
+            if (acuerdos_sin_atributos >= cfg.low_band_min_agreements
+                    or acuerdo_llm_fuerte
+                    or (acuerdo_atributos and acuerdos_sin_atributos >= 1)):
                 return _result("match", top, s1, s2, face_scores, layers, cands)
         return _result("new", None, s1, s2, face_scores, layers, cands)
 
@@ -233,6 +244,8 @@ def decide_situational(face_scores: dict[str, float],
     # gris sin corroboración => uncertain. Las capas superiores NUNCA crean.
     vetoes = 0
     confirmado = False
+    confirmado_atributos = False
+    apoyo_no_atributos = False
     for name in _escalation(plan, cfg, ctx):
         ls = ctx.layer(name, top)
         if ls is None or not ls.available:
@@ -249,8 +262,20 @@ def decide_situational(face_scores: dict[str, float],
             vetoes += 1
             continue
         if ls.score >= _agree_threshold(name, cfg):
+            if name == "attributes":
+                confirmado_atributos = True
+                if apoyo_no_atributos:
+                    confirmado = True
+                continue
             confirmado = True
-            break
+        elif name != "attributes" and ls.score >= cfg.gray_low:
+            # Attributes can break a genuinely indecisive tie only when an
+            # independent layer already supplies non-negative support.
+            apoyo_no_atributos = True
+            if confirmado_atributos:
+                confirmado = True
+            if not cfg.attributes_enabled:
+                break
     if vetoes >= 2:
         return _result("uncertain", top, s1, s2, face_scores, layers, cands)
     if confirmado:

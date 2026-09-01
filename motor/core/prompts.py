@@ -37,6 +37,8 @@ def map_to_layer(result: dict) -> tuple[float, float]:
     - c = |probability_same - 0.5| * 2  (0.5 -> 0: capa no concluyente)
     - skip=true -> c = 0 (capa no disponible)
     """
+    if not validate_identity_response(result):
+        return 0.5, 0.0
     try:
         p = float(result.get("probability_same", 0.5))
         skip = bool(result.get("skip", False))
@@ -46,3 +48,18 @@ def map_to_layer(result: dict) -> tuple[float, float]:
     if skip:
         return 0.5, 0.0
     return p, abs(p - 0.5) * 2.0
+
+
+def validate_identity_response(result: object) -> bool:
+    """Strict provider contract; malformed output is unavailable, never clamped."""
+    if not isinstance(result, dict) or not isinstance(result.get("skip"), bool):
+        return False
+    for key in ("probability_same", "confidence"):
+        if isinstance(result.get(key), bool):
+            return False
+        try:
+            if not 0.0 <= float(result[key]) <= 1.0:
+                return False
+        except (KeyError, TypeError, ValueError):
+            return False
+    return True

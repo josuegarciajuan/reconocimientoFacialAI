@@ -21,7 +21,8 @@ import requests
 
 from .config import Config
 from .matching import LayerScore
-from .prompts import SYSTEM_PROMPT, USER_PROMPT, map_to_layer
+from .prompts import SYSTEM_PROMPT, USER_PROMPT, map_to_layer, validate_identity_response
+from .attributes import ATTRIBUTES_PROMPT, parse_attributes_response
 from .vlm_local import _pair_key
 
 URL = "https://api.openai.com/v1/chat/completions"
@@ -84,7 +85,7 @@ class OpenAICompare:
     # --- llamada ---
 
     def compare(self, img_a: str, img_b: str) -> LayerScore:
-        if not self.cfg.openai_enabled or not self.cfg.llm_api_key:
+        if not self.cfg.openai_enabled or not self.cfg.external_provider_allowed or not self.cfg.llm_api_key:
             return LayerScore(available=False)
         if self.budget_remaining() <= 0:
             return LayerScore(available=False)          # presupuesto agotado: degradar
@@ -115,6 +116,8 @@ class OpenAICompare:
                 r.raise_for_status()
                 content = r.json()["choices"][0]["message"]["content"]
                 result = json.loads(content)
+                if not validate_identity_response(result):
+                    raise ValueError("invalid provider response")
                 s, c = map_to_layer(result)
                 if c > 0:
                     self._spend()                        # solo se descuenta si aporta señal
@@ -125,6 +128,27 @@ class OpenAICompare:
                 time.sleep(1.0 * (attempt + 1))
         return LayerScore(available=False)
 
+    def attributes(self, image: str) -> dict | None:
+        """Extract only the versioned structured attribute contract."""
+        if not self.cfg.attributes_enabled or not self.cfg.openai_enabled or not self.cfg.external_provider_allowed or not self.cfg.llm_api_key:
+            return None
+        if self.budget_remaining() <= 0:
+            return None
+        try:
+            r = requests.post(URL, headers={"Authorization": f"Bearer {self.cfg.llm_api_key}"},
+                json={"model": self.cfg.llm_model,
+                      "messages": [{"role": "system", "content": ATTRIBUTES_PROMPT},
+                                   {"role": "user", "content": [{"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{_b64(image)}"}}]}],
+                      "max_tokens": 180, "response_format": {"type": "json_object"}},
+                timeout=self.cfg.openai_timeout_s)
+            r.raise_for_status()
+            result = parse_attributes_response(r.json()["choices"][0]["message"]["content"])
+            if result is not None:
+                self._spend()
+            return result
+        except Exception:  # noqa: BLE001
+            return None
+
 
 def _b64(path: str) -> str:
     """Base64 de la imagen REDIMENSIONADA (misma política que el VLM local).
@@ -134,10 +158,11 @@ def _b64(path: str) -> str:
     """
     import cv2
     from .vlm_local import VLM_IMG_JPEG_QUALITY, VLM_IMG_MAX_SIDE
+    if not os.path.isfile(path) or os.path.getsize(path) > 5 * 1024 * 1024:
+        raise ValueError("image rejected by size/type policy")
     img = cv2.imread(path)
     if img is None:
-        with open(path, "rb") as fh:
-            return base64.b64encode(fh.read()).decode()
+        raise ValueError("image rejected by type policy")
     h, w = img.shape[:2]
     m = max(h, w)
     if m > VLM_IMG_MAX_SIDE:

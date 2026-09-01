@@ -13,7 +13,9 @@
 
 <script>
     function mover_img(este,aeste){
-        location.href="?page=visitantes&mode=editar&id=<?= $_GET["id"]; ?>&mover="+este+"&aeste="+aeste;
+        var f=document.createElement('form'); f.method='POST'; f.action='?page=visitantes&mode=editar&id=<?= (int)$_GET["id"]; ?>';
+        [['mover',este],['aeste',aeste],['move_key',crypto.randomUUID().replace(/-/g,'')],['csrf','<?= htmlspecialchars(rf_csrf_token(), ENT_QUOTES); ?>']].forEach(function(x){var i=document.createElement('input');i.type='hidden';i.name=x[0];i.value=x[1];f.appendChild(i);});
+        document.body.appendChild(f); f.submit();
     }
 
     // --- P4: separar en bloque (proveniencia exacta) ---
@@ -42,7 +44,9 @@
             "Se quitará de la biblioteca de esta persona exactamente lo que aportaron (sin residuos).");
         if (!ok) { return; }
         rfMostrarCargando();
-        location.href="?page=visitantes&mode=editar&id=<?= $_GET["id"]; ?>&separar=" + ids.join(",") + "&aeste=" + destino;
+        var f=document.createElement('form'); f.method='POST'; f.action='?page=visitantes&mode=editar&id=<?= (int)$_GET["id"]; ?>';
+        [['separar',ids.join(',')],['aeste',destino],['move_key',crypto.randomUUID().replace(/-/g,'')],['csrf','<?= htmlspecialchars(rf_csrf_token(), ENT_QUOTES); ?>']].forEach(function(x){var i=document.createElement('input');i.type='hidden';i.name=x[0];i.value=x[1];f.appendChild(i);});
+        document.body.appendChild(f); f.submit();
     }
     
     
@@ -77,8 +81,9 @@
             cargador.setAttribute("style","display:inline");
             
             ajax = nuevoAjax();
-            urlllamada="pages/visitantes/acciones_ajax.php?a=1&persona_id="+persona_id+"&valor="+valor;
-            ajax.open("GET", urlllamada, true);
+             urlllamada="pages/visitantes/acciones_ajax.php?a=1";
+             ajax.open("POST", urlllamada, true);
+             ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
             ajax.onreadystatechange = function () {
                 if (ajax.readyState == 4) {
                     
@@ -86,7 +91,7 @@
                     cargador.setAttribute("style","display:none");
                 }
             }
-            ajax.send(null);
+             ajax.send("persona_id="+encodeURIComponent(persona_id)+"&valor="+encodeURIComponent(valor)+"&csrf=<?= htmlspecialchars(rf_csrf_token(), ENT_QUOTES); ?>");
        
    }
    
@@ -107,8 +112,9 @@
        
        
         ajax = nuevoAjax();
-        urlllamada="pages/visitantes/acciones_ajax.php?a=2&persona_id="+persona_id+"&valor="+trabajador;
-        ajax.open("GET", urlllamada, true);
+         urlllamada="pages/visitantes/acciones_ajax.php?a=2";
+         ajax.open("POST", urlllamada, true);
+         ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
         ajax.onreadystatechange = function () {
             if (ajax.readyState == 4) {
 
@@ -116,7 +122,7 @@
                 cargador.setAttribute("style","display:none");
             }
         }
-        ajax.send(null);
+         ajax.send("persona_id="+encodeURIComponent(persona_id)+"&valor="+trabajador+"&csrf=<?= htmlspecialchars(rf_csrf_token(), ENT_QUOTES); ?>");
        
        
    }

@@ -189,11 +189,14 @@ class Config:
     # --- feature-flags (activación gradual vía .env) ---
     cascade_enabled: bool = False       # motor situacional (reemplaza la decisión binaria)
     torso_enabled: bool = False         # capa L1b torso/ropa (apoyo)
+    attributes_enabled: bool = False    # apariencia visible estructurada (solo apoyo)
+    attributes_weight: float = 0.02     # deliberadamente bajo; nunca autoridad
     silueta_enabled: bool = True        # capa geométrica L1c (acuerdo en perfil/ángulos)
     perfil_layer_enabled: bool = True   # matching pose-consciente (perfil) — ya en L1a
     zones_enabled: bool = True          # matching pose-consciente en L1a (activado por defecto)
     vlm_enabled: bool = False
     openai_enabled: bool = False
+    external_provider_allowed: bool = False
 
     # --- umbrales operativos (ENDURECIDOS 2026-09-01 anti-mezcla; override .env) ---
     secure_threshold: float = 0.55      # s1 >= esto: match seguro (NUNCA new)
@@ -368,10 +371,13 @@ class Config:
         # de confianza por capa (sin tocar código).
         cfg.cascade_enabled = get_bool(ruta, "RF_CASCADE_ENABLED", cfg.cascade_enabled)
         cfg.torso_enabled = get_bool(ruta, "RF_TORSO_ENABLED", cfg.torso_enabled)
+        cfg.attributes_enabled = get_bool(ruta, "RF_ATTRIBUTES_ENABLED", cfg.attributes_enabled)
+        cfg.attributes_weight = get_float(ruta, "RF_ATTRIBUTES_WEIGHT", cfg.attributes_weight)
         cfg.silueta_enabled = get_bool(ruta, "RF_SILUETA_ENABLED", cfg.silueta_enabled)
         cfg.perfil_layer_enabled = get_bool(ruta, "RF_PERFIL_LAYER_ENABLED", cfg.perfil_layer_enabled)
         cfg.vlm_enabled = get_bool(ruta, "RF_VLM_ENABLED", cfg.vlm_enabled)
         cfg.openai_enabled = get_bool(ruta, "RF_OPENAI_ENABLED", cfg.openai_enabled)
+        cfg.external_provider_allowed = get_bool(ruta, "RF_EXTERNAL_PROVIDER_ALLOWED", cfg.external_provider_allowed)
         cfg.min_layer_conf = get_float(ruta, "RF_MIN_LAYER_CONF", cfg.min_layer_conf)
         cfg.llm_min_conf = get_float(ruta, "RF_LLM_MIN_CONF", cfg.llm_min_conf)
         cfg.veto_conf = get_float(ruta, "RF_VETO_CONF", cfg.veto_conf)
