@@ -304,8 +304,9 @@ def test_banda_baja_sin_acuerdo_sigue_new():
 
 def test_banda_baja_acuerdo_doble_match():
     """Perfil/espaldas: coseno 0.20 contra todo, pero torso+VLM coinciden fuerte
-    -> asocia a top1 en vez de crear persona nueva (anti-fragmentación)."""
-    cfg = _cfg()
+    -> asocia a top1 en vez de crear persona nueva (anti-fragmentación).
+    (new_low_floor fijado bajo para ejercitar el mecanismo de la banda baja.)"""
+    cfg = _cfg(new_low_floor=0.15)
     ctx = CascadeContext(
         torso=lambda cod: LayerScore(score=0.85, confidence=0.80),
         vlm=lambda cod: LayerScore(score=0.88, confidence=0.90),
@@ -319,8 +320,8 @@ def test_banda_baja_acuerdo_doble_match():
 
 def test_banda_baja_acuerdo_llm_solo_match():
     """1 solo acuerdo LLM con confianza >= veto_conf también asocia (robustez
-    si el otro LLM está caído)."""
-    cfg = _cfg()
+    si el otro LLM está caído). (new_low_floor fijado bajo para ejercitar la banda.)"""
+    cfg = _cfg(new_low_floor=0.15)
     ctx = CascadeContext(
         torso=lambda cod: LayerScore(available=False),
         vlm=lambda cod: LayerScore(score=0.90, confidence=0.95),
