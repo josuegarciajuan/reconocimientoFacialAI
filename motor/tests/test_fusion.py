@@ -335,7 +335,7 @@ def test_banda_baja_acuerdo_llm_solo_match():
 
 def test_banda_baja_con_silueta_y_llm_positivo_pasa_a_revision():
     """Incidente cámara 19: no crear un duplicado con evidencia favorable incompleta."""
-    cfg = _cfg()
+    cfg = _cfg(new_low_floor=0.15)
     ctx = CascadeContext(
         silueta=lambda cod: LayerScore(score=0.646360, confidence=0.646360),
         torso=lambda cod: LayerScore(available=False),
