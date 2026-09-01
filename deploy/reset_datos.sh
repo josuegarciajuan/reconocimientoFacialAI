@@ -50,9 +50,14 @@ if [[ -f "${ENV_FILE}" ]]; then
   done < <(grep -E '^RF_DB_' "${ENV_FILE}" || true)
 fi
 
-# Servicios que escriben datos (se detienen durante el reset y se rearrancan)
+# Servicios que escriben datos (se detienen durante el reset y se rearrancan).
+# Incluye rf-live (streaming MJPEG): aunque no escribe BD, es un daemon del
+# proyecto y debe rearrancarse para un reset 100% limpio (lección 2026-09-01:
+# quedó corriendo desde antes del reset). rf-calibra y rf-vigilar-deriva NO
+# van aquí: son one-shots lanzados por sus timers (rf-calibra.timer, rf-
+# vigilar-deriva.timer) y se relanzan solos en su horario.
 SERVICIOS=(rf-capturador rf-detector rf-clasificador rf-conciliador \
-           rf-vinculador rf-alarmador rf-photo rf-panel-control)
+           rf-vinculador rf-alarmador rf-photo rf-panel-control rf-live)
 
 # Tablas de DATOS (se vacían) vs CONFIG (se conservan)
 TABLAS_DATOS=(personas estancias fotos videos cruces_lineas fichajes \
@@ -128,6 +133,7 @@ PATRONES_KILL=(
   "vinculador.php"
   "alarmador.php"
   "procesos_panel_control.php"
+  "mjpeg-stream.js"
 )
 
 matar_procesos() { # mata procesos RF vivos y espera a que terminen (con timeout)
