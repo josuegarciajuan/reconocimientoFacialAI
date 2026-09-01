@@ -61,6 +61,53 @@ function limpiar_marcadores_archiva_huerfanos(int $local_id, array $cams_local):
     closedir($d);
 }
 
+/**
+ * Limpieza global de marcadores de procesado `aux/<video>.mp4.txt` / `.avi.txt`
+ * huérfanos (mismo patrón que archiva, pero para procesa_video.py).
+ *
+ * Un marcador de procesa es huérfano cuando su proceso procesa_video.py ya no
+ * está vivo y el vídeo fuente ya no existe (borrado por el reset, la purga por
+ * retención o por un procesa_video.py que terminó sin limpiar su marker). Se
+ * barre TODOS los markers de las cámaras del local, no solo los de los vídeos
+ * del listado actual `$subidos`: un marker cuyo origen ya fue borrado nunca
+ * volvería a aparecer en `$subidos`, y sin esta limpieza satura
+ * CONFIG_LIMITE_VIDEOS permanentemente (los slots de procesado se cuentan
+ * precisamente con estos marcadores en detector.php).
+ */
+function limpiar_marcadores_procesa_huerfanos(int $local_id, array $cams_local): void {
+    $cams = [];
+    foreach ($cams_local as $c) {
+        $cams[(int)$c["id"]] = true;
+    }
+    $dir_aux = RUTA_PROYECTO . "aux";
+    if (!is_dir($dir_aux)) {
+        return;
+    }
+    $d = opendir($dir_aux);
+    while (($el = readdir($d)) !== false) {
+        if ($el === "." || $el === "..") { continue; }
+        // Solo markers de procesa: <video>.mp4.txt o <video>.avi.txt
+        if (!preg_match('/\.(mp4|avi)\.txt$/', $el)) { continue; }
+        if (strpos($el, "archiva_") === 0) { continue; }  // los de archiva los barre la otra función
+        $video = substr($el, 0, -4);  // quitar el ".txt" -> <video>.mp4 | <video>.avi
+        $cam_id = (int) explode("_", $video)[0];
+        if ($cam_id <= 0 || !isset($cams[$cam_id])) { continue; }
+        $marker = $dir_aux . "/" . $el;
+        $rc = [];
+        exec("pgrep -f \"[p]rocesa_video.py " . $local_id . " " . $cam_id . " " . $video . "\" > /dev/null 2>&1; echo $?", $rc);
+        $vivo = (isset($rc[0]) && trim($rc[0]) === "0");
+        if ($vivo) { continue; }
+        $fuente = RUTA_PROYECTO . "motor/videos/" . $local_id . "/" . $cam_id . "/" . $video;
+        $sin_fuente = !file_exists($fuente);
+        $viejo = (time() - @filemtime($marker)) > CONFIG_MARCADOR_HUERFANO_SEGS;
+        if ($sin_fuente || $viejo) {
+            @unlink($marker);
+            echo "Marker procesa huérfano limpiado (global): " . $el . "\n";
+        }
+    }
+    closedir($d);
+}
+
 while (true) {
 
     $locales = DB::select("SELECT id FROM locales WHERE id > 0 ORDER BY id ASC");
@@ -70,6 +117,10 @@ while (true) {
         $cams = DB::select("SELECT id FROM camaras WHERE local_id = ? AND encendida = 1 ORDER BY id ASC", [$local_id]);
         // limpia marcadores de archivado huérfanos ANTES de contar slots disponibles
         limpiar_marcadores_archiva_huerfanos($local_id, $cams);
+        // limpia también los de procesado (procesa_video.py): sin esto, un marker
+        // de un vídeo cuyo origen ya no existe (reset/purga) satura CONFIG_LIMITE_VIDEOS
+        // y bloquea el pipeline de extracción de caras indefinidamente.
+        limpiar_marcadores_procesa_huerfanos($local_id, $cams);
 
         // --- clasificadores de caras (pool: N cámaras por proceso para acotar RAM) ---
         // Un único clasificador.py atiende varias cámaras en round-robin
