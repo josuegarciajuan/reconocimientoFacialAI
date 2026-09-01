@@ -93,10 +93,9 @@ define("CONFIG_contourArea_MINIMO","1");
 /*
  *  detector.php  ->  procesa_videosV6.py  y  procesa_fotos_def_borrosaparteV2.py
  */
-define("CONFIG_LIMITE_RAM",85); //limite de ram ocupada para seguir procesando videos
-define("CONFIG_LIMITE_LOAD", env_or("RF_LIMITE_LOAD", "1.0")); //CPU-gate: difiere procesa_video/archiva si loadavg > nproc*ratio (protege capturadores)
-define("CONFIG_LIMITE_VIDEOS", env_or("RF_LIMITE_VIDEOS", "2")); //nº máx. de procesa_video simultáneos (cada uno ~1.5GB; 4 con autotube en la misma máquina provocaba OOM)
-define("CONFIG_CLASIF_CAMS_POR_PROC", env_or("RF_CLASIF_CAMS_POR_PROC", "2")); //nº de cámaras por proceso clasificador (pool: 8 cámaras / 2 = 4 procesos -> ~mitad de RAM de modelos)
+define("CONFIG_LIMITE_RAM",95); //limite de ram ocupada para seguir procesando videos (85->95: servidor sobrado de RAM)
+define("CONFIG_LIMITE_VIDEOS", env_or("RF_LIMITE_VIDEOS", "2")); //nº máx. de procesa_video simultáneos (cada uno ~1.5GB; en prod .env lo sube a 4)
+define("CONFIG_CLASIF_CAMS_POR_PROC", env_or("RF_CLASIF_CAMS_POR_PROC", "2")); //nº de cámaras por proceso clasificador (pool: en prod .env=4 -> 2 procesos)
 define("CONFIG_REINTENTOS_VIDEO",3); //reintentos de un vídeo antes de descartarlo (F6: marcadores huérfanos)
 define("CONFIG_MARCADOR_HUERFANO_SEGS",300); //antigüedad mínima del marcador para considerar procesa_video muerto
 define("CONFIG_TIEMPOPROCESODECLISIFICARCARAS",60*10);  //en segs tiempo max q puede estar el proceso de procesar caras, luego se reinicia
@@ -205,7 +204,7 @@ define("CONFIG_VIDEO_FPS_ARCHIVO", env_or("RF_VIDEO_FPS_ARCHIVO", "10"));
 define("CONFIG_VIDEO_PRESET", env_or("RF_VIDEO_PRESET", "medium"));
 define("CONFIG_VIDEO_RETENCION_DIAS", env_or("RF_VIDEO_RETENCION_DIAS", "30")); // purga automática
 define("CONFIG_VIDEO_PURGA_LOOP", env_or("RF_VIDEO_PURGA_LOOP", "1800"));       // cada N iteraciones del detector (~30 min)
-define("CONFIG_LIMITE_ARCHIVA", env_or("RF_LIMITE_ARCHIVA", "2"));              // nº máx. de archiva simultáneos
+define("CONFIG_LIMITE_ARCHIVA", env_or("RF_LIMITE_ARCHIVA", "3"));              // nº máx. de archiva simultáneos (2->3)
 define("CONFIG_REINTENTOS_ARCHIVA", env_or("RF_REINTENTOS_ARCHIVA", "3"));       // reintentos de archivado antes de descartar un vídeo corrupto (evita bucle infinito)
 define("CONFIG_VIDEO_SEG_ANTES", env_or("RF_VIDEO_SEG_ANTES", "2"));           // pre-roll: 1-2 s antes del movimiento
 define("CONFIG_VIDEO_SEG_DESPUES", env_or("RF_VIDEO_SEG_DESPUES", "2"));       // post-roll: 1-2 s después del movimiento

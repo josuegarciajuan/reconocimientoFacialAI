@@ -81,13 +81,6 @@ class Config:
     # (p. ej. mientras autotube renderiza en la misma máquina) y dispare el OOM killer.
     ram_min_free_gb: float = 2.0
 
-    # --- CPU-gate (clasificador.py) ---
-    # Si la carga media de 1 min (loadavg) supera nproc * max_load_ratio, el
-    # clasificador duerme: el procesado se difiere hasta que haya CPU libre.
-    # Protege a los capturadores (guarda_movimientosV3, tiempo real) de la
-    # saturación causada por la clasificación + autotube en la misma máquina.
-    max_load_ratio: float = 1.0
-
     # --- store (face_enc_v2) ---
     max_encodings_per_person: int = 500
 
