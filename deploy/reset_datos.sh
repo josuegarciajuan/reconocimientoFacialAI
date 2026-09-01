@@ -172,9 +172,24 @@ MYSQL=(mysql -u"${BD_USER}")
 if [[ ${DRY_RUN} -eq 1 ]]; then
   for t in "${TABLAS_DATOS[@]}"; do log "  (dry-run) TRUNCATE ${t}"; done
 else
+  # Solo trunca las tablas que EXISTAN (esquemas más viejos pueden no tener
+  # foto_audits/foto_audit_events, etc. — no debe abortar el reset)
+  inlist=""
+  for t in "${TABLAS_DATOS[@]}"; do inlist+="'${t}',"; done
+  inlist="${inlist%,}"
+  existentes=$("${MYSQL[@]}" -N -e \
+    "SELECT TABLE_NAME FROM information_schema.TABLES
+     WHERE TABLE_SCHEMA='${BD_NAME}'
+       AND TABLE_NAME IN (${inlist});" 2>/dev/null)
   # Construye cada TRUNCATE como sentencia propia terminada en ';'
   truncs=()
-  for t in "${TABLAS_DATOS[@]}"; do truncs+=( "TRUNCATE TABLE ${t};" ); done
+  for t in "${TABLAS_DATOS[@]}"; do
+    if grep -qx "${t}" <<< "${existentes}"; then
+      truncs+=( "TRUNCATE TABLE ${t};" )
+    else
+      log "  (tabla no existe, omitida) ${t}"
+    fi
+  done
   printf '%s\n' "SET FOREIGN_KEY_CHECKS=0;" \
     "${truncs[@]}" \
     "SET FOREIGN_KEY_CHECKS=1;" \
