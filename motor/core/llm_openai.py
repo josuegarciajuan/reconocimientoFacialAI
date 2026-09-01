@@ -21,7 +21,7 @@ import requests
 
 from .config import Config
 from .matching import LayerScore
-from .prompts import SYSTEM_PROMPT, USER_PROMPT, map_to_layer
+from .prompts import SYSTEM_PROMPT, USER_PROMPT, map_to_layer, validate_identity_response
 from .attributes import ATTRIBUTES_PROMPT, parse_attributes_response
 from .vlm_local import _pair_key
 
@@ -85,7 +85,7 @@ class OpenAICompare:
     # --- llamada ---
 
     def compare(self, img_a: str, img_b: str) -> LayerScore:
-        if not self.cfg.openai_enabled or not self.cfg.llm_api_key:
+        if not self.cfg.openai_enabled or not self.cfg.external_provider_allowed or not self.cfg.llm_api_key:
             return LayerScore(available=False)
         if self.budget_remaining() <= 0:
             return LayerScore(available=False)          # presupuesto agotado: degradar
@@ -116,6 +116,8 @@ class OpenAICompare:
                 r.raise_for_status()
                 content = r.json()["choices"][0]["message"]["content"]
                 result = json.loads(content)
+                if not validate_identity_response(result):
+                    raise ValueError("invalid provider response")
                 s, c = map_to_layer(result)
                 if c > 0:
                     self._spend()                        # solo se descuenta si aporta señal
@@ -128,7 +130,7 @@ class OpenAICompare:
 
     def attributes(self, image: str) -> dict | None:
         """Extract only the versioned structured attribute contract."""
-        if not self.cfg.attributes_enabled or not self.cfg.openai_enabled or not self.cfg.llm_api_key:
+        if not self.cfg.attributes_enabled or not self.cfg.openai_enabled or not self.cfg.external_provider_allowed or not self.cfg.llm_api_key:
             return None
         if self.budget_remaining() <= 0:
             return None
@@ -156,10 +158,11 @@ def _b64(path: str) -> str:
     """
     import cv2
     from .vlm_local import VLM_IMG_JPEG_QUALITY, VLM_IMG_MAX_SIDE
+    if not os.path.isfile(path) or os.path.getsize(path) > 5 * 1024 * 1024:
+        raise ValueError("image rejected by size/type policy")
     img = cv2.imread(path)
     if img is None:
-        with open(path, "rb") as fh:
-            return base64.b64encode(fh.read()).decode()
+        raise ValueError("image rejected by type policy")
     h, w = img.shape[:2]
     m = max(h, w)
     if m > VLM_IMG_MAX_SIDE:

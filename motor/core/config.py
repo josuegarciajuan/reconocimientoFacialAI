@@ -196,6 +196,7 @@ class Config:
     zones_enabled: bool = True          # matching pose-consciente en L1a (activado por defecto)
     vlm_enabled: bool = False
     openai_enabled: bool = False
+    external_provider_allowed: bool = False
 
     # --- umbrales operativos (ENDURECIDOS 2026-09-01 anti-mezcla; override .env) ---
     secure_threshold: float = 0.55      # s1 >= esto: match seguro (NUNCA new)
@@ -376,6 +377,7 @@ class Config:
         cfg.perfil_layer_enabled = get_bool(ruta, "RF_PERFIL_LAYER_ENABLED", cfg.perfil_layer_enabled)
         cfg.vlm_enabled = get_bool(ruta, "RF_VLM_ENABLED", cfg.vlm_enabled)
         cfg.openai_enabled = get_bool(ruta, "RF_OPENAI_ENABLED", cfg.openai_enabled)
+        cfg.external_provider_allowed = get_bool(ruta, "RF_EXTERNAL_PROVIDER_ALLOWED", cfg.external_provider_allowed)
         cfg.min_layer_conf = get_float(ruta, "RF_MIN_LAYER_CONF", cfg.min_layer_conf)
         cfg.llm_min_conf = get_float(ruta, "RF_LLM_MIN_CONF", cfg.llm_min_conf)
         cfg.veto_conf = get_float(ruta, "RF_VETO_CONF", cfg.veto_conf)

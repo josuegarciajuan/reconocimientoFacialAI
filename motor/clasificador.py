@@ -49,7 +49,7 @@ from motor.core.quality import face_sharpness, pose_label  # noqa: E402
 from motor.core.store import FaceStore          # noqa: E402
 from motor.core.superres import enhance_embedding, photo_busto  # noqa: E402
 from motor.core.photo_audit import (build_audit_record, layer_scores_json,
-                                    post_move_event_for, write_audit_queue)  # noqa: E402
+                                    write_audit_queue)  # noqa: E402
 
 ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 IMG_EXTS = (".jpg", ".jpeg", ".png")
@@ -664,13 +664,11 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
             "has_face": True,
         })
 
-    # Persist an immutable, non-sensitive audit sidecar. PHP links it to the
+    # Persist an immutable, access-controlled audit sidecar. Attributes remain
+    # potentially sensitive; PHP links it to the
     # eventual fotos.id using this classifier-generated correlation id.
-    # Scope post-move classification to the same local/camera stream AND the
-    # destination person. An event for another person cannot relabel this photo.
-    move_events = os.path.join(ruta, "motor/audit_queue", local_id, camara_id, "move_events.jsonl")
-    moved_event = post_move_event_for(move_events, person, time.time())
-    moved_at = moved_event.get("moved_at") if moved_event else None
+    # Classification phase is derived by PHP from durable BD move events; no
+    # mutable marker or journal participates in authority decisions.
     # Report the per-candidate attributes layer even when the cascade early-exits.
     if cfg.attributes_enabled and result.candidates:
         if ctx is not None:
@@ -693,7 +691,7 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
         store.add_attributes(person, query_attributes, ts=rep_item["ts"] or time.time(), src=foto_id)
     write_audit_queue(ruta, local_id, camara_id, foto_id, build_audit_record(
         foto_id, local_id, camara_id, result.verdict, person,
-        layer_scores_json(result.layer_scores), attributes=query_attributes, moved_at=moved_at))
+        layer_scores_json(result.layer_scores), attributes=query_attributes))
 
     # eliminar el resto de fotos del sub-clúster (ya procesadas)
     for idx in item_idxs:

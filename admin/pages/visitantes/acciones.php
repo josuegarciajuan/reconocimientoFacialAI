@@ -1,4 +1,5 @@
 <?php
+if (session_status() !== PHP_SESSION_ACTIVE) @session_start();
 
 /* 
  * Visitantes — acciones (REFACTOR Fase 4b).
@@ -6,6 +7,9 @@
  */
 
 require_once __DIR__ . "/../../../libs/db.php";
+require_once __DIR__ . "/../../../libs/security.php";
+
+$local_id_actual = rf_require_local_session();
 
 function generar_codigo_persona() {
     $alfabeto = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -23,8 +27,8 @@ if (isset($_GET["este"]) and $_GET["este"] !== "") {
     $original = (int)$_GET["este"];
     $copia = (int)$_GET["coneste"];
 
-    $o = DB::selectOne("SELECT cod_interno FROM personas WHERE id = ?", [$original]);
-    $c = DB::selectOne("SELECT cod_interno FROM personas WHERE id = ?", [$copia]);
+    $o = DB::selectOne("SELECT cod_interno FROM personas WHERE id = ? AND local_id = ?", [$original, $local_id_actual]);
+    $c = DB::selectOne("SELECT cod_interno FROM personas WHERE id = ? AND local_id = ?", [$copia, $local_id_actual]);
     if ($o && $c && $original !== $copia) {
         // juntar_personas_v2.py hace TODO en una transacción: snapshot F6 (store+BD),
         // merge de galería conservando `sources`, UPDATE estancias y DELETE personas.
@@ -37,25 +41,26 @@ if (isset($_GET["este"]) and $_GET["este"] !== "") {
 }
 
 // --- mover UNA foto a otra persona (o crear nueva) — DB + galería con proveniencia ---
-function mover_foto_db($foto_id, $persona_destino) {
-    $foto = DB::selectOne("SELECT estancia_id FROM fotos WHERE id = ?", [$foto_id]);
+function mover_foto_db($foto_id, $persona_destino, string $move_key) {
+    $foto = DB::selectOne("SELECT f.id, f.estancia_id, c.local_id FROM fotos f JOIN estancias e ON e.id = f.estancia_id JOIN camaras c ON c.id = e.camara_id WHERE f.id = ? AND c.local_id = ? FOR UPDATE", [$foto_id, rf_current_local_id()]);
     if (!$foto) {
         return null;
     }
-    $estancia = DB::selectOne("SELECT persona_id, camara_id, fecha_ini, fecha_fin, notificacion_vista FROM estancias WHERE id = ?", [$foto["estancia_id"]]);
+    $existing = DB::selectOne("SELECT event_key, from_person_code, to_person_code FROM foto_audit_events WHERE event_key = ?", [$move_key]);
+    if ($existing) return ["cod_origen" => (string)$existing["from_person_code"], "cod_destino" => (string)$existing["to_person_code"]];
+    $estancia = DB::selectOne("SELECT persona_id, camara_id, fecha_ini, fecha_fin, notificacion_vista FROM estancias WHERE id = ? FOR UPDATE", [$foto["estancia_id"]]);
     if (!$estancia) {
         return null;
     }
-    $pers_origen = DB::selectOne("SELECT cod_interno FROM personas WHERE id = ?", [(int)$estancia["persona_id"]]);
+    $pers_origen = DB::selectOne("SELECT cod_interno FROM personas WHERE id = ? AND local_id = ?", [(int)$estancia["persona_id"], rf_current_local_id()]);
     $cod_origen = $pers_origen ? $pers_origen["cod_interno"] : "";
 
     if ($persona_destino === 0) {
-        $cam = DB::selectOne("SELECT local_id FROM camaras WHERE id = ?", [$estancia["camara_id"]]);
-        $local = $cam ? (int)$cam["local_id"] : (int)$_SESSION["local_id"];
-        $persona_destino = DB::insert("INSERT INTO personas (local_id, cod_interno) VALUES (?, ?)", [$local, generar_codigo_persona()]);
+        $persona_destino = DB::insert("INSERT INTO personas (local_id, cod_interno) VALUES (?, ?)", [rf_current_local_id(), generar_codigo_persona()]);
     }
 
-    $pers_destino = DB::selectOne("SELECT cod_interno FROM personas WHERE id = ?", [$persona_destino]);
+    $pers_destino = DB::selectOne("SELECT cod_interno FROM personas WHERE id = ? AND local_id = ?", [$persona_destino, rf_current_local_id()]);
+    if (!$pers_destino || $persona_destino === (int)$estancia["persona_id"]) return null;
     $cod_destino = $pers_destino ? $pers_destino["cod_interno"] : "";
 
     $nueva_estancia = DB::insert(
@@ -68,19 +73,9 @@ function mover_foto_db($foto_id, $persona_destino) {
     // classification audit; future classifier runs use the marker to label
     // their own audit as post_move.
     $event_id = DB::insert(
-        "INSERT INTO foto_audit_events (foto_id, event_type, from_person_code, to_person_code) VALUES (?, ?, ?, ?)",
-        [(int)$foto_id, "move", $cod_origen !== "" ? $cod_origen : null, $cod_destino !== "" ? $cod_destino : null]
+        "INSERT INTO foto_audit_events (foto_id, event_key, event_type, camera_id, from_person_code, to_person_code) VALUES (?, ?, ?, ?, ?, ?)",
+        [(int)$foto_id, $move_key, "move", (string)$estancia["camara_id"], $cod_origen !== "" ? $cod_origen : null, $cod_destino !== "" ? $cod_destino : null]
     );
-    $marker_dir = RUTA_PROYECTO . "motor/audit_queue/" . (string)$_SESSION["local_id"]
-        . "/" . (string)$estancia["camara_id"];
-    if (!is_dir($marker_dir)) {
-        @mkdir($marker_dir, 0770, true);
-    }
-    @file_put_contents($marker_dir . "/move_events.jsonl", json_encode([
-        "event_id" => (int)$event_id, "event_type" => "move", "foto_id" => (int)$foto_id,
-        "to_person_code" => $cod_destino, "moved_at" => date("c"),
-        "moved_at_epoch" => microtime(true)
-    ], JSON_UNESCAPED_SLASHES) . "\n", FILE_APPEND | LOCK_EX);
 
     $restantes = DB::selectOne("SELECT COUNT(*) AS n FROM fotos WHERE estancia_id = ?", [$foto["estancia_id"]]);
     if ($restantes && (int)$restantes["n"] === 0) {
@@ -90,10 +85,15 @@ function mover_foto_db($foto_id, $persona_destino) {
     return ["cod_origen" => $cod_origen, "cod_destino" => $cod_destino];
 }
 
-if (isset($_GET["mover"]) and $_GET["mover"] !== "") {
-    $foto_id = (int)$_GET["mover"];
-    $persona_destino = (int)$_GET["aeste"];
-    $cod = mover_foto_db($foto_id, $persona_destino);
+if (isset($_POST["mover"]) and $_POST["mover"] !== "") {
+    rf_require_csrf();
+    $foto_id = (int)$_POST["mover"];
+    $persona_destino = (int)($_POST["aeste"] ?? 0);
+    $move_key = (string)($_POST["move_key"] ?? '');
+    if (!preg_match('/^[A-Za-z0-9_-]{16,128}$/D', $move_key)) { http_response_code(400); exit('Invalid move key'); }
+    DB::beginTransaction();
+    try { $cod = mover_foto_db($foto_id, $persona_destino, $move_key); DB::commit(); }
+    catch (Throwable $e) { if (DB::inTransaction()) DB::rollBack(); throw $e; }
 
     // B4/P4: re-encodear la foto movida y actualizar face_enc_v2 con PROVENIENCIA
     // (motor/cambiar_foto.py usa move_by_source: quita de origen EXACTAMENTE lo
@@ -108,16 +108,19 @@ if (isset($_GET["mover"]) and $_GET["mover"] !== "") {
 }
 
 // --- separar VARIAS fotos (bulk) y llevarlas a otra persona (o nueva) — P4 ---
-if (isset($_GET["separar"]) and $_GET["separar"] !== "") {
-    $foto_ids = array_values(array_filter(array_map("intval", explode(",", $_GET["separar"])), fn($v) => $v > 0));
-    $persona_destino = (int)$_GET["aeste"];
+if (isset($_POST["separar"]) and $_POST["separar"] !== "") {
+    rf_require_csrf();
+    $foto_ids = array_values(array_filter(array_map("intval", explode(",", (string)$_POST["separar"])), fn($v) => $v > 0));
+    $persona_destino = (int)($_POST["aeste"] ?? 0);
+    $batch_key = (string)($_POST["move_key"] ?? '');
+    if (!preg_match('/^[A-Za-z0-9_-]{16,128}$/D', $batch_key)) { http_response_code(400); exit('Invalid move key'); }
 
     if ($foto_ids) {
         // agrupar por persona de origen (la UI las selecciona dentro de un mismo perfil).
         // mover_foto_db ya crea la persona nueva si `aeste=0` y devuelve los cod_interno.
         $grupos = [];   // cod_origen -> ["fotos" => [...], "destino" => cod_destino]
         foreach ($foto_ids as $fid) {
-            $cod = mover_foto_db($fid, $persona_destino);
+            $cod = mover_foto_db($fid, $persona_destino, $batch_key . '_' . $fid);
             if ($cod && $cod["cod_origen"] !== "" && $cod["cod_destino"] !== "") {
                 $grupos[$cod["cod_origen"]]["fotos"][] = $fid;
                 $grupos[$cod["cod_origen"]]["destino"] = $cod["cod_destino"];

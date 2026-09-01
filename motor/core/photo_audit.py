@@ -6,10 +6,12 @@ from pathlib import Path
 from time import time
 
 from .attributes import ATTRIBUTES_VERSION, validate_attributes
+from .safe_paths import safe_component
 
 
 def build_audit_record(correlation_id, local_id, camera_id, classification, person,
                        layers, attributes=None, moved_at=None):
+    safe_component(correlation_id); safe_component(local_id); safe_component(camera_id)
     safe_attributes = None
     if attributes is not None:
         safe_attributes = validate_attributes(attributes)
@@ -20,7 +22,7 @@ def build_audit_record(correlation_id, local_id, camera_id, classification, pers
         "camera_id": str(camera_id),
         "classification": str(classification),
         "person": None if person is None else str(person),
-        "classification_phase": "post_move" if moved_at else "initial",
+        "classification_phase": "initial",
         "classified_at": time(),
         "layers": layers if isinstance(layers, dict) else {},
         "attributes": safe_attributes,
@@ -29,9 +31,9 @@ def build_audit_record(correlation_id, local_id, camera_id, classification, pers
 
 
 def write_audit_queue(root, local_id, camera_id, correlation_id, record):
-    directory = Path(root) / "motor" / "audit_queue" / str(local_id) / str(camera_id)
+    directory = Path(root) / "motor" / "audit_queue" / safe_component(local_id) / safe_component(camera_id)
     directory.mkdir(parents=True, exist_ok=True)
-    target = directory / f"{correlation_id}.json"
+    target = directory / f"{safe_component(correlation_id)}.json"
     temporary = target.with_suffix(".tmp")
     temporary.write_text(json.dumps(record, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     temporary.replace(target)
@@ -40,7 +42,7 @@ def write_audit_queue(root, local_id, camera_id, correlation_id, record):
 
 def write_move_event(root, local_id, camera_id, event):
     """Append a movement event to the local/camera stream journal."""
-    path = Path(root) / "motor" / "audit_queue" / str(local_id) / str(camera_id) / "move_events.jsonl"
+    path = Path(root) / "motor" / "audit_queue" / safe_component(local_id) / safe_component(camera_id) / "move_events.jsonl"
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(event, ensure_ascii=False, separators=(",", ":")) + "\n")

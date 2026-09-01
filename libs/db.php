@@ -73,4 +73,6 @@ final class DB
     {
         self::conn()->rollBack();
     }
+
+    public static function inTransaction(): bool { return self::conn()->inTransaction(); }
 }

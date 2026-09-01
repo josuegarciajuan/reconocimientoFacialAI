@@ -31,7 +31,7 @@ from filelock import FileLock
 
 from .config import Config
 from .matching import LayerScore
-from .prompts import SYSTEM_PROMPT, USER_PROMPT, map_to_layer
+from .prompts import SYSTEM_PROMPT, USER_PROMPT, map_to_layer, validate_identity_response
 from .attributes import ATTRIBUTES_PROMPT, parse_attributes_response
 
 LOCK_TIMEOUT_S = 5.0
@@ -127,7 +127,10 @@ class VLMClient:
         end = content.rfind("}") + 1
         if start < 0 or end <= start:
             return {"probability_same": 0.5, "skip": True}
-        return json.loads(content[start:end])
+        result = json.loads(content[start:end])
+        if not validate_identity_response(result):
+            return {"probability_same": 0.5, "confidence": 0.0, "skip": True}
+        return result
 
     def attributes(self, image: str) -> dict | None:
         """Extract versioned visible attributes; unavailable on any failure."""
@@ -148,10 +151,11 @@ class VLMClient:
 
 def _b64(path: str) -> str:
     """Base64 de la imagen REDIMENSIONADA (máx. 384px) para reducir tokens de visión."""
+    if not os.path.isfile(path) or os.path.getsize(path) > 5 * 1024 * 1024:
+        raise ValueError("image rejected by size/type policy")
     img = cv2.imread(path)
     if img is None:
-        with open(path, "rb") as fh:
-            return base64.b64encode(fh.read()).decode()
+        raise ValueError("image rejected by type policy")
     h, w = img.shape[:2]
     m = max(h, w)
     if m > VLM_IMG_MAX_SIDE:
@@ -160,8 +164,7 @@ def _b64(path: str) -> str:
                          interpolation=cv2.INTER_AREA)
     ok, buf = cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, VLM_IMG_JPEG_QUALITY])
     if not ok:
-        with open(path, "rb") as fh:
-            return base64.b64encode(fh.read()).decode()
+        raise ValueError("image encoding failed")
     return base64.b64encode(buf.tobytes()).decode()
 
 

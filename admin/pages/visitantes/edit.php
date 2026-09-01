@@ -186,15 +186,14 @@ $num_cruces = $cruces_cnt ? (int)$cruces_cnt["n"] : 0;
                             <?php if (isset($audit_by_foto[(int)$fid]) || isset($audit_events_by_foto[(int)$fid])): ?>
                                 <div class="text-xs mt-2 text-gray-600 dark:text-gray-300">
                                     <?php foreach (($audit_by_foto[(int)$fid] ?? []) as $audit): ?>
-                                        <div>Auditoría original/clasificación: <b><?= htmlspecialchars($audit["classification"]); ?></b>
-                                            · fase <?= htmlspecialchars($audit["classification_phase"]); ?></div>
+                                        <div>Clasificación <?= $audit["classification_phase"] === "post_move" ? "post-move" : "original"; ?>: <b><?= htmlspecialchars($audit["classification"]); ?></b></div>
                                         <?php $attrs = json_decode((string)$audit["attributes_json"], true); ?>
                                         <?php if (is_array($attrs) && is_array($attrs["attributes"] ?? null)): ?>
                                             <div class="mt-1">Apariencia visible: <?= htmlspecialchars(json_encode($attrs["attributes"], JSON_UNESCAPED_UNICODE)); ?></div>
                                         <?php endif; ?>
                                     <?php endforeach; ?>
                                     <?php foreach (($audit_events_by_foto[(int)$fid] ?? []) as $event): ?>
-                                        <div>Evento de movimiento: <b><?= htmlspecialchars($event["event_type"]); ?></b>
+                                        <div>Movimiento (append-only): <b><?= htmlspecialchars($event["event_type"]); ?></b>
                                             · <?= htmlspecialchars((string)$event["event_at"]); ?>
                                             · <?= htmlspecialchars((string)$event["from_person_code"]); ?> → <?= htmlspecialchars((string)$event["to_person_code"]); ?></div>
                                     <?php endforeach; ?>

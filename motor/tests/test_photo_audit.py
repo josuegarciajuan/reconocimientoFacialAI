@@ -5,7 +5,7 @@ from motor.core.photo_audit import (build_audit_record, layer_scores_json,
                                     write_move_event)
 
 
-def test_audit_record_correlates_with_foto_identifier_and_marks_post_move():
+def test_audit_record_leaves_phase_for_database_authority():
     record = build_audit_record(
         correlation_id="abc123",
         local_id="7",
@@ -16,7 +16,7 @@ def test_audit_record_correlates_with_foto_identifier_and_marks_post_move():
         moved_at="2026-09-01 10:00:00",
     )
     assert record["correlation_id"] == "abc123"
-    assert record["classification_phase"] == "post_move"
+    assert record["classification_phase"] == "initial"
     assert record["layers"]["cara"]["score"] == 0.8
 
 
@@ -39,3 +39,9 @@ def test_post_move_event_is_scoped_to_destination_person(tmp_path):
         "to_person_code": "person-a", "moved_at": 100.0})
     assert post_move_event_for(path, "person-a", 101.0)["event_id"] == 9
     assert post_move_event_for(path, "person-b", 101.0) is None
+
+
+def test_audit_paths_reject_traversal(tmp_path):
+    import pytest
+    with pytest.raises(ValueError):
+        write_audit_queue(tmp_path, "../other", "2", "abc", {})
