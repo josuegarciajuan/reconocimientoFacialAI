@@ -15,10 +15,11 @@ Sustituye a `procesa_fotos_def_borrosaparteV2.py`. Flujo por pasada:
 CASCADA DE FUSIÓN (F0-F7, feature-flags en Config, OFF por defecto):
   - cfg.cascade_enabled: sustituye la decisión binaria por fusión ponderada
     + escalada (L1a cara -> L1b torso -> L1c zonas -> L2 VLM local -> L3 OpenAI).
-  - cfg.zones_enabled (F2): en veredicto "uncertain" ENRIQUECE la galería con
-    la nueva pose (fix del bucle de fragmentación) y copia a revisión manual.
+  - ENDURECIDO 2026-09-01 (anti-mezcla): el veredicto "uncertain" NO enriquece la
+    galería del candidato (evita contaminar la identidad): crea persona nueva
+    (duplicada) y copia a revisión manual. Ante la duda, mejor un duplicado.
   - En zona gris tras la cascada: UNCERTAIN -> motor/revision/, NUNCA se crea
-    persona duplicada en silencio.
+    persona duplicada en silencio (ya no se asigna al top-1 dudoso).
 
 Uso (daemon, como antes):
     motor/venv/bin/python motor/clasificador.py <local> <cam>
@@ -497,8 +498,10 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     if rep_hash is not None:
         _PROCESSED_FACES.add(rep_hash)
 
-    # F2 fix: en veredicto "uncertain" también se enriquece la galería
-    enrich_on_uncertain = cfg.zones_enabled
+    # F2 fix (ENDURECIDO 2026-09-01 anti-mezcla): "uncertain" ya no se asigna al
+    # top-1 ni enriquece su galería (contaminaba la identidad). Se crea persona
+    # nueva/duplicada y va a revisión manual. Ante la duda, mejor un duplicado que
+    # mezclar caras de gente distinta.
 
     query_attributes = None
     if cfg.attributes_enabled:
@@ -551,7 +554,9 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
         result.layer_scores = {"cara": face_layer}
         result.candidates = select_candidates(face_scores, cfg)
 
-    if result.verdict == "new" or result.person is None:
+    if result.verdict in ("new", "uncertain") or result.person is None:
+        # "new" y "uncertain" crean una persona NUEVA (duplicada): nunca se asigna
+        # la foto a un candidato dudoso. "uncertain" además va a revisión manual.
         person = random_code()
     else:
         person = result.person
@@ -613,15 +618,11 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     # con la proveniencia `foto_id` de la foto representativa de este sub-clúster.
     if result.verdict == "match":
         _store_add(store, person, item_idxs, battery, cfg, foto_id=foto_id)
-    elif result.verdict == "new":
-        # F1.3: el sub-clúster es internamente coherente (split_coherent_clusters):
-        # identidad nueva creada solo con caras de la misma persona real.
+    else:
+        # "new" y "uncertain" (ENDURECIDO 2026-09-01): persona nueva/duplicada. El
+        # sub-clúster es internamente coherente (split_coherent_clusters) -> se
+        # construye su galería desde cero (new_person=True), sin contaminar a nadie.
         _store_add(store, person, item_idxs, battery, cfg, new_person=True, foto_id=foto_id)
-    elif result.verdict == "uncertain" and enrich_on_uncertain and person != "":
-        # F2 fix: el veredicto "uncertain" asigna persona pero NO enriquecía
-        # la galería -> bucle de fragmentación (perfil↔frontal). Ahora sí, con
-        # admisión por cara para no contaminar.
-        _store_add(store, person, item_idxs, battery, cfg, foto_id=foto_id)
 
     # F1/F3: la capa torso necesita galería de apariencia por persona.
     if cfg.torso_enabled and person:

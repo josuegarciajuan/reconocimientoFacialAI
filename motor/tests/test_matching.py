@@ -72,35 +72,31 @@ def test_match_group_aggregates(tmp_path):
 
 
 def test_default_thresholds_calibrated():
-    """Umbrales por defecto (calibrados 2026-08-18 + ajuste 2026-08-21):
-    el coseno genuino de videovigilancia es ~0.32-0.38, por lo que secure NO puede
-    subirse sin romper los pares reales (KaiZA3↔nRLmEs = 0.385). El 0.45 actual
-    (antes 0.40) NO fragmenta: la banda [match, secure) se resuelve con
-    corroboración de capas (torso/VLM/OpenAI) o revision, y el early-exit frontal
-    cubre los casos limpios. El falso merge a 0.409/0.512 (impostores) ya no pasa
-    como "seguro" sin oposición (fix 2026-08-21)."""
+    """Umbrales por defecto (ENDURECIDOS 2026-09-01 anti-mezcla): dos personas
+    "que se parecen" en videovigilancia llegan a coseno ~0.43 (falso merge real:
+    visitante 75). Todos los umbrales se suben por encima de esa banda del
+    impostor; ante la duda se prefiere crear una persona duplicada a mezclar."""
     cfg = Config()
-    assert cfg.secure_threshold == 0.45
-    assert cfg.match_threshold == 0.30
-    assert cfg.margin == 0.03
-    assert cfg.group_threshold == 0.30
+    assert cfg.secure_threshold == 0.55
+    assert cfg.match_threshold == 0.48
+    assert cfg.margin == 0.07
+    assert cfg.group_threshold == 0.50
 
 
 def test_decide_real_pair_secure_margin():
-    """Par real KaiZA3↔nRLmEs (coseno 0.385 vs 2º 0.318): con umbrales calibrados
-    debe ser match seguro por margen."""
+    """Par con coseno alto (0.60 vs 0.10) -> match seguro por secure_threshold."""
     cfg = Config()
-    r = decide({"nRLmEs": 0.385, "0EQGx": 0.318}, cfg)
-    assert r.verdict == "match" and r.person == "nRLmEs"
+    r = decide({"A": 0.60, "B": 0.10}, cfg)
+    assert r.verdict == "match" and r.person == "A"
 
 
-def test_decide_real_pair_uncertain_assigns_best():
-    """Par real 1oN9gY↔eYPdoo (0.319 vs 0.300): por debajo de secure pero sobre match;
-    si el margen no llega a 0.03, queda uncertain pero asignado a la mejor persona
-    (el clasificador la une aunque no refine la plantilla)."""
+def test_decide_impostor_band_becomes_new():
+    """Par en la banda del impostor (0.43/0.42, falso merge real de visitante 75):
+    con el endurecimiento 2026-09-01 queda por debajo de match_threshold -> new
+    (persona duplicada), en vez de mezclar las dos caras."""
     cfg = Config()
-    r = decide({"eYPdoo": 0.319, "LcBiC": 0.300}, cfg)
-    assert r.verdict == "uncertain" and r.person == "eYPdoo"
+    r = decide({"A": 0.43, "B": 0.42}, cfg)
+    assert r.verdict == "new" and r.person is None
 
 
 def test_match_group_uses_max_not_mean(tmp_path):

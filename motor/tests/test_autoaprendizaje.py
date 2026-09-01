@@ -49,8 +49,9 @@ def _face_list(battery):
 # ---------------------------------------------------------------------------
 
 def test_split_coherent_keep_same_person_together():
-    """Caras de la MISMA persona (muy similares) quedan en un solo sub-clúster."""
-    cfg = Config()
+    """Caras de la MISMA persona (muy similares) quedan en un solo sub-clúster.
+    (cluster_confirm fijado a 0.35: los pares ruidosos _e(0.05) puntúan ~0.46.)"""
+    cfg = Config(cluster_confirm=0.35)
     a1 = _e(0, noise=0.05, seed=1)
     a2 = _e(0, noise=0.05, seed=2)
     a3 = _e(0, noise=0.05, seed=3)
@@ -65,8 +66,9 @@ def test_split_coherent_keep_same_person_together():
 
 
 def test_split_coherent_separa_personas_distintas():
-    """Dos personas en la misma batería acaban en sub-clústeres separados."""
-    cfg = Config()
+    """Dos personas en la misma batería acaban en sub-clústeres separados.
+    (cluster_confirm fijado a 0.35: pares ajenos ~0.13, pares genuinos ~0.46.)"""
+    cfg = Config(cluster_confirm=0.35)
     a1, a2 = _e(0, noise=0.05, seed=1), _e(0, noise=0.05, seed=2)
     b1, b2 = _e(1, noise=0.05, seed=3), _e(1, noise=0.05, seed=4)
     battery = [_item(a1, 0), _item(a2, 1), _item(b1, 2), _item(b2, 3)]
@@ -113,8 +115,9 @@ def test_split_coherent_rompe_cadena_transitiva():
 # ---------------------------------------------------------------------------
 
 def test_store_add_admision_rechaza_impostor(tmp_path):
-    """Un impostor agrupado por transitividad NO entra en la galería de la persona."""
-    cfg = Config()   # admission_cosine = 0.32
+    """Un impostor agrupado por transitividad NO entra en la galería de la persona.
+    (admission_cosine fijado a 0.32: los pares genuinos _e(0.05) puntúan ~0.46.)"""
+    cfg = Config(admission_cosine=0.32)
     store = FaceStore(str(tmp_path / "face_enc_v2"), max_per_person=50)
     gal = _e(0, noise=0.05, seed=10)
     store.add("A", [gal], [90.0], ["f"])

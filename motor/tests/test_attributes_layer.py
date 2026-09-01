@@ -34,7 +34,8 @@ def test_attributes_alone_cannot_confirm_identity():
 def test_attributes_can_support_but_not_replace_independent_evidence():
     cfg = Config(cascade_enabled=True, attributes_enabled=True, torso_enabled=True,
                  match_threshold=0.30, secure_threshold=0.45,
-                 new_low_floor=0.15, gray_high=0.42, min_layer_conf=0.70)
+                 new_low_floor=0.15, gray_low=0.28, gray_high=0.42,
+                 min_layer_conf=0.70)
     result = run_cascade(
         {"A": 0.33, "B": 0.30},
         CascadeContext(
