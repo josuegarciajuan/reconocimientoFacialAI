@@ -67,6 +67,8 @@ def attributes_layer_score(query: dict, candidate: dict) -> LayerScore:
     """Score only mutually visible fields; unknown never contradicts."""
     if not isinstance(query, dict) or not isinstance(candidate, dict):
         return LayerScore(available=False)
+    query = query.get("attributes", query)
+    candidate = candidate.get("attributes", candidate)
     comparable = [k for k in FIELDS if query.get(k) not in (None, "unknown")
                   and candidate.get(k) not in (None, "unknown")]
     if not comparable:

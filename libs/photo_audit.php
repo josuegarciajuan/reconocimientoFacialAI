@@ -17,7 +17,7 @@ function ingest_photo_audit(int $foto_id, string $correlation_id, string $local_
     $existing = DB::selectOne("SELECT id FROM foto_audits WHERE correlation_id = ? LIMIT 1", [$correlation_id]);
     if (!$existing) {
         DB::insert(
-            "INSERT INTO foto_audits (foto_id, correlation_id, schema_version, local_id, camera_id,
+            "INSERT IGNORE INTO foto_audits (foto_id, correlation_id, schema_version, local_id, camera_id,
              classification, classification_phase, person_code, layers_json, attributes_json, classified_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [$foto_id, $correlation_id, "photo-audit-1", (string)($record["local_id"] ?? $local_id),

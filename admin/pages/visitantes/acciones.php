@@ -71,11 +71,15 @@ function mover_foto_db($foto_id, $persona_destino) {
         "INSERT INTO foto_audit_events (foto_id, event_type, from_person_code, to_person_code) VALUES (?, ?, ?, ?)",
         [(int)$foto_id, "move", $cod_origen !== "" ? $cod_origen : null, $cod_destino !== "" ? $cod_destino : null]
     );
-    $marker_dir = RUTA_PROYECTO . "motor/audit_queue/" . (string)$_SESSION["local_id"];
+    $marker_dir = RUTA_PROYECTO . "motor/audit_queue/" . (string)$_SESSION["local_id"]
+        . "/" . (string)$estancia["camara_id"];
     if (!is_dir($marker_dir)) {
         @mkdir($marker_dir, 0770, true);
     }
-    @file_put_contents($marker_dir . "/.last_move", date("c"), LOCK_EX);
+    @file_put_contents($marker_dir . "/.last_move.json", json_encode([
+        "event_type" => "move", "foto_id" => (int)$foto_id,
+        "moved_at" => date("c")
+    ], JSON_UNESCAPED_SLASHES), LOCK_EX);
 
     $restantes = DB::selectOne("SELECT COUNT(*) AS n FROM fotos WHERE estancia_id = ?", [$foto["estancia_id"]]);
     if ($restantes && (int)$restantes["n"] === 0) {

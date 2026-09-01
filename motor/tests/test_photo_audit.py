@@ -1,6 +1,6 @@
 import json
 
-from motor.core.photo_audit import build_audit_record, write_audit_queue
+from motor.core.photo_audit import build_audit_record, layer_scores_json, write_audit_queue
 
 
 def test_audit_record_correlates_with_foto_identifier_and_marks_post_move():
@@ -22,3 +22,11 @@ def test_audit_queue_is_atomic(tmp_path):
     path = write_audit_queue(tmp_path, "local", "cam", "id", {"ok": True})
     assert path.exists()
     assert json.loads(path.with_suffix(".json").read_text()) == {"ok": True}
+
+
+def test_audit_serializes_attributes_layer_activation():
+    class Score:
+        score, confidence, available = 0.75, 0.25, True
+    assert layer_scores_json({"attributes": Score()}) == {
+        "attributes": {"score": 0.75, "confidence": 0.25, "available": True}
+    }

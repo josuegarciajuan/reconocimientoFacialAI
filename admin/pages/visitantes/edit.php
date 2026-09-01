@@ -51,7 +51,17 @@ $audit_rows = DB::select(
     [$persona_id]
 );
 foreach ($audit_rows as $ar) {
-    $audit_by_foto[(int)$ar["foto_id"]] = $ar;
+    $audit_by_foto[(int)$ar["foto_id"]][] = $ar;
+}
+$audit_events_by_foto = [];
+$event_rows = DB::select(
+    "SELECT foto_id, event_type, from_person_code, to_person_code, event_at
+     FROM foto_audit_events WHERE foto_id IN
+     (SELECT f.id FROM fotos f JOIN estancias e ON e.id = f.estancia_id WHERE e.persona_id = ?)
+     ORDER BY id ASC", [$persona_id]
+);
+foreach ($event_rows as $event) {
+    $audit_events_by_foto[(int)$event["foto_id"]][] = $event;
 }
 $estancias = DB::select("SELECT * FROM estancias WHERE persona_id = ? ORDER BY id ASC", [$persona_id]);
 foreach ($estancias as $e) {
@@ -173,15 +183,21 @@ $num_cruces = $cruces_cnt ? (int)$cruces_cnt["n"] : 0;
                             <img src="<?= htmlspecialchars($img); ?>" alt="Foto <?= $fid; ?> del <?= htmlspecialchars($fecha); ?>"
                                  onclick="verFoto('<?= $js_quote($img); ?>','<?= $js_quote($fecha); ?>')"
                                  class="w-full object-cover rounded cursor-pointer" style="aspect-ratio:1/1">
-                            <?php if (isset($audit_by_foto[(int)$fid])): ?>
-                                <?php $audit = $audit_by_foto[(int)$fid]; ?>
+                            <?php if (isset($audit_by_foto[(int)$fid]) || isset($audit_events_by_foto[(int)$fid])): ?>
                                 <div class="text-xs mt-2 text-gray-600 dark:text-gray-300">
-                                    Auditoría: <b><?= htmlspecialchars($audit["classification"]); ?></b>
-                                    · <?= htmlspecialchars($audit["classification_phase"]); ?>
-                                    <?php $attrs = json_decode((string)$audit["attributes_json"], true); ?>
-                                    <?php if (is_array($attrs) && is_array($attrs["attributes"] ?? null)): ?>
-                                        <div class="mt-1">Apariencia visible: <?= htmlspecialchars(json_encode($attrs["attributes"], JSON_UNESCAPED_UNICODE)); ?></div>
-                                    <?php endif; ?>
+                                    <?php foreach (($audit_by_foto[(int)$fid] ?? []) as $audit): ?>
+                                        <div>Auditoría original/clasificación: <b><?= htmlspecialchars($audit["classification"]); ?></b>
+                                            · fase <?= htmlspecialchars($audit["classification_phase"]); ?></div>
+                                        <?php $attrs = json_decode((string)$audit["attributes_json"], true); ?>
+                                        <?php if (is_array($attrs) && is_array($attrs["attributes"] ?? null)): ?>
+                                            <div class="mt-1">Apariencia visible: <?= htmlspecialchars(json_encode($attrs["attributes"], JSON_UNESCAPED_UNICODE)); ?></div>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                    <?php foreach (($audit_events_by_foto[(int)$fid] ?? []) as $event): ?>
+                                        <div>Evento de movimiento: <b><?= htmlspecialchars($event["event_type"]); ?></b>
+                                            · <?= htmlspecialchars((string)$event["event_at"]); ?>
+                                            · <?= htmlspecialchars((string)$event["from_person_code"]); ?> → <?= htmlspecialchars((string)$event["to_person_code"]); ?></div>
+                                    <?php endforeach; ?>
                                 </div>
                             <?php endif; ?>
                             <label class="field-label mt-3" for="mover_<?= $fid; ?>">Mover imagen</label>

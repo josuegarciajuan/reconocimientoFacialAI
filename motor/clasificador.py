@@ -244,7 +244,8 @@ class _CascadeCtx:
     """Proveedores de capas superiores (L1b/L1c/L2/L3) para la fusión."""
 
     def __init__(self, ruta, local_id, camara_id, cfg, store, face_scores,
-                 query_pose, rep_face_crop, rep_torso_path, rep_img, rep_face):
+                 query_pose, rep_face_crop, rep_torso_path, rep_img, rep_face,
+                 query_attributes=None):
         self.ruta = ruta
         self.local_id = local_id
         self.camara_id = camara_id
@@ -256,6 +257,7 @@ class _CascadeCtx:
         self.rep_torso_path = rep_torso_path        # path del crop de torso (si existe)
         self.rep_img = rep_img                      # frame completo de la representativa
         self.rep_face = rep_face                    # Face detectada (bbox/landmarks)
+        self.query_attributes = query_attributes
         self._vlm = None
         self._openai = None
         self._torso_desc_cache = {}
@@ -277,6 +279,18 @@ class _CascadeCtx:
         gal = [Appearance(d, ts, s) for d, ts, s in zip(gallery["desc"], gallery["ts"], gallery.get("src", [""] * len(gallery["desc"])))]
         s, c, available = layer_score(desc, gal, ttl_days=self.cfg.torso_ttl_days)
         return LayerScore(score=s, confidence=c, available=available)
+
+    def attributes_score(self, cod: str) -> LayerScore:
+        from motor.core.attributes import attributes_layer_score
+        if not self.cfg.attributes_enabled or not self.query_attributes:
+            return LayerScore(available=False)
+        gallery = self.store.person_attributes(cod) or {}
+        values = gallery.get("values") or []
+        scores = [attributes_layer_score(self.query_attributes, value) for value in values]
+        scores = [s for s in scores if s.available]
+        if not scores:
+            return LayerScore(available=False)
+        return max(scores, key=lambda s: (s.score, s.confidence))
 
     def _query_torso_desc(self):
         from motor.core.appearance import torso_descriptor
@@ -485,6 +499,21 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     # F2 fix: en veredicto "uncertain" también se enriquece la galería
     enrich_on_uncertain = cfg.zones_enabled
 
+    query_attributes = None
+    if cfg.attributes_enabled:
+        try:
+            from motor.core.vlm_local import VLMClient
+            query_attributes = VLMClient(cfg, ruta).attributes(rep_item["path"])
+        except Exception:  # noqa: BLE001
+            query_attributes = None
+        if query_attributes is None and cfg.openai_enabled:
+            try:
+                from motor.core.llm_openai import OpenAICompare
+                query_attributes = OpenAICompare(cfg, ruta).attributes(rep_item["path"])
+            except Exception:  # noqa: BLE001
+                query_attributes = None
+
+    ctx = None
     if cfg.cascade_enabled:
         from motor.core.router import Situation
         face_scores = _face_scores(embs, store, cfg, query_pose)
@@ -495,8 +524,10 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
         face_layer = LayerScore(score=s1, confidence=face_confidence(s1, s2, best_sharp, cfg))
         from motor.core.fusion import CascadeContext, run_cascade
         ctx = _CascadeCtx(ruta, local_id, camara_id, cfg, store, face_scores,
-                          query_pose, rep_item["path"], torso_path, rep_item["img"], rep_face)
-        cc = CascadeContext(torso=ctx.torso_score, zonas=ctx.zonas_score,
+                          query_pose, rep_item["path"], torso_path, rep_item["img"], rep_face,
+                          query_attributes=query_attributes)
+        cc = CascadeContext(torso=ctx.torso_score, attributes=ctx.attributes_score,
+                            zonas=ctx.zonas_score,
                             silueta=ctx.silueta_score,
                             vlm=ctx.vlm_score, openai=ctx.openai_score)
         situ = Situation(pose=query_pose, sharpness=best_sharp,
@@ -633,32 +664,40 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
 
     # Persist an immutable, non-sensitive audit sidecar. PHP links it to the
     # eventual fotos.id using this classifier-generated correlation id.
-    move_marker = os.path.join(ruta, "motor/audit_queue", local_id, ".last_move")
+    # Scope the phase marker to this local/camera stream; a move in another
+    # camera must not relabel this stream's classifications.
+    move_marker = os.path.join(ruta, "motor/audit_queue", local_id, camara_id, ".last_move.json")
     moved_at = None
     try:
         if os.path.isfile(move_marker):
             with open(move_marker, encoding="utf-8") as fh:
-                moved_at = fh.read().strip() or None
+                marker = json.load(fh)
+                moved_at = marker.get("moved_at") if isinstance(marker, dict) else None
     except OSError:
         moved_at = None
-    attributes = None
-    if cfg.attributes_enabled:
-        # Existing VLM first, OpenAI only as configured fallback. The result is
-        # structured and version-validated; it never enters identity matching.
-        try:
-            from motor.core.vlm_local import VLMClient
-            attributes = VLMClient(cfg, ruta).attributes(out_path)
-        except Exception:  # noqa: BLE001
-            attributes = None
-        if attributes is None and cfg.openai_enabled:
-            try:
-                from motor.core.llm_openai import OpenAICompare
-                attributes = OpenAICompare(cfg, ruta).attributes(out_path)
-            except Exception:  # noqa: BLE001
-                attributes = None
+    # Report the per-candidate attributes layer even when the cascade early-exits.
+    if cfg.attributes_enabled and result.candidates:
+        if ctx is not None:
+            result.layer_scores["attributes"] = ctx.attributes_score(result.candidates[0])
+        else:
+            from motor.core.attributes import attributes_layer_score
+            values = (store.person_attributes(result.candidates[0]) or {}).get("values", [])
+            candidates = [attributes_layer_score(query_attributes, value) for value in values]
+            candidates = [score for score in candidates if score.available]
+            result.layer_scores["attributes"] = max(candidates, key=lambda score: score.score) if candidates else LayerScore(available=False)
+    elif cfg.attributes_enabled:
+        # Keep activation visible in the audit even when no identity candidate
+        # exists; there is intentionally no candidate score in that case.
+        result.layer_scores["attributes"] = LayerScore(
+            score=0.0,
+            confidence=float(query_attributes.get("confidence", 0.0)) if query_attributes else 0.0,
+            available=False,
+        )
+    if query_attributes is not None and person:
+        store.add_attributes(person, query_attributes, ts=rep_item["ts"] or time.time(), src=foto_id)
     write_audit_queue(ruta, local_id, camara_id, foto_id, build_audit_record(
         foto_id, local_id, camara_id, result.verdict, person,
-        layer_scores_json(result.layer_scores), attributes=attributes, moved_at=moved_at))
+        layer_scores_json(result.layer_scores), attributes=query_attributes, moved_at=moved_at))
 
     # eliminar el resto de fotos del sub-clúster (ya procesadas)
     for idx in item_idxs:
