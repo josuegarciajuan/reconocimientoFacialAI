@@ -43,28 +43,29 @@ class Config:
     frontal_pitch_tol: float = 25.0
 
     # --- matching (similitud coseno, embeddings L2-normalizados) ---
-    # Calibrado 2026-08-18 con datos reales: genuino ~0.32-0.38, impostor p95 ~0.36.
-    # 0.40 -> 0.45 (2026-08-21): el suelo por cara en 0.40 dejaba pasar impostores
-    # (falso merge documentado: calvo+chica a 0.409/0.512). La banda [0.30, 0.45)
-    # ahora exige corroboración de capas de apoyo o revision; el early-exit frontal
-    # se reserva para márgenes top1-top2 limpios (ver early_exit_min_margin).
-    secure_threshold: float = 0.45   # >= esto: match seguro
-    match_threshold: float = 0.30    # >= esto: match si la diferencia con el 2º >= margin
-    margin: float = 0.03             # separación frente al 2º para evitar confusión
-    group_threshold: float = 0.30    # intra-batería: >= esto = misma persona en la escena
+    # ENDURECIDO 2026-09-01 (anti-mezcla): dos personas "que se parecen" en
+    # videovigilancia alcanzan hasta coseno ~0.43 (falso merge real: visitante 75
+    # mezcló 2 personas con puente cruzado 0.43). Todos los umbrales se suben por
+    # encima de esa banda del impostor: ante la duda se prefiere crear una persona
+    # duplicada a mezclar caras (precisión sobre recall).
+    secure_threshold: float = 0.55   # >= esto: match seguro (impostor máx observado 0.43)
+    match_threshold: float = 0.48    # >= esto: match si la diferencia con el 2º >= margin
+    margin: float = 0.07             # separación frente al 2º para evitar confusión
+    group_threshold: float = 0.50    # intra-batería: >= esto = misma persona en la escena
 
     # --- refinamiento autoaprendizaje (F1): galerías limpias ---
     # Sub-clustering coherente: dentro de un clúster de batería, un miembro
     # permanece con el representativo solo si coseno >= cluster_confirm. Evita
     # que dos personas juntas en la escena se mezclen en una galería (union-find
-    # transitivo a 0.30 enlazaba caras ajenas: impostor p95 ~0.36).
-    cluster_confirm: float = 0.35
+    # transitivo enlazaba caras ajenas: impostor p95 ~0.36, máx real 0.43).
+    # ENDURECIDO 2026-09-01: 0.55 separa el par real mezclado (cruzado 0.43).
+    cluster_confirm: float = 0.55
     # Admisión individual: un encoding solo entra en la galería de la persona
     # asignada si su mejor similitud contra esa persona >= admission_cosine
     # (y, con zones_enabled, contra una pose comparable). Evita que una cara
     # ajena agrupada por transitividad contamine la galería y provoque falsos
     # match posteriores (agregación max).
-    admission_cosine: float = 0.32
+    admission_cosine: float = 0.48
     admission_pose_aware: bool = True
 
     # --- agrupación temporal ---
@@ -194,42 +195,37 @@ class Config:
     vlm_enabled: bool = False
     openai_enabled: bool = False
 
-    # --- umbrales operativos (calibrados 2026-08-18, sin tocar; override .env) ---
-    secure_threshold: float = 0.45      # s1 >= esto: match seguro (NUNCA new)
-    match_threshold: float = 0.30       # s1 >= esto: match si margen/confirmación
-    margin: float = 0.03                # separación top1-top2 (decisión binaria L1a)
-    gray_low: float = 0.28              # s < esto con confianza alta => evidencia en contra
-    gray_high: float = 0.42             # confirmación: capa de apoyo >= esto corrobora
-    escalate_band: float = 0.05         # candidatos a >= top1 - banda ("podría-ser-la-misma")
+    # --- umbrales operativos (ENDURECIDOS 2026-09-01 anti-mezcla; override .env) ---
+    secure_threshold: float = 0.55      # s1 >= esto: match seguro (NUNCA new)
+    match_threshold: float = 0.48       # s1 >= esto: match si margen/confirmación
+    margin: float = 0.07                # separación top1-top2 (decisión binaria L1a)
+    gray_low: float = 0.38              # s < esto con confianza alta => evidencia en contra
+    gray_high: float = 0.55             # confirmación: capa de apoyo >= esto corrobora
+    escalate_band: float = 0.03         # candidatos a >= top1 - banda ("podría-ser-la-misma")
 
     # --- banda baja (anti-fragmentación de perfiles/espaldas, 2026-08-21) ---
-    # Una cara con coseno < match_threshold contra TODO puede ser una pose extrema
-    # de una persona conocida (perfil/espaldas: ArcFace cae a ~0.15-0.25). Antes de
-    # crear "new" en silencio, si s1 >= new_low_floor las capas de apoyo (torso/
-    # vlm/openai) que coincidan FUERTE (>= gray_high) asocian a top1. El veredicto
-    # sigue exigiéndose a la capa de cara (solo asocia, nunca crea desde apoyo).
-    new_low_floor: float = 0.15         # s1 < esto => "new" directo sin corroboración
+    # ENDURECIDO 2026-09-01: suelo 0.15 -> 0.30 y corroboración solo si las capas
+    # coinciden con gray_high (0.55) y confianza mínima alta. La banda [0.30, 0.48)
+    # exige un acuerdo MUY fuerte de capas independientes antes de asociar a top1.
+    new_low_floor: float = 0.30         # s1 < esto => "new" directo sin corroboración
     low_band_min_agreements: int = 2    # capas independientes que deben coincidir
 
     # --- early-exit frontal: margen mínimo top1-top2 ---
-    # Con margen pequeño (2º candidato cerca, p.ej. 0.512 vs 0.467) el coseno de
-    # cara no es concluyente aunque s1 >= secure: se corrobora con las capas de
-    # apoyo (que pueden VETAR el match de un impostor) en vez de decidir solo.
-    early_exit_min_margin: float = 0.06
+    # ENDURECIDO 2026-09-01: 0.06 -> 0.09 (la cara sola solo decide con margen limpio).
+    early_exit_min_margin: float = 0.09
 
     # --- confianza mínima para VOTAR por capa ---
     # Una capa solo aporta evidencia si su confianza de instancia supera su
     # umbral; por debajo se ignora (su señal se considera no fiable, no en contra).
-    min_layer_conf: float = 0.70        # apoyo general (silueta/torso)
-    llm_min_conf: float = 0.85          # LLM: más estricto (sobreconfianza sin calibrar)
-    # 0.90 -> 0.85 (2026-08-21): con 0.90 el veto (2 capas con s<gray_low y c>=esto)
-    # era casi inalcanzable y los impostores "seguros" por cara pasaban sin oposición
-    # (falso merge). Sigue exigiendo 2 capas independientes; solo se baja el listón
-    # de confianza de la contradicción.
-    veto_conf: float = 0.85             # contradicción FUERTE (s < gray_low y c >= esto)
+    # ENDURECIDO 2026-09-01: min_layer_conf 0.70 -> 0.75, llm_min_conf 0.85 -> 0.90.
+    min_layer_conf: float = 0.75        # apoyo general (silueta/torso)
+    llm_min_conf: float = 0.90          # LLM: más estricto (sobreconfianza sin calibrar)
+    # ENDURECIDO 2026-09-01: 0.85 -> 0.80 (más fácil que 2 capas independientes
+    # vetten un match seguro -> uncertain -> persona duplicada, no mezcla).
+    veto_conf: float = 0.80             # contradicción FUERTE (s < gray_low y c >= esto)
 
     # --- acuerdo por silueta (perfil / ángulos raros) ---
-    silueta_min_score: float = 0.50     # silueta >= esto confirma el acuerdo; < bloquea
+    silueta_min_score: float = 0.60     # silueta >= esto confirma el acuerdo; < bloquea
 
     # --- pesos-prior (SOLO desempate/reporte; la decisión usa autoridad/veto) ---
     w_cara: float = 0.70                # peso-prior capa cara (L1a)
@@ -364,6 +360,9 @@ class Config:
         cfg.match_threshold = get_float(ruta, "RF_MATCH_THRESHOLD", cfg.match_threshold)
         cfg.margin = get_float(ruta, "RF_MARGIN", cfg.margin)
         cfg.secure_threshold = get_float(ruta, "RF_SECURE_THRESHOLD", cfg.secure_threshold)
+        cfg.group_threshold = get_float(ruta, "RF_GROUP_THRESHOLD", cfg.group_threshold)
+        cfg.cluster_confirm = get_float(ruta, "RF_CLUSTER_CONFIRM", cfg.cluster_confirm)
+        cfg.admission_cosine = get_float(ruta, "RF_ADMISSION_COSINE", cfg.admission_cosine)
 
         # Motor de decisión situacional: flags de activación gradual y umbrales
         # de confianza por capa (sin tocar código).
@@ -376,6 +375,9 @@ class Config:
         cfg.min_layer_conf = get_float(ruta, "RF_MIN_LAYER_CONF", cfg.min_layer_conf)
         cfg.llm_min_conf = get_float(ruta, "RF_LLM_MIN_CONF", cfg.llm_min_conf)
         cfg.veto_conf = get_float(ruta, "RF_VETO_CONF", cfg.veto_conf)
+        cfg.gray_low = get_float(ruta, "RF_GRAY_LOW", cfg.gray_low)
+        cfg.gray_high = get_float(ruta, "RF_GRAY_HIGH", cfg.gray_high)
+        cfg.escalate_band = get_float(ruta, "RF_ESCALATE_BAND", cfg.escalate_band)
         cfg.silueta_min_score = get_float(ruta, "RF_SILUETA_MIN_SCORE", cfg.silueta_min_score)
         cfg.new_low_floor = get_float(ruta, "RF_NEW_LOW_FLOOR", cfg.new_low_floor)
         cfg.low_band_min_agreements = get_int(ruta, "RF_LOW_BAND_AGREEMENTS", cfg.low_band_min_agreements)
