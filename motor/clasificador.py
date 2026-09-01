@@ -47,6 +47,7 @@ from motor.core.model import analyze            # noqa: E402
 from motor.core.quality import face_sharpness, pose_label  # noqa: E402
 from motor.core.store import FaceStore          # noqa: E402
 from motor.core.superres import enhance_embedding, photo_busto  # noqa: E402
+from motor.core.photo_audit import build_audit_record, layer_scores_json, write_audit_queue  # noqa: E402
 
 ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 IMG_EXTS = (".jpg", ".jpeg", ".png")
@@ -629,6 +630,35 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
             "sharpness": best_sharp,
             "has_face": True,
         })
+
+    # Persist an immutable, non-sensitive audit sidecar. PHP links it to the
+    # eventual fotos.id using this classifier-generated correlation id.
+    move_marker = os.path.join(ruta, "motor/audit_queue", local_id, ".last_move")
+    moved_at = None
+    try:
+        if os.path.isfile(move_marker):
+            with open(move_marker, encoding="utf-8") as fh:
+                moved_at = fh.read().strip() or None
+    except OSError:
+        moved_at = None
+    attributes = None
+    if cfg.attributes_enabled:
+        # Existing VLM first, OpenAI only as configured fallback. The result is
+        # structured and version-validated; it never enters identity matching.
+        try:
+            from motor.core.vlm_local import VLMClient
+            attributes = VLMClient(cfg, ruta).attributes(out_path)
+        except Exception:  # noqa: BLE001
+            attributes = None
+        if attributes is None and cfg.openai_enabled:
+            try:
+                from motor.core.llm_openai import OpenAICompare
+                attributes = OpenAICompare(cfg, ruta).attributes(out_path)
+            except Exception:  # noqa: BLE001
+                attributes = None
+    write_audit_queue(ruta, local_id, camara_id, foto_id, build_audit_record(
+        foto_id, local_id, camara_id, result.verdict, person,
+        layer_scores_json(result.layer_scores), attributes=attributes, moved_at=moved_at))
 
     # eliminar el resto de fotos del sub-clúster (ya procesadas)
     for idx in item_idxs:

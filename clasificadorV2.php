@@ -11,6 +11,7 @@ require_once("config/rutas.php");
 require_once("libs/db.php");
 require_once("libs/fechas.php");
 require_once("libs/vinculos.php");
+require_once("libs/photo_audit.php");
 
 $path = "motor/caras/";
 
@@ -177,6 +178,9 @@ function procesa_foto($ruta, $elemento) {
         "INSERT INTO fotos (estancia_id, nombre_real_antesconversion, identificador_unico) VALUES (?, ?, ?)",
         [$estancia_id, $elemento, $identificador_unico]
     );
+    // identificador_unico is the classifier-generated correlation id. The audit
+    // sidecar was produced before this INSERT; consume it only after fotos.id exists.
+    ingest_photo_audit((int)$foto_id, $identificador_unico, (string)$local_id, (string)$camara_id);
     @rename($ruta, "admin/caras_procesadas/" . $foto_id . ".jpg");
 }
 

@@ -32,6 +32,7 @@ from filelock import FileLock
 from .config import Config
 from .matching import LayerScore
 from .prompts import SYSTEM_PROMPT, USER_PROMPT, map_to_layer
+from .attributes import ATTRIBUTES_PROMPT, parse_attributes_response
 
 LOCK_TIMEOUT_S = 5.0
 VLM_IMG_MAX_SIDE = 384
@@ -127,6 +128,22 @@ class VLMClient:
         if start < 0 or end <= start:
             return {"probability_same": 0.5, "skip": True}
         return json.loads(content[start:end])
+
+    def attributes(self, image: str) -> dict | None:
+        """Extract versioned visible attributes; unavailable on any failure."""
+        if not self.cfg.attributes_enabled or not self.cfg.vlm_enabled:
+            return None
+        try:
+            with FileLock(os.path.join(self.cache_dir, ".vlm.lock"), timeout=LOCK_TIMEOUT_S):
+                r = requests.post(self.url, json={"model": self.cfg.vlm_model,
+                    "messages": [{"role": "user", "content": ATTRIBUTES_PROMPT,
+                                  "images": [_b64(image)]}], "stream": False,
+                    "options": {"num_ctx": self.cfg.vlm_num_ctx, "num_gpu": self.cfg.vlm_num_gpu}},
+                    timeout=self.cfg.vlm_timeout_s)
+                r.raise_for_status()
+                return parse_attributes_response(r.json()["message"]["content"])
+        except Exception:  # noqa: BLE001
+            return None
 
 
 def _b64(path: str) -> str:

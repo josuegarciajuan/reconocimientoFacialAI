@@ -46,6 +46,7 @@ class CascadeContext:
     si no hay presupuesto/caché/RAM (degradación, nunca bloqueo).
     """
     torso: object = None        # callable(cod) -> LayerScore (apariencia ropa)
+    attributes: object = None   # callable(cod) -> LayerScore (visible attrs; report-only)
     zonas: object = None        # callable(cod) -> LayerScore (pose-conf, legacy)
     silueta: object = None      # callable(cod) -> LayerScore (geometría facial)
     perfil: object = None       # callable(cod) -> LayerScore (reservado: re-embedding perfil)
@@ -106,7 +107,7 @@ def _weights(cfg: Config) -> dict[str, float]:
     """Pesos-prior para el helper `fuse` (reporte/desempate, no decisión)."""
     return {"cara": cfg.w_cara, "perfil": cfg.perfil_w, "silueta": cfg.silueta_w,
             "torso": cfg.w_torso, "zonas": cfg.w_torso, "vlm": cfg.w_llm,
-            "openai": cfg.w_llm}
+            "openai": cfg.w_llm, "attributes": cfg.attributes_weight}
 
 
 def _escalation(plan, cfg: Config, ctx: CascadeContext) -> list[str]:
@@ -118,7 +119,7 @@ def _escalation(plan, cfg: Config, ctx: CascadeContext) -> list[str]:
     """
     order = list(plan.support)
     for name in ("torso", "vlm", "openai"):
-        if name in order:
+        if name in order or name == "attributes":
             continue
         enabled = {"torso": cfg.torso_enabled, "vlm": cfg.vlm_enabled,
                    "openai": cfg.openai_enabled}[name]

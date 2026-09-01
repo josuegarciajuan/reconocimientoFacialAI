@@ -22,6 +22,7 @@ import requests
 from .config import Config
 from .matching import LayerScore
 from .prompts import SYSTEM_PROMPT, USER_PROMPT, map_to_layer
+from .attributes import ATTRIBUTES_PROMPT, parse_attributes_response
 from .vlm_local import _pair_key
 
 URL = "https://api.openai.com/v1/chat/completions"
@@ -124,6 +125,27 @@ class OpenAICompare:
                 last_err = e
                 time.sleep(1.0 * (attempt + 1))
         return LayerScore(available=False)
+
+    def attributes(self, image: str) -> dict | None:
+        """Extract only the versioned structured attribute contract."""
+        if not self.cfg.attributes_enabled or not self.cfg.openai_enabled or not self.cfg.llm_api_key:
+            return None
+        if self.budget_remaining() <= 0:
+            return None
+        try:
+            r = requests.post(URL, headers={"Authorization": f"Bearer {self.cfg.llm_api_key}"},
+                json={"model": self.cfg.llm_model,
+                      "messages": [{"role": "system", "content": ATTRIBUTES_PROMPT},
+                                   {"role": "user", "content": [{"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{_b64(image)}"}}]}],
+                      "max_tokens": 180, "response_format": {"type": "json_object"}},
+                timeout=self.cfg.openai_timeout_s)
+            r.raise_for_status()
+            result = parse_attributes_response(r.json()["choices"][0]["message"]["content"])
+            if result is not None:
+                self._spend()
+            return result
+        except Exception:  # noqa: BLE001
+            return None
 
 
 def _b64(path: str) -> str:
