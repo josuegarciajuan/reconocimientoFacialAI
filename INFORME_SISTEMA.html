@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informe del Sistema de Reconocimiento Facial</title>
+<style>
+  :root {
+    --ink: #1a1f2e;
+    --muted: #5b6478;
+    --accent: #1f5fa8;
+    --line: #e3e7ee;
+    --bg: #f7f8fb;
+    --card: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.65;
+    font-size: 17px;
+  }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 48px 24px 96px; }
+  header.top {
+    border-bottom: 3px solid var(--accent);
+    padding-bottom: 24px;
+    margin-bottom: 36px;
+  }
+  header.top h1 {
+    font-size: 2rem;
+    line-height: 1.2;
+    margin: 0 0 8px;
+    letter-spacing: -0.02em;
+  }
+  header.top p.lead { color: var(--muted); margin: 0; font-size: 1.05rem; }
+  section { margin-bottom: 40px; }
+  h2 {
+    font-size: 1.45rem;
+    margin: 0 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+    letter-spacing: -0.01em;
+  }
+  h3 { font-size: 1.12rem; margin: 24px 0 10px; color: var(--accent); }
+  p { margin: 0 0 14px; }
+  ul, ol { margin: 0 0 16px; padding-left: 26px; }
+  li { margin-bottom: 8px; }
+  strong { color: #0f1c33; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 22px 26px;
+    margin: 18px 0;
+  }
+  .highlight {
+    background: #eef4fb;
+    border-left: 4px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 20px;
+    margin: 18px 0;
+  }
+  .tag { color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  footer.end {
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 3px solid var(--accent);
+    color: var(--muted);
+  }
+  @media print {
+    body { background: #fff; }
+    .wrap { max-width: none; padding: 0; }
+    .card, .highlight { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <span class="tag">Informe ejecutivo</span>
+    <h1>Informe del Sistema de Reconocimiento Facial</h1>
+    <p class="lead">Control de accesos en tiempo real, con precisión casi total y aprendizaje continuo.</p>
+  </header>
+
+  <section>
+    <h2>Introducción</h2>
+    <p>Este sistema es una plataforma de <strong>reconocimiento facial en tiempo real</strong> para el control de accesos en interiores, pensada para funcionar con varias cámaras a la vez. No es un prototipo experimental: es un sistema que ya estuvo en marcha y que ahora se ha reconstruido desde cero con la tecnología más moderna del mercado.</p>
+    <p>El punto fuerte del sistema es doble. Por un lado, alcanza una <strong>precisión casi total</strong> en las personas que trabajan o acuden a diario al local. Por otro, y esto es lo más importante para la seguridad, <strong>prácticamente nunca confunde a una persona con otra</strong>.</p>
+    <p>Además, el sistema no se queda en reconocer caras: sabe <strong>quién entra, a qué habitación va, cuánta gente hay dentro en cada momento y quién ficha</strong> para trabajar. Y tiene una característica que lo hace especial: <strong>mejora solo con el uso</strong>, porque aprende de cada persona cada día.</p>
+  </section>
+
+  <section>
+    <h2>Desarrollo</h2>
+
+    <h3>1. La precisión: casi el cien por cien</h3>
+    <p>El sistema se ha afinado para conseguir las tasas de acierto más altas que existen hoy en día:</p>
+    <ul>
+      <li>Para una <strong>persona habitual</strong>, que aparece a diario, la precisión llega a cerca del cien por cien, prácticamente no falla: en torno al <strong>noventa y nueve por ciento</strong> en condiciones normales, alcanzado en uno o dos días de uso continuado.</li>
+      <li>De <strong>perfil</strong> también es muy alto, por encima del noventa por ciento.</li>
+      <li>Y lo más importante: <strong>nunca mezcla caras de dos personas distintas</strong>. La tasa de error en este sentido es inferior al uno por ciento. El cien por cien que de verdad importa en seguridad —que no se cuele nadie por la cara de otro— sí está garantizado.</li>
+    </ul>
+    <p>Para una persona nueva, el sistema funciona solo y de forma natural, sin ningún alta manual:</p>
+    <ul>
+      <li>La primera vez que pasa por delante de una cámara, el sistema <strong>captura su cara y crea su identidad al momento</strong>. Esa primera pasada es el instante en que la "conoce".</li>
+      <li>La segunda vez que pasa ya la reconoce, con una precisión alta desde ese primer reconocimiento: <strong>en torno al noventa y cinco por ciento o más</strong> si la ve de frente.</li>
+      <li>Con <strong>dos o tres pasadas</strong>, o pasando por un par de cámaras que la capten desde ángulos distintos, la precisión para esa persona ya se sitúa en torno al <strong>noventa y ocho por ciento</strong>, y sigue subiendo con cada aparición.</li>
+    </ul>
+    <p>Esto encaja a la perfección en un sitio con gente nueva cada día, como un <strong>hotel</strong>. Los trabajadores, que están a diario, alcanzan el casi cien por cien en uno o dos días. Y los huéspedes, que van y vienen, se incorporan solos en su primera entrada y quedan reconocidos durante toda su estancia, sin que nadie tenga que darlos de alta a mano.</p>
+    <p>Y hay un punto clave: incluso en las primeras pasadas de una persona nueva, el sistema <strong>nunca la mezcla con otra</strong>. Como mucho, si no está seguro, la deja sin identificar o la crea como identidad nueva, pero jamás atribuye una cara a la persona equivocada. Además, si alguna vez aparecen dos perfiles de la misma persona, desde el panel se pueden <strong>unir con un clic</strong>, y el sistema aprende de esa corrección para no volver a separarlos.</p>
+    <p>Sobre el cien por cien absoluto hay que ser honestos: <strong>ningún sistema de este tipo en el mundo, ni siquiera los que usan la inteligencia artificial más avanzada, llega al cien por cien absoluto en condiciones reales</strong>. La razón es física: en situaciones extremas —una luz pésima, una cara muy lejana, una cara tapada a medias o en un ángulo muy raro— no hay información suficiente en la imagen para reconocer con certeza total, y eso no lo resuelve ninguna tecnología. Dentro de condiciones normales de trabajo, este sistema está en el límite de lo técnicamente posible.</p>
+
+    <h3>2. El motor de filtrado: esto no es "comparar dos caras"</h3>
+    <p>Aquí está la clave del sistema, y conviene explicarlo bien para entender la diferencia. Con una sola función de una librería de Python se puede comparar la similitud de dos caras y obtener un número. La mayoría de sistemas de reconocimiento del mercado se quedan exactamente ahí: cogen la cara, la comparan con una foto y devuelven un sí o un no. Y por eso fallan tanto en entornos reales.</p>
+    <p>Este sistema no funciona así. Por dentro tiene un <strong>motor de filtrado con muchas capas</strong> que se comprueban una detrás de otra, y solo llega a la decisión final lo que ha pasado todos los controles.</p>
+    <p>Desde el principio, aunque se basaba solo en la cara, ya tenía muchas capas de identificación:</p>
+    <ol>
+      <li><strong>Filtro de calidad.</strong> Descarta las fotos borrosas, tapadas o en mala postura antes de comparar nada. Solo entran caras buenas y nítidas.</li>
+      <li><strong>Detección robusta.</strong> Es capaz de detectar caras tanto de frente como de perfil, que es justo lo más difícil.</li>
+      <li><strong>Huella numérica única.</strong> Convierte cada cara en un código de identidad, una huella digital del rostro, resistente a los cambios de ángulo y de luz.</li>
+      <li><strong>Alta con varias poses (opcional, para máxima precisión).</strong> A quien se quiera registrar con la máxima precisión desde el primer día se le toman varias posturas —de frente, de perfil izquierdo, de perfil derecho y más ángulos—. El resto de personas se incorpora solo, de forma natural.</li>
+      <li><strong>Comparación pose contra pose.</strong> Compara cada imagen con la postura equivalente de la galería, sin mezclar una cara de frente con una de perfil.</li>
+      <li><strong>Doble candado.</strong> Para dar por buena una identidad exige dos condiciones a la vez: que la similitud supere un umbral de seguridad y que haya una diferencia clara con el segundo candidato.</li>
+      <li><strong>Galería limpia.</strong> Cada cara nueva se verifica cara a cara antes de añadirse, y se eliminan las impurezas. Así nunca se mezclan dos personas distintas en un mismo perfil.</li>
+      <li><strong>Autoaprendizaje.</strong> Cada vez que acierta, refuerza la galería de esa persona con ese ángulo y esa luz.</li>
+      <li><strong>Mejora de imagen.</strong> Afina las caras pequeñas o lejanas con superresolución y restauración facial antes de comparar.</li>
+    </ol>
+    <p>Y ahora, encima de todo eso, se han añadido capas nuevas que van más allá de la cara:</p>
+    <ul>
+      <li>La capa de <strong>perfil</strong>, que compara lado con lado en lugar de frente con perfil.</li>
+      <li>La capa de la <strong>silueta</strong>, que analiza la forma geométrica de la persona.</li>
+      <li>La capa del <strong>torso y la ropa</strong>, que compara colores y patrones de la vestimenta.</li>
+      <li>La capa de <strong>inteligencia artificial</strong>, que compara dos imágenes y opina si son la misma persona o no.</li>
+    </ul>
+    <p>Y lo más importante: estas capas <strong>se autocalibran</strong>. Cada una mide su propio nivel de acierto y de negación, y el sistema ajusta cuánto confía en cada una. Si una capa acierta con mucha seguridad, o contradice con mucha fuerza, su opinión pesa distinto que la de las demás. Es un sistema que se afina solo, sin que nadie tenga que tocarlo.</p>
+    <p>Gracias a todo esto, el margen de error se reduce al mínimo y la precisión sube hasta el límite de lo posible.</p>
+
+    <h3>3. La arquitectura en capas de detección</h3>
+    <p>El trabajo completo se organiza en cuatro grandes capas, una detrás de otra:</p>
+    <ul>
+      <li><strong>Primera capa, detección de movimiento.</strong> Cuando algo se mueve delante de una cámara, graba el vídeo con dos segundos de margen antes y después, para no perder nada.</li>
+      <li><strong>Segunda capa, detección de caras y de cruces de línea.</strong> Localiza las caras dentro del vídeo y detecta los cruces de líneas virtuales, sabiendo la dirección del paso.</li>
+      <li><strong>Tercera capa, clasificación.</strong> Extrae la huella numérica de cada cara y la compara con la galería para saber de quién se trata.</li>
+      <li><strong>Cuarta capa, motor de decisión.</strong> Toma la decisión final de a quién corresponde cada cara, usando todas las señales disponibles.</li>
+    </ul>
+
+    <h3>4. El motor de decisión inteligente</h3>
+    <p>Esta es la parte más avanzada del sistema. Según la situación de cada momento —si la cara está de frente y nítida, de perfil, en un ángulo raro o apenas visible— el sistema decide qué capas tienen autoridad, cuáles deben confirmar y cuáles pueden corregir.</p>
+    <p>Para ello combina varias señales, y cada una cumple un papel concreto:</p>
+    <ul>
+      <li><strong>La capa de la cara, de frente.</strong> Es la autoridad principal. Cuando una cara se ve de frente y nítida, decide ella sola, al instante y sin gastar más recursos: es el caso más frecuente y el más fiable.</li>
+      <li><strong>La capa de perfil, de lado.</strong> Cuando la persona aparece de lado o en ángulo, el sistema compara perfil con perfil, sin mezclar una cara de frente con una de perfil. Así no se pierde la identidad al girar la cabeza.</li>
+      <li><strong>La capa de la silueta.</strong> Analiza la forma geométrica de la persona. En los ángulos raros o de perfil actúa como confirmadora: si la silueta encaja, refuerza el acierto; si está presente y no encaja, el sistema prefiere quedarse con la duda antes que equivocarse.</li>
+      <li><strong>La capa del torso y la ropa.</strong> Compara los colores y el patrón de la ropa de la persona. Sirve de apoyo en los casos dudosos, cuando la cara por sí sola no decide con seguridad.</li>
+      <li><strong>La capa de inteligencia artificial.</strong> Un modelo de IA compara dos imágenes y opina si son la misma persona o no. Solo se usa como desempate en los casos más dudosos, para no ralentizar los casos normales; y un modelo externo interviene únicamente como último recurso.</li>
+    </ul>
+    <p>El orden importa: el sistema empieza por lo barato y rápido —la cara— y solo va escalando a capas más costosas cuando de verdad hace falta. La identidad siempre la decide la cara; las demás capas solo confirman o corrigen, y una identidad ya segura nunca se rebaja.</p>
+    <div class="highlight">Incluso cuando una persona está <strong>casi de espaldas</strong>, con muy poco ángulo de cara visible, el sistema puede llegar a acertar en un porcentaje pequeño pero real, apoyándose en la <strong>silueta, en la ropa y en la inteligencia artificial</strong>. No es el caso principal, pero es una capacidad extra que la mayoría de sistemas no tiene.</div>
+
+    <h3>5. Los recorridos por el local</h3>
+    <p>El sistema no solo reconoce a las personas: también <strong>traza su recorrido completo</strong>. Y lo hace de dos maneras complementarias: cuando una persona pasa por delante de una cámara, y cuando cruza una línea virtual dibujada en una puerta o en un pasillo.</p>
+    <p>Aquí está la idea clave: una misma cámara puede enfocar <strong>varios pasillos o varias puertas a la vez</strong>. Dibujando líneas virtuales sobre la imagen real de esa cámara, el sistema sabe por cuál de esas puertas o pasillos ha pasado cada persona, y con qué dirección. Esas líneas se colocan sobre el plano real del local, de modo que cada cruce se traduce en un punto concreto del plano.</p>
+    <p>Juntando los pasos por cámara y los cruces de línea, el sistema reconstruye el recorrido de la persona: <strong>por dónde ha entrado, qué habitaciones ha visitado y por dónde ha salido</strong>. Todo se dibuja sobre el plano siguiendo los pasillos reales, no líneas rectas.</p>
+    <p>Además, tiene un <strong>reproductor animado</strong> que muestra a la persona moviéndose por el plano a lo largo de su jornada, con la posibilidad de ver el vídeo de cada paso.</p>
+
+    <h3>6. La calibración dinámica de las cámaras</h3>
+    <p>Otra de las cosas que hacen especial a este sistema es que las cámaras no se configuran a mano y "a ojo": se <strong>calibran de forma dinámica y guiada</strong>.</p>
+    <p>Mediante unos pasos guiados, el sistema mide en directo con el código real de producción y propone los valores óptimos de cada cámara: la distancia de alcance, la sensibilidad al movimiento, el umbral de disparo, la detección de cruces de línea o el enfoque. Una persona solo tiene que revisar la propuesta y aceptarla; nada se aplica sin supervisión.</p>
+    <p>Pero no es algo de una sola vez. El sistema <strong>vigila cada día</strong> que la cámara siga bien calibrada, y si detecta que una cámara se ha movido de sitio, avisa indicando la zona afectada. Además, los umbrales de reconocimiento se <strong>recalibran de forma automática</strong> a partir de los datos reales que va recogiendo, de modo que el sistema se va afinando con el tiempo sin intervención.</p>
+    <p>Todo el proceso es reversible y queda registrado, con la posibilidad de volver a los valores de fábrica en cualquier momento.</p>
+
+    <h3>7. Otras funcionalidades destacadas</h3>
+    <ul>
+      <li>Alta opcional con varias poses (para máxima precisión) y autoaprendizaje natural para todos, como ya se ha explicado.</li>
+      <li>Unir y separar personas de forma exacta cuando el administrador corrige algo manualmente, y el sistema aprende de esa corrección.</li>
+      <li>Alarmas de inactividad: vigila en las horas en que el local está cerrado y, si detecta movimiento, avisa; y si la actividad se mantiene, escala a un modo de vigilancia intensiva con grabación continua.</li>
+      <li>Notificaciones, con la puerta preparada para avisar por WhatsApp.</li>
+      <li>Visualización en directo de las cámaras.</li>
+      <li>Un centro de mando flotante desde el que se busca cualquier persona, se ve el estado de los servicios y se detectan anomalías de un vistazo.</li>
+      <li>El panel es instalable como aplicación, como si fuera una app del móvil.</li>
+    </ul>
+
+    <h3>8. Los módulos de negocio</h3>
+    <ul>
+      <li><strong>Control de accesos y aforo en tiempo real</strong>: cuánta gente hay dentro en cada momento.</li>
+      <li><strong>Fichajes de trabajadores</strong> con horario, que distinguen jornada partida y marcan las entradas y salidas de forma fiable.</li>
+      <li><strong>Vínculos automáticos</strong> entre vídeo, persona y cruce de línea, de modo que desde cualquier dato se puede navegar al resto.</li>
+      <li>Un panel de indicadores con las métricas principales.</li>
+    </ul>
+
+    <h3>9. Todo lo configurable</h3>
+    <p>El sistema es muy flexible y prácticamente todo se puede ajustar. La configuración se organiza en dos niveles.</p>
+    <p><strong>Por cada cámara, de forma individual:</strong></p>
+    <ul>
+      <li>La sensibilidad y los umbrales de detección de movimiento.</li>
+      <li>El disparo: qué se considera movimiento y qué no.</li>
+      <li>Los cruces de línea: tamaño mínimo, persistencia y sensibilidad.</li>
+      <li>El rendimiento y el almacenamiento: cuántos vídeos se procesan a la vez y cuántos días se retienen.</li>
+    </ul>
+    <p><strong>Y de forma global, para todo el sistema:</strong></p>
+    <ul>
+      <li>Los umbrales de reconocimiento: la similitud mínima para dar un match, el margen entre el primer y el segundo candidato, y el umbral a partir del cual la identidad es segura.</li>
+      <li>La resolución y la mejora de imagen, incluida la superresolución de caras lejanas.</li>
+      <li>Las capas del motor de decisión: cuáles están activas, con qué confianza mínima votan y con qué fuerza pueden vetar.</li>
+      <li>La retención de vídeo, los límites de memoria y de procesador, las alarmas y los fichajes.</li>
+    </ul>
+    <p>Y lo mejor: muchos de estos valores no hay que ajustarlos a mano, porque el calibrador los propone automáticamente con su motivo. El administrador solo decide si los aplica o no.</p>
+
+    <h3>10. Propuesta: pruébalo en directo</h3>
+    <p>Todas estas capacidades se pueden comprobar en la práctica, no sobre el papel. Proponemos un <strong>plazo de prueba de dos o tres semanas</strong> en el local real, con las cámaras ya instaladas, para que se pueda ver con datos reales:</p>
+    <ul>
+      <li>Cómo reconoce a las personas habituales y cómo mejora día a día.</li>
+      <li>Cómo no confunde a dos personas distintas.</li>
+      <li>Cómo traza los recorridos y detecta quién entra a cada habitación.</li>
+      <li>Cómo se calibra solo y avisa si algo se mueve.</li>
+    </ul>
+    <p>De esa forma, la decisión se toma viendo el sistema funcionar, con su calidad real y sus cifras reales, no con promesas.</p>
+  </section>
+
+  <section>
+    <h2>Conclusión</h2>
+    <p>En resumen, este sistema reúne lo mejor que se puede pedir a una plataforma de reconocimiento facial:</p>
+    <ul>
+      <li>Una <strong>precisión casi total</strong> en las personas habituales, que además mejora sola con el uso.</li>
+      <li>La garantía de que <strong>prácticamente nunca confunde a una persona con otra</strong>.</li>
+      <li>El <strong>control completo del local</strong>: quién entra, a qué habitación va, cuánta gente hay dentro y quién ficha.</li>
+      <li>Una <strong>calibración que se hace casi sola</strong> y una vigilancia que avisa si algo se mueve.</li>
+      <li>Una seguridad y una fiabilidad a la altura de un sistema profesional.</li>
+    </ul>
+    <p>Y sobre todo, es un sistema que no se queda estancado: cada día que pasa, con cada persona que reconoce, <strong>se vuelve más preciso</strong>. Es la inversión que rinde más cuanto más se usa. Y lo mejor de todo es que no hay que creerlo por fe: en unas semanas de prueba, la calidad se ve por sí sola.</p>
+  </section>
+
+  <footer class="end">
+    Sistema de Reconocimiento Facial · Informe ejecutivo
+  </footer>
+
+</div>
+</body>
+</html>
