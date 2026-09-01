@@ -230,6 +230,17 @@ cmd "Recrear ${PROYECTO}/motor/caras/${LOCAL_ID}"  mkdir -p "${PROYECTO}/motor/c
 cmd "Recrear ${PROYECTO}/motor/videos/${LOCAL_ID}" mkdir -p "${PROYECTO}/motor/videos/${LOCAL_ID}"
 cmd "Recrear ${PROYECTO}/motor/videos_archivo/${LOCAL_ID}" mkdir -p "${PROYECTO}/motor/videos_archivo/${LOCAL_ID}"
 
+# Limpiar markers de procesado/archivado de aux/ (detector.php cuenta estos
+# markers como slots de CONFIG_LIMITE_VIDEOS/CONFIG_LIMITE_ARCHIVA). Un marker
+# huérfano de un vídeo ya borrado por el reset saturaría el slot y bloquearía
+# procesa_video.py (lección 2026-09-01). Se borran los markers .mp4.txt/.avi.txt
+# de procesa y los archiva_*.txt; se conservan los contadores .intentos.
+for m in "${PROYECTO}"/aux/*.mp4.txt "${PROYECTO}"/aux/*.avi.txt "${PROYECTO}"/aux/archiva_*.txt; do
+  if [[ -f "${m}" ]]; then
+    cmd "Borrar marker ${m}" rm -f "${m}"
+  fi
+done
+
 # =============================================================================
 # FASE D — rearrancar servicios
 # =============================================================================
