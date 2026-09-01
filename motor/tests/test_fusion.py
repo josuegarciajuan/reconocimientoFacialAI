@@ -332,6 +332,21 @@ def test_banda_baja_acuerdo_llm_solo_match():
     assert res.person == "A"
 
 
+def test_banda_baja_con_silueta_y_llm_positivo_pasa_a_revision():
+    """Incidente cámara 19: no crear un duplicado con evidencia favorable incompleta."""
+    cfg = _cfg()
+    ctx = CascadeContext(
+        silueta=lambda cod: LayerScore(score=0.646360, confidence=0.646360),
+        torso=lambda cod: LayerScore(available=False),
+        openai=lambda cod: LayerScore(score=0.725, confidence=0.60),
+    )
+    res = run_cascade({"A": 0.236954, "B": 0.218139}, ctx, cfg,
+                      LayerScore(score=0.236954, confidence=0.365127),
+                      situation=Situation(pose="aba", sharpness=161.69))
+    assert res.verdict == "review"
+    assert res.person == "A"
+
+
 def test_banda_baja_por_debajo_del_suelo_new_directo():
     """s1 < new_low_floor: 'new' directo, sin gastar capas caras."""
     cfg = _cfg()

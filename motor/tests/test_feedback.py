@@ -1,7 +1,10 @@
 """Tests del recolector de feedback (F3, §5): decisiones + etiquetas -> matriz."""
+import json
+
 import numpy as np
 
 from motor.core.feedback import FeedbackCollector, embedding_hash
+from motor.core.matching import LayerScore
 
 
 def _feat_layers(s_cara, c_cara):
@@ -62,6 +65,22 @@ def test_disabled_collector_writes_nothing(tmp_path):
     fc.log_decision({"verdict": "match", "layers": _feat_layers(0.5, 0.8)})
     X, y = fc.export_matrix()
     assert len(X) == 0
+
+
+def test_log_decision_preserves_layer_availability_and_reason(tmp_path):
+    fc = FeedbackCollector(str(tmp_path), "1", enabled=True)
+    fc.log_decision({
+        "verdict": "review",
+        "layers": {
+            "torso": LayerScore(available=False, reason="similarity_zero"),
+        },
+    })
+
+    with open(fc.decisions_path, encoding="utf-8") as fh:
+        logged = json.loads(fh.readline())
+    assert logged["layers"]["torso"] == {
+        "s": 0.0, "c": 0.0, "available": False, "reason": "similarity_zero",
+    }
 
 
 def test_embedding_hash_stable_and_private():
