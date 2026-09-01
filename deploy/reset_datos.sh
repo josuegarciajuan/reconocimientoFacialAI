@@ -106,6 +106,62 @@ for svc in "${SERVICIOS[@]}"; do
   fi
 done
 
+# Patrones de procesos RF (se matan con -9; hijos/daemons que systemd no captura)
+PATRONES_KILL=(
+  "clasificador.py"
+  "procesa_video.py"
+  "archiva_video.py"
+  "guarda_movimientosV3.py"
+  "pose.py"
+  "photo_worker.py"
+  "cruces.py"
+  "reprocesar.py"
+  "enrolamiento.py"
+  "juntar_personas"
+  "separar_personas.py"
+  "detectar_mezclados.py"
+  "calibrador.py"
+  "capturador.php"
+  "detector.php"
+  "clasificadorV2.php"
+  "conciliador.php"
+  "vinculador.php"
+  "alarmador.php"
+  "procesos_panel_control.php"
+)
+
+matar_procesos() { # mata procesos RF vivos y espera a que terminen (con timeout)
+  local pat pid self_pid
+  self_pid="$$"
+  for pat in "${PATRONES_KILL[@]}"; do
+    # -f casa sobre la línea de comando; excluye este script y su propio shell
+    pkill -9 -f "${pat}" 2>/dev/null || true
+  done
+  # Barrido extra: cualquier python/php cuyo args contenga la ruta del proyecto
+  pkill -9 -f "${PROYECTO}/motor" 2>/dev/null || true
+  pkill -9 -f "${PROYECTO}/capturador.php" 2>/dev/null || true
+  pkill -9 -f "${PROYECTO}/detector.php" 2>/dev/null || true
+  pkill -9 -f "${PROYECTO}/clasificadorV2.php" 2>/dev/null || true
+  pkill -9 -f "${PROYECTO}/conciliador.php" 2>/dev/null || true
+  pkill -9 -f "${PROYECTO}/vinculador.php" 2>/dev/null || true
+  pkill -9 -f "${PROYECTO}/alarmador.php" 2>/dev/null || true
+  # Esperar hasta 15 s a que no quede ninguno
+  local i=0
+  while (( i < 15 )); do
+    local restantes
+    restantes=$(ps -eo args | grep -F "${PROYECTO}" | grep -v grep | grep -v "reset_datos.sh" | grep -v "bash" | wc -l)
+    (( restantes <= 1 )) && break
+    sleep 1; i=$((i+1))
+  done
+  log "  procesos RF restantes tras matar: ${restantes}"
+}
+
+# =============================================================================
+# FASE A2 — matar TODOS los procesos RF (hijos/huérfanos que systemd no cubre)
+# =============================================================================
+log "FASE A2: matando todos los procesos RF del proyecto..."
+cmd "Matar procesos RF" matar_procesos
+
 # =============================================================================
 # FASE B — vaciar BD (tablas de datos)
 # =============================================================================
