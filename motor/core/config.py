@@ -163,8 +163,14 @@ class Config:
     face_min_pad: int = 8          # pad mínimo (px) para no cortar frente/barbilla
 
     # --- enrolamiento ---
-    enrollment_min_sharpness: float = 80.0
-    min_poses: list[str] = field(default_factory=lambda: ["f", "pi", "pd"])
+    # Nitidez mínima de las caras admitidas en el registro. 80 -> 95 (2026-09-01):
+    # las caras "algo borrosas" ensuciaban la galería y bajaban la tasa de acierto.
+    # Se deja un valor intermedio para probar en producción.
+    enrollment_min_sharpness: float = 95.0
+    # Poses admitidas en el enrolamiento. Se conservan frontal + giros moderados
+    # (45°) + arriba/abajo; se DESCARTAN los perfiles 90° (pi/pd, "casi de espaldas")
+    # y `other` (pose degenerada), que producían embeddings ruidosos y baja acierto.
+    min_poses: list[str] = field(default_factory=lambda: ["f", "m45i", "m45d", "arr", "aba"])
 
     # --- pose label (yaw/pitch en grados) ---
     yaw_frontal: float = 15.0
@@ -375,4 +381,6 @@ class Config:
         cfg.low_band_min_agreements = get_int(ruta, "RF_LOW_BAND_AGREEMENTS", cfg.low_band_min_agreements)
         cfg.early_exit_min_margin = get_float(ruta, "RF_EARLY_EXIT_MIN_MARGIN", cfg.early_exit_min_margin)
         cfg.calib_apply = get_bool(ruta, "RF_CALIB_APPLY", cfg.calib_apply)
+        # Enrolamiento: umbral de nitidez de las caras del registro (ajustable sin código).
+        cfg.enrollment_min_sharpness = get_float(ruta, "RF_ENROLL_MIN_SHARPNESS", cfg.enrollment_min_sharpness)
         return cfg
