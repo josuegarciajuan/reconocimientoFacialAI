@@ -116,9 +116,11 @@ MYSQL=(mysql -u"${BD_USER}")
 if [[ ${DRY_RUN} -eq 1 ]]; then
   for t in "${TABLAS_DATOS[@]}"; do log "  (dry-run) TRUNCATE ${t}"; done
 else
-  # Desactiva FK/checks durante el truncado (tablas sin FKs reales, por robustez)
+  # Construye cada TRUNCATE como sentencia propia terminada en ';'
+  truncs=()
+  for t in "${TABLAS_DATOS[@]}"; do truncs+=( "TRUNCATE TABLE ${t};" ); done
   printf '%s\n' "SET FOREIGN_KEY_CHECKS=0;" \
-    "${TABLAS_DATOS[@]/#/TRUNCATE TABLE }" \
+    "${truncs[@]}" \
     "SET FOREIGN_KEY_CHECKS=1;" \
     | "${MYSQL[@]}" "${BD_NAME}" \
     || die "fallo vaciando BD"
