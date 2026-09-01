@@ -47,7 +47,8 @@ from motor.core.model import analyze            # noqa: E402
 from motor.core.quality import face_sharpness, pose_label  # noqa: E402
 from motor.core.store import FaceStore          # noqa: E402
 from motor.core.superres import enhance_embedding, photo_busto  # noqa: E402
-from motor.core.photo_audit import build_audit_record, layer_scores_json, write_audit_queue  # noqa: E402
+from motor.core.photo_audit import (build_audit_record, layer_scores_json,
+                                    post_move_event_for, write_audit_queue)  # noqa: E402
 
 ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 IMG_EXTS = (".jpg", ".jpeg", ".png")
@@ -664,17 +665,11 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
 
     # Persist an immutable, non-sensitive audit sidecar. PHP links it to the
     # eventual fotos.id using this classifier-generated correlation id.
-    # Scope the phase marker to this local/camera stream; a move in another
-    # camera must not relabel this stream's classifications.
-    move_marker = os.path.join(ruta, "motor/audit_queue", local_id, camara_id, ".last_move.json")
-    moved_at = None
-    try:
-        if os.path.isfile(move_marker):
-            with open(move_marker, encoding="utf-8") as fh:
-                marker = json.load(fh)
-                moved_at = marker.get("moved_at") if isinstance(marker, dict) else None
-    except OSError:
-        moved_at = None
+    # Scope post-move classification to the same local/camera stream AND the
+    # destination person. An event for another person cannot relabel this photo.
+    move_events = os.path.join(ruta, "motor/audit_queue", local_id, camara_id, "move_events.jsonl")
+    moved_event = post_move_event_for(move_events, person, time.time())
+    moved_at = moved_event.get("moved_at") if moved_event else None
     # Report the per-candidate attributes layer even when the cascade early-exits.
     if cfg.attributes_enabled and result.candidates:
         if ctx is not None:

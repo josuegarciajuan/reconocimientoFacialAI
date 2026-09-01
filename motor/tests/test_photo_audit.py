@@ -1,6 +1,8 @@
 import json
 
-from motor.core.photo_audit import build_audit_record, layer_scores_json, write_audit_queue
+from motor.core.photo_audit import (build_audit_record, layer_scores_json,
+                                    post_move_event_for, write_audit_queue,
+                                    write_move_event)
 
 
 def test_audit_record_correlates_with_foto_identifier_and_marks_post_move():
@@ -30,3 +32,10 @@ def test_audit_serializes_attributes_layer_activation():
     assert layer_scores_json({"attributes": Score()}) == {
         "attributes": {"score": 0.75, "confidence": 0.25, "available": True}
     }
+
+
+def test_post_move_event_is_scoped_to_destination_person(tmp_path):
+    path = write_move_event(tmp_path, "7", "2", {"event_id": 9,
+        "to_person_code": "person-a", "moved_at": 100.0})
+    assert post_move_event_for(path, "person-a", 101.0)["event_id"] == 9
+    assert post_move_event_for(path, "person-b", 101.0) is None

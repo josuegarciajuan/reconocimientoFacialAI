@@ -38,6 +38,31 @@ def write_audit_queue(root, local_id, camera_id, correlation_id, record):
     return target
 
 
+def write_move_event(root, local_id, camera_id, event):
+    """Append a movement event to the local/camera stream journal."""
+    path = Path(root) / "motor" / "audit_queue" / str(local_id) / str(camera_id) / "move_events.jsonl"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(event, ensure_ascii=False, separators=(",", ":")) + "\n")
+    return path
+
+
+def post_move_event_for(path, person_code, classified_at):
+    """Find the latest prior event targeting this person, never another one."""
+    latest = None
+    try:
+        for line in Path(path).read_text(encoding="utf-8").splitlines():
+            event = json.loads(line)
+            if event.get("to_person_code") != person_code:
+                continue
+            if float(event.get("moved_at_epoch", event.get("moved_at", 0))) <= classified_at:
+                if latest is None or float(event.get("moved_at_epoch", 0)) > float(latest.get("moved_at_epoch", 0)):
+                    latest = event
+    except (OSError, ValueError, TypeError, json.JSONDecodeError):
+        return None
+    return latest
+
+
 def layer_scores_json(layers: dict) -> dict:
     """Serialize LayerScore values without accepting arbitrary model output."""
     out = {}
