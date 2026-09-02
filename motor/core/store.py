@@ -11,6 +11,11 @@ Formato (pickle):
             "sources":   [str|None ...],    # proveniencia: foto_id (identificador_unico)
                                             # o "enroll:<cod>" que originó cada encoding
                                             # (None = legado/backfill sin traza)
+            "sil":       [ndarray|None ...],# descriptor de silueta de la MISMA cara que
+                                            # generó el encoding (alineado por índice).
+                                            # C3: la capa de silueta compara contra la
+                                            # geometría real del encoding, nunca contra
+                                            # una foto de archivo del panel.
             "appearance": {                 # opcional (capa L1b, F1+)
                 "desc": [ [float...] ],     # descriptores de torso (144-d)
                 "ts":   [float ...],        # epoch de captura
@@ -59,16 +64,22 @@ def _empty() -> dict:
 
 def _new_person() -> dict:
     return {"encodings": [], "quality": [], "poses": [], "added_at": [],
-            "sources": [], "appearance": None, "attributes": None}
+            "sources": [], "sil": [], "appearance": None, "attributes": None}
 
 
 def _aligned_lists(p: dict, n: int) -> None:
     """Rellena listas paralelas ausentes/shorts (retrocompat V3->V4 y defensa)."""
-    for k, filler in (("quality", 0.0), ("poses", ""), ("added_at", 0.0), ("sources", None)):
+    for k, filler in (("quality", 0.0), ("poses", ""), ("added_at", 0.0),
+                      ("sources", None), ("sil", None)):
         cur = p.get(k)
         if not isinstance(cur, list) or len(cur) < n:
             cur = (cur or []) + [filler] * (n - len(cur) if isinstance(cur, list) else n)
             p[k] = cur[:n]
+
+
+# Listas paralelas por encoding que se mantienen alineadas en TODA mutación
+# (prune/merge/move/reembed). `sil` puede contener None (sin descriptor).
+_FACE_KEYS = ("encodings", "quality", "poses", "added_at", "sources", "sil")
 
 
 class FaceStore:
@@ -120,6 +131,14 @@ class FaceStore:
             return None
         return np.asarray(p["encodings"], dtype=np.float32)
 
+    def person_sils(self, cod: str) -> list | None:
+        """Descriptores de silueta por encoding (C3), alineados; None si no hay."""
+        p = self.person(cod)
+        if not p or not p.get("encodings"):
+            return None
+        _aligned_lists(p, len(p["encodings"]))
+        return list(p["sil"])
+
     def count(self, cod: str) -> int:
         p = self.person(cod)
         return len(p["encodings"]) if p else 0
@@ -140,7 +159,7 @@ class FaceStore:
             mean_sim = (S.sum(axis=1) - 1.0) / np.maximum(1, n - 1)
             keep = np.where(mean_sim >= OUTLIER_COSINE)[0]
             if 0 < len(keep) < n:
-                for k in ("encodings", "quality", "poses", "added_at", "sources"):
+                for k in _FACE_KEYS:
                     p[k] = [p[k][i] for i in keep]
                 if p.get("appearance"):
                     n_app = len(p["appearance"]["desc"])
@@ -153,7 +172,7 @@ class FaceStore:
         # si sigue sobrando: conservar los más nítidos (comportamiento previo)
         if n > max_per_person:
             idx = sorted(range(n), key=lambda i: p["quality"][i], reverse=True)[:max_per_person]
-            for k in ("encodings", "quality", "poses", "added_at", "sources"):
+            for k in _FACE_KEYS:
                 p[k] = [p[k][i] for i in idx]
             if p.get("appearance"):
                 # apariencia alineada por índice (mismo crop); puede tener menos filas
@@ -165,24 +184,33 @@ class FaceStore:
 
     def add(self, cod: str, encodings: list[np.ndarray],
             qualities: list[float], poses: list[str],
-            sources: Iterable[str | None] | None = None) -> None:
+            sources: Iterable[str | None] | None = None,
+            sils: Iterable | None = None) -> None:
         """Añade encodings a la galería de `cod`.
 
         `sources`: proveniencia por encoding (foto_id / "enroll:<cod>" / None).
+        `sils`: descriptor de silueta por encoding (C3), alineado por índice;
+                None por defecto (los métodos que no aportan silueta no cambian).
         """
         srcs = list(sources) if sources is not None else [None] * len(encodings)
         if len(srcs) != len(encodings):
             srcs = (srcs + [None] * len(encodings))[:len(encodings)]
+        if sils is None:
+            sils = [None] * len(encodings)
+        sils = list(sils)
+        if len(sils) != len(encodings):
+            sils = (sils + [None] * len(encodings))[:len(encodings)]
 
         def _fn(data: dict) -> None:
             p = data["persons"].setdefault(cod, _new_person())
             now = time.time()
-            for e, q, po, s in zip(encodings, qualities, poses, srcs):
+            for e, q, po, s, si in zip(encodings, qualities, poses, srcs, sils):
                 p["encodings"].append(np.asarray(e, dtype=np.float32))
                 p["quality"].append(float(q))
                 p["poses"].append(po)
                 p["added_at"].append(now)
                 p["sources"].append(s)
+                p["sil"].append(None if si is None else np.asarray(si, dtype=np.float32))
             self._prune(p, self.max_per_person)
         self._transaction(_fn)
 
@@ -242,8 +270,8 @@ class FaceStore:
             pa = data["persons"].setdefault(a, _new_person())
             pb = data["persons"].pop(b, None)
             if pb is not None:
-                for k in ("encodings", "quality", "poses", "added_at", "sources"):
-                    pa[k] = pa[k] + pb[k]
+                for k in _FACE_KEYS:
+                    pa[k] = pa.get(k, []) + pb.get(k, [])
                 if pb.get("appearance"):
                     if pa.get("appearance") is None:
                         pa["appearance"] = {"desc": [], "ts": [], "src": []}
@@ -277,8 +305,8 @@ class FaceStore:
             pa = data["persons"].setdefault(a, _new_person())
             pb = data["persons"].pop(b, None)
             if pb is not None:
-                for k in ("encodings", "quality", "poses", "added_at", "sources"):
-                    pa[k] = pa[k] + pb[k]
+                for k in _FACE_KEYS:
+                    pa[k] = pa.get(k, []) + pb.get(k, [])
                 if pb.get("appearance"):
                     if pa.get("appearance") is None:
                         pa["appearance"] = {"desc": [], "ts": [], "src": []}
@@ -322,16 +350,23 @@ class FaceStore:
 
     def reembed_person(self, cod: str, encodings: list[np.ndarray],
                        qualities: list[float], poses: list[str],
-                       sources: Iterable[str | None] | None = None) -> None:
+                       sources: Iterable[str | None] | None = None,
+                       sils: Iterable | None = None) -> None:
         """Sustituye los encodings de `cod` por los recalculados (backfill SR-before-embedding).
 
         Conserva `appearance` (capa L1b) tal cual; solo se reemplazan las listas
         de cara (encodings/quality/poses/added_at/sources) para que query y
         galería queden en el mismo dominio (embeddings SR para caras pequeñas).
+        `sils`: descriptores de silueta por encoding (opcional; None = sin señal).
         """
         srcs = list(sources) if sources is not None else [None] * len(encodings)
         if len(srcs) != len(encodings):
             srcs = (srcs + [None] * len(encodings))[:len(encodings)]
+        if sils is None:
+            sils = [None] * len(encodings)
+        sils = list(sils)
+        if len(sils) != len(encodings):
+            sils = (sils + [None] * len(encodings))[:len(encodings)]
 
         def _fn(data: dict) -> None:
             p = data["persons"].get(cod)
@@ -345,6 +380,7 @@ class FaceStore:
             p["poses"] = list(poses)
             p["added_at"] = [now] * len(encodings)
             p["sources"] = srcs
+            p["sil"] = [None if s is None else np.asarray(s, dtype=np.float32) for s in sils]
             self._prune(p, self.max_per_person)
         self._transaction(_fn)
 
@@ -361,7 +397,7 @@ class FaceStore:
             sims = encs @ np.asarray(embedding, dtype=np.float32)
             idx = int(np.argmax(sims))
             if float(sims[idx]) >= min_cosine:
-                for k in ("encodings", "quality", "poses", "added_at", "sources"):
+                for k in _FACE_KEYS:
                     p[k].pop(idx)
                 removed[0] = 1
 
@@ -397,10 +433,10 @@ class FaceStore:
             if not idx:
                 return
             pd = data["persons"].setdefault(dst, _new_person())
-            for k in ("encodings", "quality", "poses", "added_at", "sources"):
+            for k in _FACE_KEYS:
                 pd[k].extend([ps[k][i] for i in idx])
             keep = sorted(set(range(len(ps["encodings"]))) - set(idx))
-            for k in ("encodings", "quality", "poses", "added_at", "sources"):
+            for k in _FACE_KEYS:
                 ps[k] = [ps[k][i] for i in keep]
             if ps.get("appearance"):
                 # apariencia alineada por índice (mismo crop); solo si sobra índice
@@ -436,10 +472,10 @@ class FaceStore:
             if not idx:
                 return
             pd = data["persons"].setdefault(dst, _new_person())
-            for k in ("encodings", "quality", "poses", "added_at", "sources"):
+            for k in _FACE_KEYS:
                 pd[k].extend([ps[k][i] for i in idx])
             keep = sorted(set(range(len(ps["encodings"]))) - set(idx))
-            for k in ("encodings", "quality", "poses", "added_at", "sources"):
+            for k in _FACE_KEYS:
                 ps[k] = [ps[k][i] for i in keep]
             if ps.get("appearance"):
                 n_app = len(ps["appearance"]["desc"])

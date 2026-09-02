@@ -121,6 +121,29 @@ def silhouette_sim(a_desc: np.ndarray, b_desc: np.ndarray) -> float:
     return float(np.clip(1.0 - float(np.abs(a_desc - b_desc).sum()) / 2.0, 0.0, 1.0))
 
 
+def silhouette_quality(desc) -> tuple[bool, float]:
+    """Fiabilidad de un descriptor de silueta (C3): la CONFIANZA de la capa.
+
+    La confianza no puede ser el propio score de similitud (hoy
+    `score == confidence`, circular). Se deriva de la calidad del descriptor:
+      - 12 dims  -> landmarks 106 puntos (fiable)   -> confianza alta.
+      - 6 dims   -> fallback 5 keypoints (media)     -> confianza media.
+      - 0/None   -> sin señal (available=False).
+
+    Devuelve (available, confianza 0..1). Con confianza >= veto_conf y score
+    bajo, una silueta SÍ puede aportar evidencia contraria; con confianza media
+    nunca bloquea decisiones de cara seguras (política B).
+    """
+    if desc is None:
+        return False, 0.0
+    n = int(getattr(desc, "size", len(desc)))
+    if n == 12:
+        return True, 0.95
+    if n == 6:
+        return True, 0.60
+    return False, 0.0
+
+
 def zone_crops(img: np.ndarray, face) -> dict[str, np.ndarray]:
     """Recortes de zonas faciales por landmarks (106 pts), con fallback a bbox.
 
