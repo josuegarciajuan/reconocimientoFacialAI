@@ -181,121 +181,144 @@ def decide_situational(face_scores: dict[str, float],
     if not situation.has_face:
         return _decide_body(face_scores, ctx, cfg, top, face_layer, layers, cands)
 
-    # --- ACUERDO de co-autoridad (silueta en perfil/ángulos) ---
-    for name in plan.co_authority:
-        ls = ctx.layer(name, top)
-        if ls is None:
-            continue
-        layers[name] = ls
-        if ls.available and ls.score < cfg.silueta_min_score:
-            # silueta no confirma: uncertain (nunca new si s1 >= match_threshold)
-            if s1 < cfg.match_threshold:
-                return _result("new", None, s1, s2, face_scores, layers, cands)
-            return _result("uncertain", top, s1, s2, face_scores, layers, cands)
+    # --- Política B (2026-09-02): la cara es la AUTORIDAD real. ---
+    # La silueta (y el resto de capas) ya NO puede bloquear por sí sola una
+    # decisión de cara SEGURA (coseno >= secure). Orden de evidencia:
+    #   1) s1 >= secure        -> match; solo 2 evidencias independientes
+    #      BARATAS (silueta geométrica + torso/ropa, locales y sin coste LLM)
+    #      en contradicción FUERTE degradan a uncertain (nunca new). LLM/VLM no
+    #      se consultan aquí (coste/presupuesto); su veto sigue vivo en la zona
+    #      gris ([match, secure)) donde de verdad se necesitan.
+    #   2) [match, secure)     -> silueta co-autoridad en perfil/ángulos puede
+    #      degradar a uncertain (nunca new); corroboración barato->caro; sin
+    #      confirmación => uncertain (persona nueva + revisión en el llamador).
+    #   3) s1 < match          -> gate de identidad + banda baja (>=2 acuerdos
+    #      independientes; un ÚNICO LLM nunca decide) o review o new.
 
-    # --- GATE DE IDENTIDAD: SOLO la capa de cara/perfil crea ---
-    if s1 < cfg.match_threshold:
-        # BANDA BAJA (anti-fragmentación): coseno bajo contra TODO puede ser una
-        # pose extrema de una persona conocida (perfil/espaldas) donde ArcFace
-        # pierde discriminación (genuino ~0.15-0.25). Antes de crear "new" en
-        # silencio, si las capas de apoyo coinciden FUERTE con top1, se asocia
-        # (la identidad la sigue decidiendo la cara: esto NO crea, solo asocia).
-        if s1 >= cfg.new_low_floor:
-            acuerdos = 0
-            acuerdos_sin_atributos = 0
-            acuerdo_atributos = False
-            acuerdo_llm_fuerte = False
-            apoyo_positivo = False
-            for name in _escalation(plan, cfg, ctx):
-                ls = ctx.layer(name, top)
-                if ls is None or not ls.available:
-                    continue
-                layers[name] = ls
-                # Una señal positiva pero aún no suficientemente fiable para
-                # autoasignar no desaparece: junto a una silueta co-autora
-                # válida obliga revisión en vez de fragmentar la identidad.
-                if ls.score >= cfg.gray_high:
-                    apoyo_positivo = True
-                umbral = cfg.llm_min_conf if name in ("vlm", "openai") else cfg.min_layer_conf
-                if ls.confidence < umbral:
-                    continue
-                if ls.score >= cfg.gray_high:
-                    acuerdos += 1
-                    if name == "attributes":
-                        acuerdo_atributos = True
-                    else:
-                        acuerdos_sin_atributos += 1
-                    if name in ("vlm", "openai") and ls.confidence >= cfg.veto_conf:
-                        acuerdo_llm_fuerte = True
-            if (acuerdos_sin_atributos >= cfg.low_band_min_agreements
-                    or acuerdo_llm_fuerte
-                    or (acuerdo_atributos and acuerdos_sin_atributos >= 1)):
-                return _result("match", top, s1, s2, face_scores, layers, cands)
-            silueta_valida = any(
-                name == "silueta" and ls.available and ls.score >= cfg.silueta_min_score
-                for name, ls in layers.items()
-            )
-            if silueta_valida and apoyo_positivo:
-                return _result("review", top, s1, s2, face_scores, layers, cands)
-        return _result("new", None, s1, s2, face_scores, layers, cands)
-
-    # --- EARLY-EXIT: frontal nítida decide sola SOLO con margen limpio ---
-    # Con el 2º candidato cerca (margen < early_exit_min_margin) el coseno de
-    # cara no es concluyente aunque s1 >= secure: se corrobora para que las
-    # capas de apoyo puedan VETAR un impostor (falso merge) en vez de decidir
-    # la cara sola sobre una evidencia ambigua.
-    if plan.early_exit and (s1 - s2) >= cfg.early_exit_min_margin:
-        verdict = "match" if s1 >= cfg.secure_threshold else "uncertain"
-        return _result(verdict, top, s1, s2, face_scores, layers, cands)
-
-    # --- CORROBORACIÓN barato->caro (una sola pasada: veta o confirma) ---
-    # Cada capa de apoyo: score < gray_low y c >= veto_conf => VETO (evidencia
-    # contraria muy fuerte); score >= umbral de acuerdo => CONFIRMA (fin, sin
-    # llamar a capas más caras); en banda gris => neutra (se sigue escalando).
-    # El fallback depende del suelo por cara: secure sin 2 vetos => match;
-    # gris sin corroboración => uncertain. Las capas superiores NUNCA crean.
-    vetoes = 0
-    confirmado = False
-    confirmado_atributos = False
-    apoyo_no_atributos = False
-    for name in _escalation(plan, cfg, ctx):
-        ls = ctx.layer(name, top)
-        if ls is None or not ls.available:
-            continue
-        layers[name] = ls
-        if name in ("vlm", "openai"):
-            if ls.confidence < cfg.llm_min_conf:
-                continue
-        elif name in ("torso", "zonas") and ls.confidence < cfg.min_layer_conf:
-            # torso/zonas caducos o poco fiables NO corroboran (su score alto
-            # no compensa una confianza baja, p. ej. ropa desactualizada).
-            continue
-        if ls.score < cfg.gray_low and ls.confidence >= cfg.veto_conf:
-            vetoes += 1
-            continue
-        if ls.score >= _agree_threshold(name, cfg):
-            if name == "attributes":
-                confirmado_atributos = True
-                if apoyo_no_atributos:
-                    confirmado = True
-                continue
-            confirmado = True
-        elif name != "attributes" and ls.score >= cfg.gray_low:
-            # Attributes can break a genuinely indecisive tie only when an
-            # independent layer already supplies non-negative support.
-            apoyo_no_atributos = True
-            if confirmado_atributos:
-                confirmado = True
-            if not cfg.attributes_enabled:
-                break
-    if vetoes >= 2:
-        return _result("uncertain", top, s1, s2, face_scores, layers, cands)
-    if confirmado:
-        return _result("match", top, s1, s2, face_scores, layers, cands)
+    # --- 1) SUELO SEGURO (política B, inapelable salvo 2 vetos baratos) ---
     if s1 >= cfg.secure_threshold:
-        # suelo por cara: sin 2 vetos, la cara decide (nunca new)
+        vetoes = 0
+        for name in ("silueta", "torso"):
+            enabled = {"silueta": cfg.silueta_enabled, "torso": cfg.torso_enabled}[name]
+            if not enabled:
+                continue
+            ls = ctx.layer(name, top)
+            if ls is None or not ls.available:
+                continue
+            layers[name] = ls
+            # evidencia contraria FUERTE: score bajo con confianza REAL alta
+            if ls.score < cfg.gray_low and ls.confidence >= cfg.veto_conf:
+                vetoes += 1
+        if vetoes >= 2:
+            return _result("uncertain", top, s1, s2, face_scores, layers, cands)
         return _result("match", top, s1, s2, face_scores, layers, cands)
-    return _result("uncertain", top, s1, s2, face_scores, layers, cands)
+
+    # --- 2) BANDA [match_threshold, secure_threshold) ---
+    if s1 >= cfg.match_threshold:
+        # co-autoridad (silueta en perfil/ángulos): con confianza suficiente,
+        # bloquea a uncertain o confirma; sin señal fiable, se sigue escalando.
+        for name in plan.co_authority:
+            ls = ctx.layer(name, top)
+            if ls is None:
+                continue
+            layers[name] = ls
+            if not ls.available:
+                continue
+            if ls.confidence < cfg.min_layer_conf:
+                continue                     # silueta de baja fiabilidad: neutra
+            if ls.score < cfg.silueta_min_score:
+                return _result("uncertain", top, s1, s2, face_scores, layers, cands)
+            return _result("match", top, s1, s2, face_scores, layers, cands)
+
+        # early-exit (frontal nítida): al no alcanzar secure, la cara sola no
+        # decide -> se corrobora abajo (el margen solo evita capas caras).
+        # CORROBORACIÓN barato->caro: cada capa de apoyo veta (score < gray_low
+        # y conf >= veto_conf), confirma (score >= umbral de acuerdo y conf
+        # mínima) o es neutra. Sin confirmación y sin 2 vetos => uncertain.
+        vetoes = 0
+        confirmado = False
+        confirmado_atributos = False
+        apoyo_no_atributos = False
+        for name in _escalation(plan, cfg, ctx):
+            ls = ctx.layer(name, top)
+            if ls is None or not ls.available:
+                continue
+            layers[name] = ls
+            if name in ("vlm", "openai"):
+                if ls.confidence < cfg.llm_min_conf:
+                    continue
+            elif name in ("torso", "zonas", "silueta") and ls.confidence < cfg.min_layer_conf:
+                # torso/zonas caducos o silueta de baja fiabilidad NO corroboran
+                continue
+            if ls.score < cfg.gray_low and ls.confidence >= cfg.veto_conf:
+                vetoes += 1
+                continue
+            if ls.score >= _agree_threshold(name, cfg):
+                if name == "attributes":
+                    confirmado_atributos = True
+                    if apoyo_no_atributos:
+                        confirmado = True
+                    continue
+                confirmado = True
+            elif name != "attributes" and ls.score >= cfg.gray_low:
+                apoyo_no_atributos = True
+                if confirmado_atributos:
+                    confirmado = True
+                if not cfg.attributes_enabled:
+                    break
+        if vetoes >= 2:
+            return _result("uncertain", top, s1, s2, face_scores, layers, cands)
+        if confirmado:
+            return _result("match", top, s1, s2, face_scores, layers, cands)
+        return _result("uncertain", top, s1, s2, face_scores, layers, cands)
+
+    # --- 3) GATE DE IDENTIDAD: s1 < match_threshold ---
+    # BANDA BAJA (anti-fragmentación): coseno bajo contra TODO puede ser una
+    # pose extrema de una persona conocida (perfil/espaldas) donde ArcFace
+    # pierde discriminación (genuino ~0.15-0.25). Antes de crear "new" en
+    # silencio, si las capas de apoyo coinciden FUERTE con top1, se asocia
+    # (la identidad la sigue decidiendo la cara: esto NO crea, solo asocia).
+    if s1 >= cfg.new_low_floor:
+        acuerdos_sin_atributos = 0
+        acuerdo_atributos = False
+        apoyo_positivo = False
+        # co-autoridad (silueta en perfil/ángulos) + capas de apoyo escaladas
+        apoyo: list[str] = list(plan.co_authority)
+        for _name in _escalation(plan, cfg, ctx):
+            if _name not in apoyo:
+                apoyo.append(_name)
+        for name in apoyo:
+            ls = ctx.layer(name, top)
+            if ls is None or not ls.available:
+                continue
+            layers[name] = ls
+            # Una señal positiva pero aún no suficientemente fiable para
+            # autoasignar no desaparece: junto a una silueta co-autora
+            # válida obliga revisión en vez de fragmentar la identidad.
+            if ls.score >= cfg.gray_high:
+                apoyo_positivo = True
+            umbral = cfg.llm_min_conf if name in ("vlm", "openai") else cfg.min_layer_conf
+            if ls.confidence < umbral:
+                continue
+            if ls.score >= cfg.gray_high:
+                if name == "attributes":
+                    acuerdo_atributos = True
+                else:
+                    acuerdos_sin_atributos += 1
+        # (2026-09-02) Se elimina el atajo de "un único LLM fuerte => match":
+        # con OpenAI funcional, un único proveedor siempre-positivo false-mergea
+        # todos los negativos limpios. Se exigen >=2 acuerdos independientes.
+        if (acuerdos_sin_atributos >= cfg.low_band_min_agreements
+                or (acuerdo_atributos and acuerdos_sin_atributos >= 1)):
+            return _result("match", top, s1, s2, face_scores, layers, cands)
+        silueta_valida = any(
+            name == "silueta" and ls.available and ls.score >= cfg.silueta_min_score
+            and ls.confidence >= cfg.min_layer_conf
+            for name, ls in layers.items()
+        )
+        if silueta_valida and apoyo_positivo:
+            return _result("review", top, s1, s2, face_scores, layers, cands)
+    return _result("new", None, s1, s2, face_scores, layers, cands)
 
 
 def run_cascade(face_scores: dict[str, float],
