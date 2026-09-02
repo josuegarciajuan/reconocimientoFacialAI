@@ -107,11 +107,11 @@ def test_suelo_por_cara_con_veto_simple_sigue_match():
 # ------------------------------------------------------------ acuerdo silueta
 
 def test_acuerdo_perfil_silueta_debil_uncertain():
-    """Perfil: silueta débil NO confirma -> uncertain (nunca new, s1>=match)."""
+    """Perfil: silueta débil/neutra sin confirmación -> uncertain (nunca new)."""
     cfg = _cfg()
     ctx = CascadeContext(silueta=lambda cod: LayerScore(score=0.20, confidence=0.50))
-    res = run_cascade({"A": 0.50, "B": 0.30}, ctx, cfg,
-                      LayerScore(score=0.50, confidence=0.80),
+    res = run_cascade({"A": 0.35, "B": 0.30}, ctx, cfg,
+                      LayerScore(score=0.35, confidence=0.60),
                       situation=Situation(pose="pi", sharpness=80.0))
     assert res.verdict == "uncertain"
 
@@ -137,17 +137,30 @@ def test_acuerdo_silueta_sin_proveedor_no_bloquea_frontal():
 
 # ----------------------------------------------------------------------- veto
 
-def test_veto_dos_capas_degradan_secure_a_uncertain():
+def test_veto_dos_capas_baratas_degradan_secure_a_uncertain():
+    """Política B: 2 evidencias independientes BARATAS (silueta + torso) en
+    contradicción fuerte degradan un match seguro a uncertain (nunca new)."""
     cfg = _cfg()
     ctx = CascadeContext(
+        silueta=lambda cod: LayerScore(score=0.10, confidence=0.95),
         torso=lambda cod: LayerScore(score=0.10, confidence=0.95),
-        vlm=lambda cod: LayerScore(score=0.05, confidence=0.95),
     )
     res = run_cascade({"A": 0.55, "B": 0.10}, ctx, cfg,
                       LayerScore(score=0.55, confidence=0.90),
                       situation=Situation(pose=None, sharpness=60.0))
     assert res.verdict == "uncertain"
     assert res.person == "A"
+
+
+def test_veto_silueta_o_torso_unicos_no_rompen_secure():
+    """Política B: un ÚNICO veto (silueta sola o torso solo) NO rompe el match
+    seguro: se necesitan 2 evidencias independientes."""
+    cfg = _cfg()
+    ctx = CascadeContext(silueta=lambda cod: LayerScore(score=0.10, confidence=0.95))
+    res = run_cascade({"A": 0.55, "B": 0.10}, ctx, cfg,
+                      LayerScore(score=0.55, confidence=0.90),
+                      situation=Situation(pose=None, sharpness=60.0))
+    assert res.verdict == "match"
 
 
 def test_veto_nunca_new_cuando_face_secure():
@@ -246,7 +259,8 @@ def test_torso_confiado_confirma():
 # --------------------------------------------------------- early-exit (ahorro)
 
 def test_early_exit_frontal_nitida_no_llama_capas_caras():
-    """Frontal nítida: ni silueta ni LLM se llaman (efficiencia)."""
+    """Frontal nítida y segura: NO se llaman capas caras (VLM/OpenAI); solo se
+    consultan las baratas (silueta/torso) para el veto de 2 evidencias (B)."""
     cfg = _cfg()
     calls = {"silueta": 0, "vlm": 0, "openai": 0, "torso": 0}
 
@@ -262,7 +276,7 @@ def test_early_exit_frontal_nitida_no_llama_capas_caras():
                       LayerScore(score=0.85, confidence=0.95),
                       situation=Situation(pose="f", sharpness=120.0))
     assert res.verdict == "match"
-    assert calls == {"silueta": 0, "vlm": 0, "openai": 0, "torso": 0}
+    assert calls == {"silueta": 1, "vlm": 0, "openai": 0, "torso": 1}
 
 
 # ----------------------------------------------------------- sin cara (F7)
@@ -318,13 +332,28 @@ def test_banda_baja_acuerdo_doble_match():
     assert res.person == "A"
 
 
-def test_banda_baja_acuerdo_llm_solo_match():
-    """1 solo acuerdo LLM con confianza >= veto_conf también asocia (robustez
-    si el otro LLM está caído). (new_low_floor fijado bajo para ejercitar la banda.)"""
+def test_banda_baja_acuerdo_llm_solo_no_asocia():
+    """1 SOLO acuerdo LLM NO decide (2026-09-02): un único proveedor
+    siempre-positivo false-mergea negativos limpios -> sigue "new".
+    (new_low_floor fijado bajo para ejercitar la banda.)"""
     cfg = _cfg(new_low_floor=0.15)
     ctx = CascadeContext(
         torso=lambda cod: LayerScore(available=False),
         vlm=lambda cod: LayerScore(score=0.90, confidence=0.95),
+    )
+    res = run_cascade({"A": 0.19, "B": 0.17}, ctx, cfg,
+                      LayerScore(score=0.19, confidence=0.50),
+                      situation=Situation(pose="f", sharpness=60.0))
+    assert res.verdict == "new"
+    assert res.person is None
+
+
+def test_banda_baja_acuerdo_doble_llm_match():
+    """2 acuerdos independientes (vlm + openai) en banda baja SÍ asocian a top1."""
+    cfg = _cfg(new_low_floor=0.15)
+    ctx = CascadeContext(
+        vlm=lambda cod: LayerScore(score=0.90, confidence=0.95),
+        openai=lambda cod: LayerScore(score=0.92, confidence=0.95),
     )
     res = run_cascade({"A": 0.19, "B": 0.17}, ctx, cfg,
                       LayerScore(score=0.19, confidence=0.50),
@@ -334,10 +363,12 @@ def test_banda_baja_acuerdo_llm_solo_match():
 
 
 def test_banda_baja_con_silueta_y_llm_positivo_pasa_a_revision():
-    """Incidente cámara 19: no crear un duplicado con evidencia favorable incompleta."""
+    """Incidente cámara 19: no crear un duplicado con evidencia favorable incompleta.
+    La silueta con confianza REAL alta (descriptor 106pt -> 0.95, ya no score==conf)
+    más señal positiva sin 2 acuerdos -> review."""
     cfg = _cfg(new_low_floor=0.15)
     ctx = CascadeContext(
-        silueta=lambda cod: LayerScore(score=0.646360, confidence=0.646360),
+        silueta=lambda cod: LayerScore(score=0.646360, confidence=0.95),
         torso=lambda cod: LayerScore(available=False),
         openai=lambda cod: LayerScore(score=0.725, confidence=0.60),
     )
@@ -368,7 +399,8 @@ def test_banda_baja_por_debajo_del_suelo_new_directo():
 # ------------------------------------- early-exit con margen top1-top2 pequeño
 
 def test_early_exit_margen_limpio_no_llama_capas():
-    """Frontal nítida con margen >= early_exit_min_margin: sigue early-exit."""
+    """Frontal nítida con margen limpio y s1 seguro: no se llaman LLMs (solo
+    silueta/torso para el veto de 2 evidencias baratas, política B)."""
     cfg = _cfg(early_exit_min_margin=0.06)
     calls = {"silueta": 0, "vlm": 0, "openai": 0, "torso": 0}
 
@@ -384,16 +416,16 @@ def test_early_exit_margen_limpio_no_llama_capas():
                       LayerScore(score=0.85, confidence=0.95),
                       situation=Situation(pose="f", sharpness=120.0))
     assert res.verdict == "match"
-    assert calls == {"silueta": 0, "vlm": 0, "openai": 0, "torso": 0}
+    assert calls == {"silueta": 1, "vlm": 0, "openai": 0, "torso": 1}
 
 
 def test_early_exit_margen_pequeno_corrobora_y_veta():
-    """Frontal nítida pero con el 2º candidato cerca (0.55 vs 0.51): ya no decide
-    la cara sola; las capas de apoyo pueden VETAR el match (falso merge)."""
+    """Frontal nítida segura pero con el 2º candidato cerca: sigue siendo match
+    salvo 2 evidencias baratas en contradicción fuerte (política B)."""
     cfg = _cfg(early_exit_min_margin=0.06)
     ctx = CascadeContext(
-        torso=lambda cod: LayerScore(score=0.10, confidence=0.90),
-        vlm=lambda cod: LayerScore(score=0.05, confidence=0.90),
+        silueta=lambda cod: LayerScore(score=0.10, confidence=0.95),
+        torso=lambda cod: LayerScore(score=0.10, confidence=0.95),
     )
     res = run_cascade({"A": 0.55, "B": 0.51}, ctx, cfg,
                       LayerScore(score=0.55, confidence=0.90),
@@ -403,7 +435,7 @@ def test_early_exit_margen_pequeno_corrobora_y_veta():
 
 
 def test_early_exit_margen_pequeno_corrobora_match():
-    """Margen pequeño pero torso confirma -> match (no se descarta por margen)."""
+    """Margen pequeño con evidencia barata en acuerdo -> match (B)."""
     cfg = _cfg(early_exit_min_margin=0.06)
     ctx = CascadeContext(torso=lambda cod: LayerScore(score=0.90, confidence=0.90))
     res = run_cascade({"A": 0.55, "B": 0.51}, ctx, cfg,
