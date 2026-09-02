@@ -68,10 +68,6 @@ _PROCESSED_FACES: set[str] = set()
 # en UN solo proceso rf-photo, no en N clasificadores de cámara).
 
 
-def log(*args):
-    print(*args, flush=True)
-
-
 def _queue_hq(out_path: str, img, bbox, cfg: Config, ruta: str,
               local_id: str, camara_id: str, foto_id: str) -> None:
     """Encola la generación HQ (x4plus + GFPGAN) al worker único de foto.
@@ -118,6 +114,124 @@ def parse_timestamp(filename: str) -> float | None:
         return None
 
 
+# ---------------------------------------------------------------------------
+# P1-P3 (2026-09-02): dedup PERSISTENTE por local. `_PROCESSED_FACES` (memoria
+# del proceso) no sobrevivía a restarts ni a varios clasificadores: los 18
+# "uncertain" con best=1.0 de producción eran 8 stems re-procesados en pasadas
+# distintas. El registro vive en motor/dedup/<local>/faces.jsonl (gitignored;
+# el reset lo borra junto al resto de datos runtime).
+# ---------------------------------------------------------------------------
+_DEDUP_MEM: set[tuple[str, str]] = set()     # (local, hash) recientes
+_DEDUP_TS: dict[tuple[str, str], float] = {}  # ts por clave (ventana)
+
+def _dedup_file(ruta: str, local_id: str, cfg: Config) -> str:
+    return os.path.join(ruta, cfg.dedup_dir, str(local_id), "faces.jsonl")
+
+def _dedup_load(ruta: str, local_id: str, cfg: Config) -> None:
+    """Carga en memoria las entradas dentro de la ventana y poda el fichero."""
+    path = _dedup_file(ruta, local_id, cfg)
+    if not os.path.exists(path):
+        return
+    window = cfg.dedup_window_hours * 3600.0
+    now = time.time()
+    from filelock import FileLock  # noqa: E402
+    try:
+        with FileLock(path + ".lock"):
+            with open(path, encoding="utf-8") as fh:
+                lines = [ln for ln in fh.read().splitlines() if ln.strip()]
+    except OSError:
+        return
+    keep: list[str] = []
+    for ln in lines:
+        try:
+            e = json.loads(ln)
+        except json.JSONDecodeError:
+            continue
+        if now - float(e.get("ts", 0)) <= window:
+            key = (str(e.get("local", local_id)), str(e.get("hash", "")))
+            _DEDUP_MEM.add(key)
+            _DEDUP_TS[key] = float(e.get("ts", now))
+            keep.append(ln)
+    if len(keep) < len(lines):
+        try:
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with FileLock(path + ".lock"):
+                with open(path, "w", encoding="utf-8") as fh:
+                    fh.write("\n".join(keep) + ("\n" if keep else ""))
+        except OSError:
+            pass
+
+def _dedup_seen(ruta: str, local_id: str, cfg: Config, h: str) -> bool:
+    return (str(local_id), h) in _DEDUP_MEM
+
+def _dedup_record(ruta: str, local_id: str, cfg: Config, h: str,
+                  stem: str, camara_id: str) -> None:
+    """Registra un rostro consumido (append bajo lock, poda perezosa en load)."""
+    key = (str(local_id), h)
+    now = time.time()
+    window = cfg.dedup_window_hours * 3600.0
+    if key in _DEDUP_MEM and now - _DEDUP_TS.get(key, 0) <= window:
+        return
+    _DEDUP_MEM.add(key)
+    _DEDUP_TS[key] = now
+    path = _dedup_file(ruta, local_id, cfg)
+    from filelock import FileLock  # noqa: E402
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with FileLock(path + ".lock"):
+            with open(path, "a", encoding="utf-8") as fh:
+                fh.write(json.dumps({"hash": h, "stem": stem, "cam": camara_id,
+                                     "local": str(local_id), "ts": now}) + "\n")
+    except OSError:
+        pass
+
+
+# ---------------------------------------------------------------------------
+# A4 (2026-09-02): log del clasificador a fichero. detector.php lanza el
+# clasificador con stdout a /dev/null (Jos_thread), así que las decisiones se
+# perdían; aquí se escriben a motor/logs/clasificador_<local>.log.
+# ---------------------------------------------------------------------------
+_LOG_FILE = None  # ruta absoluta; se fija en main()
+
+def log(*args):
+    msg = " ".join(str(a) for a in args)
+    if _LOG_FILE:
+        try:
+            with open(_LOG_FILE, "a", encoding="utf-8") as fh:
+                fh.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {msg}\n")
+        except OSError:
+            pass
+    print(msg, flush=True)
+
+
+def _cfg_snapshot(cfg: Config) -> dict:
+    """Config efectiva mínima para auditoría/replay (A1)."""
+    keys = ("secure_threshold", "match_threshold", "margin", "group_threshold",
+            "cluster_confirm", "admission_cosine", "min_sharpness", "face_min_side",
+            "new_low_floor", "low_band_min_agreements", "early_exit_min_margin",
+            "silueta_min_score", "min_layer_conf", "llm_min_conf", "veto_conf",
+            "gray_low", "gray_high", "exact_match_cos", "batch_seconds")
+    out = {}
+    for k in keys:
+        v = getattr(cfg, k, None)
+        out[k] = round(float(v), 4) if isinstance(v, float) else v
+    return out
+
+
+def _preserve_evidence(ruta: str, local_id: str, camara_id: str,
+                       src_path: str, stem: str, tag: str) -> None:
+    """Conserva un crop conflictivo como evidencia en la cola de revisión."""
+    if not src_path or not os.path.exists(src_path):
+        return
+    try:
+        rev_dir = os.path.join(ruta, "motor/revision", local_id, camara_id)
+        os.makedirs(rev_dir, exist_ok=True)
+        dst = os.path.join(rev_dir, f"{stem}_{tag}_{random_code(8)}.jpg")
+        shutil.copy2(src_path, dst)
+    except OSError as e:  # noqa: BLE001
+        log(f"[preserve] fallo copiando evidencia {stem}: {e}")
+
+
 def cluster_faces(faces_emb, group_threshold: float) -> list[list[int]]:
     """Union-Find sobre los embeddings de la batería (misma persona = mismo clúster)."""
     n = len(faces_emb)
@@ -150,22 +264,30 @@ def split_coherent_clusters(cluster: list[int], face_list: list[tuple],
                             battery: list[dict], cfg: Config) -> list[list[int]]:
     """Divide un clúster de batería en sub-clústeres COHERENTES (F1.1).
 
-    El union-find a `group_threshold` (0.30) puede enlazar transitivamente caras
-    de personas distintas (impostor p95 ~0.36): A~B y B~C unen A~C sin que A~C
+    El union-find a `group_threshold` puede enlazar transitivamente caras de
+    personas distintas (impostor p95 ~0.36): A~B y B~C unen A~C sin que A~C
     se parezcan. Aquí cada sub-clúster se construye alrededor de su cara más
     nítida (representativo) y un miembro permanece SOLO si confirma contra él
     (coseno >= cfg.cluster_confirm). Dos personas juntas en la escena acaban en
     sub-clústeres distintos y dejan de contaminarse mutuamente.
 
-    face_list: lista de (embedding, item_idx) de la batería (mismo orden que cluster).
+    C1 (2026-09-02): cada entrada de `face_list` es (emb, item_idx, face_idx)
+    y los sub-clústeres devueltos son índices GLOBALES de `face_list` (el bug
+    original devolvía índices locales del clúster y `_process_subcluster` los
+    usaba como globales, procesando caras que no pertenecían al sub-clúster).
+
+    face_list: lista de (embedding, item_idx, face_idx) de la batería.
     """
     from motor.core.matching import cosine  # noqa: E402
 
     infos = []   # (emb, item_idx, sharpness)
     for fi in cluster:
-        emb, item_idx = face_list[fi]
-        sh = max(face_sharpness(battery[item_idx]["img"], f)
-                 for f in battery[item_idx]["faces"]) if battery[item_idx]["faces"] else 0.0
+        emb, item_idx, face_idx = face_list[fi]
+        faces = battery[item_idx]["faces"]
+        if 0 <= face_idx < len(faces):
+            sh = face_sharpness(battery[item_idx]["img"], faces[face_idx])
+        else:
+            sh = 0.0
         infos.append((emb, item_idx, sh))
 
     remaining = set(range(len(infos)))
@@ -178,7 +300,8 @@ def split_coherent_clusters(cluster: list[int], face_list: list[tuple],
         for i in sorted(remaining - {seed}):
             if cosine(infos[i][0], rep_emb) >= cfg.cluster_confirm:
                 members.add(i)
-        subs.append(sorted(members))
+        # Mapear a índices GLOBALES de face_list (C1: antes se devolvían locales)
+        subs.append(sorted(cluster[m] for m in members))
         remaining -= members
     return subs
 
@@ -311,7 +434,7 @@ class _CascadeCtx:
 
     # --- L1c: zonas/ángulos (pose-consciente + silueta) ---
     def zonas_score(self, cod: str) -> LayerScore:
-        from motor.core.zones import pose_confidence, silhouette_descriptor, silhouette_sim
+        from motor.core.zones import pose_confidence
         if not self.cfg.zones_enabled:
             return LayerScore(available=False)
         s_face = self.face_scores.get(cod, 0.0)
@@ -319,52 +442,73 @@ class _CascadeCtx:
         p = self.store.person(cod)
         poses = (p.get("poses") or [None] * len(p.get("encodings", []))) if p else []
         pconf = max((pose_confidence(self.query_pose, po) for po in poses), default=0.6)
-        sil = 0.5
-        if self.rep_face is not None:
-            cand_face = self._candidate_face(cod)
-            if cand_face is not None:
-                a = silhouette_descriptor(self.rep_face)
-                b = silhouette_descriptor(cand_face)
-                sil = silhouette_sim(a, b) if a.size and b.size else 0.5
+        sil, sil_conf, sil_avail = self._silueta_gallery(cod)
+        if not sil_avail:
+            return LayerScore(score=float(s_face), confidence=0.0, available=False)
         c = float(np.clip(0.6 * pconf + 0.4 * sil, 0.0, 1.0))
         return LayerScore(score=float(s_face), confidence=c, available=True)
 
     # --- L1c (reenfoque): silueta geométrica como SCORE propio ---
-    # En perfil/ángulos raros es CO-AUTORIDAD: debe superar silueta_min_score
-    # para confirmar el acuerdo. Antes solo modulaba la confianza de zonas.
-    # El descriptor usa landmarks 106 o, si faltan (arr/aba extremas), el
-    # fallback a keypoints 5-punto (zones.silhouette_descriptor): la capa
-    # sigue disponible donde más se necesita.
+    # C3 (2026-09-02): la silueta del candidato se compara contra los
+    # descriptores GUARDADOS en la galería (`sil`, la geometría REAL de la cara
+    # que generó cada encoding), no contra una foto de archivo del panel
+    # (`_candidate_face` elegía por det_score y podía ser la del acompañante).
+    # La CONFIANZA es la fiabilidad del descriptor (landmarks 106 = alta,
+    # fallback 5pt = media), nunca el propio score (evita circularidad).
     def silueta_score(self, cod: str) -> LayerScore:
-        from motor.core.zones import silhouette_descriptor, silhouette_sim
-        if not self.cfg.silueta_enabled:
+        sil, sil_conf, sil_avail = self._silueta_gallery(cod)
+        if not sil_avail:
             return LayerScore(available=False)
-        if self.rep_face is None:
-            return LayerScore(available=False)
-        cand_face = self._candidate_face(cod)
-        if cand_face is None:
-            return LayerScore(available=False)
-        a = silhouette_descriptor(self.rep_face)
-        b = silhouette_descriptor(cand_face)
-        if not a.size or not b.size:
-            return LayerScore(available=False)
-        sil = silhouette_sim(a, b)
-        return LayerScore(score=float(sil), confidence=float(sil), available=True)
+        return LayerScore(score=float(sil), confidence=sil_conf, available=True)
 
-    def _candidate_face(self, cod: str):
-        """Primera cara de la foto representativa del candidato (para silueta)."""
-        from motor.core.photos import find_person_photos
-        photos = find_person_photos(self.ruta, self.local_id, cod, max_n=1)
-        if not photos:
-            return None
-        img = cv2.imread(photos[0])
-        if img is None:
-            return None
-        faces = analyze(img, det_size=(self.cfg.crop_det_size, self.cfg.crop_det_size),
-                        min_score=self.cfg.min_det_score)
-        if not faces:
-            return None
-        return max(faces, key=lambda f: f.det_score)
+    def _query_silhouette(self):
+        """Descriptor de silueta del rostro representativo del query (cacheado)."""
+        from motor.core.zones import silhouette_descriptor
+        if not hasattr(self, "_sil_q"):
+            if self.rep_face is None:
+                self._sil_q = None
+            else:
+                self._sil_q = silhouette_descriptor(self.rep_face)
+            if self._sil_q is not None and self._sil_q.size == 0:
+                self._sil_q = None
+        return self._sil_q
+
+    def _silueta_gallery(self, cod: str) -> tuple[float, float, bool]:
+        """(mejor_similitud, confianza, available) contra la galería de `cod`.
+
+        Compara el descriptor del query contra los `sil` almacenados por
+        encoding (C3), filtrando por pose comparable si zones_enabled. La
+        confianza combina la calidad del descriptor del query y del mejor match
+        de galería (silhouette_quality: 106pt alta / 5pt media / sin señal 0).
+        """
+        from motor.core.zones import silhouette_quality, silhouette_sim, pose_compatible
+        desc_q = self._query_silhouette()
+        if desc_q is None:
+            return 0.0, 0.0, False
+        q_avail, q_conf = silhouette_quality(desc_q)
+        if not q_avail:
+            return 0.0, 0.0, False
+        p = self.store.person(cod)
+        if not p or not p.get("sil"):
+            return 0.0, 0.0, False
+        poses = p.get("poses") or [None] * len(p["sil"])
+        best_sim, best_conf = -1.0, 0.0
+        for g_sil, g_pose in zip(p["sil"], poses):
+            if g_sil is None:
+                continue
+            g_sil = np.asarray(g_sil, dtype=np.float32)
+            if g_sil.size == 0:
+                continue
+            if self.cfg.zones_enabled and not pose_compatible(self.query_pose, g_pose):
+                continue
+            s = silhouette_sim(desc_q, g_sil)
+            if s > best_sim:
+                best_sim = s
+                g_avail, g_conf = silhouette_quality(g_sil)
+                best_conf = min(q_conf, g_conf)
+        if best_sim < 0.0:
+            return 0.0, 0.0, False
+        return float(best_sim), float(best_conf), True
 
     # --- L2/L3: VLM local y OpenAI (misma pareja de imágenes) ---
     def _query_images(self) -> list[str]:
@@ -412,27 +556,33 @@ class _CascadeCtx:
             return LayerScore(available=False)
         if len(scores) == 1:
             return scores[0]
-        s = float(np.mean([ls.score for ls in scores]))
-        c = float(np.max([ls.confidence for ls in scores]))
-        return LayerScore(score=s, confidence=c, available=c > 0.0)
+        # C6 (2026-09-02): si las comparaciones (cara y torso) se CONTRADICEN,
+        # la confianza agregada baja al MÍNIMO (nunca al máximo, que fabricaba
+        # confianza alta sobre conclusiones opuestas). Scores: media.
+        cs = [ls.confidence for ls in scores]
+        agree = [ls.score >= 0.5 for ls in scores]
+        c = float(max(cs) if all(agree) or not any(agree) else min(cs))
+        return LayerScore(score=float(np.mean([ls.score for ls in scores])),
+                          confidence=c, available=c > 0.0)
 
 
 def process_battery(battery, ruta: str, local_id: str, camara_id: str, cfg: Config,
                     store: FaceStore, feedback=None, torso_map: dict[str, str] | None = None,
                     busto_map: dict[str, str] | None = None):
     # batería: lista de dicts {file, path, img, faces, ts}
-    # aplanar caras -> (embedding, índice_item)
-    face_list = []  # (emb, item_idx)
+    # C1: aplanar caras conservando (emb, item_idx, face_idx): la cara EXACTA
+    # de cada detección. Perder este índice (como antes) hacía que cada
+    # sub-clúster re-procesara TODAS las caras del crop (mezcla de personas).
+    face_list = []  # (emb, item_idx, face_idx)
     for idx, it in enumerate(battery):
-        for f in it["faces"]:
-            face_list.append((f.embedding, idx))
+        for fidx, f in enumerate(it["faces"]):
+            face_list.append((f.embedding, idx, fidx))
 
-    clusters = cluster_faces([e for e, _ in face_list], cfg.group_threshold)
+    clusters = cluster_faces([e for e, _, _ in face_list], cfg.group_threshold)
 
     for cluster in clusters:
         # F1.1: dividir en sub-clústeres coherentes — nunca mezclar personas
-        # distintas dentro de la misma batería (union-find transitivo a 0.30
-        # enlazaba caras ajenas y contaminaba la galería).
+        # distintas dentro de la misma batería.
         for sub in split_coherent_clusters(cluster, face_list, battery, cfg):
             _process_subcluster(sub, face_list, battery, ruta, local_id, camara_id,
                                 cfg, store, feedback, torso_map, busto_map)
@@ -442,32 +592,43 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
                         camara_id: str, cfg: Config, store: FaceStore,
                         feedback=None, torso_map: dict[str, str] | None = None,
                         busto_map: dict[str, str] | None = None) -> None:
-    """Clasifica un sub-clúster coherente de caras y actualiza galería/álbum."""
-    from motor.core.feedback import embedding_hash  # noqa: E402 (guarda C de idempotencia)
-    item_idxs = sorted({face_list[i][1] for i in sub})
-    embs = [face_list[i][0] for i in sub]
+    """Clasifica un sub-clúster coherente de caras y actualiza galería/álbum.
 
-    # foto representativa: la más NÍTIDA Y CERCANA del sub-clúster.
+    C1 (2026-09-02): `sub` son índices GLOBALES de `face_list` y TODAS las
+    operaciones (representante, dedup, foto, galería) usan SOLO esas caras,
+    nunca "todas las caras de los items" (fuente de la mezcla de personas en
+    crops con dos caras: IDs 2/5/8/18/34/35 en producción).
+    """
+    from motor.core.feedback import embedding_hash  # noqa: E402
+    from motor.core.zones import silhouette_descriptor  # noqa: E402
+    from motor.core.matching import exact_band_persons  # noqa: E402
+
+    members = [face_list[g] for g in sub]              # (emb, item_idx, face_idx)
+    item_idxs = sorted({m[1] for m in members})
+    embs = [m[0] for m in members]
+
+    # foto representativa: la más NÍTIDA Y CERCANA del SUB-CLÚSTER.
     # Se pondera sharpness por √(área de la cara): una cara lejana enfocada
     # tiene menos píxeles reales que una cercana algo menos nítida.
     best = None
     best_score = -1.0
     best_sharp = 0.0
-    for idx in item_idxs:
+    for emb, idx, fidx in members:
         it = battery[idx]
-        for f in it["faces"]:
-            fw = f.bbox[2] - f.bbox[0]
-            fh = f.bbox[3] - f.bbox[1]
-            sh = face_sharpness(it["img"], f)
-            score = sh * (float(fw * fh) ** 0.5)
-            if score > best_score:
-                best_score = score
-                best_sharp = sh
-                best = (idx, f)
+        f = it["faces"][fidx]
+        fw = f.bbox[2] - f.bbox[0]
+        fh = f.bbox[3] - f.bbox[1]
+        sh = face_sharpness(it["img"], f)
+        score = sh * (float(fw * fh) ** 0.5)
+        if score > best_score:
+            best_score = score
+            best_sharp = sh
+            best = (idx, fidx, emb)
     rep_item = battery[best[0]]
-    rep_face = best[1]
+    rep_face = rep_item["faces"][best[1]]
     rep_stem = rep_item["file"].rsplit(".", 1)[0]
     query_pose = pose_label(rep_face, cfg.yaw_frontal, cfg.yaw_45, cfg.yaw_90, cfg.pitch_frontal)
+    rep_hash = embedding_hash(best[2]) if best[2] is not None else None
 
     # crop de torso compañero (mismo stem en <cam>_cuerpo/)
     torso_path = None
@@ -479,12 +640,13 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     if busto_map:
         busto_path = busto_map.get(rep_stem)
 
-    # C (idempotencia): si este MISMO rostro (mismo embedding representativo) ya
-    # se procesó en esta sesión, el crop es un duplicado re-leído/re-escrito. Se
-    # consumen sus ficheros y se salta: antes producía una 2ª foto del mismo crop
-    # y un match con score 1.0 (autocoincidencia tras autoenriquecer la galería).
-    rep_hash = embedding_hash(embs[0]) if embs else None
-    if rep_hash is not None and rep_hash in _PROCESSED_FACES:
+    # C + P (idempotencia persistente): si este MISMO rostro (mismo embedding
+    # representativo) ya se procesó en esta sesión O en una pasada anterior del
+    # daemon (registro persistente), el crop es un duplicado re-leído/re-escrito
+    # tras restart. Se consumen sus ficheros y se salta: antes producía una 2ª
+    # foto del mismo crop y N identidades duplicadas con score 1.0.
+    if rep_hash is not None and (
+            rep_hash in _PROCESSED_FACES or _dedup_seen(ruta, local_id, cfg, rep_hash)):
         for _idx in item_idxs:
             _p = battery[_idx]["path"]
             if os.path.exists(_p):
@@ -493,10 +655,11 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
             os.remove(torso_path)
         if busto_path and os.path.exists(busto_path):
             os.remove(busto_path)
-        log(f"[skip] rostro ya procesado en esta sesión: {rep_stem}")
+        log(f"[skip] rostro ya procesado (persistente): {rep_stem}")
         return
     if rep_hash is not None:
         _PROCESSED_FACES.add(rep_hash)
+        _dedup_record(ruta, local_id, cfg, rep_hash, rep_stem, camara_id)
 
     # F2 fix (ENDURECIDO 2026-09-01 anti-mezcla): "uncertain" ya no se asigna al
     # top-1 ni enriquece su galería (contaminaba la identidad). Se crea persona
@@ -518,15 +681,65 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
                 query_attributes = None
 
     ctx = None
-    if cfg.cascade_enabled:
-        from motor.core.router import Situation
+    from motor.core.matching import MatchResult, face_confidence, select_candidates  # noqa: E402
+    from motor.core.router import Situation  # noqa: E402
+    from motor.core.fusion import CascadeContext, run_cascade  # noqa: E402
+
+    # C5 (2026-09-02): identidad EXACTA autónoma. Si el rostro (o alguno del
+    # sub-clúster) es idéntico a un encoding de UN SOLO candidato de la galería,
+    # es la MISMA cara ya enrolada: match directo ANTES de silueta/cascada
+    # (la silueta no puede bloquear un coseno >= exact_match_cos). Si hay >1
+    # candidato en banda exacta, la galería está contaminada: NUNCA auto-fusión
+    # ni nueva copia — evidencia a revisión y fin (autónomo, sin mezcla).
+    exact_persons, best_exact = exact_band_persons(embs, store, cfg.exact_match_cos)
+    exact_match = len(exact_persons) == 1
+    exact_conflict = len(exact_persons) > 1
+
+    if exact_conflict:
+        # conservar el crop como evidencia y consumir la batería sin tocar BD
+        _preserve_evidence(ruta, local_id, camara_id, rep_item["path"], rep_stem,
+                           "conflicto-exacto")
+        for _idx in item_idxs:
+            _p = battery[_idx]["path"]
+            if os.path.exists(_p):
+                os.remove(_p)
+        if torso_path and os.path.exists(torso_path):
+            os.remove(torso_path)
+        if busto_path and os.path.exists(busto_path):
+            os.remove(busto_path)
+        log(f"[exact-conflict] rostro idéntico en 2+ personas: {rep_stem} "
+            f"-> {exact_persons}")
+        if feedback is not None and cfg.feedback_enabled:
+            from motor.core.feedback import embedding_hash  # noqa: E402
+            feedback.log_decision({
+                "local": local_id, "cam": camara_id,
+                "verdict": "uncertain", "person": None,
+                "top1": exact_persons[0], "top2": exact_persons[1] if len(exact_persons) > 1 else None,
+                "best": float(best_exact), "second": 0.0,
+                "layers": {"cara": LayerScore(score=float(best_exact), confidence=1.0)},
+                "query_hash": embedding_hash(embs[0]) if embs else None,
+                "stem": rep_stem, "pose": query_pose,
+                "yaw": float(rep_face.yaw), "pitch": float(rep_face.pitch),
+                "sharpness": best_sharp, "has_face": True,
+                "exact_match": True, "exact_conflict": True,
+                "branch": "exact_conflict",
+            })
+        return
+
+    if exact_match:
+        face_scores = _face_scores(embs, store, cfg, query_pose)
+        result = MatchResult(
+            verdict="match", person=exact_persons[0],
+            best_score=float(best_exact), second_score=0.0,
+            scores=dict(face_scores), confidence=1.0,
+            layer_scores={"cara": LayerScore(score=float(best_exact), confidence=1.0)},
+            candidates=[exact_persons[0]])
+    elif cfg.cascade_enabled:
         face_scores = _face_scores(embs, store, cfg, query_pose)
         ranked = sorted(face_scores.items(), key=lambda kv: kv[1], reverse=True)
         s1 = ranked[0][1] if ranked else 0.0
         s2 = ranked[1][1] if len(ranked) > 1 else 0.0
-        from motor.core.matching import face_confidence, select_candidates
         face_layer = LayerScore(score=s1, confidence=face_confidence(s1, s2, best_sharp, cfg))
-        from motor.core.fusion import CascadeContext, run_cascade
         ctx = _CascadeCtx(ruta, local_id, camara_id, cfg, store, face_scores,
                           query_pose, rep_item["path"], torso_path, rep_item["img"], rep_face,
                           query_attributes=query_attributes)
@@ -549,14 +762,14 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
         face_scores = _face_scores(embs, store, cfg, query_pose)
         s1 = result.best_score
         s2 = result.second_score
-        from motor.core.matching import face_confidence, select_candidates
         face_layer = LayerScore(score=s1, confidence=face_confidence(s1, s2, best_sharp, cfg))
         result.layer_scores = {"cara": face_layer}
         result.candidates = select_candidates(face_scores, cfg)
 
-    if result.verdict in ("new", "uncertain") or result.person is None:
-        # "new" y "uncertain" crean una persona NUEVA (duplicada): nunca se asigna
-        # la foto a un candidato dudoso. "uncertain" además va a revisión manual.
+    # C2 (2026-09-02): "review" se trata como "uncertain": NUNCA asigna al top-1
+    # existente (contaminaba su galería vía new_person=True). Crea persona nueva
+    # del sub-clúster (coherente) + copia a revisión.
+    if result.verdict in ("new", "uncertain", "review") or result.person is None:
         person = random_code()
     else:
         person = result.person
@@ -567,13 +780,54 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     if len(stems_sorted) >= 2 and stems_sorted[0] != stems_sorted[-1]:
         nombre = f"{stems_sorted[0]}----{stems_sorted[-1]}"
     else:
-        nombre = stems_sorted[0] if stems_sorted else battery[item_idxs[0]]["file"].rsplit(".", 1)[0]
+        nombre = stems_sorted[0] if stems_sorted else rep_stem
 
     foto_id = random_code()
     out_dir = os.path.join(ruta, "motor/caras", local_id, camara_id, person)
     os.makedirs(out_dir, exist_ok=True)
     out_name = f"{nombre}_{foto_id}.jpg"
     out_path = os.path.join(out_dir, out_name)
+
+    # A1/A3 (2026-09-02): auditoría rica y publicada ANTES que el JPEG.
+    #  - A3: escribir el sidecar primero elimina la carrera con clasificadorV2.php
+    #    (escanea cada ~1 s; si la foto aparecía antes que el sidecar, este
+    #    quedaba huérfano y la decisión sin auditar).
+    #  - A1: registrar rama de decisión, mapa top-N de scores por candidato y
+    #    la configuración efectiva usada (para el replay posterior).
+    if cfg.attributes_enabled and result.candidates:
+        if ctx is not None:
+            result.layer_scores["attributes"] = ctx.attributes_score(result.candidates[0])
+        else:
+            from motor.core.attributes import attributes_layer_score
+            values = (store.person_attributes(result.candidates[0]) or {}).get("values", [])
+            cands = [attributes_layer_score(query_attributes, value) for value in values]
+            cands = [sc for sc in cands if sc.available]
+            result.layer_scores["attributes"] = max(cands, key=lambda sc: sc.score) if cands else LayerScore(available=False)
+    elif cfg.attributes_enabled:
+        # Keep activation visible in the audit even when no identity candidate
+        # exists; there is intentionally no candidate score in that case.
+        result.layer_scores["attributes"] = LayerScore(
+            score=0.0,
+            confidence=float(query_attributes.get("confidence", 0.0)) if query_attributes else 0.0,
+            available=False,
+        )
+    if query_attributes is not None and person:
+        store.add_attributes(person, query_attributes, ts=rep_item["ts"] or time.time(), src=foto_id)
+
+    from motor.core.matching import top_scores  # noqa: E402
+    audit_meta = {
+        "exact_match": bool(exact_match),
+        "exact_conflict": False,
+        "branch": "exact" if exact_match else ("cascade" if cfg.cascade_enabled else "scalar"),
+        "top_scores": top_scores(face_scores, n=5),
+        "cfg": _cfg_snapshot(cfg),
+        "stem": rep_stem,
+        "pose": query_pose,
+    }
+    write_audit_queue(ruta, local_id, camara_id, foto_id, build_audit_record(
+        foto_id, local_id, camara_id, result.verdict, person,
+        layer_scores_json(result.layer_scores), attributes=query_attributes,
+        meta=audit_meta))
 
     # Foto final: BUSTO (torso real + cara restaurada) para display. Internamente
     # el matching usa los crops tight; aquí se genera la imagen que se muestra.
@@ -613,16 +867,18 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     if os.path.exists(rep_item["path"]):
         os.remove(rep_item["path"])
 
-    # refinar el diccionario (F1.2: admisión por cara — solo encodings que
-    # individualmente confirman contra la persona asignada). P2: se etiquetan
-    # con la proveniencia `foto_id` de la foto representativa de este sub-clúster.
+    # refinar el diccionario (F1.2: admisión por cara + C1: SOLO las caras del
+    # sub-clúster; nunca "todas las caras de los items"). P2: se etiquetan con
+    # la proveniencia `foto_id` de la foto representativa de este sub-clúster.
     if result.verdict == "match":
-        _store_add(store, person, item_idxs, battery, cfg, foto_id=foto_id)
+        _store_add(store, person, members, battery, cfg, foto_id=foto_id)
     else:
-        # "new" y "uncertain" (ENDURECIDO 2026-09-01): persona nueva/duplicada. El
-        # sub-clúster es internamente coherente (split_coherent_clusters) -> se
-        # construye su galería desde cero (new_person=True), sin contaminar a nadie.
-        _store_add(store, person, item_idxs, battery, cfg, new_person=True, foto_id=foto_id)
+        # "new", "uncertain" y "review" (ENDURECIDO 2026-09-01 + C2): persona
+        # nueva/duplicada. El sub-clúster es internamente coherente
+        # (split_coherent_clusters + C1) -> se construye su galería desde cero
+        # (new_person=True), sin contaminar a nadie. `review` NUNCA toca la
+        # galería del candidato existente (antes lo hacía vía new_person=True).
+        _store_add(store, person, members, battery, cfg, new_person=True, foto_id=foto_id)
 
     # F1/F3: la capa torso necesita galería de apariencia por persona.
     if cfg.torso_enabled and person:
@@ -641,11 +897,12 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
             store.add_appearance(person, desc, ts=rep_item["ts"] or time.time(),
                                  src=out_name)
 
-    # UNCERTAIN: copia a cola de revisión manual (nunca duplicado en silencio)
-    if result.verdict == "uncertain":
+    # UNCERTAIN/REVIEW (C2): copia a cola de revisión manual (nunca duplicado
+    # en silencio; el sub-clúster queda como persona nueva coherente).
+    if result.verdict in ("uncertain", "review"):
         _copy_to_revision(ruta, local_id, camara_id, out_dir, out_name, cfg)
 
-    # feedback: registrar la decisión con features por capa
+    # feedback: registrar la decisión con features por capa + trazabilidad (A1)
     if feedback is not None and cfg.feedback_enabled:
         from motor.core.feedback import embedding_hash
         feedback.log_decision({
@@ -655,13 +912,22 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
             "top2": result.candidates[1] if len(result.candidates) > 1 else None,
             "best": result.best_score, "second": result.second_score,
             "layers": result.layer_scores,
-            "query_hash": embedding_hash(embs[0]),
+            "query_hash": embedding_hash(embs[0]) if embs else None,
             "stem": rep_stem,
             "pose": query_pose,
             "yaw": float(rep_face.yaw),
             "pitch": float(rep_face.pitch),
             "sharpness": best_sharp,
             "has_face": True,
+            # A1: trazabilidad completa para el replay/validación posterior
+            "foto_id": foto_id,
+            "exact_match": bool(exact_match),
+            "exact_conflict": False,
+            "branch": "exact" if exact_match else ("cascade" if cfg.cascade_enabled else "scalar"),
+            "top_scores": [{"person": c, "score": round(float(s), 4)}
+                           for c, s in sorted(face_scores.items(),
+                                              key=lambda kv: kv[1], reverse=True)[:5]],
+            "cfg": _cfg_snapshot(cfg),
         })
 
     # Persist an immutable, access-controlled audit sidecar. Attributes remain
@@ -669,29 +935,7 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     # eventual fotos.id using this classifier-generated correlation id.
     # Classification phase is derived by PHP from durable BD move events; no
     # mutable marker or journal participates in authority decisions.
-    # Report the per-candidate attributes layer even when the cascade early-exits.
-    if cfg.attributes_enabled and result.candidates:
-        if ctx is not None:
-            result.layer_scores["attributes"] = ctx.attributes_score(result.candidates[0])
-        else:
-            from motor.core.attributes import attributes_layer_score
-            values = (store.person_attributes(result.candidates[0]) or {}).get("values", [])
-            candidates = [attributes_layer_score(query_attributes, value) for value in values]
-            candidates = [score for score in candidates if score.available]
-            result.layer_scores["attributes"] = max(candidates, key=lambda score: score.score) if candidates else LayerScore(available=False)
-    elif cfg.attributes_enabled:
-        # Keep activation visible in the audit even when no identity candidate
-        # exists; there is intentionally no candidate score in that case.
-        result.layer_scores["attributes"] = LayerScore(
-            score=0.0,
-            confidence=float(query_attributes.get("confidence", 0.0)) if query_attributes else 0.0,
-            available=False,
-        )
-    if query_attributes is not None and person:
-        store.add_attributes(person, query_attributes, ts=rep_item["ts"] or time.time(), src=foto_id)
-    write_audit_queue(ruta, local_id, camara_id, foto_id, build_audit_record(
-        foto_id, local_id, camara_id, result.verdict, person,
-        layer_scores_json(result.layer_scores), attributes=query_attributes))
+    # (A3) El sidecar se publica ANTES que el JPEG, justo tras fijar `foto_id`.
 
     # eliminar el resto de fotos del sub-clúster (ya procesadas)
     for idx in item_idxs:
@@ -718,17 +962,26 @@ def torso_bbox_local(face, img, cfg):
     return torso_bbox(face, w, h, cfg)
 
 
-def _store_add(store: FaceStore, person: str, item_idxs, battery, cfg: Config,
+def _store_add(store: FaceStore, person: str, members, battery, cfg: Config,
                new_person: bool = False, foto_id: str | None = None) -> None:
     """Añade encodings a la galería de `person` con CONTROL DE ADMISIÓN (F1.2).
 
-    - new_person=True (verdict "new"): el sub-clúster ya es internamente
-      coherente (split_coherent_clusters) -> se añaden todas sus caras.
-    - new_person=False (match/uncertain): cada cara se admite SOLO si su mejor
-      similitud individual contra la persona asignada >= cfg.admission_cosine
+    C1 (2026-09-02): `members` son (emb, item_idx, face_idx) — las caras EXACTAS
+    del sub-clúster. Antes se recibían `item_idxs` y se añadían TODAS las caras
+    de cada item (mezcla de personas en crops con 2+ caras, IDs 2/5/8/18/34/35).
+
+    - new_person=True (verdict "new"/"uncertain"/"review"): el sub-clúster ya es
+      internamente coherente (split_coherent_clusters + C1) -> se añaden todas
+      sus caras (solo las del sub-clúster, nunca las de otros sub-clústeres).
+    - new_person=False (match): cada cara se admite SOLO si su mejor similitud
+      individual contra la persona asignada >= cfg.admission_cosine
       (pose-consciente si cfg.zones_enabled). Las caras que no confirmen NO
-      entran en la galería: evita que una cara ajena agrupada por transitividad
-      contamine la identidad y provoque falsos match posteriores (agregación max).
+      entran en la galería: evita que una cara ajena contamine la identidad.
+
+    C3: por cada encoding admitido se guarda su descriptor de silueta (`sil`,
+    lista paralela en face_enc_v2): la capa de silueta de decisiones futuras
+    comparará contra la geometría REAL de la cara enrolada (no contra una foto
+    de archivo del panel, que podía ser la del acompañante).
 
     P2 (proveniencia): todos los encodings de este sub-clúster se etiquetan con
     `foto_id` (el identificador_unico de la foto representativa) para que luego
@@ -736,33 +989,40 @@ def _store_add(store: FaceStore, person: str, item_idxs, battery, cfg: Config,
     """
     from motor.core.quality import face_sharpness as _fs, pose_label as _pl
     from motor.core.matching import best_cosine, scores_per_person_pose_aware
+    from motor.core.zones import silhouette_descriptor
 
     gal_encs = store.person_encodings(person)
-    encs, quals, poses = [], [], []
-    for idx in item_idxs:
-        for f in battery[idx]["faces"]:
-            # B4 (2026-08-26): higiene de galería — nunca admitir un encoding
-            # de una cara demasiado pequeña aunque pase admission_cosine: su
-            # embedding es poco fiable y con la agregación MAX puede arrastrar
-            # el score de la persona. (La nitidez ya está filtrada aguas arriba.)
-            if max(f.bbox[2] - f.bbox[0], f.bbox[3] - f.bbox[1]) < cfg.face_min_side:
-                continue
-            if new_person:
-                admit = True
-            elif gal_encs is None or len(gal_encs) == 0:
-                admit = False                 # sin galería no puede confirmar (no ocurre en match)
-            elif cfg.zones_enabled and cfg.admission_pose_aware:
-                pose = _pl(f, cfg.yaw_frontal, cfg.yaw_45, cfg.yaw_90, cfg.pitch_frontal)
-                sp = scores_per_person_pose_aware(f.embedding, store, cfg, pose)
-                admit = sp.get(person, 0.0) >= cfg.admission_cosine
-            else:
-                admit = best_cosine(f.embedding, gal_encs) >= cfg.admission_cosine
-            if admit:
-                encs.append(f.embedding)
-                quals.append(_fs(battery[idx]["img"], f))
-                poses.append(_pl(f, cfg.yaw_frontal, cfg.yaw_45, cfg.yaw_90, cfg.pitch_frontal))
+    encs, quals, poses, sils, srcs = [], [], [], [], []
+    for emb, idx, fidx in members:
+        it = battery[idx]
+        if not (0 <= fidx < len(it["faces"])):
+            continue
+        f = it["faces"][fidx]
+        # B4 (2026-08-26): higiene de galería — nunca admitir un encoding
+        # de una cara demasiado pequeña aunque pase admission_cosine: su
+        # embedding es poco fiable y con la agregación MAX puede arrastrar
+        # el score de la persona. (La nitidez ya está filtrada aguas arriba.)
+        if max(f.bbox[2] - f.bbox[0], f.bbox[3] - f.bbox[1]) < cfg.face_min_side:
+            continue
+        if new_person:
+            admit = True
+        elif gal_encs is None or len(gal_encs) == 0:
+            admit = False                 # sin galería no puede confirmar (no ocurre en match)
+        elif cfg.zones_enabled and cfg.admission_pose_aware:
+            pose = _pl(f, cfg.yaw_frontal, cfg.yaw_45, cfg.yaw_90, cfg.pitch_frontal)
+            sp = scores_per_person_pose_aware(f.embedding, store, cfg, pose)
+            admit = sp.get(person, 0.0) >= cfg.admission_cosine
+        else:
+            admit = best_cosine(f.embedding, gal_encs) >= cfg.admission_cosine
+        if admit:
+            sil = silhouette_descriptor(f)
+            encs.append(f.embedding)
+            quals.append(_fs(it["img"], f))
+            poses.append(_pl(f, cfg.yaw_frontal, cfg.yaw_45, cfg.yaw_90, cfg.pitch_frontal))
+            sils.append(sil)
+            srcs.append(foto_id)
     if encs:
-        store.add(person, encs, quals, poses, sources=[foto_id] * len(encs))
+        store.add(person, encs, quals, poses, sources=srcs, sils=sils)
 
 
 def _copy_to_revision(ruta: str, local_id: str, camara_id: str,
@@ -1054,6 +1314,16 @@ def main() -> int:
         cfg.margin = args.margin
     if args.min_sharpness is not None:
         cfg.min_sharpness = args.min_sharpness
+    # A4: persistir el log del clasificador (el daemon lanza con stdout a /dev/null)
+    global _LOG_FILE
+    try:
+        logs_dir = os.path.join(args.ruta, "motor/logs")
+        os.makedirs(logs_dir, exist_ok=True)
+        _LOG_FILE = os.path.join(logs_dir, f"clasificador_{args.local_id}.log")
+    except OSError:
+        _LOG_FILE = None
+    # P1: cargar el registro persistente de rostros ya procesados (ventana)
+    _dedup_load(args.ruta, args.local_id, cfg)
 
     store = FaceStore(os.path.join(args.ruta, "motor/bbdd_reconocimiento", args.local_id, "face_enc_v2"),
                       max_per_person=cfg.max_encodings_per_person)

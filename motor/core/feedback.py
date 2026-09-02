@@ -99,6 +99,11 @@ class FeedbackCollector:
                 "has_face": bool(entry.get("has_face", True)),
             },
         }
+        # A1 (2026-09-02): trazabilidad completa para replay/validación.
+        for k in ("foto_id", "exact_match", "exact_conflict", "branch",
+                  "top_scores", "cfg"):
+            if k in entry:
+                e[k] = entry[k]
         self._append(self.decisions_path, e)
 
     def label_merge(self, cod_a: str, cod_b: str) -> None:

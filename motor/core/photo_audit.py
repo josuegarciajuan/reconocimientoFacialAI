@@ -10,12 +10,12 @@ from .safe_paths import safe_component
 
 
 def build_audit_record(correlation_id, local_id, camera_id, classification, person,
-                       layers, attributes=None, moved_at=None):
+                       layers, attributes=None, moved_at=None, meta=None):
     safe_component(correlation_id); safe_component(local_id); safe_component(camera_id)
     safe_attributes = None
     if attributes is not None:
         safe_attributes = validate_attributes(attributes)
-    return {
+    record = {
         "schema_version": "photo-audit-1",
         "correlation_id": str(correlation_id),
         "local_id": str(local_id),
@@ -28,6 +28,11 @@ def build_audit_record(correlation_id, local_id, camera_id, classification, pers
         "attributes": safe_attributes,
         "attributes_version": ATTRIBUTES_VERSION if safe_attributes else None,
     }
+    # A1 (2026-09-02): trazabilidad de la decisión (rama, mapa top-N de scores,
+    # config efectiva, pose/stem). El validador PHP ignora claves extra.
+    if isinstance(meta, dict):
+        record.update({k: v for k, v in meta.items() if k not in record})
+    return record
 
 
 def write_audit_queue(root, local_id, camera_id, correlation_id, record):
@@ -74,12 +79,17 @@ def layer_scores_json(layers: dict) -> dict:
                 score = float(layer.get("score", 0.0))
                 confidence = float(layer.get("confidence", 0.0))
                 available = bool(layer.get("available", False))
+                reason = str(layer.get("reason", ""))
             else:
                 score = float(getattr(layer, "score", 0.0))
                 confidence = float(getattr(layer, "confidence", 0.0))
                 available = bool(getattr(layer, "available", False))
+                reason = str(getattr(layer, "reason", ""))
         except (AttributeError, TypeError, ValueError):
             continue
         if 0.0 <= score <= 1.0 and 0.0 <= confidence <= 1.0:
-            out[str(name)] = {"score": score, "confidence": confidence, "available": available}
+            rec = {"score": score, "confidence": confidence, "available": available}
+            if reason:  # A2: conservar el motivo de cada capa en la auditoría
+                rec["reason"] = reason
+            out[str(name)] = rec
     return out
