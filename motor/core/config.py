@@ -228,6 +228,9 @@ class Config:
     # personas reales distintas en la galería limpia (0 en 3.417 pares).
     exact_match_cos: float = 0.999
 
+    # --- score robusto top-k (Fase 4, M2/M8) ---
+    robust_k: int = 5                 # media de los top-k cosenos de la galería
+
     # --- dedup persistente (P1-P3) ---
     # Registro por local de rostros ya consumidos (hash+stem). A diferencia de
     # `_PROCESSED_FACES` (memoria del proceso), sobrevive a restarts y a varios

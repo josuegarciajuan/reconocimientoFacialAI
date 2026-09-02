@@ -91,6 +91,8 @@ RUTAS_BORRAR=(
   # Registro de retratos por identidad (Fase 2, 2026-09-02): fotos de referencia
   # para VLM/OpenAI/silueta; debe vaciarse con el reset para empezar de cero.
   "motor/portraits/${LOCAL_ID}"
+  # Cola de consolidación al nacer (Fase 5/M6, 2026-09-02).
+  "motor/pending/${LOCAL_ID}"
 )
 
 # =============================================================================

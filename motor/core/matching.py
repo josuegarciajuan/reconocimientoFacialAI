@@ -174,3 +174,59 @@ def exact_band_persons(embs: list[np.ndarray], store: FaceStore,
                 hits[cod] = max(hits.get(cod, 0.0), s)
     ranked = sorted(hits.items(), key=lambda kv: kv[1], reverse=True)
     return [c for c, _ in ranked], (ranked[0][1] if ranked else 0.0)
+
+
+# ---------------------------------------------------------------------------
+# Fase 4 (M2/M4/M8): score ROBUSTO top-k por persona (media de los k mejores
+# cosenos con la galería) y puntuaciones por persona para la fusión.
+# El `max` (usado para el suelo seguro) se deja engañar por un solo encoding
+# contaminado o por una pose aislada; la media top-k es más estable.
+# ---------------------------------------------------------------------------
+
+def best_cosine_robust(query: np.ndarray, gallery: np.ndarray,
+                       qualities: np.ndarray | None = None,
+                       k: int = 5, min_quality: float = 0.0) -> float:
+    """Media de los top-k mejores cosenos query↔galería.
+
+    M8: si `qualities` se da, se descartan previamente los encodings por debajo
+    de `min_quality` (peso por calidad: solo caras nítidas comparan).
+    Devuelve 0.0 si no quedan encodings válidos.
+    """
+    if gallery is None or len(gallery) == 0:
+        return 0.0
+    sims = np.asarray(gallery @ np.asarray(query, dtype=np.float32))
+    if qualities is not None and min_quality > 0:
+        sims = sims[np.asarray(qualities) >= min_quality]
+    if sims.size == 0:
+        return 0.0
+    sims = np.sort(sims)[::-1][:max(1, int(k))]
+    return float(np.mean(sims))
+
+
+def robust_scores_per_person(embs: list[np.ndarray], store: FaceStore,
+                             k: int = 5, min_quality: float = 0.0,
+                             pose: str | None = None) -> dict[str, float]:
+    """Score robusto top-k por persona, agregado sobre las caras del query.
+
+    Fase 4: score(persona) = media sobre los queries del mejor robust top-k.
+    Si `pose` se da y la persona NO tiene ningún encoding de pose comparable,
+    se usa el top-k global (fallback, igual que el matcher pose-aware).
+    """
+    from .zones import pose_compatible
+    out: dict[str, float] = {}
+    for cod in store.persons():
+        p = store.person(cod)
+        if not p or not p.get("encodings"):
+            continue
+        encs = np.asarray(p["encodings"], dtype=np.float32)
+        quals = np.asarray(p.get("quality") or [0.0] * len(encs))
+        poses = p.get("poses") or [None] * len(encs)
+        if pose is not None:
+            mask = np.asarray([pose_compatible(pose, po) for po in poses], dtype=bool)
+            if mask.any():
+                encs, quals = encs[mask], quals[mask]
+        vals = []
+        for q in embs:
+            vals.append(best_cosine_robust(q, encs, quals, k=k, min_quality=min_quality))
+        out[cod] = float(np.mean(vals)) if vals else 0.0
+    return out

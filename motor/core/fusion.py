@@ -155,7 +155,8 @@ def decide_situational(face_scores: dict[str, float],
                        ctx: CascadeContext,
                        cfg: Config,
                        face_layer: LayerScore,
-                       situation: Situation | None = None) -> MatchResult:
+                       situation: Situation | None = None,
+                       robust_scores: dict[str, float] | None = None) -> MatchResult:
     """Motor de decisión situacional.
 
     face_scores : similitudes por persona de la capa cara (ya pose-consciente
@@ -163,9 +164,20 @@ def decide_situational(face_scores: dict[str, float],
     ctx         : proveedores de las capas superiores (por candidato).
     face_layer  : LayerScore de la capa cara (score=s1, confidence=c_cara).
     situation   : pose/nitidez/presencia de cara y torso (None => default).
+    robust_scores : scores top-k por persona (Fase 4, M2). Usados para exigir
+                  margen robusto top1-top2 antes de asociar en zona ambigua
+                  (M4): evita false-merges de dos personas "parecidas".
     """
     situation = situation or Situation()
     plan = route(situation, cfg)
+
+    def _robust_margin_ok() -> bool:
+        if not robust_scores:
+            return True                       # sin robusto: no aplica margen
+        rr = sorted(robust_scores.items(), key=lambda kv: kv[1], reverse=True)
+        r1 = rr[0][1] if rr else 0.0
+        r2 = rr[1][1] if len(rr) > 1 else 0.0
+        return (r1 - r2) >= cfg.consolidate_min_margin
 
     cands = select_candidates(face_scores, cfg)
     if not cands:
@@ -266,6 +278,9 @@ def decide_situational(face_scores: dict[str, float],
         if vetoes >= 2:
             return _result("uncertain", top, s1, s2, face_scores, layers, cands)
         if confirmado:
+            if not _robust_margin_ok():
+                # M4: sin margen robusto top1-top2 no se asocia en zona gris
+                return _result("uncertain", top, s1, s2, face_scores, layers, cands)
             return _result("match", top, s1, s2, face_scores, layers, cands)
         return _result("uncertain", top, s1, s2, face_scores, layers, cands)
 
@@ -314,6 +329,9 @@ def decide_situational(face_scores: dict[str, float],
                     acuerdos_locales += 1
         acuerdos_independientes = acuerdos_locales + (1 if ia_acuerdo else 0)
         if acuerdos_independientes >= cfg.low_band_min_agreements:
+            if not _robust_margin_ok():
+                # M4: dos candidatos "parecidos" sin margen robusto -> uncertain
+                return _result("uncertain", top, s1, s2, face_scores, layers, cands)
             return _result("match", top, s1, s2, face_scores, layers, cands)
         silueta_valida = any(
             name == "silueta" and ls.available and ls.score >= cfg.silueta_min_score
@@ -329,10 +347,12 @@ def run_cascade(face_scores: dict[str, float],
                 ctx: CascadeContext,
                 cfg: Config,
                 face_layer: LayerScore,
-                situation: Situation | None = None) -> MatchResult:
+                situation: Situation | None = None,
+                robust_scores: dict[str, float] | None = None) -> MatchResult:
     """Wrapper retro-compatible: delega en el motor situacional.
 
     Si no se pasa `situation` (p. ej. reagrupar.py), se usa el default
     (pose None, frontal genérica) con autoridad "cara" + apoyo general.
     """
-    return decide_situational(face_scores, ctx, cfg, face_layer, situation)
+    return decide_situational(face_scores, ctx, cfg, face_layer, situation,
+                              robust_scores=robust_scores)
