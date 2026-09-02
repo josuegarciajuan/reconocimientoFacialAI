@@ -88,6 +88,9 @@ RUTAS_BORRAR=(
   # limpio (el dedup suprime caras ya vistas y audit_queue re-ingesta sidecars).
   "motor/dedup"
   "motor/audit_queue"
+  # Registro de retratos por identidad (Fase 2, 2026-09-02): fotos de referencia
+  # para VLM/OpenAI/silueta; debe vaciarse con el reset para empezar de cero.
+  "motor/portraits/${LOCAL_ID}"
 )
 
 # =============================================================================
