@@ -780,6 +780,10 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
         s1 = ranked[0][1] if ranked else 0.0
         s2 = ranked[1][1] if len(ranked) > 1 else 0.0
         face_layer = LayerScore(score=s1, confidence=face_confidence(s1, s2, best_sharp, cfg))
+        # Fase 4 (M2): scores robustos top-k para exigir margen en zona ambigua
+        from motor.core.matching import robust_scores_per_person  # noqa: E402
+        robust_scores = robust_scores_per_person(embs, store, k=cfg.robust_k,
+                                                 min_quality=0.0, pose=query_pose)
         ctx = _CascadeCtx(ruta, local_id, camara_id, cfg, store, face_scores,
                           query_pose, rep_item["path"], torso_path, busto_path,
                           rep_item["img"], rep_face,
@@ -790,7 +794,8 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
                             vlm=ctx.vlm_score, openai=ctx.openai_score)
         situ = Situation(pose=query_pose, sharpness=best_sharp,
                          has_face=True, has_torso=torso_path is not None)
-        result = run_cascade(face_scores, cc, cfg, face_layer, situation=situ)
+        result = run_cascade(face_scores, cc, cfg, face_layer, situation=situ,
+                             robust_scores=robust_scores)
     else:
         result = match_group(embs, store, cfg)
         # pose-consciente (F2) sin cascada: se activa con zones_enabled
@@ -953,6 +958,14 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     # en silencio; el sub-clúster queda como persona nueva coherente).
     if result.verdict in ("uncertain", "review"):
         _copy_to_revision(ruta, local_id, camara_id, out_dir, out_name, cfg)
+
+    # Fase 5 (M6): toda persona NUEVA (new/uncertain/review) entra en la cola
+    # de consolidación al nacer. El worker la fusionará con la identidad
+    # correcta cuando la galería acumule varias poses, o la confirmará como
+    # definitiva si tras los intentos no hay coincidencia sólida.
+    if result.verdict in ("new", "uncertain", "review"):
+        from motor.consolidar_nacidos import enqueue  # noqa: E402
+        enqueue(ruta, local_id, person, query_pose)
 
     # feedback: registrar la decisión con features por capa + trazabilidad (A1)
     if feedback is not None and cfg.feedback_enabled:
@@ -1390,11 +1403,21 @@ def main() -> int:
         f" silueta={cfg.silueta_enabled}"
         f" vlm={cfg.vlm_enabled} openai={cfg.openai_enabled}")
     _last_calib_check = 0.0
+    _last_consolidar = 0.0
     cam_idx = 0
     while True:
         try:
-            # reload periódico de pesos calibrados (timer rf-calibra a las 05:10)
             now = time.time()
+            # Fase 5 (M6): consolidación al nacer (cola de pendientes) cada
+            # consolidate_interval_s; es barata si la cola está vacía.
+            if now - _last_consolidar > cfg.consolidate_interval_s:
+                _last_consolidar = now
+                try:
+                    from motor.consolidar_nacidos import run_once  # noqa: E402
+                    run_once(args.ruta, args.local_id, cfg, store, log=log)
+                except Exception as e:  # noqa: BLE001 — nunca rompe el daemon
+                    log(f"[consolidar] error: {e}")
+            # reload periódico de pesos calibrados (timer rf-calibra a las 05:10)
             if now - _last_calib_check > 60:
                 _last_calib_check = now
                 if _apply_calib_weights(cfg, args.ruta):
