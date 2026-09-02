@@ -348,8 +348,9 @@ def test_banda_baja_acuerdo_llm_solo_no_asocia():
     assert res.person is None
 
 
-def test_banda_baja_acuerdo_doble_llm_match():
-    """2 acuerdos independientes (vlm + openai) en banda baja SÍ asocian a top1."""
+def test_banda_baja_acuerdo_doble_llm_no_asocia():
+    """2 LLMs (vlm+openai) cuentan como UN SOLO acuerdo IA: no bastan para
+    asociar en banda baja (evita false-merge por sesgo compartido)."""
     cfg = _cfg(new_low_floor=0.15)
     ctx = CascadeContext(
         vlm=lambda cod: LayerScore(score=0.90, confidence=0.95),
@@ -358,6 +359,21 @@ def test_banda_baja_acuerdo_doble_llm_match():
     res = run_cascade({"A": 0.19, "B": 0.17}, ctx, cfg,
                       LayerScore(score=0.19, confidence=0.50),
                       situation=Situation(pose="f", sharpness=60.0))
+    assert res.verdict == "new"
+    assert res.person is None
+
+
+def test_banda_baja_acuerdo_local_mas_ia_match():
+    """Acuerdo LOCAL (silueta co-autoridad en ángulo) + acuerdo IA (un LLM)
+    sí asocian a top1."""
+    cfg = _cfg(new_low_floor=0.15)
+    ctx = CascadeContext(
+        silueta=lambda cod: LayerScore(score=0.90, confidence=0.95),
+        vlm=lambda cod: LayerScore(score=0.90, confidence=0.95),
+    )
+    res = run_cascade({"A": 0.19, "B": 0.17}, ctx, cfg,
+                      LayerScore(score=0.19, confidence=0.50),
+                      situation=Situation(pose="aba", sharpness=161.0))
     assert res.verdict == "match"
     assert res.person == "A"
 

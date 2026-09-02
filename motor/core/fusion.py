@@ -221,7 +221,7 @@ def decide_situational(face_scores: dict[str, float],
             ls = ctx.layer(name, top)
             if ls is None:
                 continue
-            layers[name] = ls
+            layers[name] = ls                      # registrar también si no available
             if not ls.available:
                 continue
             if ls.confidence < cfg.min_layer_conf:
@@ -230,42 +230,39 @@ def decide_situational(face_scores: dict[str, float],
                 return _result("uncertain", top, s1, s2, face_scores, layers, cands)
             return _result("match", top, s1, s2, face_scores, layers, cands)
 
-        # early-exit (frontal nítida): al no alcanzar secure, la cara sola no
-        # decide -> se corrobora abajo (el margen solo evita capas caras).
-        # CORROBORACIÓN barato->caro: cada capa de apoyo veta (score < gray_low
-        # y conf >= veto_conf), confirma (score >= umbral de acuerdo y conf
-        # mínima) o es neutra. Sin confirmación y sin 2 vetos => uncertain.
+        # CORROBORACIÓN barato->caro: cada capa veta/confirma/es neutra.
+        # La IA (vlm+openai) se consulta en grupo: cualquiera con acuerdo fuerte
+        # confirma; ambas consultadas se registran con su motivo aunque no estén.
+        # Atributos (M7): corroboran SOLO si una capa no-atributos da apoyo
+        # no-negativo (nunca deciden por sí solos).
         vetoes = 0
         confirmado = False
-        confirmado_atributos = False
+        attrs_ok = False
         apoyo_no_atributos = False
         for name in _escalation(plan, cfg, ctx):
             ls = ctx.layer(name, top)
-            if ls is None or not ls.available:
+            if ls is None:
                 continue
-            layers[name] = ls
+            layers[name] = ls                      # registrar incluso no disponible
+            if not ls.available:
+                continue
             if name in ("vlm", "openai"):
                 if ls.confidence < cfg.llm_min_conf:
                     continue
             elif name in ("torso", "zonas", "silueta") and ls.confidence < cfg.min_layer_conf:
-                # torso/zonas caducos o silueta de baja fiabilidad NO corroboran
                 continue
             if ls.score < cfg.gray_low and ls.confidence >= cfg.veto_conf:
                 vetoes += 1
                 continue
             if ls.score >= _agree_threshold(name, cfg):
                 if name == "attributes":
-                    confirmado_atributos = True
-                    if apoyo_no_atributos:
-                        confirmado = True
-                    continue
-                confirmado = True
+                    attrs_ok = True
+                else:
+                    confirmado = True
             elif name != "attributes" and ls.score >= cfg.gray_low:
                 apoyo_no_atributos = True
-                if confirmado_atributos:
-                    confirmado = True
-                if not cfg.attributes_enabled:
-                    break
+        if attrs_ok and apoyo_no_atributos:
+            confirmado = True
         if vetoes >= 2:
             return _result("uncertain", top, s1, s2, face_scores, layers, cands)
         if confirmado:
@@ -273,14 +270,16 @@ def decide_situational(face_scores: dict[str, float],
         return _result("uncertain", top, s1, s2, face_scores, layers, cands)
 
     # --- 3) GATE DE IDENTIDAD: s1 < match_threshold ---
-    # BANDA BAJA (anti-fragmentación): coseno bajo contra TODO puede ser una
-    # pose extrema de una persona conocida (perfil/espaldas) donde ArcFace
-    # pierde discriminación (genuino ~0.15-0.25). Antes de crear "new" en
-    # silencio, si las capas de apoyo coinciden FUERTE con top1, se asocia
-    # (la identidad la sigue decidiendo la cara: esto NO crea, solo asocia).
+    # BANDA BAJA (anti-fragmentación). Se exigen acuerdos INDEPENDIENTES:
+    #   - cada capa local (silueta/torso) cuenta 1;
+    #   - la IA (vlm + openai) cuenta como UN SOLO acuerdo de grupo (evita que
+    #     dos LLMs con el mismo sesgo false-mergeen en bloque);
+    #   - un único LLM nunca decide (2026-09-02).
+    # Capas consultadas se registran (available o no, con su motivo).
     if s1 >= cfg.new_low_floor:
-        acuerdos_sin_atributos = 0
-        acuerdo_atributos = False
+        acuerdos_locales = 0
+        ia_acuerdo = False
+        ia_consultado = False
         apoyo_positivo = False
         # co-autoridad (silueta en perfil/ángulos) + capas de apoyo escaladas
         apoyo: list[str] = list(plan.co_authority)
@@ -289,27 +288,32 @@ def decide_situational(face_scores: dict[str, float],
                 apoyo.append(_name)
         for name in apoyo:
             ls = ctx.layer(name, top)
-            if ls is None or not ls.available:
+            if ls is None:
                 continue
-            layers[name] = ls
-            # Una señal positiva pero aún no suficientemente fiable para
-            # autoasignar no desaparece: junto a una silueta co-autora
-            # válida obliga revisión en vez de fragmentar la identidad.
+            layers[name] = ls                      # registrar también si no available
+            if not ls.available:
+                if name in ("vlm", "openai"):
+                    ia_consultado = True
+                continue
+            if name in ("vlm", "openai"):
+                ia_consultado = True
+                umbral = cfg.llm_min_conf
+            else:
+                umbral = cfg.min_layer_conf
+            # señal positiva (aunque no alcance confianza mínima para decidir)
             if ls.score >= cfg.gray_high:
                 apoyo_positivo = True
-            umbral = cfg.llm_min_conf if name in ("vlm", "openai") else cfg.min_layer_conf
             if ls.confidence < umbral:
                 continue
             if ls.score >= cfg.gray_high:
-                if name == "attributes":
-                    acuerdo_atributos = True
+                if name in ("vlm", "openai"):
+                    ia_acuerdo = True              # IA = 1 solo acuerdo de grupo
+                elif name == "attributes":
+                    pass                           # atributos no deciden
                 else:
-                    acuerdos_sin_atributos += 1
-        # (2026-09-02) Se elimina el atajo de "un único LLM fuerte => match":
-        # con OpenAI funcional, un único proveedor siempre-positivo false-mergea
-        # todos los negativos limpios. Se exigen >=2 acuerdos independientes.
-        if (acuerdos_sin_atributos >= cfg.low_band_min_agreements
-                or (acuerdo_atributos and acuerdos_sin_atributos >= 1)):
+                    acuerdos_locales += 1
+        acuerdos_independientes = acuerdos_locales + (1 if ia_acuerdo else 0)
+        if acuerdos_independientes >= cfg.low_band_min_agreements:
             return _result("match", top, s1, s2, face_scores, layers, cands)
         silueta_valida = any(
             name == "silueta" and ls.available and ls.score >= cfg.silueta_min_score

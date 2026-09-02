@@ -11,6 +11,7 @@ Las fotos viven en:
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 
 from .env import load_env
@@ -31,11 +32,26 @@ def find_person_photos(ruta: str, local_id: str, person_cod: str,
                        max_n: int = 3) -> list[str]:
     """Devuelve las N fotos más recientes de la persona (por mtime, descendente).
 
-    Primero busca en `motor/caras/<local>/<cam>/<persona>/` (contrato del
-    clasificador); si no hay nada (p.ej. galería histórica con carpetas vacías),
-    resuelve las fotos desde la BD: fotos -> estancias -> personas, con las
-    imágenes en `admin/caras_procesadas/<foto_id>.jpg`.
+    Fase 2: la prioridad es el REGISTRO DE RETRATOS (`motor/portraits/<local>/<cod>/`),
+    una copia inmune a la ingesta/limpieza que el clasificador actualiza en cada
+    decisión. Las capas VLM/OpenAI/silueta leen SIEMPRE de aquí para tener foto
+    del candidato en el instante de decidir (antes dependían de `motor/caras`,
+    que el ingestor vacía, y de `admin/caras_procesadas`, que no siempre existe).
+    Después: `motor/caras/<local>/<cam>/<persona>/` y, en último lugar, BD.
     """
+    # 1) registro de retratos persistente
+    portraits = _portraits_dir(ruta, local_id, person_cod)
+    if os.path.isdir(portraits):
+        try:
+            files = sorted(os.listdir(portraits), key=lambda f: os.path.getmtime(os.path.join(portraits, f)),
+                           reverse=True)
+        except OSError:
+            files = []
+        out = [os.path.join(portraits, f) for f in files
+               if f.lower().endswith((".jpg", ".jpeg", ".png"))][:max_n]
+        if out:
+            return out
+    # 2) motor/caras (contrato del clasificador)
     base = os.path.join(ruta, "motor/caras", str(local_id))
     found: list[tuple[float, str]] = []
     if os.path.isdir(base):
@@ -61,8 +77,42 @@ def find_person_photos(ruta: str, local_id: str, person_cod: str,
     if found:
         return [p for _, p in found[:max_n]]
 
-    # fallback BD: admin/caras_procesadas/<foto_id>.jpg (más recientes primero)
+    # 3) fallback BD: admin/caras_procesadas/<foto_id>.jpg (más recientes primero)
     return find_person_photos_db(ruta, local_id, person_cod, max_n=max_n)
+
+
+def _portraits_dir(ruta: str, local_id: str, person_cod: str) -> str:
+    return os.path.join(ruta, "motor/portraits", str(local_id), str(person_cod))
+
+
+def save_portrait(ruta: str, local_id: str, person_cod: str, pose: str,
+                  foto_id: str, tight_path: str | None,
+                  busto_path: str | None) -> None:
+    """Copia la mejor cara y busto de una decisión al registro de retratos.
+
+    El registro es inmune a la ingesta/limpieza: garantiza que las capas
+    VLM/OpenAI/silueta tengan foto del candidato en el instante de decidir.
+    Se guarda una entrada por (pose, foto_id) para no duplicar.
+    """
+    if not person_cod:
+        return
+    d = _portraits_dir(ruta, local_id, person_cod)
+    try:
+        os.makedirs(d, exist_ok=True)
+    except OSError:
+        return
+    pose_s = pose or "other"
+    for label, src in (("cara", tight_path), ("busto", busto_path)):
+        if not src or not os.path.exists(src):
+            continue
+        ext = os.path.splitext(src)[1].lower() or ".jpg"
+        dst = os.path.join(d, f"{pose_s}_{label}_{foto_id}{ext}")
+        try:
+            if os.path.exists(dst):
+                continue
+            shutil.copy2(src, dst)
+        except OSError:
+            continue
 
 
 def find_person_photos_db(ruta: str, local_id: str, person_cod: str,

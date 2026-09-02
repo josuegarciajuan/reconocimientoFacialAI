@@ -369,8 +369,8 @@ class _CascadeCtx:
     """Proveedores de capas superiores (L1b/L1c/L2/L3) para la fusión."""
 
     def __init__(self, ruta, local_id, camara_id, cfg, store, face_scores,
-                 query_pose, rep_face_crop, rep_torso_path, rep_img, rep_face,
-                 query_attributes=None):
+                 query_pose, rep_face_crop, rep_torso_path, rep_busto_path,
+                 rep_img, rep_face, query_attributes=None):
         self.ruta = ruta
         self.local_id = local_id
         self.camara_id = camara_id
@@ -380,6 +380,7 @@ class _CascadeCtx:
         self.query_pose = query_pose
         self.rep_face_crop = rep_face_crop          # path del crop de cara (si existe)
         self.rep_torso_path = rep_torso_path        # path del crop de torso (si existe)
+        self.rep_busto_path = rep_busto_path        # path del crop de busto/media-superior
         self.rep_img = rep_img                      # frame completo de la representativa
         self.rep_face = rep_face                    # Face detectada (bbox/landmarks)
         self.query_attributes = query_attributes
@@ -387,20 +388,24 @@ class _CascadeCtx:
         self._openai = None
         self._torso_desc_cache = {}
 
-    # --- L1b: torso/ropa ---
+    # --- L1b: cuerpo/apariencia (media superior, Fase 1) ---
+    # Antes esta capa usaba un crop diminuto bajo la barbilla (o el fallback
+    # sobre el crop tight de la cara): daba similitudes ~0.0-0.42 incluso para
+    # la misma persona. Ahora se compara con el BUSTO (cabeza-hombros/pecho)
+    # recortado del frame completo, que sí contiene ropa real del sujeto.
     def torso_score(self, cod: str) -> LayerScore:
         from motor.core.appearance import Appearance, layer_score, torso_descriptor
         if not self.cfg.torso_enabled:
-            return LayerScore(available=False)
+            return LayerScore(available=False, reason="torso_disabled")
         gallery = self.store.person_appearance(cod)
         if not gallery or not gallery.get("desc"):
-            return LayerScore(available=False)
+            return LayerScore(available=False, reason="sin_galeria_cuerpo")
         desc = self._torso_desc_cache.get("q")
         if desc is None:
             desc = self._query_torso_desc()
             self._torso_desc_cache["q"] = desc
         if desc is None or desc.size == 0:
-            return LayerScore(available=False)
+            return LayerScore(available=False, reason="sin_crop_cuerpo")
         gal = [Appearance(d, ts, s) for d, ts, s in zip(gallery["desc"], gallery["ts"], gallery.get("src", [""] * len(gallery["desc"])))]
         s, c, available = layer_score(desc, gal, ttl_days=self.cfg.torso_ttl_days)
         return LayerScore(score=s, confidence=c, available=available)
@@ -418,13 +423,15 @@ class _CascadeCtx:
         return max(scores, key=lambda s: (s.score, s.confidence))
 
     def _query_torso_desc(self):
+        """Descriptor del cuerpo del query: busto (media superior) > torso > tight."""
         from motor.core.appearance import torso_descriptor
         from motor.procesa_video import torso_bbox
-        if self.rep_torso_path and os.path.exists(self.rep_torso_path):
-            img = cv2.imread(self.rep_torso_path)
-            if img is not None:
-                h, w = img.shape[:2]
-                return torso_descriptor(img, (0, 0, w, h))
+        for path in (self.rep_busto_path, self.rep_torso_path):
+            if path and os.path.exists(path):
+                img = cv2.imread(path)
+                if img is not None and min(img.shape[:2]) >= 24:
+                    h, w = img.shape[:2]
+                    return torso_descriptor(img, (0, 0, w, h))
         if self.rep_img is not None and self.rep_face is not None:
             h, w = self.rep_img.shape[:2]
             tb = torso_bbox(self.rep_face, w, h, self.cfg)
@@ -512,18 +519,47 @@ class _CascadeCtx:
 
     # --- L2/L3: VLM local y OpenAI (misma pareja de imágenes) ---
     def _query_images(self) -> list[str]:
-        """Imágenes del query disponibles para el VLM: crop de cara y/o torso."""
+        """Imágenes del query para el VLM/OpenAI: cara + busto (cuerpo real)."""
         out = []
         if self.rep_face_crop and os.path.exists(self.rep_face_crop):
             out.append(self.rep_face_crop)
-        if self.rep_torso_path and os.path.exists(self.rep_torso_path):
+        if self.rep_busto_path and os.path.exists(self.rep_busto_path):
+            out.append(self.rep_busto_path)
+        elif self.rep_torso_path and os.path.exists(self.rep_torso_path):
             out.append(self.rep_torso_path)
         return out
 
     def _candidate_photo(self, cod: str) -> str | None:
         from motor.core.photos import find_person_photos
-        photos = find_person_photos(self.ruta, self.local_id, cod, max_n=1)
+        photos = find_person_photos(self.ruta, self.local_id, cod, max_n=3)
         return photos[0] if photos else None
+
+    def _candidate_photos_pose(self, cod: str) -> list[str]:
+        """Referencias del candidato ordenadas por pose COMPARABLE al query
+        (Fase 3): los LLMs deben comparar contra una pose similar, no la última."""
+        from motor.core.photos import find_person_photos
+        from motor.core.quality import pose_label
+        from motor.core.model import analyze
+        from motor.core.zones import pose_compatible
+        photos = find_person_photos(self.ruta, self.local_id, cod, max_n=6)
+        if not photos:
+            return []
+        scored = []
+        for p in photos:
+            img = cv2.imread(p)
+            if img is None:
+                continue
+            faces = analyze(img, det_size=(self.cfg.crop_det_size, self.cfg.crop_det_size),
+                            min_score=self.cfg.min_det_score)
+            if not faces:
+                continue
+            f = max(faces, key=lambda x: x.det_score)
+            po = pose_label(f, self.cfg.yaw_frontal, self.cfg.yaw_45,
+                            self.cfg.yaw_90, self.cfg.pitch_frontal)
+            compat = int(pose_compatible(self.query_pose, po)) if self.query_pose else 1
+            scored.append((compat, p))
+        scored.sort(key=lambda x: -x[0])
+        return [p for _, p in scored]
 
     def vlm_score(self, cod: str) -> LayerScore:
         if not self.cfg.vlm_enabled:
@@ -542,18 +578,22 @@ class _CascadeCtx:
         return self._llm_pair(self._openai, cod)
 
     def _llm_pair(self, client, cod: str) -> LayerScore:
-        ref = self._candidate_photo(cod)
-        if not ref:
-            return LayerScore(available=False)
+        # Fase 3: referencia del candidato con pose COMPARABLE al query (no la
+        # más reciente): comparar dos perfiles espejo hace que el LLM diga
+        # "distintas" aunque sean la misma persona.
+        refs = self._candidate_photos_pose(cod)
+        if not refs:
+            return LayerScore(available=False, reason="sin_foto_referencia")
+        ref = refs[0]
         queries = self._query_images()
         if not queries:
-            return LayerScore(available=False)
-        # con cara y torso: 2 llamadas (baratas en volumen bajo); nos quedamos
+            return LayerScore(available=False, reason="sin_imagenes_query")
+        # con cara y busto: 2 llamadas (baratas en volumen bajo); nos quedamos
         # con la de mayor confianza si concluyen igual, si no con la media.
         scores = [client.compare(q, ref) for q in queries]
         scores = [ls for ls in scores if ls.available]
         if not scores:
-            return LayerScore(available=False)
+            return LayerScore(available=False, reason="proveedor_sin_respuesta")
         if len(scores) == 1:
             return scores[0]
         # C6 (2026-09-02): si las comparaciones (cara y torso) se CONTRADICEN,
@@ -741,7 +781,8 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
         s2 = ranked[1][1] if len(ranked) > 1 else 0.0
         face_layer = LayerScore(score=s1, confidence=face_confidence(s1, s2, best_sharp, cfg))
         ctx = _CascadeCtx(ruta, local_id, camara_id, cfg, store, face_scores,
-                          query_pose, rep_item["path"], torso_path, rep_item["img"], rep_face,
+                          query_pose, rep_item["path"], torso_path, busto_path,
+                          rep_item["img"], rep_face,
                           query_attributes=query_attributes)
         cc = CascadeContext(torso=ctx.torso_score, attributes=ctx.attributes_score,
                             zonas=ctx.zonas_score,
@@ -864,6 +905,13 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     if cfg.hq_enabled and cfg.sr_model_photo != "compact":
         _queue_hq(out_path, photo_img, photo_bbox, cfg, ruta, local_id, camara_id, foto_id)
 
+    # Fase 2: registrar el retrato (cara + busto) de la decisión ANTES de borrar
+    # el crop fuente. `find_person_photos` leerá de aquí para las próximas
+    # decisiones (VLM/OpenAI/silueta) aunque el ingestor vacíe motor/caras.
+    from motor.core.photos import save_portrait  # noqa: E402
+    save_portrait(ruta, local_id, person, query_pose, foto_id,
+                  rep_item["path"], busto_path)
+
     if os.path.exists(rep_item["path"]):
         os.remove(rep_item["path"])
 
@@ -880,15 +928,19 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
         # galería del candidato existente (antes lo hacía vía new_person=True).
         _store_add(store, person, members, battery, cfg, new_person=True, foto_id=foto_id)
 
-    # F1/F3: la capa torso necesita galería de apariencia por persona.
+    # F1/F3: galería de apariencia (cuerpo/media superior) por persona.
+    # Fase 1: preferir el BUSTO (cabeza-hombros/pecho del frame completo) sobre
+    # el crop de torso diminuto; el fallback tight solo si no hay otro contexto.
     if cfg.torso_enabled and person:
         from motor.core.appearance import torso_descriptor
         desc = None
-        if torso_path and os.path.exists(torso_path):
-            img = cv2.imread(torso_path)
-            if img is not None:
-                h, w = img.shape[:2]
-                desc = torso_descriptor(img, (0, 0, w, h))
+        for cand in (busto_path, torso_path):
+            if cand and os.path.exists(cand):
+                img = cv2.imread(cand)
+                if img is not None and min(img.shape[:2]) >= 24:
+                    h, w = img.shape[:2]
+                    desc = torso_descriptor(img, (0, 0, w, h))
+                    break
         if desc is None:
             tb = torso_bbox_local(rep_face, rep_item["img"], cfg)
             if tb is not None:
