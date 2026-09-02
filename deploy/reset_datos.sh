@@ -13,7 +13,8 @@
 #   Galería (motor):         motor/bbdd_reconocimiento/*/face_enc_v2
 #   Media / colas (motor):   caras/, videos/, videos_archivo/, feedback/,
 #                            revision/, removidas/, inicial/, alinear_caras/,
-#                            fotos_lineas/, videos_lineas/, photo_queue/
+#                            fotos_lineas/, videos_lineas/, photo_queue/,
+#                            dedup/, audit_queue/
 #
 # Qué CONSERVA:
 #   BD (config):             camaras, locales, lineas, lineas_plano, nodos,
@@ -79,6 +80,11 @@ RUTAS_BORRAR=(
   "motor/fotos_lineas"
   "motor/videos_lineas"
   "motor/photo_queue"
+  # Dedup persistente y cola de auditoría del clasificador (P1/A1, 2026-09-02):
+  # datos runtime de identidad del último merge; sin borrarlos el reset NO sería
+  # limpio (el dedup suprime caras ya vistas y audit_queue re-ingesta sidecars).
+  "motor/dedup"
+  "motor/audit_queue"
 )
 
 # =============================================================================

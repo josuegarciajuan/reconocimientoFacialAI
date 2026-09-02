@@ -98,7 +98,7 @@ Qué borra:
 - BD: `personas`, `estancias`, `fotos`, `videos`, `cruces_lineas`, `fichajes`,
   `alarmas`, `calibraciones` (+ `foto_audits`/`foto_audit_events` si existen).
 - Galería y media del motor: `face_enc_v2`, `caras/`, `videos/`,
-  `videos_archivo/`, `feedback/`, `revision/`, etc.
+  `videos_archivo/`, `feedback/`, `revision/`, `dedup/`, `audit_queue/`, etc.
 
 Qué conserva: `camaras`, `locales`, `lineas`, `lineas_plano`, `nodos`,
 `senderos`, `dispositivos_autologin`, `alarmas_telefonos`.
