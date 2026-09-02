@@ -22,7 +22,10 @@
 #                            alarmas_telefonos
 #
 # USO:  sudo bash deploy/reset_datos.sh
-#   El script detiene los servicios que escriben datos, borra, y rearranca.
+#   El script: (A) detiene los servicios, (A2) MATA TODOS los procesos RF
+#   (incluidos huérfanos/hijos que systemd no cubre), (B) vacía la BD,
+#   (C) borra la galería/media/markers del motor y (D) REARCA los servicios y
+#   rearma los timers. Robusto por SSH: mata por PID sin matarse a sí mismo.
 #   Pasa --dry-run para listar lo que se va a borrar sin tocar nada.
 # =============================================================================
 set -euo pipefail
@@ -117,7 +120,11 @@ for svc in "${SERVICIOS[@]}"; do
   fi
 done
 
-# Patrones de procesos RF (se matan con -9; hijos/daemons que systemd no captura)
+# Patrones de procesos RF (se matan con -9; hijos/daemons que systemd no captura).
+# Se matan SIEMPRE por PID recogido con pgrep, excluyendo el árbol de este script
+# (su propio shell y la sesión SSH que lo invoca), para que FASE A2 jamás se
+# suicide ni corte el reset a mitad (lección 2026-09-02: pkill -f con la ruta del
+# proyecto mataba el wrapper ssh y el script moría en FASE A2 sin llegar a B/C/D).
 PATRONES_KILL=(
   "clasificador.py"
   "procesa_video.py"
@@ -132,6 +139,7 @@ PATRONES_KILL=(
   "separar_personas.py"
   "detectar_mezclados.py"
   "calibrador.py"
+  "vigilar_deriva.py"
   "capturador.php"
   "detector.php"
   "clasificadorV2.php"
@@ -142,27 +150,59 @@ PATRONES_KILL=(
   "mjpeg-stream.js"
 )
 
-matar_procesos() { # mata procesos RF vivos y espera a que terminen (con timeout)
-  local pat pid self_pid
-  self_pid="$$"
-  for pat in "${PATRONES_KILL[@]}"; do
-    # -f casa sobre la línea de comando; excluye este script y su propio shell
-    pkill -9 -f "${pat}" 2>/dev/null || true
+# PIDs de la sesión actual (este script + su shell + ancestros SSH): NUNCA matar.
+_arbol_no_tocar() {
+  local p=$$ out=""
+  while [[ "$p" =~ ^[0-9]+$ ]] && [[ "$p" -gt 1 ]]; do
+    out="$out $p"
+    p=$(awk '{print $4}' "/proc/${p}/stat" 2>/dev/null) || break
   done
-  # Barrido extra: cualquier python/php cuyo args contenga la ruta del proyecto
-  pkill -9 -f "${PROYECTO}/motor" 2>/dev/null || true
-  pkill -9 -f "${PROYECTO}/capturador.php" 2>/dev/null || true
-  pkill -9 -f "${PROYECTO}/detector.php" 2>/dev/null || true
-  pkill -9 -f "${PROYECTO}/clasificadorV2.php" 2>/dev/null || true
-  pkill -9 -f "${PROYECTO}/conciliador.php" 2>/dev/null || true
-  pkill -9 -f "${PROYECTO}/vinculador.php" 2>/dev/null || true
-  pkill -9 -f "${PROYECTO}/alarmador.php" 2>/dev/null || true
-  # Esperar hasta 15 s a que no quede ninguno
-  local i=0
-  while (( i < 15 )); do
-    local restantes
-    restantes=$(ps -eo args | grep -F "${PROYECTO}" | grep -v grep | grep -v "reset_datos.sh" | grep -v "bash" | wc -l)
-    (( restantes <= 1 )) && break
+  printf '%s' "$out"
+}
+
+matar_procesos() { # mata por PID los procesos RF vivos, esperando a que terminen
+  local no_tocar no_tocar_regex pat base pids pid seen="" targets=()
+  no_tocar="$(_arbol_no_tocar)"
+  # regex "^(p1|p2|...)$" para filtrar esos PIDs del conteo final
+  no_tocar_regex=$(printf '%s\n' "$no_tocar" | tr ' ' '\n' | sed '/^$/d' | paste -sd'|' -)
+
+  # 1) Recoger candidatos por patrón + rutas del proyecto
+  pids=""
+  for pat in "${PATRONES_KILL[@]}"; do
+    pids="$pids $(pgrep -f -- "${pat}" 2>/dev/null || true)"
+  done
+  pids="$pids $(pgrep -f -- "${PROYECTO}/motor" 2>/dev/null || true)"
+  for base in capturador.php detector.php clasificadorV2.php conciliador.php \
+              vinculador.php alarmador.php procesos_panel_control.php; do
+    pids="$pids $(pgrep -f -- "${PROYECTO}/${base}" 2>/dev/null || true)"
+  done
+
+  # 2) PIDs únicos excluyendo la sesión actual (nunca matarse a sí mismo)
+  for pid in $pids; do
+    case " $no_tocar " in
+      *" ${pid} "*) continue ;;        # sesión/ssh actual: se ignora
+    esac
+    case " $seen " in
+      *" ${pid} "*) ;;                 # duplicado
+      *) seen="$seen $pid"; targets+=("$pid") ;;
+    esac
+  done
+
+  if [[ ${#targets[@]} -eq 0 ]]; then
+    log "  ningún proceso RF vivo que matar"
+    return 0
+  fi
+
+  log "  matando PIDs: ${targets[*]}"
+  kill -9 "${targets[@]}" 2>/dev/null || true
+
+  # 3) Esperar hasta 20 s a que no queden procesos RF (fuera de la sesión actual)
+  local i=0 restantes=999
+  while (( i < 20 )); do
+    restantes=$( { for pat in "${PATRONES_KILL[@]}"; do pgrep -f -- "$pat"; done
+                   pgrep -f -- "${PROYECTO}/motor"; } 2>/dev/null \
+                 | grep -vE "^(${no_tocar_regex})$" | wc -l ) || restantes=0
+    (( restantes == 0 )) && break
     sleep 1; i=$((i+1))
   done
   log "  procesos RF restantes tras matar: ${restantes}"
@@ -248,11 +288,18 @@ for m in "${PROYECTO}"/aux/*.mp4.txt "${PROYECTO}"/aux/*.avi.txt "${PROYECTO}"/a
 done
 
 # =============================================================================
-# FASE D — rearrancar servicios
+# FASE D — rearrancar servicios y timers (encendido total desde cero)
 # =============================================================================
-log "FASE D: rearrancando servicios..."
+log "FASE D: rearrancando servicios y timers..."
 for svc in "${SERVICIOS[@]}"; do
   cmd "Arrancar ${svc}" systemctl restart "${svc}" 2>/dev/null || true
+done
+# Rearmar los timers de one-shots (rf-calibra, rf-vigilar-deriva): se lanzan en
+# su horario; restart del timer lo fuerza a reprogramarse tras el reset limpio.
+for t in rf-calibra.timer rf-vigilar-deriva.timer; do
+  if systemctl list-unit-files "${t}" >/dev/null 2>&1; then
+    cmd "Rearmar ${t}" systemctl restart "${t}" 2>/dev/null || true
+  fi
 done
 
 log "Reset completado. Verificar con: systemctl status rf-* y el panel web."
