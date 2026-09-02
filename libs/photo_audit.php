@@ -37,7 +37,7 @@ function ingest_photo_audit(int $foto_id, string $correlation_id, string $local_
         || (string)($record["correlation_id"] ?? "") !== $correlation_id
         || (string)($record["local_id"] ?? "") !== $local_id
         || (string)($record["camera_id"] ?? "") !== $camera_id
-        || !in_array((string)($record["classification"] ?? ""), ["match", "new", "unknown", "uncertain"], true)
+        || !in_array((string)($record["classification"] ?? ""), ["match", "new", "unknown", "uncertain", "review"], true)
         || !is_array($record["layers"] ?? null)
         || !$valid_layers($record["layers"])
         || !$valid_attributes($record["attributes"] ?? null)

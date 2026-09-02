@@ -145,3 +145,32 @@ def select_candidates(scores: dict[str, float], cfg: Config) -> list[str]:
     if len(ranked) >= 2 and ranked[1][0] not in cands:
         cands.append(ranked[1][0])
     return cands
+
+
+def top_scores(scores: dict[str, float], n: int = 5) -> list[dict]:
+    """Top-N (persona, score) ordenado para auditoría (A1): nunca scores crudos."""
+    ranked = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)
+    return [{"person": cod, "score": round(float(s), 4)} for cod, s in ranked[:n]]
+
+
+def exact_band_persons(embs: list[np.ndarray], store: FaceStore,
+                       cos: float = 0.999) -> tuple[list[str], float]:
+    """Personas con un encoding idéntico/casi idéntico a ALGÚN embedding del query.
+
+    C5: un rostro exactamente igual al ya enrolado NO puede crear una identidad
+    nueva. Devuelve (personas_en_banda_exacta, mejor_coseno). Si hay UN solo
+    candidato -> match directo autónomo; si hay varios (contaminación cruzada)
+    -> conflicto: el llamador crea perfil nuevo + revisión (nunca auto-fusión).
+    """
+    hits: dict[str, float] = {}
+    for q in embs:
+        qq = np.asarray(q, dtype=np.float32)
+        for cod in store.persons():
+            g = store.person_encodings(cod)
+            if g is None or len(g) == 0:
+                continue
+            s = float(np.max(g @ qq))
+            if s >= cos:
+                hits[cod] = max(hits.get(cod, 0.0), s)
+    ranked = sorted(hits.items(), key=lambda kv: kv[1], reverse=True)
+    return [c for c, _ in ranked], (ranked[0][1] if ranked else 0.0)

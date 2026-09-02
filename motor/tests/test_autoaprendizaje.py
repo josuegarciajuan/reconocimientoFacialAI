@@ -41,7 +41,10 @@ def _item(emb: np.ndarray, idx: int, seed: int = 0) -> dict:
 
 
 def _face_list(battery):
-    return [(f.embedding, idx) for idx, it in enumerate(battery) for f in it["faces"]]
+    # C1: cada cara conserva (emb, item_idx, face_idx)
+    return [(f.embedding, idx, fidx)
+            for idx, it in enumerate(battery)
+            for fidx, f in enumerate(it["faces"])]
 
 
 # ---------------------------------------------------------------------------
@@ -125,7 +128,9 @@ def test_store_add_admision_rechaza_impostor(tmp_path):
     genuino = _e(0, noise=0.05, seed=11)      # coseno ~0.99 con A
     impostor = _e(1, noise=0.05, seed=12)     # coseno ~0 con A
     battery = [_item(genuino, 0), _item(impostor, 1)]
-    _store_add(store, "A", [0, 1], battery, cfg)
+    fl = _face_list(battery)
+    # C1: _store_add recibe las caras EXACTAS del sub-clúster (no item_idxs)
+    _store_add(store, "A", [fl[0], fl[1]], battery, cfg)
 
     assert store.count("A") == 2, "solo el genuino debe admitirse (1 previo + 1 nuevo)"
     encs = store.person_encodings("A")
@@ -141,7 +146,8 @@ def test_store_add_new_person_admite_todo(tmp_path):
     a1 = _e(3, noise=0.05, seed=20)
     a2 = _e(3, noise=0.05, seed=21)
     battery = [_item(a1, 0), _item(a2, 1)]
-    _store_add(store, "NUEVO", [0, 1], battery, cfg, new_person=True)
+    fl = _face_list(battery)
+    _store_add(store, "NUEVO", [fl[0], fl[1]], battery, cfg, new_person=True)
     assert store.count("NUEVO") == 2
 
 
