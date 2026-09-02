@@ -222,6 +222,19 @@ class Config:
 
     # --- acuerdo por silueta (perfil / ángulos raros) ---
     silueta_min_score: float = 0.60     # silueta >= esto confirma el acuerdo; < bloquea
+    # Exact-band identity: coseno >= esto contra UN único candidato con un
+    # encoding de la galería se resuelve como match directo ANTES de cascada.
+    # Medido en producción: no existe ningún par exacto (>=0.999) entre
+    # personas reales distintas en la galería limpia (0 en 3.417 pares).
+    exact_match_cos: float = 0.999
+
+    # --- dedup persistente (P1-P3) ---
+    # Registro por local de rostros ya consumidos (hash+stem). A diferencia de
+    # `_PROCESSED_FACES` (memoria del proceso), sobrevive a restarts y a varios
+    # clasificadores, evitando personas duplicadas por re-procesado del mismo
+    # crop tras reinicios (18 uncertain reales = 8 stems repetidos).
+    dedup_dir: str = "motor/dedup"
+    dedup_window_hours: float = 72.0    # retención de entradas del registro
 
     # --- pesos-prior (SOLO desempate/reporte; la decisión usa autoridad/veto) ---
     w_cara: float = 0.70                # peso-prior capa cara (L1a)
@@ -359,6 +372,12 @@ class Config:
         cfg.group_threshold = get_float(ruta, "RF_GROUP_THRESHOLD", cfg.group_threshold)
         cfg.cluster_confirm = get_float(ruta, "RF_CLUSTER_CONFIRM", cfg.cluster_confirm)
         cfg.admission_cosine = get_float(ruta, "RF_ADMISSION_COSINE", cfg.admission_cosine)
+        cfg.exact_match_cos = get_float(ruta, "RF_EXACT_MATCH_COS", cfg.exact_match_cos)
+        cfg.dedup_window_hours = get_float(ruta, "RF_DEDUP_WINDOW_HOURS", cfg.dedup_window_hours)
+        # Invariante anti-inconsistencia (G2): secure SIEMPRE por encima de match.
+        # Producción llegó a correr secure=0.45 < match=0.48 (el gate s1<match se
+        # ejecuta antes y el suelo seguro no rescataba la banda [0.45, 0.48)).
+        cfg.secure_threshold = max(cfg.secure_threshold, cfg.match_threshold + 0.03)
 
         # Motor de decisión situacional: flags de activación gradual y umbrales
         # de confianza por capa (sin tocar código).
