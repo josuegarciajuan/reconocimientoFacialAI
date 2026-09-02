@@ -236,6 +236,28 @@ class Config:
     dedup_dir: str = "motor/dedup"
     dedup_window_hours: float = 72.0    # retención de entradas del registro
 
+    # --- retratos por identidad (Fase 2) ---
+    # Carpeta runtime inmune a la ingesta/limpieza con la MEJOR cara + busto por
+    # pose de cada persona. Las capas VLM/OpenAI/silueta que necesitan la FOTO
+    # real del candidato la leen de aquí SIEMPRE disponible en el instante de
+    # decidir (antes dependían de motor/caras, que el ingestor vacía, y de
+    # admin/caras_procesadas, que no siempre existe).
+    portraits_dir: str = "motor/portraits"
+
+    # --- consolidación al nacer (Fase 5, M6) ---
+    # Cuando el clasificador crea una persona nueva, la deja "pendiente de
+    # consolidación": pasados `pending_min_poses` poses o `pending_max_wait_s`
+    # segundos (lo primero), un worker compara la galería ya multi-pose contra
+    # personas recientes y, si el parecido es sólido, fusiona; si no, tras
+    # `pending_max_attempts` intentos la CONFIRMA como persona nueva definitiva.
+    pending_min_poses: int = 3
+    pending_max_wait_s: float = 300.0
+    pending_max_attempts: int = 3
+    pending_hard_deadline_s: float = 3600.0
+    consolidate_min_cos: float = 0.50   # parecido mutuo mínimo (galerías ricas)
+    consolidate_min_margin: float = 0.05
+    consolidate_interval_s: float = 60.0
+
     # --- pesos-prior (SOLO desempate/reporte; la decisión usa autoridad/veto) ---
     w_cara: float = 0.70                # peso-prior capa cara (L1a)
     w_torso: float = 0.10               # peso-prior capa torso/ropa (L1b, apoyo)
@@ -374,6 +396,13 @@ class Config:
         cfg.admission_cosine = get_float(ruta, "RF_ADMISSION_COSINE", cfg.admission_cosine)
         cfg.exact_match_cos = get_float(ruta, "RF_EXACT_MATCH_COS", cfg.exact_match_cos)
         cfg.dedup_window_hours = get_float(ruta, "RF_DEDUP_WINDOW_HOURS", cfg.dedup_window_hours)
+        cfg.pending_min_poses = get_int(ruta, "RF_PENDING_MIN_POSES", cfg.pending_min_poses)
+        cfg.pending_max_wait_s = get_float(ruta, "RF_PENDING_MAX_WAIT_S", cfg.pending_max_wait_s)
+        cfg.pending_max_attempts = get_int(ruta, "RF_PENDING_MAX_ATTEMPTS", cfg.pending_max_attempts)
+        cfg.pending_hard_deadline_s = get_float(ruta, "RF_PENDING_HARD_DEADLINE_S", cfg.pending_hard_deadline_s)
+        cfg.consolidate_min_cos = get_float(ruta, "RF_CONSOLIDATE_MIN_COS", cfg.consolidate_min_cos)
+        cfg.consolidate_min_margin = get_float(ruta, "RF_CONSOLIDATE_MIN_MARGIN", cfg.consolidate_min_margin)
+        cfg.consolidate_interval_s = get_float(ruta, "RF_CONSOLIDATE_INTERVAL_S", cfg.consolidate_interval_s)
         # Invariante anti-inconsistencia (G2): secure SIEMPRE por encima de match.
         # Producción llegó a correr secure=0.45 < match=0.48 (el gate s1<match se
         # ejecuta antes y el suelo seguro no rescataba la banda [0.45, 0.48)).
