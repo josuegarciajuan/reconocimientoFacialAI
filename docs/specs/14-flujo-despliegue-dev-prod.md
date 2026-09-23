@@ -7,7 +7,7 @@ El sistema de reconocimiento facial se despliega en **dos servidores**:
 | Rol | Servidor | Ruta | Rol del repo |
 |---|---|---|---|
 | **Desarrollo** | `92.113.151.136` (`liveyourdre2`) | `/root/reconocimientoFacial` | Worktrees de GitHub + opencode |
-| **Producción** | `194.233.67.64` | `/root/reconocimientoFacial` | `git clone` de GitHub `main` (se actualiza con `git pull`) |
+| **Producción** | `<HOST_PRODUCCION>` | `/root/reconocimientoFacial` | `git clone` de GitHub `main` (se actualiza con `git pull`) |
 
 - **Datos de producción** (vídeos, caras, modelos, `face_enc_v2`, BD, `.env`, `.insightface`)
   **solo viven en el servidor de producción** y NO están en git (`.gitignore`).
@@ -15,23 +15,22 @@ El sistema de reconocimiento facial se despliega en **dos servidores**:
 
 ## Acceso a producción
 
-- **Panel web**: `http://194.233.67.64:8090/reconocimientoFacial/admin`
+- **Panel web**: `http://<HOST_PRODUCCION>:8090/reconocimientoFacial/admin`
 - **SSH**:
   ```bash
-  sshpass -p '<password>' ssh root@194.233.67.64
+  sshpass -p '<password>' ssh root@<HOST_PRODUCCION>
   # o si no hay sshpass instalado:
-  ssh root@194.233.67.64
+  ssh root@<HOST_PRODUCCION>
   ```
-  La contraseña actual está en el `.env` de **dev** como `RF_PROD_PASS`
-  (`/root/reconocimientoFacial/.env`) y en el secret manager del equipo.
+  La contraseña se gestiona **fuera del repo** (secret manager del equipo).
   **No versionar nunca contraseñas** (bloqueado por el hook pre-commit).
 
 > ⚠️ **IMPORTANTE (lección 2026-09-01)**: los datos reales del sistema viven en
-> **producción (`194.233.67.64`), NO en dev**. Hacer operaciones sobre datos
+> **producción (`<HOST_PRODUCCION>`), NO en dev**. Hacer operaciones sobre datos
 > (reset, purgas, borrados) en la máquina de desarrollo **no afecta a
 > producción** y puede confundir (los procesos que se ven en `ps` en dev no son
 > los de producción). **Antes de tocar datos, confirmar siempre en qué host
-> se está** (`hostname`): dev = `liveyourdre2`, prod = `mail`.
+> se está** (`hostname`): dev = `liveyourdre2`, prod = `<hostname de producción>`.
 
 ## Regla de oro
 
@@ -55,7 +54,7 @@ El sistema de reconocimiento facial se despliega en **dos servidores**:
    git checkout main && git merge work/<slug>
    git push origin main
    ```
-4. **En producción** (`194.233.67.64`), aplicar:
+4. **En producción** (`<HOST_PRODUCCION>`), aplicar:
    ```bash
    cd /root/reconocimientoFacial
    git pull origin main
@@ -80,7 +79,7 @@ El sistema de reconocimiento facial se despliega en **dos servidores**:
 
 ## Reset del sistema (empezar a capturar caras desde cero)
 
-> ⚠️ **EJECUTAR SIEMPRE EN PRODUCCIÓN (`194.233.67.64`), nunca en dev.**
+> ⚠️ **EJECUTAR SIEMPRE EN PRODUCCIÓN (`<HOST_PRODUCCION>`), nunca en dev.**
 
 El script `deploy/reset_datos.sh` (versionado en el repo) vuelve a cero los
 datos de identidad y movimiento y rearranca los servicios, conservando la
