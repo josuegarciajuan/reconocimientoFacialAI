@@ -77,6 +77,7 @@ php tests/vinculos_test.php                           # lógica de vínculos ví
 | `docs/specs/12-refinar-autoaprendizaje.md` | Refinamiento del autoaprendizaje: galerías limpias, admisión por cara, feedback activo y limpieza de perfiles mezclados |
 | `docs/specs/13-calibracion-templar.md` | Calibrador guiado (Templar): rituales A-F, valores de fábrica/journal, vigilancia diaria de deriva y herramientas CLI |
 | `docs/specs/14-flujo-despliegue-dev-prod.md` | Flujo de despliegue: dev (worktrees) → GitHub `main` → producción (`git pull`) |
+| `docs/specs/15-red-camaras-tailscale.md` | Red de cámaras: subred de la oficina (`172.16.51.0/24`) vía subnet router de Tailscale |
 
 ## Seguridad
 

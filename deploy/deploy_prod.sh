@@ -98,15 +98,15 @@ CHANGED="$(git diff --name-only "$OLD" "$NEW")"
 echo "[deploy] ficheros cambiados: $(printf '%s\n' "$CHANGED" | grep -c .)"
 
 # Prerrequisitos de runtime (no versionados).
-mkdir -p libs/threads_files_aux && chmod 777 libs/threads_files_aux
+mkdir -p aux motor/logs libs/threads_files_aux && chmod 777 libs/threads_files_aux
 if [ -f .env ]; then
     chown root:www-data .env 2>/dev/null || true
     chmod 640 .env 2>/dev/null || true
 fi
 
-# Units systemd.
-if printf '%s\n' "$CHANGED" | grep -qE '^deploy/systemd/'; then
-    echo "[deploy] units cambiadas -> reinstalando systemd"
+# Units systemd / instalador (drop-ins de memoria, dirs runtime, .env perms).
+if printf '%s\n' "$CHANGED" | grep -qE '^(deploy/systemd/|deploy/install_services\.sh$)'; then
+    echo "[deploy] units/instalador cambiados -> reinstalando systemd"
     bash deploy/install_services.sh >/dev/null
     systemctl daemon-reload
 fi
@@ -162,7 +162,7 @@ want '^(procesos_panel_control\.php|motor/pose\.py)$' 'rf-panel-control'
 want '^live/' 'rf-live'
 want '^motor/photo_worker\.py$' 'rf-photo'
 # Cambios transversales -> todos los daemons (core compartido, db, config, units, apache, deps).
-if printf '%s\n' "$CHANGED" | grep -qE '^(motor/core/|libs/db\.php|config/config\.php|deploy/systemd/|deploy/apache/|motor/requirements\.txt)'; then
+if printf '%s\n' "$CHANGED" | grep -qE '^(motor/core/|libs/db\.php|config/config\.php|deploy/systemd/|deploy/apache/|deploy/install_services\.sh$|motor/requirements\.txt)'; then
     SVC=" $ALL_SERVICES"
 fi
 if [ "$ALL" = 1 ]; then

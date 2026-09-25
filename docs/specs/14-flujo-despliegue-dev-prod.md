@@ -100,6 +100,9 @@ de runtime (`libs/threads_files_aux/`) y ajusta los permisos de `.env`
   variables de un entorno a otro con el `pull`.
 - **No reinventar el remoto**: el repo usa `origin` =
   `https://github.com/josuegarciajuan/reconocimientoFacialAI.git` (público).
+- **Red de cámaras**: la LAN de la oficina (`172.16.51.0/24`) se alcanza desde
+  producción por el subnet router de Tailscale del nodo `oficina`. Ver
+  `docs/specs/15-red-camaras-tailscale.md`.
 - **Rollback**: si algo falla en producción tras el pull, revisar el cambio con
   `git log`/`git diff`; para datos, restaurar desde el backup previo. Nunca
   `git reset --hard` ni `git clean -fd` (machacan datos/estado).
