@@ -26,7 +26,7 @@ systemctl daemon-reload
 # Prerrequisitos de runtime (no versionados): el orquestador PHP escribe ahí
 # (markers aux/, tracking de hilos) y el panel (php-fpm/www-data) necesita leer
 # .env para conectar a la BD.
-mkdir -p "$DIR/aux" "$DIR/motor/logs" "$DIR/libs/threads_files_aux"
+mkdir -p "$DIR/aux" "$DIR/motor/logs" "$DIR/libs/threads_files_aux" "$DIR/admin/caras_procesadas"
 chmod 777 "$DIR/libs/threads_files_aux"
 if [ -f "$DIR/.env" ]; then
     chown root:www-data "$DIR/.env" 2>/dev/null || true

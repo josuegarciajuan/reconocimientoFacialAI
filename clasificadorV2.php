@@ -13,6 +13,25 @@ require_once("libs/fechas.php");
 require_once("libs/vinculos.php");
 require_once("libs/photo_audit.php");
 
+/**
+ * Asegura el directorio runtime donde el panel sirve las fotos publicadas
+ * (`admin/caras_procesadas/<foto_id>.jpg`). Es un directorio de DATOS
+ * (gitignored): en una instalación limpia no existe y los `rename` fallaban
+ * en silencio, dejando las fotos sin publicar (panel con imágenes rotas).
+ */
+function asegura_dir_fotos(): bool {
+    $dir = rtrim(RUTA_PROYECTO, "/") . "/admin/caras_procesadas";
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0755, true);
+    }
+    return is_dir($dir);
+}
+
+/** Ruta absoluta de destino de una foto publicada. */
+function ruta_foto_publicada($foto_id): string {
+    return rtrim(RUTA_PROYECTO, "/") . "/admin/caras_procesadas/" . (int)$foto_id . ".jpg";
+}
+
 $path = "motor/caras/";
 
 while (true) {
@@ -70,10 +89,15 @@ function procesa_foto_hq($ruta, $elemento) {
         // la foto rápida aún no se ha ingerido: reintentar en la siguiente pasada
         return;
     }
-    $dest = "admin/caras_procesadas/" . (int)$foto["id"] . ".jpg";
     if (is_file($ruta) && filesize($ruta) > 0) {
-        @rename($ruta, $dest);
-        DB::execute("UPDATE fotos SET generada_hq = 1 WHERE id = ?", [(int)$foto["id"]]);
+        asegura_dir_fotos();
+        $dest = ruta_foto_publicada($foto["id"]);
+        if (@rename($ruta, $dest)) {
+            @chmod($dest, 0644);
+            DB::execute("UPDATE fotos SET generada_hq = 1 WHERE id = ?", [(int)$foto["id"]]);
+        } else {
+            error_log("[clasificadorV2] no se pudo publicar la foto HQ " . (int)$foto["id"] . ": {$ruta} -> {$dest}");
+        }
     }
 }
 
@@ -150,7 +174,7 @@ function procesa_foto($ruta, $elemento) {
             $fotos = DB::select("SELECT id FROM fotos WHERE estancia_id = ? ORDER BY id ASC", [$estancia_id]);
             foreach ($fotos as $i => $f) {
                 if ($i > 0) {
-                    @unlink("admin/caras_procesadas/" . $f["id"] . ".jpg");
+                    @unlink(ruta_foto_publicada($f["id"]));
                     DB::execute("DELETE FROM fotos WHERE id = ?", [$f["id"]]);
                 }
             }
@@ -178,10 +202,20 @@ function procesa_foto($ruta, $elemento) {
         "INSERT INTO fotos (estancia_id, nombre_real_antesconversion, identificador_unico) VALUES (?, ?, ?)",
         [$estancia_id, $elemento, $identificador_unico]
     );
+    // Publica el crop antes de consumir el sidecar: si la publicación falla, se
+    // descarta la fila recién creada y se reintenta en la siguiente pasada (así
+    // nunca quedan filas `fotos` sin fichero, que rompen las miniaturas del panel).
+    asegura_dir_fotos();
+    $dest = ruta_foto_publicada($foto_id);
+    if (!@rename($ruta, $dest)) {
+        DB::execute("DELETE FROM fotos WHERE id = ?", [(int)$foto_id]);
+        error_log("[clasificadorV2] no se pudo publicar la foto {$foto_id}: {$ruta} -> {$dest}");
+        return;
+    }
+    @chmod($dest, 0644);
     // identificador_unico is the classifier-generated correlation id. The audit
-    // sidecar was produced before this INSERT; consume it only after fotos.id exists.
+    // sidecar was produced before the INSERT; consume it once fotos.id + fichero existen.
     ingest_photo_audit((int)$foto_id, $identificador_unico, (string)$local_id, (string)$camara_id);
-    @rename($ruta, "admin/caras_procesadas/" . $foto_id . ".jpg");
 }
 
 function extrae_datos($file) {
