@@ -8,6 +8,7 @@ require_once __DIR__ . '/../libs/etiquetas.php';
 require_once __DIR__ . '/../libs/fechas.php';
 require_once __DIR__ . '/../libs/alarmas.php';
 require_once __DIR__ . '/../libs/rutas.php';
+require_once __DIR__ . '/../libs/fotos.php';
 require_once __DIR__ . '/includes/terminos.php';
 
 header('Content-Type: application/json; charset=UTF-8');
@@ -47,9 +48,9 @@ if ($table === 'visitantes') {
     $total=(int)(DB::selectOne('SELECT COUNT(DISTINCT e.persona_id) n FROM '.$from.' WHERE e.camara_id IN (SELECT id FROM camaras WHERE local_id=?)',[$local])['n']??0);
     $filtered=(int)(DB::selectOne('SELECT COUNT(DISTINCT e.persona_id) n FROM '.$from.' WHERE '.$w,$params)['n']??0);
     $order=datatables_order($request['column'], ['0'=>'MAX(e.fecha_ini)','1'=>'p.nombre','2'=>'MAX(e.fecha_ini)','3'=>'COUNT(e.id)']);
-    $rows=DB::select('SELECT e.persona_id,p.cod_interno,p.nombre,p.trabajador,MAX(e.fecha_ini) ultima,COUNT(e.id) estancias,(SELECT MIN(f.id) FROM fotos f JOIN estancias ef ON ef.id=f.estancia_id WHERE ef.persona_id=e.persona_id) foto_id FROM '.$from.' WHERE '.$w.' GROUP BY e.persona_id,p.cod_interno,p.nombre,p.trabajador ORDER BY '.$order.' '.$request['direction'].' LIMIT '.$limit.' OFFSET '.$offset,$params);
-    $data=[]; foreach($rows as $r){ $id=(int)$r['persona_id']; $name=$r['nombre']!==''?$r['nombre']:$r['cod_interno']; $acciones='<a href="?page=visitantes&mode=editar&id='.$id.'">Ver</a> · <a href="?page=accesos&persona_id='.$id.'">'.htmlspecialchars(rf_term("nav-accesos"),ENT_QUOTES).'</a> · <a href="?page=visitantes&mode=editar&id='.$id.'#videos">Vídeos</a> · <a href="?page=lineas&persona_id='.$id.'">Cruces</a> · <a href="?page=rutas&persona_id='.$id.'">Rutas</a>';if((int)$r['trabajador']===1)$acciones.=' · <a href="?page=fichajes&persona_id='.$id.'">Fichajes</a>'; $data[]=[
-        '<img alt="Foto de '.$esc($name).'" class="img-thumb" loading="lazy" src="./caras_procesadas/'.(int)$r['foto_id'].'.jpg">',
+    $rows=DB::select('SELECT e.persona_id,p.cod_interno,p.nombre,p.trabajador,MAX(e.fecha_ini) ultima,COUNT(e.id) estancias FROM '.$from.' WHERE '.$w.' GROUP BY e.persona_id,p.cod_interno,p.nombre,p.trabajador ORDER BY '.$order.' '.$request['direction'].' LIMIT '.$limit.' OFFSET '.$offset,$params);
+    $data=[]; foreach($rows as $r){ $id=(int)$r['persona_id']; $name=$r['nombre']!==''?$r['nombre']:$r['cod_interno']; $acciones='<a href="?page=visitantes&mode=editar&id='.$id.'">Ver</a> · <a href="?page=accesos&persona_id='.$id.'">'.htmlspecialchars(rf_term("nav-accesos"),ENT_QUOTES).'</a> · <a href="?page=visitantes&mode=editar&id='.$id.'#videos">Vídeos</a> · <a href="?page=lineas&persona_id='.$id.'">Cruces</a> · <a href="?page=rutas&persona_id='.$id.'">Rutas</a>';if((int)$r['trabajador']===1)$acciones.=' · <a href="?page=fichajes&persona_id='.$id.'">Fichajes</a>'; $foto=foto_persona_url($id); $celda_foto=$foto!==''?'<img alt="Foto de '.$esc($name).'" class="img-thumb" loading="lazy" src="'.htmlspecialchars($foto,ENT_QUOTES).'">':'<span class="text-xs text-gray-500">—</span>'; $data[]=[
+        $celda_foto,
         '<a class="text-theme-1 font-medium hover:underline" href="?page=visitantes&mode=editar&id='.$id.'">'.$esc(persona_label($name,$r['cod_interno'])).'</a>',
         $esc($r['ultima']), (int)$r['estancias'], $acciones]; }
     dt_json($request,$total,$filtered,$data);
@@ -65,7 +66,7 @@ if ($table === 'accesos') {
     $filtered=(int)(DB::selectOne('SELECT COUNT(*) n FROM '.$base.' WHERE '.$w,$params)['n']??0);
     $rows=DB::select('SELECT e.id,e.persona_id,e.fecha_ini,e.fecha_fin,p.nombre,p.cod_interno,c.id camara_id,c.descripcion camara,(SELECT MIN(v.id) FROM videos v WHERE v.local_id=c.local_id AND v.camara_id=e.camara_id AND v.fecha_ini<=e.fecha_fin AND COALESCE(v.fecha_fin,v.fecha_ini)>=e.fecha_ini) video_id FROM '.$base.' WHERE '.$w.' ORDER BY e.fecha_ini '.$request['direction'].' LIMIT '.$limit.' OFFSET '.$offset,$params);
     $ids=array_map(static fn($r)=>(int)$r['id'],$rows);$fotos=[];if($ids){$in=implode(',',array_fill(0,count($ids),'?'));foreach(DB::select('SELECT estancia_id,GROUP_CONCAT(id ORDER BY id) ids FROM fotos WHERE estancia_id IN ('.$in.') GROUP BY estancia_id',$ids) as $f){$fotos[(int)$f['estancia_id']]=array_map('intval',array_filter(explode(',',(string)$f['ids'])));}}
-    $data=[];foreach($rows as $r){$id=(int)$r['persona_id'];$n=$r['nombre']?:$r['cod_interno'];$fh='—';foreach(array_slice($fotos[(int)$r['id']]??[],0,2) as $fid){$fh.='<img alt="Foto de '.$esc($n).'" class="img-thumb ml-1" loading="lazy" src="./caras_procesadas/'.$fid.'.jpg">';}$video=$r['video_id']?'<a href="../video.php?id='.(int)$r['video_id'].'" target="_blank">▶ Ver</a>':'—';$data[]=[ $esc($r['fecha_ini']),'<a href="?page=visitantes&mode=editar&id='.$id.'">'.$esc($n).'</a>',camara_link((int)$r['camara_id'],$r['camara']),$fh,$video,$esc(formato_duracion(max(1,strtotime($r['fecha_fin'])-strtotime($r['fecha_ini']))))];} dt_json($request,$total,$filtered,$data);
+    $data=[];foreach($rows as $r){$id=(int)$r['persona_id'];$n=$r['nombre']?:$r['cod_interno'];$fh='';$n_pub=0;foreach(($fotos[(int)$r['id']]??[]) as $fid){if($n_pub>=2){break;}$url=foto_url((int)$fid);if($url===''){continue;}$fh.='<img alt="Foto de '.$esc($n).'" class="img-thumb ml-1" loading="lazy" onerror="this.style.display=\'none\'" src="'.htmlspecialchars($url,ENT_QUOTES).'">';$n_pub++;}if($fh===''){$fh='—';}$video=$r['video_id']?'<a href="../video.php?id='.(int)$r['video_id'].'" target="_blank">▶ Ver</a>':'—';$data[]=[ $esc($r['fecha_ini']),'<a href="?page=visitantes&mode=editar&id='.$id.'">'.$esc($n).'</a>',camara_link((int)$r['camara_id'],$r['camara']),$fh,$video,$esc(formato_duracion(max(1,strtotime($r['fecha_fin'])-strtotime($r['fecha_ini']))))];} dt_json($request,$total,$filtered,$data);
 }
 
 if ($table === 'fichajes') {

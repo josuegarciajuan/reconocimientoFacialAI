@@ -12,6 +12,7 @@
 
 require_once __DIR__ . "/../../../libs/db.php";
 require_once __DIR__ . "/../../../libs/fechas.php";
+require_once __DIR__ . "/../../../libs/fotos.php";
 require_once __DIR__ . "/../../../libs/etiquetas.php";
 require_once __DIR__ . "/../../includes/terminos.php";
 
@@ -35,29 +36,39 @@ function dash_tiempo_relativo($fecha) {
     return date("d/m H:i", $ts);
 }
 
-/** Primera foto (caras_procesadas/<fid>.jpg) de una persona, o 0. */
+/** Primera foto EXISTENTE (caras_procesadas/<fid>.jpg) de una persona, o 0. */
 function dash_foto_persona($persona_id) {
-    $f = DB::selectOne(
-        "SELECT MIN(f.id) AS fid FROM fotos f JOIN estancias e ON e.id = f.estancia_id WHERE e.persona_id = ?",
+    $rows = DB::select(
+        "SELECT f.id AS fid FROM fotos f JOIN estancias e ON e.id = f.estancia_id
+         WHERE e.persona_id = ? ORDER BY f.id ASC",
         [(int)$persona_id]
     );
-    return $f && $f["fid"] ? (int)$f["fid"] : 0;
+    foreach ($rows as $r) {
+        $fid = (int)$r["fid"];
+        if (foto_existe($fid)) { return $fid; }
+    }
+    return 0;
 }
 
-/** Fotos (MIN id) de varias personas en una sola consulta. */
+/** Primera foto EXISTENTE de varias personas en una sola consulta. */
 function dash_fotos_personas(array $persona_ids) {
     $ids = array_values(array_unique(array_filter(array_map("intval", $persona_ids))));
     if (!$ids) { return []; }
     $in = implode(",", array_fill(0, count($ids), "?"));
     $rows = DB::select(
-        "SELECT e.persona_id AS pid, MIN(f.id) AS fid
+        "SELECT e.persona_id AS pid, f.id AS fid
          FROM fotos f JOIN estancias e ON e.id = f.estancia_id
          WHERE e.persona_id IN ($in)
-         GROUP BY e.persona_id",
+         ORDER BY e.persona_id ASC, f.id ASC",
         $ids
     );
     $map = [];
-    foreach ($rows as $r) { $map[(int)$r["pid"]] = (int)$r["fid"]; }
+    foreach ($rows as $r) {
+        $pid = (int)$r["pid"];
+        if (isset($map[$pid])) { continue; }
+        $fid = (int)$r["fid"];
+        if (foto_existe($fid)) { $map[$pid] = $fid; }
+    }
     return $map;
 }
 

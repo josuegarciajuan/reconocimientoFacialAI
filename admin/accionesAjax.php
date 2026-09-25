@@ -9,6 +9,7 @@
 @session_start();
 require_once '../config/rutas.php';
 require_once '../libs/db.php';
+require_once '../libs/fotos.php';
 require_once '../libs/etiquetas.php';
 require_once '../libs/alarmas.php';
 require_once './pages/dashboard/widgets.php';
@@ -128,8 +129,8 @@ switch ($_GET["a"]) {
                 } elseif ((int)$r["salida"] === 1) {
                     $mode = "Salida del local por " . $cam_desc;
                 }
-                $foto = DB::selectOne("SELECT MIN(id) as mid FROM fotos WHERE estancia_id = ?", [(int)$r["id"]]);
-                $img = "./caras_procesadas/" . ($foto && $foto["mid"] ? $foto["mid"] : 0) . ".jpg";
+                $img = foto_estancia_url((int)$r["id"]);
+                if ($img === "") { $img = "./files/logo-sauron.png"; }
                 $return .= (int)$r["persona_id"] . "///" . $nombre . "///" . (int)$r["camara_id"] . "///" . $cam_desc . "///" . $mode . "///" . $img . "///" . $img . "///" . $r["created"] . "###";
             }
         }

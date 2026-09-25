@@ -24,9 +24,10 @@ if(!isset($_SESSION["user"])){
 if(isset($_GET["descargar"]) and $_GET["descargar"]!=""){
     // B19: descarga segura de la foto de una estancia (antes: $tmp sin instanciar -> fatal)
     require_once '../libs/db.php';
-    $foto = DB::selectOne("SELECT MIN(id) AS mid FROM fotos WHERE estancia_id = ?", [(int)$_GET["descargar"]]);
-    if ($foto && $foto["mid"]) {
-        $file = "./caras_procesadas/" . (int)$foto["mid"] . ".jpg";
+    require_once '../libs/fotos.php';
+    $foto_url = foto_estancia_url((int)$_GET["descargar"]);
+    if ($foto_url !== "") {
+        $file = __DIR__ . "/" . ltrim($foto_url, "./");
         if (file_exists($file)) {
             $filename = basename($file);
             header("Content-Description: Descargar imagen");

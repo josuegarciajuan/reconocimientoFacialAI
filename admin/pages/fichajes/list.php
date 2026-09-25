@@ -9,6 +9,7 @@
 
 require_once __DIR__ . "/../../../libs/db.php";
 require_once __DIR__ . "/../../../libs/fechas.php";
+require_once __DIR__ . "/../../../libs/fotos.php";
 require_once __DIR__ . "/../../../libs/etiquetas.php";
 
 $local_id = (int)$_SESSION["local_id"];
@@ -103,16 +104,8 @@ $trabajadores = DB::select(
         foreach ($rows as $r) {
             $nombre = persona_label($r["nombre"], $r["cod_interno"]);
 
-            $foto_entrada = "";
-            if ($r["entrada_estancia_id"]) {
-                $f = DB::selectOne("SELECT MIN(id) AS fid FROM fotos WHERE estancia_id = ?", [(int)$r["entrada_estancia_id"]]);
-                if ($f && $f["fid"]) { $foto_entrada = "./caras_procesadas/" . $f["fid"] . ".jpg"; }
-            }
-            $foto_salida = "";
-            if ($r["salida_estancia_id"]) {
-                $f = DB::selectOne("SELECT MAX(id) AS fid FROM fotos WHERE estancia_id = ?", [(int)$r["salida_estancia_id"]]);
-                if ($f && $f["fid"]) { $foto_salida = "./caras_procesadas/" . $f["fid"] . ".jpg"; }
-            }
+            $foto_entrada = $r["entrada_estancia_id"] ? foto_estancia_url((int)$r["entrada_estancia_id"]) : "";
+            $foto_salida  = $r["salida_estancia_id"] ? foto_estancia_url((int)$r["salida_estancia_id"], true) : "";
 
             $entrada_fmt = $r["entrada_hora"] ? date("d/m/Y H:i", strtotime($r["entrada_hora"])) : "—";
             $salida_fmt  = $r["salida_hora"] ? date("d/m/Y H:i", strtotime($r["salida_hora"])) : "—";

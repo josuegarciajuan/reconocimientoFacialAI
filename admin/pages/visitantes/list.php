@@ -6,6 +6,7 @@
 
 require_once __DIR__ . "/../../../libs/db.php";
 require_once __DIR__ . "/../../../libs/fechas.php";
+require_once __DIR__ . "/../../../libs/fotos.php";
 require_once __DIR__ . "/../../../libs/etiquetas.php";
 
 $local_id = (int)$_SESSION["local_id"];
@@ -223,11 +224,8 @@ $js_quote = function ($s) {
 <?php
 $u = DB::selectOne("SELECT cod_interno, nombre FROM personas WHERE id = ?", [(int)$_GET["unir"]]);
 $u_label = persona_label($u["nombre"] ?? "", $u["cod_interno"] ?? "");
-$img_row = DB::selectOne(
-    "SELECT f.id AS fid FROM fotos f JOIN estancias e ON e.id = f.estancia_id WHERE e.persona_id = ? ORDER BY f.id ASC LIMIT 1",
-    [(int)$_GET["unir"]]
-);
-$imagen_unir = "./caras_procesadas/" . ($img_row ? $img_row["fid"] : 0) . ".jpg";
+$imagen_unir = foto_persona_url((int)$_GET["unir"]);
+$imagen_unir_src = $imagen_unir !== "" ? $imagen_unir : "./files/logo-sauron.png";
 $unir_id = (int)$_GET["unir"];
 $candidatos = DB::select(
     "SELECT id, cod_interno, nombre FROM personas WHERE local_id = ? AND id <> ? ORDER BY nombre ASC, cod_interno ASC",
@@ -245,7 +243,8 @@ $candidatos = DB::select(
             <img class="w-24 h-24 object-cover rounded cursor-pointer flex-none"
                  alt="Foto de <?= htmlspecialchars($u_label); ?>"
                  onclick="verFoto('<?= $js_quote($imagen_unir); ?>','<?= $js_quote($u_label); ?>')"
-                 src="<?= htmlspecialchars($imagen_unir); ?>">
+                 src="<?= htmlspecialchars($imagen_unir_src); ?>"
+                 onerror="this.onerror=null;this.src='./files/logo-sauron.png';">
             <div class="text-center sm:text-left text-gray-600 dark:text-gray-300">
                 <div class="font-semibold"><?= htmlspecialchars($u_label); ?></div>
             </div>
