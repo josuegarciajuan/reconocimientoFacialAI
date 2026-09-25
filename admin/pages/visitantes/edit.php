@@ -97,7 +97,7 @@ $num_cruces = $cruces_cnt ? (int)$cruces_cnt["n"] : 0;
             <img alt="Foto de perfil de <?= htmlspecialchars($persona["nombre"]); ?>" class="rounded-full w-32 h-32 object-cover" src="<?= htmlspecialchars($imagen_perfil); ?>">
             <?php if ($avatar_url !== ""): ?>
             <img alt="Avatar (cabeza recortada) de <?= htmlspecialchars($persona["nombre"]); ?>"
-                 title="Avatar del monigote (Caminos)"
+                 title="<?= htmlspecialchars(rf_term("avatar-monigote"), ENT_QUOTES); ?>"
                  class="ml-3 rounded-full w-16 h-16 object-contain bg-gray-900 dark:bg-gray-800 border border-gray-700"
                  src="<?= htmlspecialchars($avatar_url); ?>">
             <?php endif; ?>
@@ -133,8 +133,8 @@ $num_cruces = $cruces_cnt ? (int)$cruces_cnt["n"] : 0;
     </div>
 
     <div class="nav-tabs flex flex-col sm:flex-row justify-center lg:justify-start">
-        <a href="?page=accesos&persona_id=<?= $persona_id; ?>" class="py-4 sm:mr-8 flex items-center active">Ver Movimientos</a>
-        <a href="?page=rutas&persona_id=<?= $persona_id; ?>" class="py-4 sm:mr-8 flex items-center">Ver Caminos</a>
+        <a href="?page=accesos&persona_id=<?= $persona_id; ?>" class="py-4 sm:mr-8 flex items-center active">Ver <?= rf_term_html("nav-accesos"); ?></a>
+        <a href="?page=rutas&persona_id=<?= $persona_id; ?>" class="py-4 sm:mr-8 flex items-center">Ver <?= rf_term_html("caminos"); ?></a>
         <a href="#videos" class="py-4 sm:mr-8 flex items-center">Ver Vídeos (<?= count($videos_persona); ?>)</a>
         <a href="?page=lineas&persona_id=<?= $persona_id; ?>" class="py-4 sm:mr-8 flex items-center">Ver Cruces (<?= $num_cruces; ?>)</a>
     </div>
@@ -223,13 +223,13 @@ $num_cruces = $cruces_cnt ? (int)$cruces_cnt["n"] : 0;
         <div class="intro-y box col-span-12">
             <div class="flex items-center px-5 py-3 border-b border-gray-200 dark:border-dark-5">
                 <h2 class="font-medium text-base mr-auto">Vídeos de movimiento (<?= count($videos_persona); ?>)</h2>
-                <a href="?page=accesos&persona_id=<?= $persona_id; ?>" class="text-theme-1 font-medium text-sm hover:underline">Ver en Movimientos</a>
+                <a href="?page=accesos&persona_id=<?= $persona_id; ?>" class="text-theme-1 font-medium text-sm hover:underline">Ver en <?= rf_term_html("nav-accesos"); ?></a>
             </div>
             <div class="p-3 sm:p-5">
                 <?php if (!$videos_persona): ?>
                 <div class="empty-state">
                     <div class="empty-state__title">Sin vídeos vinculados</div>
-                    <div class="empty-state__hint">Los vídeos de movimiento de esta persona aparecerán aquí cuando el vinculador los enlace (misma cámara y fecha).</div>
+                    <div class="empty-state__hint">Los vídeos de movimiento de esta persona aparecerán aquí cuando <?= rf_term_html("vinculador"); ?> los enlace (misma cámara y fecha).</div>
                 </div>
                 <?php else: ?>
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -263,7 +263,7 @@ $num_cruces = $cruces_cnt ? (int)$cruces_cnt["n"] : 0;
                 <?php if ($num_cruces === 0): ?>
                 <div class="empty-state">
                     <div class="empty-state__title">Sin cruces atribuidos</div>
-                    <div class="empty-state__hint">Los cruces de línea de esta persona aparecerán aquí cuando el vinculador los atribuya (estancia del mismo vídeo que cubre el cruce).</div>
+                    <div class="empty-state__hint">Los cruces de línea de esta persona aparecerán aquí cuando <?= rf_term_html("vinculador"); ?> los atribuya (estancia del mismo vídeo que cubre el cruce).</div>
                 </div>
                 <?php else: ?>
                 <p class="text-sm text-gray-600 dark:text-gray-300">

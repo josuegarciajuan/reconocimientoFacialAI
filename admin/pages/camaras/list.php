@@ -75,7 +75,7 @@ $ph_uri = "data:image/svg+xml;base64," . base64_encode(
 ?>
 
 <div class="intro-y flex flex-col sm:flex-row items-center mt-8">
-    <h2 class="text-lg font-medium mr-auto">Cámaras en Directo</h2>
+    <h2 class="text-lg font-medium mr-auto"><?= rf_term_html("nav-camaras"); ?></h2>
     <div class="w-full sm:w-auto flex mt-4 sm:mt-0"></div>
 </div>
 

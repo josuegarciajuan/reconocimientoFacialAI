@@ -50,7 +50,7 @@ $personas_opciones = DB::select(
 ?>
 
 <div class="intro-y flex flex-col sm:flex-row items-center mt-8">
-    <h2 class="text-lg font-medium mr-auto">Caminos</h2>
+    <h2 class="text-lg font-medium mr-auto"><?= rf_term_html("caminos"); ?></h2>
     <div class="filter-bar mt-4 sm:mt-0">
         <div class="filter-item">
             <label for="persona_id">Persona</label>
@@ -92,7 +92,7 @@ $personas_opciones = DB::select(
         <?php if ($num_puerta === 0): ?>
             <tr><td colspan="6" class="text-center py-8 text-gray-500 dark:text-gray-500">No hay cámaras de entrada (puerta) configuradas en este local.</td></tr>
         <?php elseif (count($rutas_data) === 0): ?>
-            <tr><td colspan="6" class="text-center py-8 text-gray-500 dark:text-gray-500">No hay caminos para el filtro seleccionado.</td></tr>
+            <tr><td colspan="6" class="text-center py-8 text-gray-500 dark:text-gray-500">No hay <?= rf_term("caminos"); ?> para el filtro seleccionado.</td></tr>
         <?php else: ?>
             <?php
             $js_quote = function ($s) {
@@ -119,7 +119,7 @@ $personas_opciones = DB::select(
                     <td class="text-center border-b"><?= htmlspecialchars($r["tiempo"]); ?></td>
                     <td class="text-center border-b">
                         <div class="flex flex-col sm:flex-row sm:justify-center items-center gap-2">
-                            <a href="javascript:;" data-toggle="modal" data-target="#basic-modal-preview" onclick="abrirCamino(<?= (int)$r["inicio_id"]; ?>)" class="button inline-block bg-theme-1 text-white">▶ Ver camino</a>
+                            <a href="javascript:;" data-toggle="modal" data-target="#basic-modal-preview" onclick="abrirCamino(<?= (int)$r["inicio_id"]; ?>)" class="button inline-block bg-theme-1 text-white"><?= rf_term_html("ver-camino"); ?></a>
                             <a target="_blank" href="?page=visitantes&mode=editar&id=<?= $r["persona_id"]; ?>" class="button inline-block bg-theme-2 text-white">Ver Persona</a>
                         </div>
                     </td>
@@ -134,7 +134,7 @@ $personas_opciones = DB::select(
 <div class="modal" id="basic-modal-preview">
     <div class="modal__content box p-5 modal__content--xl">
         <div class="flex items-center mb-4">
-            <h3 id="caminoTitulo" class="media-modal__title mr-auto truncate">Camino de la persona</h3>
+            <h3 id="caminoTitulo" class="media-modal__title mr-auto truncate"><?= rf_term_html("camino-persona"); ?></h3>
             <a href="javascript:;" data-dismiss="modal" class="button button--sm text-white bg-theme-6 ml-3">Cerrar</a>
         </div>
 

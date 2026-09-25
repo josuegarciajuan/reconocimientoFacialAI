@@ -1,0 +1,770 @@
+/* ============================================================
+   theme-pro.css · Tema profesional "Iris" (claro)
+   ============================================================
+   Se carga el ÚLTIMO (tras dashboard.css). TODO va encapsulado
+   bajo `html.theme-pro`, así que el tema Mordor (html.dark) queda
+   intacto. Sin @layer y sin !important (salvo casos inline).
+
+   Paleta: papel hueso cálido + pino-teal + verde-lente (scan).
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   1. TOKENS
+   ------------------------------------------------------------ */
+html.theme-pro {
+  color-scheme: light;
+
+  --pro-bg:           #F5F3EC;
+  --pro-bg-sunken:    #ECE9E0;
+  --pro-surface:      #FCFBF6;
+  --pro-surface-raised: #FFFFFF;
+  --pro-border:       #D9D5C7;
+  --pro-border-strong:#8A8570;
+  --pro-hairline:     rgba(30, 35, 32, 0.10);
+
+  --pro-ink:          #1E2320;
+  --pro-ink-muted:    #5C6159;
+  --pro-ink-subtle:   #8A8F84;
+
+  --pro-primary:      #0F5A50;
+  --pro-primary-hover:#0B463E;
+  --pro-primary-soft: #E3EEEB;
+  --pro-secondary:    #6B7A3A;
+  --pro-scan:         #2FBF8F;
+  --pro-scan-ink:     #0F7A5A;
+  --pro-scan-glow:    rgba(47, 191, 143, 0.28);
+
+  --pro-success:      #237A46;
+  --pro-warn:         #8A5A12;
+  --pro-danger:       #A9301F;
+
+  --pro-font-body: "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --pro-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Remapeo de los tokens Mordor: los componentes tokenizados
+     (sections.css / dashboard.css) se adaptan sin tocar su código. */
+  --mordor-negro:     #F5F3EC;
+  --mordor-carbon:    #FCFBF6;
+  --mordor-carbon-2:  #ECE9E0;
+  --mordor-brasa:     #0F5A50;
+  --mordor-magma:     #0B463E;
+  --mordor-oro:       #0F5A50;
+  --mordor-verde:     #6B7A3A;
+  --mordor-ceniza:    #1E2320;
+  --mordor-humo:      #5C6159;
+  --mordor-oro-suave: rgba(15, 90, 80, 0.18);
+  --mordor-brasa-suave: rgba(47, 191, 143, 0.14);
+}
+
+/* ------------------------------------------------------------
+   2. LIENZO / BASE
+   ------------------------------------------------------------ */
+html.theme-pro {
+  background:
+    radial-gradient(1100px 520px at 88% -8%, rgba(47, 191, 143, 0.10), transparent 62%),
+    radial-gradient(900px 480px at -8% 6%, rgba(15, 90, 80, 0.07), transparent 55%),
+    var(--pro-bg);
+  background-attachment: fixed;
+}
+
+html.theme-pro body {
+  color: var(--pro-ink);
+  font-family: var(--pro-font-body);
+}
+
+html.theme-pro .content {
+  background-color: transparent;
+}
+
+html.theme-pro ::selection {
+  background: var(--pro-scan-glow);
+  color: var(--pro-ink);
+}
+
+html.theme-pro ::-webkit-scrollbar-track {
+  background: var(--pro-bg-sunken);
+}
+html.theme-pro ::-webkit-scrollbar-thumb {
+  background: #cdc8b9;
+  border: 1px solid var(--pro-border);
+  border-radius: 6px;
+}
+html.theme-pro ::-webkit-scrollbar-thumb:hover {
+  background: var(--pro-primary);
+}
+
+/* Datos "forenses" en monoespaciada */
+html.theme-pro .tnum,
+html.theme-pro .aforo-gauge__value {
+  font-family: var(--pro-font-mono);
+}
+
+/* ------------------------------------------------------------
+   3. MARCA / DIAFRAGMA
+   ------------------------------------------------------------ */
+html.theme-pro .sauron-eye { display: none; }
+html.theme-pro .mordor-ashes { display: none; }
+html.dark .rf-brand-aperture,
+html.dark .rf-menu-aperture { display: none; }
+
+.rf-brand-aperture {
+  display: block;
+  width: 38px;
+  height: 38px;
+  color: var(--pro-primary);
+  flex: none;
+}
+.rf-menu-aperture {
+  display: block;
+  width: 22px;
+  height: 22px;
+  color: var(--pro-primary);
+  flex: none;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+html.theme-pro .top-nav li:hover .rf-menu-aperture { transform: rotate(15deg); }
+
+html.theme-pro .baradur-brand__word {
+  font-family: var(--pro-font-body);
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+  -webkit-text-fill-color: currentColor;
+  color: var(--pro-ink);
+  filter: none;
+  letter-spacing: -0.01em;
+}
+html.theme-pro .baradur-brand__sub {
+  color: var(--pro-ink-muted);
+  letter-spacing: 0.2em;
+}
+
+/* Mostrar/ocultar el lockup por tema */
+html.theme-pro .rf-brand-mordor { display: none; }
+html.dark .rf-brand-pro { display: none; }
+
+/* ------------------------------------------------------------
+   4. BARRA SUPERIOR / BUSCADOR / CAMPANAS / CUENTA
+   ------------------------------------------------------------ */
+html.theme-pro .topbar-sticky {
+  background: rgba(252, 251, 246, 0.86);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--pro-border);
+  box-shadow: 0 1px 2px rgba(30, 35, 32, 0.04);
+}
+html.theme-pro .top-bar-boxed::after { display: none; }
+
+html.theme-pro .search .search__input {
+  background: var(--pro-surface);
+  border: 1px solid var(--pro-border-strong);
+  color: var(--pro-ink);
+  box-shadow: none;
+}
+html.theme-pro .search .search__input::placeholder { color: var(--pro-ink-muted); }
+html.theme-pro .search .search__input:focus {
+  background: #fff;
+  border-color: var(--pro-primary);
+  box-shadow: 0 0 0 3px var(--pro-scan-glow);
+}
+html.theme-pro .search .search__icon { color: var(--pro-primary); }
+
+html.theme-pro .notification--light { color: var(--pro-ink); }
+html.theme-pro .notification .notification-badge {
+  background: var(--pro-danger);
+  border-color: var(--pro-surface);
+  box-shadow: 0 2px 6px rgba(169, 48, 31, 0.35);
+}
+
+html.theme-pro .dropdown-box__content.box {
+  background: var(--pro-surface-raised);
+  color: var(--pro-ink);
+  border: 1px solid var(--pro-border);
+  box-shadow: 0 18px 44px -20px rgba(30, 35, 32, 0.28);
+}
+html.theme-pro .dropdown-box__content .border-theme-40,
+html.theme-pro .dropdown-box__content .border-dark-3 {
+  border-color: var(--pro-border);
+}
+html.theme-pro .dropdown-box__content a:hover {
+  background: var(--pro-primary-soft);
+}
+html.theme-pro .dropdown-box__content .text-theme-1 { color: var(--pro-primary); }
+
+/* Botón de cambio de tema */
+.rf-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 40px;
+  padding: 0 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid var(--pro-border-strong);
+  background: var(--pro-surface);
+  color: var(--pro-primary);
+  font: 600 0.72rem/1 var(--pro-font-body);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.12s ease;
+}
+.rf-theme-toggle:hover,
+.rf-theme-toggle:focus-visible {
+  border-color: var(--pro-primary);
+  background: var(--pro-primary-soft);
+  box-shadow: 0 0 0 3px var(--pro-scan-glow);
+}
+.rf-theme-toggle:active { transform: scale(0.97); }
+.rf-theme-toggle__aperture {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.rf-theme-toggle[aria-checked="true"] .rf-theme-toggle__aperture { transform: rotate(30deg); }
+@media (max-width: 640px) {
+  .rf-theme-toggle { padding: 0; width: 40px; justify-content: center; }
+  .rf-theme-toggle__label { display: none; }
+}
+
+/* ------------------------------------------------------------
+   5. NAV SUPERIOR + DRAWER
+   ------------------------------------------------------------ */
+html.theme-pro .top-nav > ul li .top-menu { color: var(--pro-ink-muted); }
+html.theme-pro .top-nav > ul li .top-menu:hover:not(.top-menu--active) {
+  background: var(--pro-primary-soft);
+}
+html.theme-pro .top-nav > ul li .top-menu.top-menu--active {
+  background: var(--pro-primary-soft);
+  box-shadow: inset 0 0 0 1px rgba(15, 90, 80, 0.22);
+}
+html.theme-pro .top-nav > ul li .top-menu.top-menu--active .top-menu__title {
+  color: var(--pro-primary);
+  box-shadow: inset 0 -2px 0 var(--pro-scan);
+}
+html.theme-pro .top-nav > ul li .top-menu--featured,
+html.theme-pro .top-nav > ul li .top-menu--hero {
+  background: linear-gradient(135deg, rgba(47, 191, 143, 0.14), rgba(15, 90, 80, 0.05));
+  box-shadow: inset 0 0 0 1px rgba(15, 90, 80, 0.3);
+}
+html.theme-pro .top-nav > ul li .top-menu--featured .top-menu__title,
+html.theme-pro .top-nav > ul li .top-menu--hero .top-menu__title { color: var(--pro-primary); }
+
+html.theme-pro .top-nav__sep {
+  background: linear-gradient(180deg, transparent, var(--pro-border), transparent);
+}
+html.theme-pro .panel-drawer__sep {
+  background: linear-gradient(90deg, transparent, var(--pro-border), transparent);
+}
+html.theme-pro .menu__svg { color: var(--pro-ink-muted); }
+html.theme-pro .top-menu--active .menu__svg,
+html.theme-pro .menu--active .menu__svg { color: var(--pro-primary); }
+
+html.theme-pro .panel-drawer {
+  background: var(--pro-surface);
+  border-right: 1px solid var(--pro-border);
+  box-shadow: 0 0 60px -12px rgba(30, 35, 32, 0.35);
+}
+html.theme-pro .panel-drawer__header {
+  background: var(--pro-bg-sunken);
+  border-bottom: 1px solid var(--pro-border);
+}
+html.theme-pro .panel-drawer-toggler,
+html.theme-pro .panel-drawer__close { color: var(--pro-ink); }
+html.theme-pro .panel-drawer .menu { color: var(--pro-ink-muted); }
+html.theme-pro .panel-drawer .menu:hover:not(.menu--active) { background: var(--pro-primary-soft); }
+html.theme-pro .panel-drawer .menu.menu--active {
+  background: var(--pro-primary-soft);
+  color: var(--pro-primary);
+  box-shadow: inset 0 0 0 1px rgba(15, 90, 80, 0.2);
+}
+html.theme-pro .panel-drawer .menu.menu--featured,
+html.theme-pro .panel-drawer .menu.menu--hero {
+  background: linear-gradient(135deg, rgba(47, 191, 143, 0.12), rgba(15, 90, 80, 0.04));
+  box-shadow: inset 0 0 0 1px rgba(15, 90, 80, 0.28);
+}
+html.theme-pro .panel-drawer .menu.menu--featured .menu__title,
+html.theme-pro .panel-drawer .menu.menu--hero .menu__title { color: var(--pro-primary); }
+html.theme-pro .panel-drawer-backdrop { background: rgba(30, 35, 32, 0.4); }
+
+/* ------------------------------------------------------------
+   6. CAJAS, TABLAS (DataTables) Y BOTONES
+   ------------------------------------------------------------ */
+html.theme-pro .box {
+  background-color: var(--pro-surface);
+  border-color: var(--pro-border);
+  box-shadow: 0 16px 34px -24px rgba(30, 35, 32, 0.22);
+}
+html.theme-pro .report-box:before {
+  background: linear-gradient(180deg, rgba(47, 191, 143, 0.12), transparent);
+}
+html.theme-pro .datatable-wrapper.box { background-color: var(--pro-surface); }
+
+html.theme-pro .table thead th {
+  background: var(--pro-bg-sunken);
+  color: var(--pro-ink-muted);
+  border-color: var(--pro-border);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+html.theme-pro .table-report td {
+  border-color: var(--pro-hairline);
+  color: var(--pro-ink);
+}
+html.theme-pro .table-report tbody tr:nth-child(even) { background: #FAF9F4; }
+html.theme-pro .table-report tbody tr:hover { background: var(--pro-primary-soft); }
+html.theme-pro .table-report tbody tr:hover td:first-child {
+  box-shadow: inset 3px 0 0 var(--pro-scan);
+}
+
+html.theme-pro .dataTables_wrapper .dataTables_filter input,
+html.theme-pro .dataTables_wrapper .dataTables_length select {
+  background: var(--pro-surface);
+  border: 1px solid var(--pro-border-strong);
+  color: var(--pro-ink);
+  border-radius: 0.5rem;
+}
+html.theme-pro .dataTables_wrapper .dataTables_paginate .paginate_button {
+  color: var(--pro-ink-muted);
+  border-radius: 0.4rem;
+}
+html.theme-pro .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+html.theme-pro .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+  background: var(--pro-primary);
+  color: #fff;
+  border-color: var(--pro-primary);
+}
+
+html.theme-pro .button { border-radius: 0.65rem; }
+html.theme-pro .bg-theme-1 { background-color: var(--pro-primary); }
+html.theme-pro .text-theme-1 { color: var(--pro-primary); }
+html.theme-pro .bg-theme-2 { background-color: var(--pro-scan-ink); }
+
+/* ------------------------------------------------------------
+   7. DASHBOARD (La Torre / Panel)
+   ------------------------------------------------------------ */
+html.theme-pro .content h2,
+html.theme-pro .intro-y h2,
+html.theme-pro .kpi-number {
+  font-family: var(--pro-font-body);
+  letter-spacing: -0.01em;
+}
+html.theme-pro .kpi-number { color: var(--pro-ink); }
+html.theme-pro .kpi-chip {
+  background: var(--pro-primary-soft);
+  box-shadow: none;
+}
+html.theme-pro .kpi-chip .feather,
+html.theme-pro .kpi-chip .menu__emoji { color: var(--pro-primary); }
+html.theme-pro .kpi-label { color: var(--pro-ink-muted); }
+
+html.theme-pro .kpi-card::before { opacity: 0.5; }
+html.theme-pro .kpi-card--brasas .kpi-number,
+html.theme-pro .kpi-card--alerta .kpi-number { color: var(--pro-danger); }
+html.theme-pro .kpi-card--oro .kpi-number { color: var(--pro-primary); }
+html.theme-pro .kpi-card--verde .kpi-number { color: var(--pro-success); }
+html.theme-pro .kpi-card--humo .kpi-number { color: var(--pro-ink); }
+html.theme-pro .kpi-sub { color: var(--pro-ink-muted); }
+
+html.theme-pro .mordor-hero__title,
+html.theme-pro .mordor-hero__eyebrow { color: var(--pro-ink); }
+html.theme-pro .mordor-hero__eyebrow { letter-spacing: 0.18em; color: var(--pro-primary); }
+html.theme-pro .mordor-hero__saludo { color: var(--pro-ink-muted); }
+html.theme-pro .hero-kpi {
+  background: var(--pro-surface);
+  border: 1px solid var(--pro-border);
+}
+html.theme-pro .hero-kpi__lbl { color: var(--pro-ink-muted); }
+html.theme-pro .hero-kpi--alerta { border-color: rgba(169, 48, 31, 0.35); }
+html.theme-pro .aforo-gauge__of,
+html.theme-pro .aforo-gauge__sem { color: var(--pro-ink-muted); }
+html.theme-pro .scroll-section__title { color: var(--pro-ink); }
+html.theme-pro .heat-cell--empty { background: rgba(30, 35, 32, 0.04); }
+
+/* ------------------------------------------------------------
+   8. CÁMARAS (brackets de enfoque + focus-pull)
+   ------------------------------------------------------------ */
+html.theme-pro .cam-card {
+  background: var(--pro-surface);
+  border: 1px solid var(--pro-border);
+}
+html.theme-pro .cam-card:hover,
+html.theme-pro .cam-card:focus-visible {
+  border-color: var(--pro-scan);
+  box-shadow: 0 16px 34px -18px rgba(30, 35, 32, 0.3), 0 0 0 1px var(--pro-scan-glow);
+}
+html.theme-pro .cam-card__name { color: var(--pro-ink); }
+html.theme-pro .cam-card__cta { color: var(--pro-scan-ink); }
+html.theme-pro .cam-card__media::before,
+html.theme-pro .cam-card__media::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.45;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  border-color: var(--pro-scan);
+}
+html.theme-pro .cam-card__media::before {
+  top: 8px; left: 8px;
+  border-top: 2px solid var(--pro-scan);
+  border-left: 2px solid var(--pro-scan);
+}
+html.theme-pro .cam-card__media::after {
+  bottom: 8px; right: 8px;
+  border-bottom: 2px solid var(--pro-scan);
+  border-right: 2px solid var(--pro-scan);
+}
+html.theme-pro .cam-card:hover .cam-card__media::before,
+html.theme-pro .cam-card:hover .cam-card__media::after,
+html.theme-pro .cam-card:focus-visible .cam-card__media::before,
+html.theme-pro .cam-card:focus-visible .cam-card__media::after {
+  opacity: 1;
+  transform: scale(0.82);
+}
+html.theme-pro .cam-card__img {
+  transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s ease;
+}
+html.theme-pro .cam-card:hover .cam-card__img { transform: scale(1.03); }
+
+/* ------------------------------------------------------------
+   9. FORMULARIOS / INPUTS
+   ------------------------------------------------------------ */
+html.theme-pro .input {
+  background-color: var(--pro-surface);
+  border-color: var(--pro-border-strong);
+  color: var(--pro-ink);
+}
+html.theme-pro .input::placeholder { color: var(--pro-ink-subtle); }
+html.theme-pro .input:focus {
+  border-color: var(--pro-primary);
+  box-shadow: 0 0 0 3px var(--pro-scan-glow);
+  outline: none;
+}
+html.theme-pro .field-label { color: var(--pro-ink-muted); }
+html.theme-pro .filter-bar .filter-item label { color: var(--pro-ink-muted); }
+html.theme-pro .form-section__title { color: var(--pro-ink); }
+html.theme-pro .section-tabs .section-tab { color: var(--pro-ink-muted); }
+html.theme-pro .section-tabs .section-tab.is-active {
+  color: var(--pro-primary);
+  border-color: var(--pro-primary);
+}
+
+/* ------------------------------------------------------------
+   10. MODALES / TOASTS / BANNER
+   ------------------------------------------------------------ */
+html.theme-pro .modal__content.box {
+  background: var(--pro-surface-raised);
+  border: 1px solid var(--pro-border);
+  box-shadow: 0 30px 70px -30px rgba(30, 35, 32, 0.4);
+}
+html.theme-pro .modal__content .table,
+html.theme-pro .modal__content h3 { color: var(--pro-ink); }
+
+html.theme-pro .rf-toast {
+  background: rgba(252, 251, 246, 0.97);
+  border: 1px solid var(--pro-border);
+  color: var(--pro-ink);
+  box-shadow: 0 16px 36px -18px rgba(30, 35, 32, 0.35);
+}
+html.theme-pro .rf-toast--ok { border-color: rgba(35, 122, 70, 0.5); }
+html.theme-pro .rf-toast--ok .rf-toast__icon { color: var(--pro-success); }
+html.theme-pro .rf-toast--err { border-color: rgba(169, 48, 31, 0.5); }
+html.theme-pro .rf-toast--err .rf-toast__icon { color: var(--pro-danger); }
+
+html.theme-pro .banner-alarma {
+  border: 1px solid rgba(169, 48, 31, 0.45);
+  background: #FBEDE9;
+  color: #7A2013;
+  box-shadow: 0 8px 20px -14px rgba(169, 48, 31, 0.5);
+}
+html.theme-pro .banner-alarma__cta { color: var(--pro-danger); }
+html.theme-pro .banner-alarma:hover,
+html.theme-pro .banner-alarma:focus-visible { filter: none; color: #5C1509; }
+
+/* ------------------------------------------------------------
+   11. CENTRO DE MANDO (widget + hub)
+   ------------------------------------------------------------ */
+html.theme-pro .ring-widget {
+  background: rgba(252, 251, 246, 0.92);
+  border: 1px solid var(--pro-border);
+  box-shadow: 0 10px 30px -14px rgba(30, 35, 32, 0.35), 0 0 0 1px var(--pro-scan-glow);
+}
+html.theme-pro .ring-widget:hover,
+html.theme-pro .ring-widget:focus-visible {
+  border-color: var(--pro-scan);
+  box-shadow: 0 12px 34px -14px rgba(30, 35, 32, 0.4), 0 0 0 1px var(--pro-scan);
+}
+html.theme-pro .ring-widget--arde {
+  border-color: var(--pro-danger);
+  background: #FBEDE9;
+  animation: none;
+}
+html.theme-pro .ring-widget__emoji { display: none; }
+html.theme-pro .ring-widget__label::before {
+  content: "◎ ";
+  color: var(--pro-scan-ink);
+}
+html.theme-pro .ring-widget__label {
+  font-family: var(--pro-font-body);
+  color: var(--pro-ink);
+  letter-spacing: 0.1em;
+}
+html.theme-pro .ring-widget__badge {
+  background: var(--pro-danger);
+  border-color: var(--pro-surface);
+}
+
+html.theme-pro .ring-hub {
+  background: rgba(252, 251, 246, 0.98);
+  border: 1px solid var(--pro-border);
+  box-shadow: 0 24px 60px -22px rgba(30, 35, 32, 0.4);
+}
+html.theme-pro .ring-hub__head { border-bottom-color: var(--pro-border); }
+html.theme-pro .ring-hub__title {
+  font-family: var(--pro-font-body);
+  color: var(--pro-ink);
+  letter-spacing: 0;
+}
+html.theme-pro .ring-hub__estado { color: var(--pro-ink-muted); }
+html.theme-pro .ring-hub__close {
+  border-color: var(--pro-border);
+  background: var(--pro-bg-sunken);
+  color: var(--pro-ink);
+}
+html.theme-pro .ring-hub__close:hover,
+html.theme-pro .ring-hub__close:focus-visible {
+  color: var(--pro-primary);
+  border-color: var(--pro-primary);
+  background: var(--pro-primary-soft);
+}
+html.theme-pro .ring-hub__search-label,
+html.theme-pro .ring-hub__section-title {
+  font-family: var(--pro-font-body);
+  color: var(--pro-ink-muted);
+  letter-spacing: 0.1em;
+}
+html.theme-pro .ring-hub__search-input {
+  background: var(--pro-surface);
+  border: 1px solid var(--pro-border-strong);
+  color: var(--pro-ink);
+}
+html.theme-pro .ring-hub__search-input::placeholder { color: var(--pro-ink-subtle); }
+html.theme-pro .ring-hub__search-input:focus {
+  border-color: var(--pro-primary);
+  box-shadow: 0 0 0 3px var(--pro-scan-glow);
+}
+html.theme-pro .ring-hub__search-btn {
+  border: 1px solid var(--pro-primary);
+  background: var(--pro-primary);
+  color: #fff;
+  font-family: var(--pro-font-body);
+  letter-spacing: 0.04em;
+}
+html.theme-pro .ring-hub__search-btn:hover,
+html.theme-pro .ring-hub__search-btn:focus-visible {
+  background: var(--pro-primary-hover);
+  box-shadow: 0 0 0 3px var(--pro-scan-glow);
+}
+html.theme-pro .ring-hub__nav-link {
+  background: var(--pro-bg-sunken);
+  border: 1px solid var(--pro-border);
+  color: var(--pro-ink);
+}
+html.theme-pro .ring-hub__nav-link:hover,
+html.theme-pro .ring-hub__nav-link:focus-visible {
+  color: var(--pro-primary);
+  background: var(--pro-primary-soft);
+  border-color: var(--pro-primary);
+  box-shadow: none;
+}
+html.theme-pro .ring-hub__nav-link--featured {
+  border-color: rgba(15, 90, 80, 0.4);
+  background: linear-gradient(135deg, rgba(47, 191, 143, 0.12), rgba(15, 90, 80, 0.04));
+  color: var(--pro-primary);
+}
+html.theme-pro .ring-hub__daemons { border-top-color: var(--pro-border); }
+html.theme-pro .ring-hub__daemons-hint { color: var(--pro-ink-muted); }
+html.theme-pro .ring-hub .daemon-tile {
+  background: var(--pro-surface);
+  border: 1px solid var(--pro-border);
+}
+html.theme-pro .ring-hub .daemon-tile__name {
+  font-family: var(--pro-font-body);
+  color: var(--pro-ink);
+}
+html.theme-pro .ring-hub .daemon-tile__svc { color: var(--pro-ink-subtle); }
+
+/* Botón de apagado/encendido del sistema */
+html.theme-pro .power-btn {
+  font-family: var(--pro-font-body);
+  border: 1px solid var(--pro-border-strong);
+  background: var(--pro-surface);
+  color: var(--pro-ink);
+  letter-spacing: 0.02em;
+}
+html.theme-pro .power-btn--on { border-color: rgba(35, 122, 70, 0.5); }
+html.theme-pro .power-btn--on .power-btn__led { background: var(--pro-success); }
+html.theme-pro .power-btn--off { border-color: rgba(169, 48, 31, 0.5); box-shadow: none; }
+html.theme-pro .power-btn--off .power-btn__led { background: var(--pro-danger); }
+
+/* ------------------------------------------------------------
+   12. TOOLTIPS (rf-tip funcional + rf-lore temático)
+   ------------------------------------------------------------ */
+html.theme-pro .rf-tip,
+html.theme-pro .rf-lore {
+  background: rgba(30, 35, 32, 0.97);
+  border: 1px solid var(--pro-scan);
+  color: #F5F3EC;
+  box-shadow: 0 14px 36px -14px rgba(30, 35, 32, 0.55);
+}
+html.theme-pro .rf-tip::after { border-color: transparent; }
+html.theme-pro .rf-tip--down::after { border-bottom-color: var(--pro-scan); }
+html.theme-pro .rf-tip--up::after { border-top-color: var(--pro-scan); }
+html.theme-pro .rf-tip--right::after { border-right-color: var(--pro-scan); }
+html.theme-pro .rf-tip--left::after { border-left-color: var(--pro-scan); }
+html.theme-pro .rf-lore::before { border-bottom-color: var(--pro-scan); }
+html.theme-pro .rf-lore__term {
+  font-family: var(--pro-font-body);
+  color: #8FE9CB;
+}
+html.theme-pro .rf-lore__mean { color: #E4E1D8; }
+
+/* Tooltip CSS-only del dashboard ([data-tip]::after) */
+html.theme-pro [data-tip]::after {
+  background: rgba(30, 35, 32, 0.97);
+  border-color: var(--pro-scan);
+  color: #F5F3EC;
+}
+
+/* ------------------------------------------------------------
+   13. ACCIONES COMPACTAS EN TABLAS
+   ------------------------------------------------------------ */
+html.theme-pro .accion-item a {
+  color: var(--pro-ink);
+  background: var(--pro-bg-sunken);
+  border: 1px solid var(--pro-border);
+}
+html.theme-pro .accion-item a:hover,
+html.theme-pro .accion-item a:focus-visible {
+  color: var(--pro-primary);
+  background: var(--pro-primary-soft);
+  border-color: var(--pro-primary);
+  box-shadow: none;
+}
+
+/* ------------------------------------------------------------
+   14. TERCEROS (select2 / daterangepicker) — legibilidad mínima
+   ------------------------------------------------------------ */
+html.theme-pro .select2-container--default .select2-selection--single,
+html.theme-pro .daterangepicker {
+  background: var(--pro-surface);
+  border-color: var(--pro-border-strong);
+  color: var(--pro-ink);
+}
+html.theme-pro .daterangepicker td.active,
+html.theme-pro .daterangepicker td.active:hover {
+  background: var(--pro-primary);
+}
+
+/* ------------------------------------------------------------
+   15. LOGIN (la "Puerta Negra" en modo profesional)
+   ------------------------------------------------------------ */
+html.theme-pro .login {
+  background:
+    radial-gradient(900px 520px at 50% -10%, rgba(47, 191, 143, 0.12), transparent 60%),
+    radial-gradient(1200px 800px at 50% 115%, rgba(15, 90, 80, 0.08), transparent 62%),
+    var(--pro-bg);
+  background-attachment: fixed;
+}
+html.theme-pro .login .bg-white {
+  background: var(--pro-surface-raised);
+  border: 1px solid var(--pro-border);
+  box-shadow: 0 24px 60px -30px rgba(30, 35, 32, 0.3);
+}
+html.theme-pro .login h2 {
+  color: var(--pro-ink);
+  font-family: var(--pro-font-body);
+  text-shadow: none;
+}
+html.theme-pro .login .text-gray-500 { color: var(--pro-ink-muted); }
+html.theme-pro .login .login__input {
+  background: var(--pro-surface);
+  border-color: var(--pro-border-strong);
+  color: var(--pro-ink);
+}
+html.theme-pro .login .login__input::placeholder { color: var(--pro-ink-subtle); }
+html.theme-pro .login .login__input:focus {
+  border-color: var(--pro-primary);
+  box-shadow: 0 0 0 3px var(--pro-scan-glow);
+}
+html.theme-pro .login .input-icon .feather { color: var(--pro-primary); }
+html.theme-pro .login .password-toggle { color: var(--pro-ink-muted); }
+html.theme-pro .login .password-toggle:hover { color: var(--pro-primary); }
+html.theme-pro .login-alert {
+  background: #FBEDE9;
+  color: #7A2013;
+  border: 1px solid rgba(169, 48, 31, 0.4);
+}
+html.theme-pro .btn-login {
+  background: linear-gradient(135deg, #0F5A50 0%, #0B463E 100%);
+  box-shadow: 0 10px 24px -8px rgba(15, 90, 80, 0.5);
+}
+html.theme-pro .btn-login:hover {
+  box-shadow: 0 14px 30px -10px rgba(47, 191, 143, 0.55);
+}
+html.theme-pro .login-brand__overlay {
+  background: linear-gradient(180deg, rgba(245, 243, 236, 0) 0%, rgba(245, 243, 236, 0.92) 100%);
+}
+html.theme-pro .login-brand__title {
+  color: var(--pro-ink);
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+  -webkit-text-fill-color: currentColor;
+  font-family: var(--pro-font-body);
+}
+html.theme-pro .login-brand__tagline { color: var(--pro-ink-muted); }
+
+/* Marca del login: Sauron oculto, diafragma visible */
+html.theme-pro .login-brand__hero--mordor,
+html.theme-pro .login-brand__logo--mordor { display: none; }
+html.dark .login-brand__aperture-wrap { display: none; }
+html.theme-pro .login-brand__aperture-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 0;
+}
+html.theme-pro .login-brand__aperture {
+  width: 150px;
+  height: 150px;
+  color: var(--pro-primary);
+}
+
+/* ------------------------------------------------------------
+   16. FOCO VISIBLE + MOVIMIENTO REDUCIDO
+   ------------------------------------------------------------ */
+html.theme-pro a:focus-visible,
+html.theme-pro button:focus-visible,
+html.theme-pro input:focus-visible,
+html.theme-pro select:focus-visible,
+html.theme-pro textarea:focus-visible,
+html.theme-pro [tabindex]:focus-visible {
+  outline: 2px solid var(--pro-primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--pro-scan-glow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.theme-pro *,
+  html.theme-pro *::before,
+  html.theme-pro *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

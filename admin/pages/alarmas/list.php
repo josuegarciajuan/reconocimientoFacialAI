@@ -27,14 +27,14 @@ $no_vistas = alarma_no_vistas_count($local_id);
 function alarma_severidad_badge(string $sev): string
 {
     if ($sev === "asedio") {
-        return '<span class="px-2 py-0.5 rounded text-white text-xs font-bold" style="background:#b91c1c">ASEDIO</span>';
+        return '<span class="px-2 py-0.5 rounded text-white text-xs font-bold" style="background:#b91c1c">' . rf_term_html("alarma-asedio") . '</span>';
     }
     return '<span class="px-2 py-0.5 rounded text-white text-xs font-bold" style="background:#d97706">AVISO</span>';
 }
 ?>
 
 <div class="intro-y flex flex-col sm:flex-row items-center mt-8">
-    <h2 class="text-lg font-medium mr-auto">🚨 La Almenara</h2>
+    <h2 class="text-lg font-medium mr-auto">🚨 <?= rf_term_html("almenara"); ?></h2>
     <div class="w-full sm:w-auto flex mt-4 sm:mt-0 text-xs text-gray-500 dark:text-gray-600">
         Alarmas por movimiento en horario de inactividad
     </div>
@@ -51,7 +51,7 @@ function alarma_severidad_badge(string $sev): string
     </div>
     <div class="box p-4 text-center">
         <div class="text-2xl font-bold text-red-600"><?= (int)($resumen["asedios"] ?? 0); ?></div>
-        <div class="text-xs text-gray-500 dark:text-gray-600 mt-1">Asedios</div>
+        <div class="text-xs text-gray-500 dark:text-gray-600 mt-1"><?= rf_term_html("asedios"); ?></div>
     </div>
     <div class="box p-4 text-center">
         <div class="text-2xl font-bold <?= $no_vistas > 0 ? "text-theme-6" : ""; ?>"><?= $no_vistas; ?></div>
@@ -112,7 +112,8 @@ function alarma_severidad_badge(string $sev): string
             }
             if (!$alarmas) {
                 echo '<tr class="odd"><td class="text-center border-b py-6 text-gray-500 dark:text-gray-500" colspan="5">'
-                   . 'La Almenara está en calma: ninguna alarma registrada. Configura la vigilancia en «La Forja» → Fortalezas o Cámaras.</td></tr>';
+                   . rf_term_html("almenara") . ' está en calma: ninguna alarma registrada. Configura la vigilancia en «'
+                   . rf_term_html("forja") . '» → ' . rf_term_html("fortalezas") . ' o Cámaras.</td></tr>';
             }
             } ?>
         </table>

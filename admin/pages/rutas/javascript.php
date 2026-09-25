@@ -423,7 +423,7 @@ function PlayerVerVideo(videoId, camaraDesc, fecha, personaId, personaNombre) {
             videoId,
             "../video.php?id=" + videoId,
             "../video.php?id=" + videoId + "&poster=1",
-            "Camino · " + camaraDesc + " · " + fecha,
+            <?= json_encode(rf_term("camino-prefix"), JSON_UNESCAPED_UNICODE); ?> + camaraDesc + " · " + fecha,
             personaId,
             personaNombre
         );
@@ -501,7 +501,7 @@ function abrirCamino(inicioId, recargarAvatar) {
             Player.ultPos = null;
             Player.fase = 0;
             const titulo = document.getElementById("caminoTitulo");
-            if (titulo) titulo.textContent = "Camino · " + Player.ruta.nombre + " · " + Player.ruta.num_camaras + " cámaras";
+            if (titulo) titulo.textContent = <?= json_encode(rf_term("camino-prefix"), JSON_UNESCAPED_UNICODE); ?> + Player.ruta.nombre + " · " + Player.ruta.num_camaras + " cámaras";
             // avatar
             Player.avatarImg = null;
             if (Player.ruta.avatar) PlayerCargarAvatar(Player.ruta.avatar);
@@ -512,8 +512,8 @@ function abrirCamino(inicioId, recargarAvatar) {
             if (recargarAvatar) PlayerPlay();
         })
         .catch(function (err) {
-            if (typeof rfToast === "function") rfToast("No se pudo cargar el camino: " + err.message, "err");
-            else alert("No se pudo cargar el camino: " + err.message);
+            if (typeof rfToast === "function") rfToast(<?= json_encode(rf_term("camino-error"), JSON_UNESCAPED_UNICODE); ?> + err.message, "err");
+            else alert(<?= json_encode(rf_term("camino-error"), JSON_UNESCAPED_UNICODE); ?> + err.message);
         });
 }
 

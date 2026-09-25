@@ -21,7 +21,7 @@ if ($sub === "editar") {
 <div class="form-section" data-panel-forge="crear">
     <div class="form-section__title">
         <span class="form-section__emoji" aria-hidden="true">🏰</span>
-        <span data-lore="fortalezas">Nueva fortaleza</span>
+        <span data-lore="fortalezas"><?= rf_term_html("nueva-fortaleza"); ?></span>
         <a href="?page=config&tab=locales&sub=listar" class="button button--sm text-white bg-theme-6 shadow-md ml-auto">Volver al listado</a>
     </div>
 
@@ -35,7 +35,7 @@ if ($sub === "editar") {
 <div class="form-section" data-panel-forge="editar">
     <div class="form-section__title">
         <span class="form-section__emoji" aria-hidden="true">🏰</span>
-        <span data-lore="fortalezas">Editar fortaleza: <?= htmlspecialchars($local_edit["nombre"] ?? ""); ?></span>
+        <span data-lore="fortalezas"><?= rf_term_html("editar-fortaleza"); ?><?= htmlspecialchars($local_edit["nombre"] ?? ""); ?></span>
         <a href="?page=config&tab=locales&sub=listar" class="button button--sm text-white bg-theme-6 shadow-md ml-auto">Volver al listado</a>
     </div>
 
@@ -48,7 +48,7 @@ if ($sub === "editar") {
 <div class="form-section">
     <div class="form-section__title">
         <span class="form-section__emoji" aria-hidden="true">⚠️</span>
-        Fortaleza no encontrada
+        <?= rf_term_html("fortaleza-no-encontrada"); ?>
     </div>
     <a href="?page=config&tab=locales&sub=listar" class="button text-white bg-theme-2 shadow-md">Volver al listado</a>
 </div>
@@ -58,12 +58,12 @@ if ($sub === "editar") {
 <div class="form-section">
     <div class="form-section__title">
         <span class="form-section__emoji" aria-hidden="true">🏰</span>
-        <span data-lore="fortalezas">Fortalezas</span>
+        <span data-lore="fortalezas"><?= rf_term_html("fortalezas"); ?></span>
         <a href="?page=config&tab=locales&sub=crear" class="button button--sm text-white bg-theme-1 shadow-md ml-auto">Nuevo</a>
     </div>
 
     <p class="text-xs text-gray-500 dark:text-gray-600 mb-3">
-        Cada fortaleza es un local con sus cámaras, su plano, su aforo y su legión. Crea y edita desde aquí sin salir de La Forja.
+        Cada <?= rf_term_html("fortaleza"); ?> es un local con sus cámaras, su plano, su aforo y su <?= rf_term_html("legion"); ?>. Crea y edita desde aquí sin salir de <?= rf_term_html("forja"); ?>.
     </p>
 
     <div class="table-wrap">
@@ -109,7 +109,7 @@ if ($sub === "editar") {
                 $par = ($par === "odd") ? "pair" : "odd";
             }
             if (!$fortalezas) {
-                echo '<tr class="odd"><td class="text-center border-b py-4 text-gray-500 dark:text-gray-500" colspan="7">No hay fortalezas dadas de alta todavía.</td></tr>';
+                echo '<tr class="odd"><td class="text-center border-b py-4 text-gray-500 dark:text-gray-500" colspan="7">No hay ' . rf_term_html("fortalezas") . ' dadas de alta todavía.</td></tr>';
             }
             } ?>
         </table>

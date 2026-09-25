@@ -20,7 +20,7 @@ if ($local_id > 0) {
 }
 
 $diagnostico = "Usuario: " . ($usuario !== "" ? $usuario : "—")
-    . "\nFortaleza: " . ($fortaleza !== "" ? $fortaleza : "—")
+    . "\n" . rf_term("fortaleza-label") . " " . ($fortaleza !== "" ? $fortaleza : "—")
     . "\nURL: " . ($_SERVER["REQUEST_URI"] ?? "—")
     . "\nFecha: " . date("Y-m-d H:i");
 ?>
@@ -180,39 +180,39 @@ $diagnostico = "Usuario: " . ($usuario !== "" ? $usuario : "—")
 </style>
 
 <div class="intro-y flex flex-col sm:flex-row items-center mt-8">
-    <h2 class="text-lg font-medium mr-auto">El Concilio · Ayuda</h2>
+    <h2 class="text-lg font-medium mr-auto"><?= rf_term_html("concilio"); ?></h2>
     <div class="w-full sm:w-auto flex mt-4 sm:mt-0">
-        <a href="?page=dash" class="button text-white bg-theme-1 shadow-md mr-2">👁️ Ir a La Torre</a>
+        <a href="?page=dash" class="button text-white bg-theme-1 shadow-md mr-2"><?= rf_term_html("ir-torre"); ?></a>
     </div>
 </div>
 
 <!-- Guía del Reino: qué se hace en cada sección y cómo -->
 <div class="intro-y block sm:flex items-center h-10 mt-8">
-    <h2 class="text-lg font-medium truncate mr-5">🗺️ Guía del Reino</h2>
+    <h2 class="text-lg font-medium truncate mr-5">🗺️ <?= rf_term_html("ayuda-guia-reino"); ?></h2>
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-5">
 
     <a href="?page=dash" class="ayuda-card box p-5 intro-y block">
-        <div class="ayuda-card__head"><span class="ayuda-card__emoji" aria-hidden="true">👁️</span><span class="ayuda-card__title">La Torre · Dashboard</span></div>
-        <p class="ayuda-card__text">Resumen del reino en una mirada: almas en la fortaleza, visitas de hoy, medias diarias y visitantes recurrentes. El Mapa de Asedio compara el periodo elegido con el anterior.</p>
+        <div class="ayuda-card__head"><span class="ayuda-card__emoji" aria-hidden="true">👁️</span><span class="ayuda-card__title"><?= rf_term_html("ayuda-torre"); ?></span></div>
+        <p class="ayuda-card__text">Resumen del <?= rf_term_html("reino"); ?> en una mirada: <?= rf_term_html("dash-almas-fortaleza"); ?>, visitas de hoy, medias diarias y visitantes recurrentes. El <?= rf_term_html("dash-mapa-asedio"); ?> compara el periodo elegido con el anterior.</p>
         <span class="ayuda-card__go">Entrar →</span>
     </a>
 
     <a href="?page=locales" class="ayuda-card box p-5 intro-y block">
-        <div class="ayuda-card__head"><span class="ayuda-card__emoji" aria-hidden="true">🏰</span><span class="ayuda-card__title">Fortalezas · Locales</span></div>
-        <p class="ayuda-card__text">Cada fortaleza es un local con sus cámaras, su plano y su aforo. Solo los administradores pueden crearlas o editarlas; desde aquí se gestiona también el máximo de almas permitido.</p>
+        <div class="ayuda-card__head"><span class="ayuda-card__emoji" aria-hidden="true">🏰</span><span class="ayuda-card__title"><?= rf_term_html("ayuda-locales"); ?></span></div>
+        <p class="ayuda-card__text">Cada <?= rf_term_html("fortaleza"); ?> es un local con sus cámaras, su plano y su aforo. Solo los administradores pueden crearlas o editarlas; desde aquí se gestiona también el máximo de <?= rf_term_html("almas"); ?> permitido.</p>
         <span class="ayuda-card__go">Entrar →</span>
     </a>
 
     <a href="?page=visitantes" class="ayuda-card box p-5 intro-y block">
-        <div class="ayuda-card__head"><span class="ayuda-card__emoji" aria-hidden="true">👹</span><span class="ayuda-card__title">Pueblos · Visitantes</span></div>
+        <div class="ayuda-card__head"><span class="ayuda-card__emoji" aria-hidden="true">👹</span><span class="ayuda-card__title"><?= rf_term_html("ayuda-visitantes"); ?></span></div>
         <p class="ayuda-card__text">Registra visitantes con un vídeo corto para crear su identidad facial. El listado permite buscar por nombre o código y filtrar por cámara y fechas.</p>
         <span class="ayuda-card__go">Entrar →</span>
     </a>
 
     <a href="?page=accesos" class="ayuda-card box p-5 intro-y block">
-        <div class="ayuda-card__head"><span class="ayuda-card__emoji" aria-hidden="true">⚔️</span><span class="ayuda-card__title">Movimientos · Accesos</span></div>
+        <div class="ayuda-card__head"><span class="ayuda-card__emoji" aria-hidden="true">⚔️</span><span class="ayuda-card__title"><?= rf_term_html("ayuda-accesos"); ?></span></div>
         <p class="ayuda-card__text">Todas las entradas y salidas registradas por las cámaras de puerta: persona, cámara y hora exacta. Filtra por periodo o por cámara para investigar un caso.</p>
         <span class="ayuda-card__go">Entrar →</span>
     </a>
@@ -224,19 +224,19 @@ $diagnostico = "Usuario: " . ($usuario !== "" ? $usuario : "—")
     </a>
 
     <a href="?page=rutas" class="ayuda-card box p-5 intro-y block">
-        <div class="ayuda-card__head"><span class="ayuda-card__emoji" aria-hidden="true">🗺️</span><span class="ayuda-card__title">Caminos · Rutas</span></div>
-        <p class="ayuda-card__text">Coloca las cámaras sobre el plano y enlázalas entre sí para reconstruir recorridos: las rutas ordenan los pasos de cada persona por la fortaleza.</p>
+        <div class="ayuda-card__head"><span class="ayuda-card__emoji" aria-hidden="true">🗺️</span><span class="ayuda-card__title"><?= rf_term_html("ayuda-rutas"); ?></span></div>
+        <p class="ayuda-card__text">Coloca las cámaras sobre el plano y enlázalas entre sí para reconstruir recorridos: las rutas ordenan los pasos de cada persona por la <?= rf_term_html("fortaleza"); ?>.</p>
         <span class="ayuda-card__go">Entrar →</span>
     </a>
 
     <a href="?page=config" class="ayuda-card box p-5 intro-y block">
-        <div class="ayuda-card__head"><span class="ayuda-card__emoji" aria-hidden="true">⚒️</span><span class="ayuda-card__title">La Forja · Configuración</span></div>
-        <p class="ayuda-card__text">Ajustes generales del panel y los planos: sensibilidad de detección, parámetros de vídeo y comportamiento de las cámaras. Cambia con cuidado: afecta a todo el reino.</p>
+        <div class="ayuda-card__head"><span class="ayuda-card__emoji" aria-hidden="true">⚒️</span><span class="ayuda-card__title"><?= rf_term_html("ayuda-config"); ?></span></div>
+        <p class="ayuda-card__text">Ajustes generales del panel y los planos: sensibilidad de detección, parámetros de vídeo y comportamiento de las cámaras. Cambia con cuidado: afecta a todo el <?= rf_term_html("reino"); ?>.</p>
         <span class="ayuda-card__go">Entrar →</span>
     </a>
 
     <a href="?page=camaras" class="ayuda-card box p-5 intro-y block">
-        <div class="ayuda-card__head"><span class="ayuda-card__emoji" aria-hidden="true">📡</span><span class="ayuda-card__title">El Ojo en Vivo · Cámaras</span></div>
+        <div class="ayuda-card__head"><span class="ayuda-card__emoji" aria-hidden="true">📡</span><span class="ayuda-card__title"><?= rf_term_html("ayuda-camaras"); ?></span></div>
         <p class="ayuda-card__text">Cada cámara con su snapshot en vivo, actualizado en segundo plano. Un clic abre el stream en tiempo real; si no hay stream, se muestra el último snapshot guardado.</p>
         <span class="ayuda-card__go">Entrar →</span>
     </a>
@@ -258,46 +258,46 @@ $diagnostico = "Usuario: " . ($usuario !== "" ? $usuario : "—")
 
     <details>
         <summary>¿Cómo veo las cámaras en directo?</summary>
-        <p class="ayuda-faq__answer">Entra en <a href="?page=camaras">El Ojo en Vivo</a> y haz clic en la cámara que quieras ver: se abre su stream en tiempo real. Si el stream no está disponible, se muestra automáticamente el último snapshot guardado. Las miniaturas se refrescan solas cada pocos segundos.</p>
+        <p class="ayuda-faq__answer">Entra en <a href="?page=camaras"><?= rf_term_html("nav-camaras"); ?></a> y haz clic en la cámara que quieras ver: se abre su stream en tiempo real. Si el stream no está disponible, se muestra automáticamente el último snapshot guardado. Las miniaturas se refrescan solas cada pocos segundos.</p>
     </details>
 
     <details>
         <summary>¿Cómo registro un visitante nuevo?</summary>
-        <p class="ayuda-faq__answer">Ve a <a href="?page=visitantes">Pueblos</a>, pulsa el botón Registrar y graba un vídeo corto siguiendo las indicaciones: el sistema extrae la identidad facial. Si la cara ya existe en la fortaleza, te lo avisará para evitar duplicados.</p>
+        <p class="ayuda-faq__answer">Ve a <a href="?page=visitantes"><?= rf_term_html("nav-visitantes"); ?></a>, pulsa el botón Registrar y graba un vídeo corto siguiendo las indicaciones: el sistema extrae la identidad facial. Si la cara ya existe en la <?= rf_term_html("fortaleza"); ?>, te lo avisará para evitar duplicados.</p>
     </details>
 
     <details>
         <summary>¿Cómo interpreto los movimientos?</summary>
-        <p class="ayuda-faq__answer"><a href="?page=accesos">Movimientos</a> lista cada entrada y salida registrada por las cámaras de puerta: quién fue, por qué cámara y a qué hora. Usa los filtros de fechas y de cámara para acotar la búsqueda, o el buscador para localizar a una persona concreta.</p>
+        <p class="ayuda-faq__answer"><a href="?page=accesos"><?= rf_term_html("nav-accesos"); ?></a> lista cada entrada y salida registrada por las cámaras de puerta: quién fue, por qué cámara y a qué hora. Usa los filtros de fechas y de cámara para acotar la búsqueda, o el buscador para localizar a una persona concreta.</p>
     </details>
 
     <details>
-        <summary>¿Cómo cambio el aforo de la fortaleza?</summary>
-        <p class="ayuda-faq__answer">En <a href="?page=dash">La Torre</a>, la primera tarjeta (Almas en la Fortaleza) tiene un campo junto al indicador en vivo: escribe el nuevo máximo y pulsa Actualizar. El cambio se aplica de inmediato.</p>
+        <summary>¿Cómo cambio el aforo de la <?= rf_term_html("fortaleza"); ?>?</summary>
+        <p class="ayuda-faq__answer">En <a href="?page=dash"><?= rf_term_html("nav-torre"); ?></a>, la primera tarjeta (<?= rf_term_html("dash-aforo"); ?>) tiene un campo junto al indicador en vivo: escribe el nuevo máximo y pulsa Actualizar. El cambio se aplica de inmediato.</p>
     </details>
 
     <details>
         <summary>¿Cómo configuro el plano, las líneas y las rutas?</summary>
-        <p class="ayuda-faq__answer">En <a href="?page=lineas">Líneas</a> dibujas sobre el plano los pasos o zonas que vigila cada cámara; en <a href="?page=rutas">Caminos</a> colocas y enlazas las cámaras para reconstruir recorridos. Los ajustes generales del panel (sensibilidad, vídeo…) están en <a href="?page=config">La Forja</a>.</p>
+        <p class="ayuda-faq__answer">En <a href="?page=lineas">Líneas</a> dibujas sobre el plano los pasos o zonas que vigila cada cámara; en <a href="?page=rutas"><?= rf_term_html("caminos"); ?></a> colocas y enlazas las cámaras para reconstruir recorridos. Los ajustes generales del panel (sensibilidad, vídeo…) están en <a href="?page=config"><?= rf_term_html("forja"); ?></a>.</p>
     </details>
 
     <details>
         <summary>¿Qué hago si una cámara no detecta bien?</summary>
-        <p class="ayuda-faq__answer">Comprueba primero que la cámara está encendida en <a href="?page=camaras">El Ojo en Vivo</a> y que la imagen es nítida: limpia el objetivo y revisa la orientación. Si sigue fallando, revisa la sensibilidad de detección en <a href="?page=config">La Forja</a> o contacta con el administrador.</p>
+        <p class="ayuda-faq__answer">Comprueba primero que la cámara está encendida en <a href="?page=camaras"><?= rf_term_html("nav-camaras"); ?></a> y que la imagen es nítida: limpia el objetivo y revisa la orientación. Si sigue fallando, revisa la sensibilidad de detección en <a href="?page=config"><?= rf_term_html("forja"); ?></a> o contacta con el administrador.</p>
     </details>
 
 </div>
 
 <!-- Contacto -->
 <div class="intro-y block sm:flex items-center h-10 mt-8">
-    <h2 class="text-lg font-medium truncate mr-5">🛡️ Último Recurso</h2>
+    <h2 class="text-lg font-medium truncate mr-5">🛡️ <?= rf_term_html("ayuda-ultimo-recurso"); ?></h2>
 </div>
 
 <div class="intro-y box p-5 mt-5">
     <div class="flex flex-col sm:flex-row sm:items-center sm:gap-4">
         <div class="flex-1">
             <h3 class="ayuda-contact__title">¿Aún no lo resuelves?</h3>
-            <p class="ayuda-contact__text">Si el problema persiste, contacta con el administrador. Incluye los datos de sesión de abajo: permiten localizar tu fortaleza y el origen del fallo con rapidez.</p>
+            <p class="ayuda-contact__text">Si el problema persiste, contacta con el administrador. Incluye los datos de sesión de abajo: permiten localizar tu <?= rf_term_html("fortaleza"); ?> y el origen del fallo con rapidez.</p>
         </div>
         <div class="flex-none mt-4 sm:mt-0">
             <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="rfCopiarDiagnostico()">📋 Copiar datos de sesión</button>

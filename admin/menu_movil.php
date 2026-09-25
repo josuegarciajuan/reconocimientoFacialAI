@@ -38,7 +38,7 @@
 
                 <div class="menu__icon menu__emoji">👁️</div>
 
-                <div class="menu__title"> La Torre </div>
+                <div class="menu__title"> <?= rf_term_html("nav-torre"); ?> </div>
             </a>
         </li>
 
@@ -67,9 +67,20 @@
                         <!-- brillo -->
                         <circle class="sauron-eye__shine" cx="27.4" cy="20.5" r="1.5" fill="rgba(255,235,205,0.95)"/>
                     </svg>
+                    <!-- Marca profesional: diafragma/apertura -->
+                    <svg class="rf-menu-aperture" viewBox="0 0 48 48" aria-hidden="true" focusable="false" fill="none" stroke="currentColor">
+                        <circle cx="24" cy="24" r="21" stroke-width="2"/>
+                        <circle cx="24" cy="24" r="8" stroke-width="1.4" opacity=".7"/>
+                        <path d="M32 24 L45 24" stroke-width="1.6" stroke-linecap="round"/>
+                        <path d="M28 30.93 L34.5 42.19" stroke-width="1.6" stroke-linecap="round"/>
+                        <path d="M20 30.93 L13.5 42.19" stroke-width="1.6" stroke-linecap="round"/>
+                        <path d="M16 24 L3 24" stroke-width="1.6" stroke-linecap="round"/>
+                        <path d="M20 17.07 L13.5 5.81" stroke-width="1.6" stroke-linecap="round"/>
+                        <path d="M28 17.07 L34.5 5.81" stroke-width="1.6" stroke-linecap="round"/>
+                    </svg>
                 </div>
 
-                <div class="menu__title"> El Ojo en Vivo <span class="live-dot live-dot--menu" aria-hidden="true"></span></div>
+                <div class="menu__title"> <?= rf_term_html("nav-camaras"); ?> <span class="live-dot live-dot--menu" aria-hidden="true"></span></div>
             </a>
         </li>
 
@@ -78,7 +89,7 @@
 
                 <div class="menu__icon menu__emoji">⚒️</div>
 
-                <div class="menu__title"> La Forja </div>
+                <div class="menu__title"> <?= rf_term_html("nav-config"); ?> </div>
             </a>
         </li>
 
@@ -87,7 +98,7 @@
         <li>
             <a href="?page=accesos" class="menu menu<?php if(isset($_GET["page"]) and $_GET["page"]=="accesos"){ echo "--active"; } ?>">
                 <div class="menu__icon menu__emoji">⚔️</div>
-                <div class="menu__title"> Movimientos </div>
+                <div class="menu__title"> <?= rf_term_html("nav-accesos"); ?> </div>
             </a>
         </li>
 
@@ -96,14 +107,14 @@
 
                 <div class="menu__icon menu__emoji">👹</div>
                 
-                <div class="menu__title"> Pueblos </div>
+                <div class="menu__title"> <?= rf_term_html("nav-visitantes"); ?> </div>
             </a>
         </li>
 
         <li>
             <a href="?page=rutas" class="menu menu<?php if(isset($_GET["page"]) and $_GET["page"]=="rutas"){ echo "--active"; } ?>">
                 <div class="menu__icon menu__emoji">🗺️</div>
-                <div class="menu__title"> Caminos </div>
+                <div class="menu__title"> <?= rf_term_html("nav-rutas"); ?> </div>
             </a>
         </li>
 
@@ -121,7 +132,7 @@
                         <circle cx="12" cy="12" r="1.7" fill="var(--mordor-oro)"/>
                     </svg>
                 </div>
-                <div class="menu__title"> Líneas </div>
+                <div class="menu__title"> <?= rf_term_html("nav-lineas"); ?> </div>
             </a>
         </li>
 
@@ -130,7 +141,7 @@
         <li>
             <a href="?page=ayuda" class="menu menu<?php if(isset($_GET["page"]) and $_GET["page"]=="ayuda"){ echo "--active"; } ?>">
                 <div class="menu__icon menu__emoji">📜</div>
-                <div class="menu__title"> El Concilio </div>
+                <div class="menu__title"> <?= rf_term_html("nav-ayuda"); ?> </div>
             </a>
         </li>
 

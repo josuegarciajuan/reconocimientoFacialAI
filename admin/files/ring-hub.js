@@ -15,6 +15,11 @@
 (function (win, doc) {
   "use strict";
 
+  /* Textos dependientes del tema (Mordor / Profesional) vía terminos.js. */
+  function T(clave, fallback) {
+    return (win.rfTerm ? win.rfTerm(clave) : fallback);
+  }
+
   var btn = doc.getElementById("ring-widget");
   var hub = doc.getElementById("ring-hub");
   if (!btn || !hub) { return; }
@@ -59,13 +64,14 @@
     btn.classList.toggle("ring-widget--arde", anomalias > 0);
     btn.setAttribute("aria-label",
       anomalias > 0
-        ? "El Anillo arde: " + (r.detalle || []).join(" · ") + ". Abre el centro de mando."
-        : "Un Anillo para gobernarlos a todos — abre el centro de mando");
+        ? "Aviso: " + (r.detalle || []).join(" · ") + ". Abre el centro de mando."
+        : T("anillo-aria", "Un Anillo para gobernarlos a todos — abre el centro de mando"));
 
     if (resumen) {
       var partes = [];
       if (r.daemons) {
-        partes.push((r.daemons.en_pie || 0) + "/" + r.daemons.total + " centinelas");
+        partes.push((r.daemons.en_pie || 0) + "/" + r.daemons.total + " " +
+          (win.rfGetTheme && win.rfGetTheme() === "pro" ? "servicios" : "centinelas"));
       }
       if (r.camaras && r.camaras.total > 0) {
         partes.push((r.camaras.total - r.camaras.apagadas) + "/" + r.camaras.total + " cámaras");
@@ -73,7 +79,7 @@
       if (r.aforo && r.aforo.max > 0) {
         partes.push("aforo " + r.aforo.pct + "%");
       }
-      resumen.textContent = partes.length > 0 ? partes.join(" · ") : "El Ojo vigila";
+      resumen.textContent = partes.length > 0 ? partes.join(" · ") : T("vigila", "El Ojo vigila");
     }
   }
 
@@ -181,7 +187,11 @@
     b.classList.remove("power-btn--on", "power-btn--off");
     b.classList.add("power-btn--" + estado);
     var lbl = doc.getElementById("ring-hub-power-label");
-    if (lbl) { lbl.textContent = (estado === "on") ? "Apagar el Ojo" : "Encender el Ojo"; }
+    if (lbl) {
+      lbl.textContent = (estado === "on")
+        ? T("power-off", "Apagar el Ojo")
+        : T("power-on", "Encender el Ojo");
+    }
   }
 
   function powerToggle() {

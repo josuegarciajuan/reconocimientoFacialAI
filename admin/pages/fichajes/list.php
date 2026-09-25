@@ -55,7 +55,7 @@ $trabajadores = DB::select(
 
 <div class="intro-y datatable-wrapper box p-5 mt-5 table-wrap">
     <p class="text-xs text-gray-500 dark:text-gray-500 mb-3">
-        Generados automáticamente por el conciliador según el horario del local (entrada = primera captura
+        Generados automáticamente por <?= rf_term_html("conciliador"); ?> según el horario del local (entrada = primera captura
         del día por cámara de puerta; salida = última por cámara de salida). <strong>Provisional</strong> = día en
         curso (la salida aún puede cambiar); <strong>Conciliado</strong> = día cerrado con salida definitiva.
     </p>
@@ -155,7 +155,7 @@ $trabajadores = DB::select(
             $par = ($par === "odd") ? "pair" : "odd";
         }
         if (!$rows) {
-            echo '<tr class="odd"><td class="text-center border-b py-4 text-gray-500 dark:text-gray-500" colspan="11">Sin fichajes en el rango. El conciliador los genera automáticamente (provisionales durante el día).</td></tr>';
+            echo '<tr class="odd"><td class="text-center border-b py-4 text-gray-500 dark:text-gray-500" colspan="11">Sin fichajes en el rango. ' . rf_term_html("daemon-conciliador") . ' los genera automáticamente (provisionales durante el día).</td></tr>';
         }
         } ?>
     </table>

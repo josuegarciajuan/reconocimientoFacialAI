@@ -51,13 +51,13 @@ $deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0))
 <div class="forge-submenu" role="tablist" aria-label="Acciones de cámaras">
     <a role="tab" aria-selected="<?= $sub === "crear" ? "true" : "false"; ?>"
        class="forge-sub<?= $sub === "crear" ? " is-active" : ""; ?>"
-       href="?page=config&tab=camaras&sub=crear" data-lore="forjar">Forjar</a>
+       href="?page=config&tab=camaras&sub=crear" data-lore="forjar"><?= rf_term_html("forjar"); ?></a>
     <a role="tab" aria-selected="<?= $sub === "editar" ? "true" : "false"; ?>"
        class="forge-sub<?= $sub === "editar" ? " is-active" : ""; ?>"
        href="?page=config&tab=camaras&sub=editar" data-lore="editar">Editar</a>
     <a role="tab" aria-selected="<?= $sub === "calibrar" ? "true" : "false"; ?>"
        class="forge-sub<?= $sub === "calibrar" ? " is-active" : ""; ?>"
-       href="?page=config&tab=camaras&sub=calibrar" data-lore="templar">Templar</a>
+       href="?page=config&tab=camaras&sub=calibrar" data-lore="templar" data-lore-pro="pro-config-templar"><?= rf_term_html("templar"); ?></a>
 </div>
 
 <?php if ($sub === "editar"): ?>
@@ -84,7 +84,7 @@ $deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0))
             <input type="text" name="nombre" id="nombre" class="input border w-full" placeholder="Descripción" value="<?= htmlspecialchars($camara_sel["descripcion"] ?? ""); ?>">
         </div>
         <div>
-            <label for="url_conexion" class="field-label" data-lore="url-conexion">URL de conexión</label>
+            <label for="url_conexion" class="field-label" data-lore="url-conexion" data-lore-pro="pro-config-url">URL de conexión</label>
             <input type="text" name="url_conexion" id="url_conexion" class="input border w-full" placeholder="url_conexion" value="<?= htmlspecialchars($camara_sel["url_conexion"] ?? ""); ?>">
         </div>
         <div>
@@ -95,10 +95,10 @@ $deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0))
         <div>
             <span class="field-label">Tipo de acceso</span>
             <div class="flex flex-wrap gap-x-4 gap-y-2 items-center">
-                <label for="entrada2" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="puerta-camara">
+                <label for="entrada2" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="puerta-camara" data-lore-pro="pro-config-puerta">
                     <input type="checkbox" name="eos2_puerta" id="entrada2" value="1" style="accent-color:var(--mordor-oro)" <?= $puerta_sel === 1 ? "checked" : ""; ?>> Puerta
                 </label>
-                <label for="salida2" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="salida-camara">
+                <label for="salida2" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="salida-camara" data-lore-pro="pro-config-salida">
                     <input type="checkbox" name="eos2_salida" id="salida2" value="1" style="accent-color:var(--mordor-oro)" <?= $salida_sel === 1 ? "checked" : ""; ?>> Salida
                 </label>
             </div>
@@ -109,7 +109,7 @@ $deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0))
 
         <div>
             <span class="field-label">Estado</span>
-            <label for="encendida" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="encendida">
+            <label for="encendida" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="encendida" data-lore-pro="pro-config-encendida">
                 <input type="checkbox" name="encendida" id="encendida" value="1" style="accent-color:var(--mordor-oro)" <?= $encendida_sel === 1 ? "checked" : ""; ?>> Encendida
             </label>
         </div>
@@ -123,12 +123,12 @@ $deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0))
     <p class="text-xs text-gray-500 dark:text-gray-600 mb-4">
         Parámetros que aplica el motor a la cámara seleccionada. El «↺» restaura ese campo a su
         valor de fábrica. Los badges <span style="color:#2e9e44">recomendado</span> llegan del
-        calibrador guiado (<a href="?page=config&tab=camaras&sub=calibrar&camara=<?= (int)($camara_sel["id"] ?? 0); ?>" class="underline">Templar</a>).
+        calibrador guiado (<a href="?page=config&tab=camaras&sub=calibrar&camara=<?= (int)($camara_sel["id"] ?? 0); ?>" class="underline"><?= rf_term_html("templar"); ?></a>).
     </p>
 
     <?php
     $dominios_ui = [
-        "movimiento"   => ["🎯", "Movimiento", "Cómo decide el centinela que hay movimiento (dispara la grabación)."],
+        "movimiento"   => ["🎯", "Movimiento", "Cómo decide " . rf_term("centinela") . " que hay movimiento (dispara la grabación)."],
         "rendimiento"  => ["⚡", "Rendimiento", "Cadencia y escala de análisis: más exigente = más CPU."],
         "almacenamiento" => ["💾", "Almacenamiento", "Cuánto ocupa cada clip de movimiento."],
     ];
@@ -173,7 +173,7 @@ $deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0))
         Vigilancia (alarmas de inactividad)
     </div>
     <p class="text-xs text-gray-500 dark:text-gray-600 mb-4">
-        Fuera de este horario, el movimiento en esta cámara dispara una alarma en «La Almenara».
+        Fuera de este horario, el movimiento en esta cámara dispara una alarma en «<?= rf_term_html("almenara"); ?>».
         Por defecto hereda el horario del local; desmarca «Heredar» para definir uno propio.
     </p>
 
@@ -201,10 +201,10 @@ $deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0))
         <button type="button" class="button text-white bg-theme-6 shadow-md" onclick="RestaurarFabrica()">Restaurar valores de fábrica</button>
         <?php if ($camara_sel): ?>
             <a href="?page=config&tab=camaras&sub=calibrar&camara=<?= (int)$camara_sel["id"]; ?>"
-               class="button text-white bg-theme-2 shadow-md">Ir a Templar →</a>
+               class="button text-white bg-theme-2 shadow-md">Ir a <?= rf_term_html("templar"); ?> →</a>
         <?php endif; ?>
         <span class="text-xs text-gray-500 dark:text-gray-600" data-lore="posicion-yunque">
-            La posición (X/Y) se ajusta arrastrando la cámara en «El Yunque».
+            La posición (X/Y) se ajusta arrastrando la cámara en «<?= rf_term_html("el-yunque-corto"); ?>».
         </span>
     </div>
 </div>
@@ -214,12 +214,12 @@ $deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0))
 <div class="form-section" data-panel-forge="calibrar">
     <div class="form-section__title">
         <span class="form-section__emoji" aria-hidden="true">🔧</span>
-        Templar · Calibrador guiado
+        <?= rf_term_html("templar"); ?> · Calibrador guiado
     </div>
     <p class="text-xs text-gray-500 dark:text-gray-600 mb-4">
-        Cada ritual mide la cámara <b>en vivo</b> con el mismo código de producción y propone
+        Cada <?= rf_term_html("ritual"); ?> mide la cámara <b>en vivo</b> con el mismo código de producción y propone
         valores con su motivo. Nada se aplica sin tu confirmación: revisa la recomendación y pulsa
-        «Aplicar» o descártala. También puedes ejecutar solo el ritual que te interese.
+        «Aplicar» o descártala. También puedes ejecutar solo <?= rf_term_html("el-ritual"); ?> que te interese.
     </p>
 
     <div class="form-grid">
@@ -245,7 +245,7 @@ $deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0))
             </select>
         </div>
         <div id="calibSegundosWrap">
-            <label for="calib_segundos" class="field-label">Duración del ritual (s)</label>
+            <label for="calib_segundos" class="field-label"><?= rf_term_html("duracion-ritual"); ?></label>
             <input type="number" id="calib_segundos" name="calib_segundos" value="20" min="5" max="60" class="input border w-full">
         </div>
     </div>
@@ -261,7 +261,7 @@ $deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0))
                 <img id="calibImg" src="" alt="Vista del calibrador"
                      style="width:100%;border-radius:8px;border:1px solid #333;background:#000">
                 <div id="calibEstadoRitual" class="text-xs mt-2" style="color:#9a9a9a">
-                    Elige un ritual y pulsa «Iniciar».
+                    <?= rf_term_html("elige-ritual"); ?>
                 </div>
             </div>
             <div style="flex:1 1 280px;min-width:240px">
@@ -275,11 +275,11 @@ $deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0))
         </div>
 
         <div class="form-section__title mt-6">
-            <span class="form-section__emoji" aria-hidden="true">🧪</span> Rituales
+            <span class="form-section__emoji" aria-hidden="true">🧪</span> <?= rf_term_html("rituales"); ?>
         </div>
         <div class="flex flex-wrap gap-2 mt-2">
             <button type="button" class="button text-white bg-theme-2 shadow-md calib-ritual" data-ritual="A"
-                    title="Mide a qué distancias/tamaños se detecta la cara">A · Alcance</button>
+                    title="Mide a qué distancias/tamaños se detecta la cara">A · <?= rf_term_html("ritual-alcance"); ?></button>
             <button type="button" class="button text-white bg-theme-2 shadow-md calib-ritual" data-ritual="B"
                     title="Pasa rápido delante de la cámara: comprueba que el movimiento/captura no se pierde">B · Paso veloz</button>
             <button type="button" class="button text-white bg-theme-2 shadow-md calib-ritual" data-ritual="C"
@@ -289,13 +289,13 @@ $deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0))
             <button type="button" class="button text-white bg-theme-2 shadow-md calib-ritual" data-ritual="E"
                     title="Offline: TAR/FAR sobre el set etiquetado motor/eval/data">E · Identidad</button>
             <button type="button" class="button text-white bg-theme-2 shadow-md calib-ritual" data-ritual="F"
-                    title="Sostén la cara a la distancia máxima de reconocimiento">F · Enfoque</button>
+                    title="Sostén la cara a la distancia máxima de reconocimiento">F · <?= rf_term_html("ritual-enfoque"); ?></button>
         </div>
 
         <!-- Parámetros específicos por ritual -->
         <div id="calibRitualParams" class="form-grid mt-3" style="display:none">
             <div id="calibFaseWrap" style="display:none">
-                <span class="field-label">Fase del ritual C</span>
+                <span class="field-label">Fase <?= rf_term_html("del-ritual"); ?> C</span>
                 <select id="calib_fase" class="input border w-full">
                     <option value="c1">C1 · Caminar despacio (DEBE disparar)</option>
                     <option value="c2">C2 · Agitar la mano lejos (NO debe disparar)</option>
@@ -308,7 +308,7 @@ $deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0))
                 <span class="field-label">Cruces esperados</span>
                 <input type="number" id="calib_esperados" value="3" min="1" max="20" class="input border w-full">
                 <p class="text-xs text-gray-500 dark:text-gray-600 mt-1">
-                    Cuántas veces vas a cruzar la línea durante el ritual.
+                    Cuántas veces vas a cruzar la línea durante <?= rf_term_html("el-ritual"); ?>.
                 </p>
             </div>
         </div>
@@ -317,11 +317,11 @@ $deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0))
             <span class="form-section__emoji" aria-hidden="true">📋</span> Recomendación
         </div>
         <div id="calibRecomendaciones" class="text-xs mt-2" style="line-height:1.7">
-            — ejecuta un ritual para obtener una recomendación —
+            — ejecuta <?= rf_term_html("el-ritual"); ?> para obtener una recomendación —
         </div>
 
         <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 items-center">
-            <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="TemplarIniciar()">▶ Iniciar ritual</button>
+            <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="TemplarIniciar()">▶ <?= rf_term_html("iniciar-ritual"); ?></button>
             <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="TemplarAplicar()">Aplicar recomendación</button>
             <button type="button" class="button text-white bg-theme-6 shadow-md" onclick="TemplarRestaurarFabrica()">Restaurar valores de fábrica</button>
         </div>
@@ -334,7 +334,7 @@ $deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0))
         </div>
         <p class="text-xs text-gray-500 dark:text-gray-600 mb-2">
             Valores del <code>.env</code> (fuera de git). El «↺» borra la línea para que aplique el
-            default del código (fábrica). Los rituales del modo «Esta cámara» también pueden
+            default del código (fábrica). Los <?= rf_term_html("rituales-lc"); ?> del modo «Esta cámara» también pueden
             recomendar valores globales (RF_*) aquí.
         </p>
         <div class="overflow-x-auto">
@@ -372,10 +372,10 @@ $deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0))
                class="button text-white bg-theme-6 shadow-md">Restaurar todos los globales</a>
             <?php if ($camara_sel): ?>
                 <a href="?page=config&tab=camaras&sub=calibrar&accion=calibrar_aplicar_global&camara=<?= (int)$camara_sel["id"]; ?>&modo=general"
-                   class="button text-white bg-theme-1 shadow-md" title="Aplica las recomendaciones RF_* pendientes (de los rituales) al .env">Aplicar recomendaciones globales</a>
+                   class="button text-white bg-theme-1 shadow-md" title="Aplica las recomendaciones RF_* pendientes (<?= htmlspecialchars(rf_term("de-los-rituales"), ENT_QUOTES); ?>) al .env">Aplicar recomendaciones globales</a>
             <?php endif; ?>
             <span class="text-xs text-gray-500 dark:text-gray-600">
-                El ritual E (identidad) corre el TAR/FAR sobre el set etiquetado <code>motor/eval/data</code>.
+                <?= rf_term_html("ritual-e"); ?> corre el TAR/FAR sobre el set etiquetado <code>motor/eval/data</code>.
                 El barrido offline de movimiento (<code>calibrar_movimiento.py</code>) se ejecuta por CLI con
                 vídeos positivos/negativos y escribe su recomendación aquí.
             </span>
@@ -461,17 +461,17 @@ $deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0))
             <input type="text" name="nombre_nueva" id="nombre_nueva" class="input border w-full" placeholder="Descripción">
         </div>
         <div>
-            <label for="url_conexion_nueva" class="field-label" data-lore="url-conexion">URL de conexión / ID cámara local</label>
+            <label for="url_conexion_nueva" class="field-label" data-lore="url-conexion" data-lore-pro="pro-config-url">URL de conexión / ID cámara local</label>
             <input type="text" name="url_conexion_nueva" id="url_conexion_nueva" class="input border w-full" placeholder="Url conexion / id camara local">
         </div>
 
         <div>
             <span class="field-label">Tipo de acceso</span>
             <div class="flex flex-wrap gap-x-4 gap-y-2 items-center">
-                <label for="entrada1" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="puerta-camara">
+                <label for="entrada1" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="puerta-camara" data-lore-pro="pro-config-puerta">
                     <input type="checkbox" name="eos1_puerta" id="entrada1" value="1" style="accent-color:var(--mordor-oro)"> Puerta
                 </label>
-                <label for="salida1" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="salida-camara">
+                <label for="salida1" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="salida-camara" data-lore-pro="pro-config-salida">
                     <input type="checkbox" name="eos1_salida" id="salida1" value="1" style="accent-color:var(--mordor-oro)"> Salida
                 </label>
             </div>
@@ -482,7 +482,7 @@ $deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0))
 
         <div>
             <span class="field-label">Estado</span>
-            <label for="encendida_nueva" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="encendida">
+            <label for="encendida_nueva" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400" data-lore="encendida" data-lore-pro="pro-config-encendida">
                 <input type="checkbox" name="encendida_nueva" id="encendida_nueva" value="1" style="accent-color:var(--mordor-oro)"> Encendida
             </label>
         </div>
@@ -490,7 +490,7 @@ $deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0))
         <div class="form-grid__full">
             <button type="button" class="button text-white bg-theme-1 shadow-md" onclick="crear()">Crear cámara</button>
             <span class="text-xs text-gray-500 dark:text-gray-600 ml-2" data-lore="posicion-yunque">
-                Al crearla quedará sin posición; arrástrala al plano en «El Yunque».
+                Al crearla quedará sin posición; arrástrala al plano en «<?= rf_term_html("el-yunque-corto"); ?>».
             </span>
         </div>
 

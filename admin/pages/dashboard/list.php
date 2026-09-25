@@ -278,8 +278,8 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
      ================================================================ -->
 <div class="col-span-12 mt-8">
     <div class="intro-y flex items-center h-10">
-        <h2 class="text-lg font-medium truncate mr-5">🧭 El Camino del Mensajero</h2>
-        <a href="?page=dash" class="ml-auto flex text-theme-1 dark:text-theme-10">🔮 Reinvocar Datos</a>
+        <h2 class="text-lg font-medium truncate mr-5">🧭 <?= rf_term_html("dash-guia"); ?></h2>
+        <a href="?page=dash" class="ml-auto flex text-theme-1 dark:text-theme-10">🔮 <?= rf_term_html("dash-reinvocar"); ?></a>
     </div>
     <nav class="quick-links mt-3" aria-label="Accesos directos">
         <a class="quick-link quick-link--anchor" href="#seccion-fichajes"><span class="quick-link__emoji" aria-hidden="true">⏳</span><span class="quick-link__label">Fichajes de hoy</span></a>
@@ -297,7 +297,7 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
             <!-- Caldero de aforo -->
             <div class="mordor-hero__gauge">
                 <div class="aforo-gauge aforo-gauge--<?= $aforo["estado"]; ?>" id="aforo-gauge">
-                    <div class="aforo-gauge__vessel" role="img" aria-label="Caldero de aforo" data-lore="caldero-aforo">
+                    <div class="aforo-gauge__vessel" role="img" aria-label="<?= htmlspecialchars(rf_term("dash-caldero"), ENT_QUOTES); ?>" data-lore="caldero-aforo">
                         <div class="aforo-gauge__lava" id="aforo-lava" style="--nivel:<?= min(100, $aforo["pct"]); ?>%"></div>
                         <span class="aforo-gauge__tick aforo-gauge__tick--t1" aria-hidden="true"></span>
                         <span class="aforo-gauge__tick aforo-gauge__tick--t2" aria-hidden="true"></span>
@@ -308,12 +308,12 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
                         <div class="aforo-gauge__value tnum" id="aforo-actual"><?= (int)$aforo["actual"]; ?></div>
                         <div class="aforo-gauge__of">de <span id="aforo-max" class="tnum"><?= (int)$aforo["max"]; ?></span> plazas</div>
                         <div class="aforo-gauge__sem" id="aforo-sem" data-lore="semaforo-aforo"><?php
-                            if ($aforo["estado"] === "full") { echo "🔴 Asedio · " . $aforo["pct"] . "%"; }
-                            elseif ($aforo["estado"] === "warn") { echo "🟡 Animado · " . $aforo["pct"] . "%"; }
-                            else { echo "🟢 Tranquilo · " . $aforo["pct"] . "%"; }
+                            if ($aforo["estado"] === "full") { echo "🔴 " . rf_term_html("aforo-full") . " · " . $aforo["pct"] . "%"; }
+                            elseif ($aforo["estado"] === "warn") { echo "🟡 " . rf_term_html("aforo-warn") . " · " . $aforo["pct"] . "%"; }
+                            else { echo "🟢 " . rf_term_html("aforo-ok") . " · " . $aforo["pct"] . "%"; }
                         ?></div>
                         <div class="aforo-gauge__control">
-                            <input type="number" id="aforo_input" class="input border w-24" min="0" placeholder="<?= (int)$aforo["actual"]; ?>" aria-label="Nuevo aforo actual de la fortaleza" title="Fijar el aforo actual">
+                            <input type="number" id="aforo_input" class="input border w-24" min="0" placeholder="<?= (int)$aforo["actual"]; ?>" aria-label="<?= htmlspecialchars(rf_term("aforo-nuevo-aria"), ENT_QUOTES); ?>" title="Fijar el aforo actual">
                             <button type="button" class="button text-white bg-theme-1 shadow-md" data-lore="fijar-aforo" onclick="dashCambiarAforo()">⚙️ Fijar</button>
                         </div>
                     </div>
@@ -322,36 +322,36 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
 
             <!-- Saludo + estado -->
             <div class="mordor-hero__main">
-                <div class="mordor-hero__eyebrow" aria-hidden="true">👁️ EL OJO VIGILA</div>
-                <h1 class="mordor-hero__title">Estado de Mordor</h1>
+                <div class="mordor-hero__eyebrow" aria-hidden="true">👁️ <?= rf_term_html("hero-ojo-vigila"); ?></div>
+                <h1 class="mordor-hero__title"><?= rf_term_html("dash-estado-sistema"); ?></h1>
                 <p class="mordor-hero__saludo"><?= dash_saludo(); ?>, <strong><?= htmlspecialchars($usuario); ?></strong> — <?= htmlspecialchars(dash_fecha_larga()); ?> · <span id="dash-clock" class="tnum">--:--:--</span></p>
 
                 <div class="hero-kpis">
                     <div class="hero-kpi" data-lore="almas-dentro-ahora">
                         <span class="hero-kpi__emoji" aria-hidden="true">👁️</span>
                         <span class="hero-kpi__num tnum" id="hero-dentro"><?= $almas_dentro; ?></span>
-                        <span class="hero-kpi__lbl">almas dentro</span>
+                        <span class="hero-kpi__lbl"><?= rf_term_html("dash-almas-dentro"); ?></span>
                     </div>
                     <div class="hero-kpi <?= $ciegas > 0 ? "hero-kpi--alerta" : ""; ?>" data-lore="camaras-en-pie">
                         <span class="hero-kpi__emoji" aria-hidden="true">📷</span>
                         <span class="hero-kpi__num tnum"><?= $total_camaras - $ciegas; ?>/<?= $total_camaras; ?></span>
-                        <span class="hero-kpi__lbl">cámaras en pie</span>
+                        <span class="hero-kpi__lbl"><?= rf_term_html("dash-camaras-en-pie"); ?></span>
                     </div>
                     <div class="hero-kpi <?= $anomalias > 0 ? "hero-kpi--alerta" : ""; ?>" data-lore="anomalias-ojo">
                         <span class="hero-kpi__emoji" aria-hidden="true">🔥</span>
                         <span class="hero-kpi__num tnum"><?= $anomalias; ?></span>
-                        <span class="hero-kpi__lbl">anomalías</span>
+                        <span class="hero-kpi__lbl"><?= rf_term_html("dash-anomalias"); ?></span>
                     </div>
                     <div class="hero-kpi" data-lore="pergaminos-ojo">
                         <span class="hero-kpi__emoji" aria-hidden="true">🎞️</span>
                         <span class="hero-kpi__num tnum"><?= $videos_hoy; ?></span>
-                        <span class="hero-kpi__lbl">vídeos hoy</span>
+                        <span class="hero-kpi__lbl"><?= rf_term_html("dash-videos-hoy"); ?></span>
                     </div>
                 </div>
 
                 <?php if ($anomalias > 0): ?>
                 <div class="hero-alertas" role="alert">
-                    <strong>🚨 Señales de alarma:</strong>
+                    <strong>🚨 <?= rf_term_html("dash-senales-alarma"); ?>:</strong>
                     <?= htmlspecialchars(implode(" · ", $detalle_anomalias)); ?>
                 </div>
                 <?php endif; ?>
@@ -365,7 +365,7 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
      ================================================================ -->
 <div class="col-span-12 mt-8">
     <div class="intro-y flex items-center h-10">
-        <h2 class="text-lg font-medium truncate mr-5">👁️ La Vanguardia</h2>
+        <h2 class="text-lg font-medium truncate mr-5">👁️ <?= rf_term_html("dash-vanguardia"); ?></h2>
         <span class="ml-auto text-xs text-gray-500 dark:text-gray-500">lo esencial de un vistazo</span>
     </div>
     <div class="grid grid-cols-12 gap-6 mt-5">
@@ -378,7 +378,7 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
                         <div class="ml-auto"><span class="tendencia-pill tendencia-pill--<?= $pct_entradas >= 0 ? "up" : "down"; ?>"><?= ($pct_entradas > 0 ? "+" : "") . $pct_entradas . "%"; ?></span></div>
                     </div>
                     <div class="kpi-number mt-4 tnum count-up" data-count="<?= $entradas_hoy; ?>"><?= $entradas_hoy; ?></div>
-                    <div class="kpi-label mt-1" data-lore="cruzaron-puerta">Cruzaron la Puerta Negra <span class="kpi-sub">· <?= $salidas_hoy; ?> salieron · neto <?= ($entradas_hoy - $salidas_hoy) >= 0 ? "+" : ""; ?><?= $entradas_hoy - $salidas_hoy; ?></span></div>
+                    <div class="kpi-label mt-1" data-lore="cruzaron-puerta"><?= rf_term_html("dash-cruzaron-puerta"); ?> <span class="kpi-sub">· <?= $salidas_hoy; ?> salieron · neto <?= ($entradas_hoy - $salidas_hoy) >= 0 ? "+" : ""; ?><?= $entradas_hoy - $salidas_hoy; ?></span></div>
                 </div>
             </div>
         </div>
@@ -391,7 +391,7 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
                         <div class="ml-auto"><span class="live-dot" aria-hidden="true"></span></div>
                     </div>
                     <div class="kpi-number mt-4 tnum count-up" data-count="<?= $almas_dentro; ?>"><?= $almas_dentro; ?></div>
-                    <div class="kpi-label mt-1">Almas dentro ahora <span class="kpi-sub">· <?= $aforo["max"] > 0 ? $aforo["pct"] . "% de la fortaleza" : "aforo sin límite"; ?></span></div>
+                    <div class="kpi-label mt-1"><?= rf_term_html("dash-almas-ahora"); ?> <span class="kpi-sub">· <?= $aforo["max"] > 0 ? $aforo["pct"] . "% " . rf_term("de-fortaleza") : "aforo sin límite"; ?></span></div>
                 </div>
             </div>
         </div>
@@ -405,11 +405,11 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
                     </div>
                     <?php if ($total_trabajadores > 0): ?>
                     <div class="kpi-number mt-4 tnum count-up" data-count="<?= $fichados_hoy; ?>"><?= $fichados_hoy; ?><span class="kpi-number__frac">/<?= $total_trabajadores; ?></span></div>
-                    <div class="kpi-label mt-1">Legión en formación <span class="kpi-sub">· han fichado hoy</span></div>
+                    <div class="kpi-label mt-1"><?= rf_term_html("dash-legion-formacion"); ?> <span class="kpi-sub">· han fichado hoy</span></div>
                     <div class="kpi-progress kpi-progress--<?= $pct_legion >= 85 ? "full" : ($pct_legion >= 60 ? "warn" : "ok"); ?> mt-3"><div class="kpi-progress__fill" style="width:<?= $pct_legion; ?>%"></div></div>
                     <?php else: ?>
                     <div class="kpi-number mt-4 tnum">—</div>
-                    <div class="kpi-label mt-1">Legión en formación <span class="kpi-sub">· sin trabajadores dados de alta</span></div>
+                    <div class="kpi-label mt-1"><?= rf_term_html("dash-legion-formacion"); ?> <span class="kpi-sub">· sin trabajadores dados de alta</span></div>
                     <?php endif; ?>
                 </div>
             </div>
@@ -423,7 +423,7 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
                         <div class="ml-auto"><?= $ciegas > 0 ? '<span class="tendencia-pill tendencia-pill--down">¡ojo!</span>' : '<span class="tendencia-pill tendencia-pill--flat">ok</span>'; ?></div>
                     </div>
                     <div class="kpi-number mt-4 tnum count-up" data-count="<?= $ciegas; ?>"><?= $ciegas; ?></div>
-                    <div class="kpi-label mt-1">Cámaras ciegas <span class="kpi-sub">· <?= $total_camaras; ?> desplegadas</span></div>
+                    <div class="kpi-label mt-1"><?= rf_term_html("dash-camaras-ciegas"); ?> <span class="kpi-sub">· <?= $total_camaras; ?> <?= rf_term_html("dash-desplegadas"); ?></span></div>
                 </div>
             </div>
         </div>
@@ -436,7 +436,7 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
                         <div class="ml-auto"><span class="live-dot" aria-hidden="true"></span></div>
                     </div>
                     <div class="kpi-number mt-4 tnum"><?= $pico ? str_pad((int)$pico["h"], 2, "0", STR_PAD_LEFT) . ":00" : "—"; ?></div>
-                    <div class="kpi-label mt-1">Hora del asedio <span class="kpi-sub">· pico de hoy (<?= $pico ? (int)$pico["n"] . " movs" : "sin datos"; ?>)</span></div>
+                    <div class="kpi-label mt-1"><?= rf_term_html("dash-hora-asedio"); ?> <span class="kpi-sub">· pico de hoy (<?= $pico ? (int)$pico["n"] . " movs" : "sin datos"; ?>)</span></div>
                 </div>
             </div>
         </div>
@@ -449,7 +449,7 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
                         <div class="ml-auto"><span class="tendencia-pill tendencia-pill--flat">archivo</span></div>
                     </div>
                     <div class="kpi-number mt-4 tnum count-up" data-count="<?= $videos_hoy; ?>"><?= $videos_hoy; ?></div>
-                    <div class="kpi-label mt-1">Pergaminos del Ojo <span class="kpi-sub">· 💾 <?= $gb_tesoro > 0 ? $gb_tesoro . " GB en la Forja" : "0 GB"; ?></span></div>
+                    <div class="kpi-label mt-1"><?= rf_term_html("dash-pergaminos-ojo"); ?> <span class="kpi-sub">· 💾 <?= $gb_tesoro > 0 ? $gb_tesoro . " " . rf_term("dash-gb-forja") : "0 GB"; ?></span></div>
                 </div>
             </div>
         </div>
@@ -462,7 +462,7 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
                         <div class="ml-auto"><span class="tendencia-pill tendencia-pill--flat">hoy</span></div>
                     </div>
                     <div class="kpi-number mt-4 tnum" style="font-size:1.6rem;line-height:1.3"><?= $vigia ? camara_link((int)$vigia["id"], $vigia["descripcion"]) : "—"; ?></div>
-                    <div class="kpi-label mt-1">El vigía incansable <span class="kpi-sub">· <?= $vigia ? (int)$vigia["n"] . " detecciones hoy" : "sin actividad"; ?></span></div>
+                    <div class="kpi-label mt-1"><?= rf_term_html("dash-vigia-incansable"); ?> <span class="kpi-sub">· <?= $vigia ? (int)$vigia["n"] . " detecciones hoy" : "sin actividad"; ?></span></div>
                 </div>
             </div>
         </div>
@@ -479,20 +479,20 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
             <div class="box p-5 h-full">
                 <div class="flex flex-col xl:flex-row xl:items-center">
                     <div>
-                        <h2 class="text-lg font-medium truncate mr-5">🗺️ Mapa de Asedio</h2>
+                        <h2 class="text-lg font-medium truncate mr-5">🗺️ <?= rf_term_html("dash-mapa-asedio"); ?></h2>
                         <div class="flex items-center mt-1 gap-4">
                             <div class="flex items-center"><span class="dash-legend dash-legend--actual" aria-hidden="true"></span><span class="text-xs text-gray-600 dark:text-gray-500"><?= htmlspecialchars($txt1); ?> · <strong class="tnum"><?= array_sum($v_datos1); ?></strong></span></div>
                             <div class="flex items-center"><span class="dash-legend dash-legend--pasado" aria-hidden="true"></span><span class="text-xs text-gray-600 dark:text-gray-500"><?= htmlspecialchars($txt2); ?> · <strong class="tnum"><?= array_sum($v_datos2); ?></strong></span></div>
                         </div>
                     </div>
                     <div class="dropdown relative xl:ml-auto mt-3 xl:mt-0">
-                        <button class="dropdown-toggle button font-normal border dark:border-dark-5 text-white dark:text-gray-300 relative flex items-center text-gray-700">🕰️ Elegir era</button>
+                        <button class="dropdown-toggle button font-normal border dark:border-dark-5 text-white dark:text-gray-300 relative flex items-center text-gray-700">🕰️ <?= rf_term_html("dash-elegir-era"); ?></button>
                         <div class="dropdown-box mt-10 absolute w-40 top-0 xl:right-0 z-20">
                             <div class="dropdown-box__content box dark:bg-dark-1 p-2 overflow-y-auto h-32">
-                                <a href="?page=dash&filtro=dia" class="flex items-center block p-2">🌅 Un amanecer</a>
-                                <a href="?page=dash&filtro=semana" class="flex items-center block p-2">🌙 Una luna</a>
-                                <a href="?page=dash&filtro=mes" class="flex items-center block p-2">📅 Un ciclo</a>
-                                <a href="?page=dash&filtro=anyo" class="flex items-center block p-2">🏛️ Una era</a>
+                                <a href="?page=dash&filtro=dia" class="flex items-center block p-2">🌅 <?= rf_term_html("era-dia"); ?></a>
+                                <a href="?page=dash&filtro=semana" class="flex items-center block p-2">🌙 <?= rf_term_html("era-semana"); ?></a>
+                                <a href="?page=dash&filtro=mes" class="flex items-center block p-2">📅 <?= rf_term_html("era-mes"); ?></a>
+                                <a href="?page=dash&filtro=anyo" class="flex items-center block p-2">🏛️ <?= rf_term_html("era-anyo"); ?></a>
                             </div>
                         </div>
                     </div>
@@ -509,7 +509,7 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
         <!-- La Puerta vs Las Cámaras -->
         <div class="col-span-12 xl:col-span-5 intro-y">
             <div class="box p-5 h-full">
-                <h2 class="text-lg font-medium truncate">⚖️ La Puerta vs Las Cámaras</h2>
+                <h2 class="text-lg font-medium truncate">⚖️ <?= rf_term_html("dash-puerta-vs-camaras"); ?></h2>
                 <div class="text-xs text-gray-600 dark:text-gray-500 mt-1">actividad por cámara · último mes</div>
                 <?php
                 $donut_html = "";
@@ -555,7 +555,7 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
         <!-- Heatmap -->
         <div class="col-span-12 xl:col-span-7 intro-y">
             <div class="box p-5">
-                <h2 class="text-lg font-medium truncate">🔥 Las Fraguas por Hora</h2>
+                <h2 class="text-lg font-medium truncate">🔥 <?= rf_term_html("dash-fraguas-hora"); ?></h2>
                 <div class="text-xs text-gray-600 dark:text-gray-500 mt-1">afluencia · últimos 7 días · pasa el cursor por una celda</div>
                 <div class="heat-card mt-3">
                     <?php
@@ -609,7 +609,7 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
      ================================================================ -->
 <div class="col-span-12 mt-8">
     <div class="intro-y flex items-center h-10">
-        <h2 class="text-lg font-medium truncate mr-5">📜 El Alcance del Ojo</h2>
+        <h2 class="text-lg font-medium truncate mr-5">📜 <?= rf_term_html("dash-alcance"); ?></h2>
         <span class="ml-auto text-xs text-gray-500 dark:text-gray-500">despliega para más detalle</span>
     </div>
 
@@ -617,7 +617,7 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
     <section class="scroll-section scroll-section--open intro-y box p-5 mt-5" id="seccion-cronica">
         <button class="scroll-section__toggle" aria-expanded="true" aria-controls="cronica-body">
             <span class="scroll-section__emoji" aria-hidden="true">👁️</span>
-            <span class="scroll-section__title">Crónica del Ojo en Vivo</span>
+            <span class="scroll-section__title"><?= rf_term_html("dash-cronica-ojo"); ?></span>
             <span class="scroll-section__hint">últimos movimientos · <span id="feed-actualizado">ahora</span></span>
             <span class="scroll-section__chevron" aria-hidden="true">▾</span>
         </button>
@@ -626,7 +626,7 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
                 <?= dash_feed_html($local_id, 10); ?>
             </div>
             <div class="mt-4 text-right">
-                <a class="text-theme-1 dark:text-theme-10 text-xs font-semibold" href="?page=accesos">↳ Ver todos los Movimientos →</a>
+                <a class="text-theme-1 dark:text-theme-10 text-xs font-semibold" href="?page=accesos">↳ <?= rf_term_html("dash-ver-todos-movimientos"); ?> →</a>
             </div>
         </div>
     </section>
@@ -636,7 +636,7 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
         <button class="scroll-section__toggle" aria-expanded="false" aria-controls="dentro-body">
             <span class="scroll-section__emoji" aria-hidden="true">🚶</span>
             <span class="scroll-section__title">Quién está Dentro</span>
-            <span class="scroll-section__hint"><span class="tnum" id="dentro-count"><?= $almas_dentro; ?></span> almas en la fortaleza</span>
+            <span class="scroll-section__hint"><span class="tnum" id="dentro-count"><?= $almas_dentro; ?></span> <?= rf_term_html("dash-almas-fortaleza"); ?></span>
             <span class="scroll-section__chevron" aria-hidden="true">▾</span>
         </button>
         <div class="scroll-section__body" id="dentro-body" hidden>
@@ -649,7 +649,7 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
         <button class="scroll-section__toggle" aria-expanded="false" aria-controls="falta-body">
             <span class="scroll-section__emoji" aria-hidden="true">⏳</span>
             <span class="scroll-section__title">Falta por Fichar</span>
-            <span class="scroll-section__hint"><span class="tnum" id="falta-count"><?= count(dash_falta_fichar($local_id)); ?></span> trabajadores aún en camino</span>
+            <span class="scroll-section__hint"><span class="tnum" id="falta-count"><?= count(dash_falta_fichar($local_id)); ?></span> <?= rf_term_html("dash-trabajadores-camino"); ?></span>
             <span class="scroll-section__chevron" aria-hidden="true">▾</span>
         </button>
         <div class="scroll-section__body" id="falta-body" hidden>
@@ -677,14 +677,14 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
     <section class="scroll-section intro-y box p-5 mt-5" id="seccion-ranking">
         <button class="scroll-section__toggle" aria-expanded="false" aria-controls="ranking-body">
             <span class="scroll-section__emoji" aria-hidden="true">👑</span>
-            <span class="scroll-section__title">El Concilio de los Fieles</span>
-            <span class="scroll-section__hint">rankings y glorias del mes</span>
+            <span class="scroll-section__title"><?= rf_term_html("dash-concilio"); ?></span>
+            <span class="scroll-section__hint"><?= rf_term_html("dash-glorias-mes"); ?></span>
             <span class="scroll-section__chevron" aria-hidden="true">▾</span>
         </button>
         <div class="scroll-section__body" id="ranking-body" hidden>
             <div class="grid grid-cols-12 gap-6">
                 <div class="col-span-12 lg:col-span-7">
-                    <h3 class="scroll-section__sub">🏆 Los más leales · 30 días</h3>
+                    <h3 class="scroll-section__sub">🏆 <?= rf_term_html("dash-mas-leales"); ?></h3>
                     <ul class="ranking">
                         <?php foreach ($ranking as $i => $r):
                             $medallas = ["🥇", "🥈", "🥉"];
@@ -702,30 +702,30 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
                             <span class="ranking__val tnum"><?= (int)$r["n"]; ?> <small>visitas</small></span>
                         </li>
                         <?php endforeach; ?>
-                        <?php if (!$ranking): ?><li class="ranking__li ranking__li--empty">Aún no hay súbditos este mes. 🕸️</li><?php endif; ?>
+                        <?php if (!$ranking): ?><li class="ranking__li ranking__li--empty"><?= rf_term_html("dash-sin-subditos"); ?></li><?php endif; ?>
                     </ul>
                 </div>
                 <div class="col-span-12 lg:col-span-5">
-                    <h3 class="scroll-section__sub">✨ Glorias del Reino</h3>
+                    <h3 class="scroll-section__sub">✨ <?= rf_term_html("dash-glorias-reino"); ?></h3>
                     <ul class="premios">
                         <li class="premio">
                             <span class="premio__emoji" aria-hidden="true">🌅</span>
                             <div class="premio__info">
-                                <div class="premio__titulo">Alma madrugadora de hoy</div>
+                                <div class="premio__titulo"><?= rf_term_html("dash-alma-madrugadora"); ?></div>
                                 <div class="premio__valor"><?= $madrugadora ? persona_link((int)$madrugadora["id"], persona_label($madrugadora["nombre"], $madrugadora["cod_interno"])) . " a las " . date("H:i", strtotime($madrugadora["t"])) : "Nadie ha llegado aún 🕊️"; ?></div>
                             </div>
                         </li>
                         <li class="premio">
                             <span class="premio__emoji" aria-hidden="true">🏆</span>
                             <div class="premio__info">
-                                <div class="premio__titulo">El Visitante más Leal</div>
+                                <div class="premio__titulo"><?= rf_term_html("dash-visitante-leal"); ?></div>
                                 <div class="premio__valor"><?= isset($ranking[0]) ? persona_link((int)$ranking[0]["pid"], persona_label($ranking[0]["nombre"], $ranking[0]["cod_interno"])) . " con " . (int)$ranking[0]["n"] . " visitas" : "—"; ?></div>
                             </div>
                         </li>
                         <li class="premio">
                             <span class="premio__emoji" aria-hidden="true">🔥</span>
                             <div class="premio__info">
-                                <div class="premio__titulo">Rachas de presencia (14 días)</div>
+                                <div class="premio__titulo"><?= rf_term_html("dash-rachas-presencia"); ?></div>
                                 <div class="premio__valor">
                                     <?php foreach ($rachas as $i => $r): ?>
                                         <span class="premio__racha"><?= persona_link((int)$r["pid"], persona_label($r["nombre"], $r["cod_interno"])); ?> · <?= (int)$r["dias"]; ?> días</span><?= $i < count($rachas) - 1 ? ", " : ""; ?>
@@ -748,14 +748,14 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
     <div class="intro-y box p-5">
         <div class="flex flex-col sm:flex-row sm:items-center gap-2">
             <div>
-                <h2 class="text-lg font-medium truncate">🔮 Profecía de Afluencia</h2>
-                <div class="text-xs text-gray-600 dark:text-gray-500 mt-1">real hoy (brasa) vs media de los mismos días de semana (oro) · últimos 28 días</div>
+                <h2 class="text-lg font-medium truncate">🔮 <?= rf_term_html("dash-profecia"); ?></h2>
+                <div class="text-xs text-gray-600 dark:text-gray-500 mt-1"><?= rf_term_html("dash-profecia-detalle"); ?></div>
             </div>
             <div class="sm:ml-auto flex flex-wrap gap-2 text-xs">
                 <span class="prophecy-pill">📅 esperado: <strong class="tnum"><?= $profecia["total_esperado"]; ?></strong></span>
                 <span class="prophecy-pill">⚡ real (acumulado): <strong class="tnum"><?= $profecia["total_real"]; ?></strong></span>
                 <?php if ($profecia["pico_h"] !== 0 || $profecia["pico_v"] > 0): ?>
-                <span class="prophecy-pill">⏰ asedio previsto ~<strong class="tnum"><?= str_pad($profecia["pico_h"], 2, "0", STR_PAD_LEFT); ?>:00</strong></span>
+                <span class="prophecy-pill">⏰ <?= rf_term_html("dash-asedio-previsto"); ?> ~<strong class="tnum"><?= str_pad($profecia["pico_h"], 2, "0", STR_PAD_LEFT); ?>:00</strong></span>
                 <?php endif; ?>
             </div>
         </div>
@@ -772,10 +772,10 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
             ?>
             <p class="prophecy__augur mt-2"><?php
                 $d = $profecia["total_real"] - $profecia["total_esperado"];
-                if ($profecia["total_esperado"] === 0) { echo "🜂 El fuego aún no habla; regresa cuando haya historia que leer."; }
-                elseif ($d > 0) { echo "🜂 El fuego crece con fuerza: hoy llega más gente de lo habitual (" . $d . " almas por encima de lo esperado). ¡Preparad la puerta!"; }
-                elseif ($d < 0) { echo "🜂 El fuego titubea: hoy hay " . abs($d) . " almas por debajo de lo esperado. Mordor descansa."; }
-                else { echo "🜂 El fuego respira tranquilo: la afluencia sigue la profecía al pie de la letra."; }
+                if ($profecia["total_esperado"] === 0) { echo rf_term_html("augur-sin-historia"); }
+                elseif ($d > 0) { echo rf_term_html("augur-crece-pre") . $d . rf_term_html("augur-crece-post"); }
+                elseif ($d < 0) { echo rf_term_html("augur-titubea-pre") . abs($d) . rf_term_html("augur-titubea-post"); }
+                else { echo rf_term_html("augur-encaja"); }
             ?></p>
         </div>
     </div>
@@ -787,13 +787,13 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
 <div class="col-span-12 mt-8">
     <div class="intro-y box p-5">
         <div class="flex items-center gap-3 flex-wrap">
-            <h2 class="text-lg font-medium truncate">⚙️ Los Seis Centinelas</h2>
+            <h2 class="text-lg font-medium truncate">⚙️ <?= rf_term_html("dash-centinelas"); ?></h2>
             <?php if ($es_admin): $power = dash_power_estado(); ?>
             <button type="button" class="power-btn power-btn--<?= $power; ?>" id="power-btn"
                     data-estado="<?= $power; ?>" aria-pressed="true"
                     title="Apagar o encender todo el motor de visión (captura, detector, clasificador…)">
                 <span class="power-btn__led" aria-hidden="true"></span>
-                <span class="power-btn__label" id="power-btn-label"><?= $power === "on" ? "Apagar el Ojo" : "Encender el Ojo"; ?></span>
+                <span class="power-btn__label" id="power-btn-label"><?= $power === "on" ? rf_term("power-off") : rf_term("power-on"); ?></span>
             </button>
             <?php endif; ?>
             <span class="ml-auto text-xs text-gray-500 dark:text-gray-500" id="daemons-updated">estado de los procesos · se refresca solo</span>
