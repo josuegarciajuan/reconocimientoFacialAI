@@ -21,6 +21,18 @@ for t in "${TIMERS[@]}"; do
     sed "s|/root/reconocimientoFacial|$DIR|g" "$DIR/deploy/systemd/$t.timer" > "/etc/systemd/system/$t.timer"
 done
 
+# --- Ollama (worker VLM local): drop-in versionado ---
+# La unit de distro corre como User=ollama y no ve /root/.ollama. El drop-in
+# fija User=root + OLLAMA_MODELS para que systemd gestione la instancia que
+# realmente usan los clasificadores (evita el serve manual huérfano y el bucle
+# de reinicios por "address already in use").
+OLLAMA_DROPIN="/etc/systemd/system/ollama.service.d"
+if [ -f "$DIR/deploy/systemd/ollama.service.d/override.conf" ]; then
+    mkdir -p "$OLLAMA_DROPIN"
+    cp "$DIR/deploy/systemd/ollama.service.d/override.conf" "$OLLAMA_DROPIN/override.conf"
+    echo "==> ollama: drop-in instalado (User=root, OLLAMA_MODELS=/root/.ollama/models)"
+fi
+
 systemctl daemon-reload
 
 # Prerrequisitos de runtime (no versionados): el orquestador PHP escribe ahí

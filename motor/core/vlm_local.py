@@ -37,6 +37,57 @@ from .attributes import ATTRIBUTES_PROMPT, parse_attributes_response
 LOCK_TIMEOUT_S = 5.0
 VLM_IMG_MAX_SIDE = 384
 VLM_IMG_JPEG_QUALITY = 85
+# Nombre del fichero de estado del circuit breaker dentro del cache dir VLM.
+_BREAKER_FILE = ".breaker.json"
+
+
+def _breaker_read(cache_dir: str) -> dict:
+    """Lee el estado del breaker (compartido entre todos los daemons vía fichero)."""
+    p = os.path.join(cache_dir, _BREAKER_FILE)
+    try:
+        with open(p) as fh:
+            data = json.load(fh)
+        if isinstance(data, dict):
+            return data
+    except (OSError, json.JSONDecodeError):
+        pass
+    return {"until": 0.0, "fails": 0, "last": 0.0}
+
+
+def _breaker_write(cache_dir: str, data: dict) -> None:
+    p = os.path.join(cache_dir, _BREAKER_FILE)
+    tmp = p + ".tmp"
+    try:
+        with open(tmp, "w") as fh:
+            json.dump(data, fh)
+        os.replace(tmp, p)
+    except OSError:
+        pass
+
+
+def breaker_open(cache_dir: str, now: float | None = None) -> bool:
+    """True si el VLM está en cooldown (no debe invocarse)."""
+    data = _breaker_read(cache_dir)
+    return float(data.get("until", 0.0)) > (now if now is not None else time.time())
+
+
+def breaker_note_success(cache_dir: str) -> None:
+    """Una llamada resuelta reinicia el contador de fallos."""
+    data = _breaker_read(cache_dir)
+    if data.get("fails") or data.get("until"):
+        _breaker_write(cache_dir, {"until": 0.0, "fails": 0, "last": time.time()})
+
+
+def breaker_note_failure(cache_dir: str, max_fails: int, cooldown_s: float) -> None:
+    """Suma un fallo; al alcanzar el umbral abre el breaker durante el cooldown."""
+    data = _breaker_read(cache_dir)
+    fails = int(data.get("fails", 0)) + 1
+    now = time.time()
+    if fails >= max(1, int(max_fails)):
+        _breaker_write(cache_dir, {"until": now + float(cooldown_s), "fails": 0,
+                                   "last": now})
+    else:
+        _breaker_write(cache_dir, {"until": 0.0, "fails": fails, "last": now})
 
 
 def _mem_free_gb() -> float:
@@ -87,6 +138,10 @@ class VLMClient:
         if cached is not None:
             return LayerScore(score=cached["s"], confidence=cached["c"], available=True)
 
+        # CIRCUIT BREAKER: worker caído -> degradar YA, sin gastar vlm_timeout_s.
+        if breaker_open(self.cache_dir):
+            return LayerScore(available=False)
+
         # MEMORY GUARD
         free = _mem_free_gb()
         if free < self.cfg.vlm_ram_skip_gb:
@@ -101,13 +156,42 @@ class VLMClient:
                 result = self._call(img_a, img_b)
         except TimeoutError:
             return LayerScore(available=False)          # cola llena: degradar
-        except Exception:  # noqa: BLE001 — red/worker caído: degradar
+        except Exception:  # noqa: BLE001 — red/worker caído/colgado: degradar
+            breaker_note_failure(self.cache_dir, self.cfg.vlm_breaker_fails,
+                                 self.cfg.vlm_breaker_cooldown_s)
             return LayerScore(available=False)
 
+        breaker_note_success(self.cache_dir)
         s, c = map_to_layer(result)
         if c > 0:
             self._write_cache(key, s, c)
         return LayerScore(score=s, confidence=c, available=c > 0.0)
+
+    def healthcheck(self) -> bool:
+        """Chat mínimo con timeout corto; al fallar abre el circuit breaker.
+
+        Detecta el fallo real de producción: Ollama acepta `/api/tags` pero
+        `/api/chat` queda colgado (worker wedged). Así la capa VLM se degrada
+        en vez de esperar `vlm_timeout_s` (90 s) en CADA cara.
+        """
+        if not self.cfg.vlm_enabled:
+            return False
+        url = f"{self.cfg.vlm_base_url}/api/chat"
+        try:
+            r = requests.post(url, json={
+                "model": self.cfg.vlm_model,
+                "messages": [{"role": "user", "content": "ping"}],
+                "stream": False,
+                "options": {"num_predict": 1},
+                "keep_alive": self.cfg.vlm_keep_alive_s,
+            }, timeout=self.cfg.vlm_health_timeout_s)
+            r.raise_for_status()
+        except Exception:  # noqa: BLE001
+            breaker_note_failure(self.cache_dir, self.cfg.vlm_breaker_fails,
+                                 self.cfg.vlm_breaker_cooldown_s)
+            return False
+        breaker_note_success(self.cache_dir)
+        return True
 
     def _call(self, img_a: str, img_b: str) -> dict:
         payload = {
@@ -136,6 +220,8 @@ class VLMClient:
         """Extract versioned visible attributes; unavailable on any failure."""
         if not self.cfg.attributes_enabled or not self.cfg.vlm_enabled:
             return None
+        if breaker_open(self.cache_dir):
+            return None
         try:
             with FileLock(os.path.join(self.cache_dir, ".vlm.lock"), timeout=LOCK_TIMEOUT_S):
                 r = requests.post(self.url, json={"model": self.cfg.vlm_model,
@@ -144,9 +230,13 @@ class VLMClient:
                     "options": {"num_ctx": self.cfg.vlm_num_ctx, "num_gpu": self.cfg.vlm_num_gpu}},
                     timeout=self.cfg.vlm_timeout_s)
                 r.raise_for_status()
-                return parse_attributes_response(r.json()["message"]["content"])
+                out = parse_attributes_response(r.json()["message"]["content"])
         except Exception:  # noqa: BLE001
+            breaker_note_failure(self.cache_dir, self.cfg.vlm_breaker_fails,
+                                 self.cfg.vlm_breaker_cooldown_s)
             return None
+        breaker_note_success(self.cache_dir)
+        return out
 
 
 def _b64(path: str) -> str:

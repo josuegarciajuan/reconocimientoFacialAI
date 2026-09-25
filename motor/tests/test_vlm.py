@@ -118,3 +118,47 @@ def test_compare_lock_timeout_degrades(monkeypatch, tmp_path):
         assert not ls.available
     finally:
         held.release()
+
+
+# --- circuit breaker (incidente 2026-09-25: Ollama colgado) -----------------
+
+def test_breaker_opens_after_failures(monkeypatch, tmp_path):
+    """Tras N fallos seguidos, el breaker evita seguir pagando el timeout."""
+    cfg = _make_cfg(tmp_path, vlm_breaker_fails=2, vlm_breaker_cooldown_s=300.0)
+    client = VLMClient(cfg, str(tmp_path))
+    calls = {"n": 0}
+
+    def boom(url, **kwargs):
+        calls["n"] += 1
+        raise RuntimeError("connection refused")
+
+    monkeypatch.setattr("requests.post", boom)
+    a, b = _img(tmp_path, "a.jpg"), _img(tmp_path, "b.jpg")
+    assert not client.compare(a, b).available
+    assert not client.compare(a, b).available
+    assert calls["n"] == 2                     # 2 fallos -> breaker abierto
+    # breaker abierto: degrada SIN volver a llamar al worker
+    assert not client.compare(a, b).available
+    assert calls["n"] == 2
+
+
+def test_healthcheck_trips_breaker(monkeypatch, tmp_path):
+    from motor.core.vlm_local import breaker_open
+    cfg = _make_cfg(tmp_path, vlm_breaker_fails=1, vlm_breaker_cooldown_s=300.0)
+    client = VLMClient(cfg, str(tmp_path))
+
+    def boom(url, **kwargs):
+        raise RuntimeError("no responde")
+    monkeypatch.setattr("requests.post", boom)
+    assert client.healthcheck() is False
+    assert breaker_open(client.cache_dir)
+
+
+def test_healthcheck_success_resets(tmp_path):
+    from motor.core.vlm_local import breaker_note_failure, breaker_note_success, breaker_open
+    cfg = _make_cfg(tmp_path, vlm_breaker_fails=1, vlm_breaker_cooldown_s=300.0)
+    client = VLMClient(cfg, str(tmp_path))
+    breaker_note_failure(client.cache_dir, 1, 300.0)
+    assert breaker_open(client.cache_dir)
+    breaker_note_success(client.cache_dir)
+    assert not breaker_open(client.cache_dir)

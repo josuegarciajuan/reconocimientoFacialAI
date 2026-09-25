@@ -1402,6 +1402,15 @@ def main() -> int:
         f" | cascada={cfg.cascade_enabled} torso={cfg.torso_enabled} zonas={cfg.zones_enabled}"
         f" silueta={cfg.silueta_enabled}"
         f" vlm={cfg.vlm_enabled} openai={cfg.openai_enabled}")
+    # Healthcheck VLM: si el worker está colgado, abrir el circuit breaker ya
+    # para no pagar vlm_timeout_s por cara durante el resto de la ejecución.
+    if cfg.vlm_enabled:
+        from motor.core.vlm_local import VLMClient  # noqa: E402
+        if VLMClient(cfg, args.ruta).healthcheck():
+            log("[vlm] worker OK")
+        else:
+            log(f"[vlm] worker NO responde -> capa VLM degradada "
+                f"({cfg.vlm_breaker_cooldown_s:.0f}s de cooldown)")
     _last_calib_check = 0.0
     _last_consolidar = 0.0
     cam_idx = 0

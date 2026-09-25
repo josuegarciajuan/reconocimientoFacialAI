@@ -299,6 +299,14 @@ class Config:
     vlm_max_pending: int = 20           # cola acotada; si se llena, se degrada (no bloquea)
     vlm_ram_defer_gb: float = 2.0       # RAM libre < esto => diferir (encolar)
     vlm_ram_skip_gb: float = 1.0        # RAM libre < esto => omitir (c_vlm=0)
+    # Circuit breaker del worker VLM (Ollama): si N llamadas seguidas fallan
+    # (timeout/red/worker colgado), se deja de invocar el VLM durante
+    # `vlm_breaker_cooldown_s`. Sin esto, un Ollama colgado cuesta
+    # `vlm_timeout_s` (90 s) POR CARA y hunde el ritmo de clasificación.
+    vlm_breaker_fails: int = 3
+    vlm_breaker_cooldown_s: float = 300.0
+    # Timeout del chequeo de salud (chat mínimo) al arrancar/antes de reintentar.
+    vlm_health_timeout_s: float = 20.0
 
     # --- OpenAI (F5, L3) — solo último recurso, con presupuesto diario ---
     openai_enabled: bool = False
@@ -357,6 +365,11 @@ class Config:
         cfg.vlm_max_pending = get_int(ruta, "RF_VLM_MAX_PENDING", cfg.vlm_max_pending)
         cfg.vlm_ram_defer_gb = get_float(ruta, "RF_VLM_RAM_DEFER_GB", cfg.vlm_ram_defer_gb)
         cfg.vlm_ram_skip_gb = get_float(ruta, "RF_VLM_RAM_SKIP_GB", cfg.vlm_ram_skip_gb)
+        cfg.vlm_breaker_fails = get_int(ruta, "RF_VLM_BREAKER_FAILS", cfg.vlm_breaker_fails)
+        cfg.vlm_breaker_cooldown_s = get_float(ruta, "RF_VLM_BREAKER_COOLDOWN_S",
+                                               cfg.vlm_breaker_cooldown_s)
+        cfg.vlm_health_timeout_s = get_float(ruta, "RF_VLM_HEALTH_TIMEOUT_S",
+                                             cfg.vlm_health_timeout_s)
 
         # Resolución/calidad del pipeline (opcional; por defecto los valores de
         # esta clase). Permite afinar sin tocar código: p. ej. RF_SR_TARGET_SIDE
