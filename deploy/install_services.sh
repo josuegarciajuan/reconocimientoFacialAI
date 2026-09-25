@@ -23,6 +23,15 @@ done
 
 systemctl daemon-reload
 
+# Prerrequisitos de runtime (no versionados): el orquestador PHP escribe ahí y
+# el panel (php-fpm/www-data) necesita leer .env para conectar a la BD.
+mkdir -p "$DIR/libs/threads_files_aux"
+chmod 777 "$DIR/libs/threads_files_aux"
+if [ -f "$DIR/.env" ]; then
+    chown root:www-data "$DIR/.env" 2>/dev/null || true
+    chmod 640 "$DIR/.env" 2>/dev/null || true
+fi
+
 if [ "${1:-}" = "start" ]; then
     for s in "${SERVICES[@]}"; do
         systemctl enable --now "$s.service"

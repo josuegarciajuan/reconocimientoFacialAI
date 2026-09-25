@@ -1,4 +1,4 @@
-# 14 · Flujo de despliegue: dev (worktrees) → GitHub `main` → producción
+# 14 · Flujo de despliegue: dev (worktrees) → GitHub `main` → producción (auto-deploy)
 
 ## Contexto
 
@@ -6,37 +6,38 @@ El sistema de reconocimiento facial se despliega en **dos servidores**:
 
 | Rol | Servidor | Ruta | Rol del repo |
 |---|---|---|---|
-| **Desarrollo** | `92.113.151.136` (`liveyourdre2`) | `/root/reconocimientoFacial` | Worktrees de GitHub + opencode |
-| **Producción** | `<HOST_PRODUCCION>` | `/root/reconocimientoFacial` | `git clone` de GitHub `main` (se actualiza con `git pull`) |
+| **Desarrollo** | `liveyourdre2` (`92.113.151.136`) | `/root/reconocimientoFacial` | Worktrees de GitHub + opencode. El motor NO corre aquí. |
+| **Producción** | `<HOST_PRODUCCION>` (`RF_PROD_HOST`) | `/root/reconocimientoFacial` | `git clone` de GitHub `main` (se actualiza con `git pull`). Motor en marcha. |
 
 - **Datos de producción** (vídeos, caras, modelos, `face_enc_v2`, BD, `.env`, `.insightface`)
   **solo viven en el servidor de producción** y NO están en git (`.gitignore`).
-- En dev solo existe una copia para desarrollo/pruebas; el motor **no** corre en dev.
+- El host y las credenciales de producción **no se versionan**: se definen en el `.env`
+  local (ver «Configuración»). La spec usa siempre `<HOST_PRODUCCION>`.
 
 ## Acceso a producción
 
 - **Panel web**: `http://<HOST_PRODUCCION>:8090/reconocimientoFacial/admin`
-- **SSH**:
+- **SSH**: gestionado por `deploy/deploy_prod.sh` a partir de `.env`:
   ```bash
-  sshpass -p '<password>' ssh root@<HOST_PRODUCCION>
-  # o si no hay sshpass instalado:
-  ssh root@<HOST_PRODUCCION>
+  RF_PROD_HOST=<HOST_PRODUCCION>
+  RF_PROD_SSH_USER=root
+  RF_PROD_SSH_PASS=<secreto>      # nunca se versiona
+  RF_PROD_SSH_PORT=22             # opcional
+  RF_PROD_PATH=/root/reconocimientoFacial   # opcional
   ```
-  La contraseña se gestiona **fuera del repo** (secret manager del equipo).
-  **No versionar nunca contraseñas** (bloqueado por el hook pre-commit).
 
 > ⚠️ **IMPORTANTE (lección 2026-09-01)**: los datos reales del sistema viven en
 > **producción (`<HOST_PRODUCCION>`), NO en dev**. Hacer operaciones sobre datos
-> (reset, purgas, borrados) en la máquina de desarrollo **no afecta a
-> producción** y puede confundir (los procesos que se ven en `ps` en dev no son
-> los de producción). **Antes de tocar datos, confirmar siempre en qué host
-> se está** (`hostname`): dev = `liveyourdre2`, prod = `<hostname de producción>`.
+> (reset, purgas, borrados) en la máquina de desarrollo **no afecta a producción** y
+> puede confundir (los procesos que se ven en `ps` en dev no son los de producción).
+> **Antes de tocar datos, confirmar siempre en qué host se está** (`hostname`):
+> dev = `liveyourdre2`, prod = `mail` (hostname configurado en `<HOST_PRODUCCION>`).
 
 ## Regla de oro
 
 > **git = código, no datos.** Cada CAMBIO se trabaja en una copia aislada
-> (`git worktree`), se integra en `main` y se publica con `push`; luego se
-> aplica en producción con `git pull`.
+> (`git worktree`), se integra en `main` y se publica con `push`; después el cambio
+> **se despliega automáticamente a producción** con `deploy/deploy_prod.sh`.
 
 ## Flujo por cambio (dev → producción)
 
@@ -54,43 +55,69 @@ El sistema de reconocimiento facial se despliega en **dos servidores**:
    git checkout main && git merge work/<slug>
    git push origin main
    ```
-4. **En producción** (`<HOST_PRODUCCION>`), aplicar:
+4. **Desplegar a producción** (obligatorio, ver `AGENTS.md`):
    ```bash
-   cd /root/reconocimientoFacial
-   git pull origin main
-   # si el cambio toca servicios, reiniciar los afectados:
-   # systemctl restart rf-capturador rf-detector ...   (según el caso)
+   bash deploy/deploy_prod.sh
    ```
-   Los datos runtime y `.env` NO cambian con el pull (no están versionados);
-   si un cambio necesita nueva variable de entorno, actualizarla manualmente
-   en el `.env` de producción.
+   El script, por SSH:
+   - `git fetch` + `git pull --ff-only origin main` en `/root/reconocimientoFacial`;
+   - gate de sintaxis (`php -l` / `py_compile`) sobre los ficheros cambiados;
+   - reinstala units systemd (`deploy/systemd/`), vhost Apache (`deploy/apache/`) o
+     dependencias Python (`motor/requirements.txt`) **solo si cambiaron**;
+   - reinicia **solo los servicios afectados** por el diff (o todos con `--all`);
+   - comprueba que los servicios queden `active` y reporta.
+
+   Opciones: `--all`, `--no-restart`, `--dry-run`, `--host`, `--path`.
+
+### Mapa diff → servicios
+
+| Rutas cambiadas | Servicio(s) reiniciado(s) |
+|---|---|
+| `capturador.php`, `motor/guarda_movimientosV3.py` | `rf-capturador` |
+| `detector.php`, `motor/procesa_video.py`, `motor/archiva_video.py`, `motor/cruces.py`, `motor/clasificador.py` | `rf-detector` |
+| `clasificadorV2.php` | `rf-clasificador` |
+| `conciliador.php`, `libs/conciliador.php` | `rf-conciliador` |
+| `vinculador.php`, `libs/vinculos.php` | `rf-vinculador` |
+| `alarmador.php`, `libs/alarmas.php` | `rf-alarmador` |
+| `procesos_panel_control.php`, `motor/pose.py` | `rf-panel-control` |
+| `live/**` | `rf-live` |
+| `motor/photo_worker.py` | `rf-photo` |
+| `motor/calibrar.py`, `motor/vigilar_deriva.py` | rearma `rf-calibra.timer` / `rf-vigilar-deriva.timer` |
+| `motor/core/**`, `libs/db.php`, `config/config.php`, `deploy/systemd/**`, `deploy/apache/**`, `motor/requirements.txt` | **todos** los daemons |
+| `admin/**`, `includes/**`, `docs/**`, `tests/**` | ninguno (solo `git pull`) |
+
+## Instalación / reactivación de producción
+
+`deploy/install_services.sh` instala y arranca los servicios; `deploy/install_apache.sh`
+instala el vhost del panel (`:8090`, detecta el socket php-fpm) y el symlink de
+`/var/www/html/reconocimientoFacial`. El `install_services.sh` crea además los directorios
+de runtime (`libs/threads_files_aux/`) y ajusta los permisos de `.env`
+(`root:www-data`, `640`) para que php-fpm pueda leerlo.
 
 ## Notas
 
-- **`.env` por entorno**: dev y prod tienen su propio `.env` (no versionado).
-  No arrastres variables de un entorno a otro con el `pull`.
+- **`.env` por entorno**: dev y prod tienen su propio `.env` (no versionado). No arrastres
+  variables de un entorno a otro con el `pull`.
 - **No reinventar el remoto**: el repo usa `origin` =
   `https://github.com/josuegarciajuan/reconocimientoFacialAI.git` (público).
-- **Rollback**: si algo falla en producción tras el pull, revisar el cambio
-  con `git log`/`git diff`; para datos, restaurar desde el backup previo.
-  Nunca `git reset --hard` ni `git clean -fd` (machacan datos/estado).
-- **Migración histórica (2026-09-01)**: el servidor antiguo quedó como dev;
-  el motor quedó detenido y deshabilitado allí. Ver `docs/adr/` si aplica.
+- **Rollback**: si algo falla en producción tras el pull, revisar el cambio con
+  `git log`/`git diff`; para datos, restaurar desde el backup previo. Nunca
+  `git reset --hard` ni `git clean -fd` (machacan datos/estado).
 
 ## Reset del sistema (empezar a capturar caras desde cero)
 
 > ⚠️ **EJECUTAR SIEMPRE EN PRODUCCIÓN (`<HOST_PRODUCCION>`), nunca en dev.**
 
-El script `deploy/reset_datos.sh` (versionado en el repo) vuelve a cero los
-datos de identidad y movimiento y rearranca los servicios, conservando la
-configuración (cámaras, líneas, plano, local, auto-login):
+El script `deploy/reset_datos.sh` (versionado en el repo) vuelve a cero los datos de
+identidad y movimiento y rearranca los servicios, conservando la configuración (cámaras,
+líneas, plano, local, auto-login):
 
 ```bash
 # 1. Desplegar el script (si no está) y ejecutarlo en PRODUCCIÓN:
 cd /root/reconocimientoFacial
 git pull origin main
-bash deploy/reset_datos.sh          # detiene servicios → mata procesos → vacía BD → borra motor → rearranca
-bash deploy/reset_datos.sh --dry-run  # modo ensayo: solo muestra el plan
+bash deploy/reset_datos.sh              # detiene servicios → mata procesos → vacía BD → borra motor → rearranca
+bash deploy/reset_datos.sh --dry-run    # modo ensayo: solo muestra el plan
 ```
 
 Qué borra:
