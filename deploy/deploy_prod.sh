@@ -98,7 +98,7 @@ CHANGED="$(git diff --name-only "$OLD" "$NEW")"
 echo "[deploy] ficheros cambiados: $(printf '%s\n' "$CHANGED" | grep -c .)"
 
 # Prerrequisitos de runtime (no versionados).
-mkdir -p aux motor/logs libs/threads_files_aux && chmod 777 libs/threads_files_aux
+mkdir -p aux motor/logs libs/threads_files_aux admin/caras_procesadas && chmod 777 libs/threads_files_aux
 if [ -f .env ]; then
     chown root:www-data .env 2>/dev/null || true
     chmod 640 .env 2>/dev/null || true
@@ -138,6 +138,24 @@ done <<< "$CHANGED"
 if printf '%s\n' "$CHANGED" | grep -qE '^motor/(calibrar|vigilar_deriva)\.py$'; then
     echo "[deploy] one-shots cambiados -> rearmando timers"
     systemctl restart rf-calibra.timer rf-vigilar-deriva.timer 2>/dev/null || true
+fi
+
+# Migraciones SQL pendientes (solo ficheros sql/*.sql del diff; deben ser idempotentes).
+if printf '%s\n' "$CHANGED" | grep -qE '^sql/.*\.sql$'; then
+    echo "[deploy] migraciones SQL cambiadas -> aplicando"
+    set -a; [ -f .env ] && . ./.env; set +a
+    DBNAME="${RF_DB_NAME:-reconocimientofacial}"
+    while IFS= read -r f; do
+        [ -f "$f" ] || continue
+        echo "[deploy]   mysql < $f"
+        if [ -n "${RF_DB_PASS:-}" ]; then
+            mysql -u"${RF_DB_USER:-root}" -p"$RF_DB_PASS" -h"${RF_DB_HOST:-localhost}" "$DBNAME" < "$f" \
+                || { echo "[deploy] SQL ERROR: $f"; FAIL=1; }
+        else
+            mysql -u"${RF_DB_USER:-root}" -h"${RF_DB_HOST:-localhost}" "$DBNAME" < "$f" \
+                || { echo "[deploy] SQL ERROR: $f"; FAIL=1; }
+        fi
+    done <<< "$(printf '%s\n' "$CHANGED" | grep -E '^sql/.*\.sql$')"
 fi
 
 if [ "$NO_RESTART" = 1 ]; then

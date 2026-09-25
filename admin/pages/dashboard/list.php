@@ -690,7 +690,8 @@ $usuario = $_SESSION["user"] ?? "Vigilante";
                             $medallas = ["🥇", "🥈", "🥉"];
                             $medalla = $i < 3 ? $medallas[$i] : (($i + 1) . "º");
                             $pct_barra = $ranking[0]["n"] > 0 ? round((int)$r["n"] / (int)$ranking[0]["n"] * 100) : 0;
-                            $img = "./caras_procesadas/" . (int)$r["foto_id"] . ".jpg";
+                            $img = foto_url((int)$r["foto_id"]);
+                            if ($img === "") { $img = "./files/logo-sauron.png"; }
                         ?>
                         <li class="ranking__li">
                             <span class="ranking__medal" aria-hidden="true"><?= $medalla; ?></span>

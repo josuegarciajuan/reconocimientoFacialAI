@@ -5,6 +5,7 @@
  */
 
 require_once __DIR__ . "/../libs/db.php";
+require_once __DIR__ . "/../libs/fotos.php";
 require_once __DIR__ . "/../libs/etiquetas.php";
 
 $local_id = (int)($_SESSION["local_id"] ?? 0);
@@ -60,12 +61,12 @@ $hay_notificaciones = $num_notificaciones > 0;
                 } elseif ((int)$r["salida"] === 1) {
                     $mode_html = "Salida del local por " . camara_link((int)$r["camara_id"], $r["descripcion"]);
                 }
-                $foto = DB::selectOne("SELECT MIN(id) AS mid FROM fotos WHERE estancia_id = ?", [(int)$r["id"]]);
-                $imagen = "./caras_procesadas/" . ($foto && $foto["mid"] ? $foto["mid"] : 0) . ".jpg";
+                $imagen = foto_estancia_url((int)$r["id"]);
+                $imagen_src = $imagen !== "" ? $imagen : "./files/logo-sauron.png";
             ?>
                 <div class="cursor-pointer relative flex items-center">
                     <div class="w-12 h-12 flex-none image-fit mr-1">
-                        <img alt="" class="rounded-full" src="<?= htmlspecialchars($imagen); ?>">
+                        <img alt="" class="rounded-full" src="<?= htmlspecialchars($imagen_src); ?>" onerror="this.onerror=null;this.src='./files/logo-sauron.png';">
                         <div class="w-3 h-3 bg-theme-9 absolute right-0 bottom-0 rounded-full border-2 border-white"></div>
                     </div>
                     <div class="ml-2 overflow-hidden">

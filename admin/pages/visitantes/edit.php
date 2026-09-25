@@ -6,6 +6,7 @@
 
 require_once __DIR__ . "/../../../libs/db.php";
 require_once __DIR__ . "/../../../libs/avatars.php";
+require_once __DIR__ . "/../../../libs/fotos.php";
 require_once __DIR__ . "/../../../libs/etiquetas.php";
 
 $local_id = (int)($_SESSION["local_id"] ?? 0);
@@ -18,11 +19,8 @@ if (!$persona) {
 }
 $nombre_pers = ($persona["nombre"] !== "") ? $persona["nombre"] : $persona["cod_interno"];
 
-$foto = DB::selectOne(
-    "SELECT f.id AS fid FROM fotos f JOIN estancias e ON e.id = f.estancia_id WHERE e.persona_id = ? ORDER BY f.id ASC LIMIT 1",
-    [$persona_id]
-);
-$imagen_perfil = "./caras_procesadas/" . ($foto ? $foto["fid"] : 0) . ".jpg";
+$imagen_perfil = foto_persona_url($persona_id);
+$imagen_perfil_src = $imagen_perfil !== "" ? $imagen_perfil : "./files/logo-sauron.png";
 $avatar_url = avatar_url($persona_id);
 
 // cámaras del local + nº de estancias por cámara
@@ -94,7 +92,7 @@ $num_cruces = $cruces_cnt ? (int)$cruces_cnt["n"] : 0;
 <div class="intro-y box px-5 pt-5 mt-5">
     <div class="flex flex-col lg:flex-row border-b border-gray-200 dark:border-dark-5 pb-5 -mx-5">
         <div class="flex flex-1 px-5 items-center justify-center lg:justify-start">
-            <img alt="Foto de perfil de <?= htmlspecialchars($persona["nombre"]); ?>" class="rounded-full w-32 h-32 object-cover" src="<?= htmlspecialchars($imagen_perfil); ?>">
+            <img alt="Foto de perfil de <?= htmlspecialchars($persona["nombre"]); ?>" class="rounded-full w-32 h-32 object-cover" src="<?= htmlspecialchars($imagen_perfil_src); ?>" onerror="this.onerror=null;this.src='./files/logo-sauron.png';">
             <?php if ($avatar_url !== ""): ?>
             <img alt="Avatar (cabeza recortada) de <?= htmlspecialchars($persona["nombre"]); ?>"
                  title="<?= htmlspecialchars(rf_term("avatar-monigote"), ENT_QUOTES); ?>"
@@ -173,7 +171,8 @@ $num_cruces = $cruces_cnt ? (int)$cruces_cnt["n"] : 0;
                         foreach ($g["fotos"] as $fid) {
                             $fecha = $primera ? $g["fecha_ini"] : $g["fecha_fin"];
                             $primera = false;
-                            $img = "./caras_procesadas/" . $fid . ".jpg";
+                            $img = foto_url((int)$fid);
+                            if ($img === "") { continue; } // fila sin fichero (foto no publicada)
                     ?>
                         <div class="box p-3">
                             <label class="flex items-center gap-1 text-xs mb-1 cursor-pointer">
