@@ -140,12 +140,16 @@ if printf '%s\n' "$CHANGED" | grep -qE '^motor/(calibrar|vigilar_deriva)\.py$'; 
     systemctl restart rf-calibra.timer rf-vigilar-deriva.timer 2>/dev/null || true
 fi
 
-# Migraciones SQL pendientes (solo ficheros sql/*.sql del diff; deben ser idempotentes).
-if printf '%s\n' "$CHANGED" | grep -qE '^sql/.*\.sql$'; then
-    echo "[deploy] migraciones SQL cambiadas -> aplicando"
+# Migraciones SQL pendientes: SOLO los ficheros NUEVOS (--diff-filter=A).
+# Los sql/ históricos no son re-ejecutables (p. ej. CREATE TRIGGER exige SUPER
+# con binary logging); una migración nueva debe ser idempotente.
+ADDED_SQL="$(git diff --diff-filter=A --name-only "$OLD" "$NEW" | grep -E '^sql/.*\.sql$' || true)"
+if [ -n "$ADDED_SQL" ]; then
+    echo "[deploy] migraciones SQL nuevas -> aplicando"
     set -a; [ -f .env ] && . ./.env; set +a
     DBNAME="${RF_DB_NAME:-reconocimientofacial}"
     while IFS= read -r f; do
+        [ -n "$f" ] || continue
         [ -f "$f" ] || continue
         echo "[deploy]   mysql < $f"
         if [ -n "${RF_DB_PASS:-}" ]; then
@@ -155,7 +159,7 @@ if printf '%s\n' "$CHANGED" | grep -qE '^sql/.*\.sql$'; then
             mysql -u"${RF_DB_USER:-root}" -h"${RF_DB_HOST:-localhost}" "$DBNAME" < "$f" \
                 || { echo "[deploy] SQL ERROR: $f"; FAIL=1; }
         fi
-    done <<< "$(printf '%s\n' "$CHANGED" | grep -E '^sql/.*\.sql$')"
+    done <<< "$ADDED_SQL"
 fi
 
 if [ "$NO_RESTART" = 1 ]; then
