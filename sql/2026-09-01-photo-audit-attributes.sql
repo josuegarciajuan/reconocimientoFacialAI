@@ -16,7 +16,8 @@ CREATE TABLE IF NOT EXISTS foto_audits (
   PRIMARY KEY (id),
   UNIQUE KEY uq_foto_audit_correlation (correlation_id),
   KEY idx_foto_audit_foto (foto_id)
-  ,CONSTRAINT fk_foto_audit_foto FOREIGN KEY (foto_id) REFERENCES fotos(id)
+  -- Sin FK a fotos(id): las auditorías son append-only y deben sobrevivir al
+  -- borrado runtime de fotos duplicadas (ver 2026-09-25-drop-foto-audit-fk.sql).
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE IF NOT EXISTS foto_audit_events (
@@ -30,8 +31,8 @@ CREATE TABLE IF NOT EXISTS foto_audit_events (
   event_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_foto_audit_event_key (event_key),
-  KEY idx_foto_audit_events_foto (foto_id),
-  CONSTRAINT fk_foto_audit_event_foto FOREIGN KEY (foto_id) REFERENCES fotos(id)
+  KEY idx_foto_audit_events_foto (foto_id)
+  -- Sin FK a fotos(id): ver 2026-09-25-drop-foto-audit-fk.sql.
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Enforce append-only audit rows; the sole permitted update links foto_id once.
