@@ -8,18 +8,23 @@
 #
 # Qué BORRA:
 #   BD (tablas de datos):    personas, estancias, fotos, videos, cruces_lineas,
-#                            fichajes, alarmas, calibraciones, foto_audits,
-#                            foto_audit_events
+#                            fichajes, alarmas, foto_audits, foto_audit_events,
+#                            personas_avatar
 #   Galería (motor):         motor/bbdd_reconocimiento/*/face_enc_v2
 #   Media / colas (motor):   caras/, videos/, videos_archivo/, feedback/,
 #                            revision/, removidas/, inicial/, alinear_caras/,
 #                            fotos_lineas/, videos_lineas/, photo_queue/,
-#                            dedup/, audit_queue/
+#                            dedup/, audit_queue/, llm_cache/
+#   Fotos publicadas (panel): admin/caras_procesadas/ (jpg + avatares/) y los
+#                            uploads de registro (admin/files/videos_registro*)
 #
 # Qué CONSERVA:
 #   BD (config):             camaras, locales, lineas, lineas_plano, nodos,
 #                            senderos, senderos_puntos, dispositivos_autologin,
 #                            alarmas_telefonos
+#   BD (calibración):        calibraciones (journal de parámetros de análisis
+#                            por cámara; NO es identidad)
+#   Runtime (motor):         models/, venv/, logs/, backups/, calibrador/
 #
 # USO:  sudo bash deploy/reset_datos.sh
 #   El script: (A) detiene los servicios, (A2) MATA TODOS los procesos RF
@@ -65,7 +70,7 @@ SERVICIOS=(rf-capturador rf-detector rf-clasificador rf-conciliador \
 
 # Tablas de DATOS (se vacían) vs CONFIG (se conservan)
 TABLAS_DATOS=(personas estancias fotos videos cruces_lineas fichajes \
-              alarmas calibraciones foto_audits foto_audit_events)
+              alarmas foto_audits foto_audit_events personas_avatar)
 
 # Directorios de datos del motor que se borran
 RUTAS_BORRAR=(
@@ -93,6 +98,24 @@ RUTAS_BORRAR=(
   "motor/portraits/${LOCAL_ID}"
   # Cola de consolidación al nacer (Fase 5/M6, 2026-09-02).
   "motor/pending/${LOCAL_ID}"
+  # Fotos publicadas y avatares del panel (2026-09-25): al truncar `fotos` y
+  # `personas` los AUTO_INCREMENT se reinician y los IDs se reutilizan; sin
+  # borrar los ficheros viejos se asignarían a identidades nuevas.
+  "admin/caras_procesadas"
+  # Cache de clasificación VLM/OpenAI por hash de imagen (identidad derivada).
+  "motor/llm_cache"
+  # Salidas/derivados de identidad y de evaluación.
+  "motor/reagrupar_out"
+  "motor/eval/data"
+  "motor/cosas_en_la_cara"
+  "motor/laterales_test"
+  # Uploads de registro de personas (enrolamiento).
+  "admin/files/videos_registro"
+  "admin/files/videos_registro_videos"
+  "admin/files/videos_registro_videos_partidos"
+  "admin/files/videos_registro_posiciones"
+  "admin/files/videos_registro_pruebas"
+  "admin/files/videos_registro_resultados"
 )
 
 # =============================================================================
@@ -280,6 +303,9 @@ done
 cmd "Recrear ${PROYECTO}/motor/caras/${LOCAL_ID}"  mkdir -p "${PROYECTO}/motor/caras/${LOCAL_ID}"
 cmd "Recrear ${PROYECTO}/motor/videos/${LOCAL_ID}" mkdir -p "${PROYECTO}/motor/videos/${LOCAL_ID}"
 cmd "Recrear ${PROYECTO}/motor/videos_archivo/${LOCAL_ID}" mkdir -p "${PROYECTO}/motor/videos_archivo/${LOCAL_ID}"
+# Fotos publicadas del panel: el clasificador la autocrea, pero la dejamos lista
+# para que Apache sirva el directorio aunque aún no haya capturas.
+cmd "Recrear ${PROYECTO}/admin/caras_procesadas" mkdir -p "${PROYECTO}/admin/caras_procesadas"
 
 # Limpiar markers de procesado/archivado de aux/ (detector.php cuenta estos
 # markers como slots de CONFIG_LIMITE_VIDEOS/CONFIG_LIMITE_ARCHIVA). Un marker
