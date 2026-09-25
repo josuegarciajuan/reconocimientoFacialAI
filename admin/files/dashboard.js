@@ -193,7 +193,11 @@
     btn.classList.remove("power-btn--on", "power-btn--off");
     btn.classList.add("power-btn--" + estado);
     var lbl = document.getElementById("power-btn-label");
-    if (lbl) { lbl.textContent = (estado === "on") ? "Apagar el Ojo" : "Encender el Ojo"; }
+    if (lbl) {
+      lbl.textContent = (estado === "on")
+        ? (window.rfTerm ? window.rfTerm("power-off") : "Apagar el Ojo")
+        : (window.rfTerm ? window.rfTerm("power-on") : "Encender el Ojo");
+    }
   }
 
   function dashPowerToggle() {

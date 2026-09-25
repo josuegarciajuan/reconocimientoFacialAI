@@ -485,6 +485,122 @@ function rf_glosario() {
             "significado" => "Contacto con el administrador: incluye los datos de sesión (fortaleza, URL, fecha) para diagnosticar el problema.",
             "match"      => "auto",
         ],
+
+        /* ================================================================
+         * MODO PROFESIONAL (tema "pro")
+         * Explicaciones de conceptos que no son evidentes para un usuario
+         * nuevo, en vocabulario neutro. Solo se muestran con tema pro.
+         * ================================================================ */
+        "pro-aforo" => [
+            "termino"    => "Aforo actual",
+            "significado" => "Número de personas que hay dentro del local en este momento: se calcula comparando su última entrada con su última salida.",
+            "match"      => "auto",
+            "tema"       => "pro",
+        ],
+        "pro-personas-dentro" => [
+            "termino"    => "Personas dentro ahora",
+            "significado" => "Personas cuyo último cruce de cámara fue una entrada (están dentro del local en este instante).",
+            "match"      => "auto",
+            "tema"       => "pro",
+        ],
+        "pro-incidencias" => [
+            "termino"    => "Incidencias",
+            "significado" => "Alertas activas: cámaras apagadas, aforo al límite o fichajes sin conciliar de días anteriores.",
+            "match"      => "auto",
+            "tema"       => "pro",
+        ],
+        "pro-servicios" => [
+            "termino"    => "Servicios del sistema",
+            "significado" => "Los procesos internos que dan servicio al panel: capturador, detector, clasificador, vinculador, conciliador y mensajero en vivo. Si alguno se detiene, la vigilancia se resiente.",
+            "match"      => "auto",
+            "tema"       => "pro",
+        ],
+        "pro-centro-mando" => [
+            "termino"    => "Centro de mando",
+            "significado" => "Acceso rápido (abajo a la derecha): búsqueda global, atajos de navegación y estado de los servicios del sistema. Si se resalta, hay incidencias.",
+            "match"      => "auto",
+            "tema"       => "pro",
+        ],
+        "pro-daemon-vigia" => [
+            "termino"    => "Capturador",
+            "significado" => "Servicio que detecta movimiento y graba los vídeos en H.264.",
+            "match"      => "auto",
+            "tema"       => "pro",
+        ],
+        "pro-daemon-rastreador" => [
+            "termino"    => "Detector",
+            "significado" => "Servicio que detecta los cruces de línea y extrae las caras de los vídeos.",
+            "match"      => "auto",
+            "tema"       => "pro",
+        ],
+        "pro-daemon-mirada" => [
+            "termino"    => "Clasificador",
+            "significado" => "Servicio que ingesta los datos en la base de datos (personas, estancias y fotos).",
+            "match"      => "auto",
+            "tema"       => "pro",
+        ],
+        "pro-daemon-atador" => [
+            "termino"    => "Vinculador",
+            "significado" => "Servicio que enlaza los vídeos con las personas y los cruces de línea.",
+            "match"      => "auto",
+            "tema"       => "pro",
+        ],
+        "pro-daemon-conciliador" => [
+            "termino"    => "Conciliador",
+            "significado" => "Servicio que calcula y concilia los fichajes diarios según el horario del local.",
+            "match"      => "auto",
+            "tema"       => "pro",
+        ],
+        "pro-daemon-mensajero" => [
+            "termino"    => "Mensajero en vivo",
+            "significado" => "Servicio que sirve los snapshots en tiempo real para la vista de cámaras en directo.",
+            "match"      => "auto",
+            "tema"       => "pro",
+        ],
+
+        /* Configuración (términos ambiguos, solo con data-lore-pro) */
+        "pro-config-forjar" => [
+            "termino"    => "Crear",
+            "significado" => "Dar de alta una cámara nueva: marca su posición en el plano y asígnale nombre y conexión.",
+            "match"      => "explicito",
+            "tema"       => "pro",
+        ],
+        "pro-config-templar" => [
+            "termino"    => "Calibrar",
+            "significado" => "Ajustar los parámetros de análisis de una cámara existente (sensibilidad, líneas, umbrales…).",
+            "match"      => "explicito",
+            "tema"       => "pro",
+        ],
+        "pro-config-puerta" => [
+            "termino"    => "Puerta",
+            "significado" => "Cámara de entrada: marca el instante en que alguien entra (genera el acceso de entrada y los fichajes). Puede ser también de salida si se marcan ambas.",
+            "match"      => "explicito",
+            "tema"       => "pro",
+        ],
+        "pro-config-salida" => [
+            "termino"    => "Salida",
+            "significado" => "Cámara de salida: marca el instante en que alguien sale (genera el acceso de salida y cierra los fichajes del día). Puede ser también de entrada si se marcan ambas.",
+            "match"      => "explicito",
+            "tema"       => "pro",
+        ],
+        "pro-config-encendida" => [
+            "termino"    => "Encendida",
+            "significado" => "Cámara activa: está capturando y analizando vídeo. Apagada, el sistema no la vigila.",
+            "match"      => "explicito",
+            "tema"       => "pro",
+        ],
+        "pro-config-url" => [
+            "termino"    => "URL de conexión",
+            "significado" => "Dirección de la cámara para capturar su vídeo. Cámara IP: rtsp://usuario:contraseña@IP:puerto/stream. Grabador (DVR/NVR): el ID/canal local de la cámara. Si contiene '&', escríbelo como '--jos--'.",
+            "match"      => "explicito",
+            "tema"       => "pro",
+        ],
+        "pro-senderos" => [
+            "termino"    => "Trayectos",
+            "significado" => "Caminos que unen nodos en el plano (rectos, con ángulos rectos o curvos) para reconstruir por dónde se mueve la gente.",
+            "match"      => "explicito",
+            "tema"       => "pro",
+        ],
     ];
 }
 

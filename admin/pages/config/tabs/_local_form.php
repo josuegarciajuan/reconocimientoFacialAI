@@ -71,7 +71,7 @@ $val = function ($k, $d = "") use ($lf) {
     <h3 class="field-label">Vigilancia (alarmas de inactividad)</h3>
     <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
         Si está activa, cualquier movimiento fuera de este horario dispara una alarma en
-        «La Almenara». Marca «Actividad 24h» para que el local nunca alerte (todos los
+        «<?= rf_term_html("almenara"); ?>». Marca «Actividad 24h» para que el local nunca alerte (todos los
         casos quedan cubiertos). Las cámaras heredan este horario salvo que definan el suyo.
     </p>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
@@ -102,5 +102,5 @@ $val = function ($k, $d = "") use ($lf) {
 </div>
 
 <div class="mt-5 flex justify-end">
-    <button type="submit" class="button text-white bg-theme-1 shadow-md">Guardar fortaleza</button>
+    <button type="submit" class="button text-white bg-theme-1 shadow-md"><?= rf_term_html("guardar-fortaleza"); ?></button>
 </div>

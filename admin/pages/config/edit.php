@@ -92,18 +92,18 @@ function rf_cfg_select_rango($ini, $fin, $valor) {
 /* --- Pestañas de sección: [clave] => [emoji, sabor(Cinzel), entidad, lore] --- */
 /* El Yunque (plano) va en última posición. */
 $tabs_ui = [
-    "camaras" => ["📷", "Forjar", "Cámaras", "forja-camaras"],
-    "lineas"  => ["📏", "Trazos", "Líneas", "trazos"],
-    "plano"   => ["🗺️", "El Yunque", "Plano", "el-yunque"],
+    "camaras" => ["📷", "config-tab-forjar", "Cámaras", "forja-camaras"],
+    "lineas"  => ["📏", "config-tab-trazos", "Líneas", "trazos"],
+    "plano"   => ["🗺️", "config-tab-plano", "Plano", "el-yunque"],
 ];
 // Fortalezas (locales): pestaña solo para administradores, siempre la primera.
 if ($es_admin) {
-    $tabs_ui = ["locales" => ["🏰", "Fortalezas", "Locales", "fortalezas"]] + $tabs_ui;
+    $tabs_ui = ["locales" => ["🏰", "config-tab-locales", "Locales", "fortalezas"]] + $tabs_ui;
 }
 ?>
 
 <div class="intro-y flex flex-col sm:flex-row items-center mt-8">
-    <h2 class="text-lg font-medium mr-auto">La Forja</h2>
+    <h2 class="text-lg font-medium mr-auto"><?= rf_term_html("forja"); ?></h2>
     <div class="w-full sm:w-auto flex mt-4 sm:mt-0 text-xs text-gray-500 dark:text-gray-600">
         Plano, cámaras y líneas del local
     </div>
@@ -112,7 +112,7 @@ if ($es_admin) {
 <div class="intro-y box p-5 mt-5">
 
     <!-- ================= Pestañas de sección (sabor + entidad) ================= -->
-    <nav class="section-tabs" role="tablist" aria-label="Secciones de La Forja">
+    <nav class="section-tabs" role="tablist" aria-label="Secciones de <?= htmlspecialchars(rf_term("forja"), ENT_QUOTES); ?>">
         <?php foreach ($tabs_ui as $key => $t): ?>
             <a role="tab" aria-selected="<?= $tab === $key ? "true" : "false"; ?>"
                class="section-tab<?= $tab === $key ? " is-active" : ""; ?>"
@@ -120,7 +120,7 @@ if ($es_admin) {
                data-lore="<?= htmlspecialchars($t[3], ENT_QUOTES); ?>">
                 <span class="section-tab__emoji" aria-hidden="true"><?= $t[0]; ?></span>
                 <span class="section-tab__text">
-                    <span class="section-tab__flavor"><?= htmlspecialchars($t[1]); ?></span>
+                    <span class="section-tab__flavor"><?= rf_term_html($t[1]); ?></span>
                     <span class="section-tab__entity"><?= htmlspecialchars($t[2]); ?></span>
                 </span>
             </a>

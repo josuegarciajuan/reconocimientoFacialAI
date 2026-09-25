@@ -13,7 +13,7 @@ $local_id = (int)($_SESSION["local_id"] ?? 0);
 
 <div class="intro-y flex flex-col sm:flex-row items-center mt-8">
     <h2 class="text-lg font-medium mr-auto">📞 Teléfonos de aviso</h2>
-    <a href="?page=alarmas" class="button text-white bg-theme-2 shadow-md">← Volver a La Almenara</a>
+    <a href="?page=alarmas" class="button text-white bg-theme-2 shadow-md">← <?= rf_term_html("volver-almenara"); ?></a>
 </div>
 
 <div class="intro-y box p-5 mt-5">
@@ -83,7 +83,7 @@ $local_id = (int)($_SESSION["local_id"] ?? 0);
         Horarios de inactividad
     </div>
     <p class="text-xs text-gray-500 dark:text-gray-600 mt-1">
-        Los horarios se configuran en los formularios de <a class="text-theme-1 hover:underline" href="?page=config&tab=locales">Fortalezas (local)</a>
+        Los horarios se configuran en los formularios de <a class="text-theme-1 hover:underline" href="?page=config&tab=locales"><?= rf_term_html("fortalezas"); ?> (local)</a>
         y de <a class="text-theme-1 hover:underline" href="?page=config&tab=camaras">Cámaras</a> (sección «Vigilancia»).
         Cada cámara hereda el horario del local salvo que defina el suyo, y «Actividad 24h» desactiva las alarmas.
     </p>

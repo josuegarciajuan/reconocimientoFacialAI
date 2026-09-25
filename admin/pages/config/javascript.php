@@ -526,11 +526,11 @@ function YunqueCrearSendero(nodoA, nodoB) {
             estilo: estilo, puntos: puntos
         })
     }).then(function (r) { return r.json(); }).then(function (d) {
-        if (!d || !d.ok) { if (typeof rfToast === "function") rfToast("No se pudo guardar el sendero.", "err"); return; }
+        if (!d || !d.ok) { if (typeof rfToast === "function") rfToast(<?= json_encode(rf_term("sendero-no-guardar"), JSON_UNESCAPED_UNICODE); ?>, "err"); return; }
         FORGE_SENDEROS.push({ id: d.id, origen_tipo: nodoA.tipo, origen_id: nodoA.ref_id, destino_tipo: nodoB.tipo, destino_id: nodoB.ref_id, estilo: estilo, nombre: "", puntos: puntos });
         Yunque.nodoSel1 = null;
         YunqueDibujar();
-        if (typeof rfToast === "function") rfToast("Sendero creado.", "ok");
+        if (typeof rfToast === "function") rfToast(<?= json_encode(rf_term("sendero-creado"), JSON_UNESCAPED_UNICODE); ?>, "ok");
     }).catch(function () {});
 }
 function YunqueGuardarSendero(s) {
@@ -538,15 +538,15 @@ function YunqueGuardarSendero(s) {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: s.id, estilo: s.estilo, puntos: s.puntos })
     }).then(function (r) { return r.text(); }).then(function (t) {
-        if (t.indexOf("error") !== -1 && typeof rfToast === "function") rfToast("No se pudo actualizar el sendero.", "err");
+        if (t.indexOf("error") !== -1 && typeof rfToast === "function") rfToast(<?= json_encode(rf_term("sendero-no-actualizar"), JSON_UNESCAPED_UNICODE); ?>, "err");
     }).catch(function () {});
 }
 function YunqueBorrarSendero(id) {
-    if (!confirm("¿Eliminar este sendero?")) return;
+    if (!confirm(<?= json_encode(rf_term("sendero-eliminar"), JSON_UNESCAPED_UNICODE); ?>)) return;
     fetch("pages/config/acciones_ajax.php?a=18", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: id })
     }).then(function (r) { return r.text(); }).then(function (t) {
-        if (t.indexOf("error") !== -1) { if (typeof rfToast === "function") rfToast("No se pudo eliminar el sendero.", "err"); return; }
+        if (t.indexOf("error") !== -1) { if (typeof rfToast === "function") rfToast(<?= json_encode(rf_term("sendero-no-eliminar"), JSON_UNESCAPED_UNICODE); ?>, "err"); return; }
         FORGE_SENDEROS = FORGE_SENDEROS.filter(function (s) { return s.id !== id; });
         YunqueDibujar();
     }).catch(function () {});
@@ -1012,7 +1012,7 @@ function TemplarIniciar() {
     var btn = null;
     var bots = document.querySelectorAll(".calib-ritual");
     for (var i = 0; i < bots.length; i++) if (bots[i].classList.contains("is-activo")) { btn = bots[i]; break; }
-    if (!btn) { alert("Elige un ritual (A · Alcance … F · Enfoque)."); return; }
+    if (!btn) { alert(<?= json_encode(rf_term("elige-ritual-js"), JSON_UNESCAPED_UNICODE); ?>); return; }
     Templar.ritual = btn.getAttribute("data-ritual");
     var extra = "";
     if (Templar.ritual === "C") {
@@ -1023,7 +1023,7 @@ function TemplarIniciar() {
         var esp = document.getElementById("calib_esperados");
         extra = "&esperados=" + (esp ? (parseInt(esp.value, 10) || 3) : 3);
     }
-    document.getElementById("calibEstadoRitual").textContent = "Iniciando ritual " + Templar.ritual + " en la cámara " + Templar.camara + " (" + Templar.segundos + "s)…";
+    document.getElementById("calibEstadoRitual").textContent = <?= json_encode(rf_term("estado-iniciando-ritual"), JSON_UNESCAPED_UNICODE); ?> + Templar.ritual + " en la cámara " + Templar.camara + " (" + Templar.segundos + "s)…";
     document.getElementById("calibRecomendaciones").textContent = "— midiendo en vivo —";
     document.getElementById("calibMetrics").textContent = "— arrancando el probe —";
     fetch("pages/config/acciones_ajax.php?a=20&camara=" + Templar.camara + "&ritual=" + Templar.ritual + "&segundos=" + Templar.segundos + extra)
@@ -1037,7 +1037,7 @@ function TemplarIniciar() {
             TemplarDetener();
             Templar.poll = setInterval(TemplarPoll, 1000);
         })
-        .catch(function () { document.getElementById("calibEstadoRitual").textContent = "Error de red al iniciar el ritual."; });
+        .catch(function () { document.getElementById("calibEstadoRitual").textContent = <?= json_encode(rf_term("estado-error-red-ritual"), JSON_UNESCAPED_UNICODE); ?>; });
 }
 
 function TemplarPoll() {
@@ -1049,15 +1049,15 @@ function TemplarPoll() {
         .then(function (d) {
             if (!d) return;
             if (d.estado === "corriendo" || d.estado === "pendiente") {
-                document.getElementById("calibEstadoRitual").textContent = "Ritual en curso… (" + d.estado + ")";
+                document.getElementById("calibEstadoRitual").textContent = <?= json_encode(rf_term("estado-ritual-curso"), JSON_UNESCAPED_UNICODE); ?> + d.estado + ")";
                 return;
             }
             TemplarDetener();
             if (d.estado === "error") {
-                document.getElementById("calibEstadoRitual").textContent = "El ritual terminó con error: " + (d.error || "desconocido");
+                document.getElementById("calibEstadoRitual").textContent = <?= json_encode(rf_term("estado-ritual-error"), JSON_UNESCAPED_UNICODE); ?> + (d.error || "desconocido");
                 return;
             }
-            document.getElementById("calibEstadoRitual").textContent = "Ritual " + d.ritual + " completado en " + d.duracion_s + "s. Revisa la recomendación.";
+            document.getElementById("calibEstadoRitual").textContent = <?= json_encode(rf_term("estado-ritual-completado-pre"), JSON_UNESCAPED_UNICODE); ?> + d.ritual + <?= json_encode(rf_term("estado-ritual-completado-post"), JSON_UNESCAPED_UNICODE); ?> + d.duracion_s + "s. Revisa la recomendación.";
             TemplarRenderMetricas(d);
             TemplarRenderRecomendaciones(d);
         })

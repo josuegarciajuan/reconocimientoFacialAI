@@ -50,10 +50,10 @@
         <div class="form-section">
             <div class="form-section__title">
                 <span class="form-section__emoji" aria-hidden="true">🛤️</span>
-                Senderos
+                <?= rf_term_html("senderos"); ?>
             </div>
-            <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer" data-lore="senderos">
-                <input type="checkbox" id="yunqueModoSenderos" style="accent-color:var(--mordor-oro)"> Modo senderos
+            <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer" data-lore="senderos" data-lore-pro="pro-senderos">
+                <input type="checkbox" id="yunqueModoSenderos" style="accent-color:var(--mordor-oro)"> <?= rf_term_html("modo-senderos"); ?>
             </label>
             <div class="mt-3">
                 <label for="yunqueEstilo" class="field-label">Estilo de trazado</label>
@@ -64,7 +64,7 @@
                 </select>
             </div>
             <p class="text-xs text-gray-500 dark:text-gray-600 mt-2">
-                Con el modo senderos activo, haz clic sobre dos nodos para unirlos. Los nodos son cámaras
+                Con el <?= rf_term_html("modo-senderos-lc"); ?> activo, haz clic sobre dos nodos para unirlos. Los nodos son cámaras
                 <strong>sin</strong> líneas o las <strong>líneas</strong> de cámaras con líneas. Arrastra los puntos
                 intermedios para personalizar el trazado (pasillos); Shift+clic sobre un punto lo elimina.
             </p>
@@ -76,7 +76,7 @@
         <div class="form-section">
             <div class="form-section__title">
                 <span class="form-section__emoji" aria-hidden="true">⚒️</span>
-                <span data-lore="el-yunque">El Yunque — Plano del local</span>
+                <span data-lore="el-yunque"><?= rf_term_html("yunque"); ?></span>
                 <span id="yunqueEstado" class="yunque-estado yunque-estado--pend ml-auto"></span>
             </div>
 
@@ -86,7 +86,7 @@
                 <span><span class="yunque-dot" style="background:#d22829"></span> nodo cámara</span>
                 <span><span class="yunque-dot" style="background:#2596be"></span> nodo línea</span>
                 <span><span class="yunque-dot" style="background:#ffed00"></span> línea en el plano</span>
-                <span><span class="yunque-dot" style="background:#9a6bff"></span> sendero</span>
+                <span><span class="yunque-dot" style="background:#9a6bff"></span> <?= rf_term_html("sendero"); ?></span>
             </div>
 
             <div class="plan-wrap">
@@ -96,7 +96,7 @@
             </div>
             <p class="text-xs text-gray-500 dark:text-gray-600 mt-2">
                 Arrastra las cámaras desde la derecha al plano (se autoguardan al soltar). Clic en una cámara para
-                ver y arrastrar sus líneas. Con «modo senderos», clic sobre dos nodos para unirlos.
+                ver y arrastrar sus líneas. Con «<?= rf_term_html("modo-senderos-lc"); ?>», clic sobre dos nodos para unirlos.
             </p>
         </div>
     </div>

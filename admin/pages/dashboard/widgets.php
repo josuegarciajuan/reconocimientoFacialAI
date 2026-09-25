@@ -13,6 +13,7 @@
 require_once __DIR__ . "/../../../libs/db.php";
 require_once __DIR__ . "/../../../libs/fechas.php";
 require_once __DIR__ . "/../../../libs/etiquetas.php";
+require_once __DIR__ . "/../../includes/terminos.php";
 
 /* ---------------------------------------------------------------
  * Utilidades
@@ -315,20 +316,22 @@ function dash_daemon_estado($svc) {
 /** Lista de daemons con estado (los 6 centinelas). */
 function dash_daemons() {
     $lista = [
-        ["svc" => "rf-capturador",   "nombre" => "El Vigía",       "emoji" => "📡", "rol" => "Graba movimientos", "lore" => "el-vigia"],
-        ["svc" => "rf-detector",     "nombre" => "El Rastreador",  "emoji" => "🐺", "rol" => "Cruces + caras",      "lore" => "el-rastreador"],
-        ["svc" => "rf-clasificador", "nombre" => "La Mirada",      "emoji" => "👁️", "rol" => "Ingesta a la BD",    "lore" => "la-mirada"],
-        ["svc" => "rf-vinculador",   "nombre" => "El Atador",      "emoji" => "⛓️", "rol" => "Vídeo ↔ personas",  "lore" => "el-atador"],
-        ["svc" => "rf-conciliador",  "nombre" => "El Conciliador", "emoji" => "⚖️", "rol" => "Fichajes diarios",  "lore" => "el-conciliador"],
-        ["svc" => "rf-live",         "nombre" => "El Mensajero",   "emoji" => "📯", "rol" => "Snapshots en vivo", "lore" => "el-mensajero"],
+        ["svc" => "rf-capturador",   "term" => "daemon-vigia",       "emoji" => "📡", "rol" => "Graba movimientos", "lore" => "el-vigia"],
+        ["svc" => "rf-detector",     "term" => "daemon-rastreador",  "emoji" => "🐺", "rol" => "Cruces + caras",      "lore" => "el-rastreador"],
+        ["svc" => "rf-clasificador", "term" => "daemon-mirada",      "emoji" => "👁️", "rol" => "Ingesta a la BD",    "lore" => "la-mirada"],
+        ["svc" => "rf-vinculador",   "term" => "daemon-atador",      "emoji" => "⛓️", "rol" => "Vídeo ↔ personas",  "lore" => "el-atador"],
+        ["svc" => "rf-conciliador",  "term" => "daemon-conciliador", "emoji" => "⚖️", "rol" => "Fichajes diarios",  "lore" => "el-conciliador"],
+        ["svc" => "rf-live",         "term" => "daemon-mensajero",   "emoji" => "📯", "rol" => "Snapshots en vivo", "lore" => "el-mensajero"],
     ];
     foreach ($lista as &$d) {
+        $d["nombre"] = rf_term($d["term"]);
         $st = dash_daemon_estado($d["svc"]);
         $d["estado"] = $st;
-        if ($st === "active")       { $d["clase"] = "active"; $d["texto"] = "en pie"; }
-        elseif ($st === "failed")   { $d["clase"] = "failed"; $d["texto"] = "caído"; }
-        elseif ($st === "inactive") { $d["clase"] = "idle";   $d["texto"] = "dormido"; }
-        else                        { $d["clase"] = "unknown"; $d["texto"] = "desconocido"; }
+        if ($st === "active")       { $d["clase"] = "active";   $d["term_estado"] = "estado-en-pie"; }
+        elseif ($st === "failed")   { $d["clase"] = "failed";   $d["term_estado"] = "estado-caido"; }
+        elseif ($st === "inactive") { $d["clase"] = "idle";     $d["term_estado"] = "estado-dormido"; }
+        else                        { $d["clase"] = "unknown";  $d["term_estado"] = "estado-desconocido"; }
+        $d["texto"] = rf_term($d["term_estado"]);
     }
     return $lista;
 }
@@ -359,8 +362,8 @@ function dash_feed_html($local_id, $limite = 10) {
     );
     if (!$rows) {
         return '<div class="empty-state"><div class="empty-state__icon">🕸️</div>'
-            . '<div class="empty-state__title">Silencio en Mordor</div>'
-            . '<div class="empty-state__hint">Aún no hay movimientos registrados. El Ojo sigue vigilando.</div></div>';
+            . '<div class="empty-state__title">' . rf_term_html("feed-vacio") . '</div>'
+            . '<div class="empty-state__hint">' . rf_term_html("feed-vacio-hint") . '</div></div>';
     }
     $fids = DB::select(
         "SELECT estancia_id, MIN(id) AS fid FROM fotos WHERE estancia_id IN ("
@@ -378,7 +381,7 @@ function dash_feed_html($local_id, $limite = 10) {
         $img = "./caras_procesadas/" . $fid . ".jpg";
         if ((int)$r["puerta"] === 1)      { $tag = "entrada"; $tag_txt = "⚔️ Entrada"; }
         elseif ((int)$r["salida"] === 1)  { $tag = "salida";  $tag_txt = "🚪 Salida"; }
-        else                              { $tag = "mov";     $tag_txt = "👣 Movimiento"; }
+        else                              { $tag = "mov";     $tag_txt = "👣 " . rf_term_html("tag-acceso"); }
         $titulo = $nombre . " · " . $r["cam"];
         $out .= '<div class="feed-item" style="--i:' . $i . '">'
             . '<img class="feed-avatar" src="' . htmlspecialchars($img) . '" alt="Foto de ' . htmlspecialchars($nombre) . '" loading="lazy"'
@@ -401,8 +404,8 @@ function dash_dentro_html($local_id) {
     $dentro = dash_almas_dentro($local_id);
     if (!$dentro) {
         return '<div class="empty-state"><div class="empty-state__icon">🕊️</div>'
-            . '<div class="empty-state__title">La fortaleza está vacía</div>'
-            . '<div class="empty-state__hint">Nadie dentro ahora mismo. El Ojo descansa tranquilo.</div></div>';
+            . '<div class="empty-state__title">' . rf_term_html("dentro-vacio") . '</div>'
+            . '<div class="empty-state__hint">' . rf_term_html("dentro-vacio-hint") . '</div></div>';
     }
     $out = '<div class="avatar-stack" aria-hidden="true">';
     foreach ($dentro as $i => $p) {
@@ -416,7 +419,7 @@ function dash_dentro_html($local_id) {
     }
     $out .= '</div>'
         . '<div class="inside-now__count tnum"><span class="count-up" data-count="' . count($dentro) . '">' . count($dentro) . '</span>'
-        . ' <span class="inside-now__lbl">almas dentro</span></div>'
+        . ' <span class="inside-now__lbl">' . rf_term_html("dash-almas-dentro") . '</span></div>'
         . '<ul class="inside-now__list">';
     foreach ($dentro as $p) {
         $nombre = persona_label($p["nombre"], $p["cod_interno"]);
@@ -437,14 +440,14 @@ function dash_falta_html($local_id) {
     $hay_trabajadores = (int)(DB::selectOne("SELECT COUNT(*) AS n FROM personas WHERE local_id = ? AND trabajador = 1", [(int)$local_id])["n"] ?? 0);
     if ($hay_trabajadores === 0) {
         return '<div class="empty-state"><div class="empty-state__icon">🫏</div>'
-            . '<div class="empty-state__title">La legión aún no está registrada</div>'
-            . '<div class="empty-state__hint">Marca trabajadores en "Pueblos" (👹) para que el conciliador genere sus fichajes.</div></div>';
+            . '<div class="empty-state__title">' . rf_term_html("falta-sin-legion") . '</div>'
+            . '<div class="empty-state__hint">' . rf_term_html("falta-sin-legion-hint") . '</div></div>';
     }
     $falta = dash_falta_fichar($local_id);
     if (!$falta) {
         return '<div class="empty-state"><div class="empty-state__icon">🛡️</div>'
-            . '<div class="empty-state__title">La guardia está completa</div>'
-            . '<div class="empty-state__hint">Todos los trabajadores han cruzado la puerta hoy.</div></div>';
+            . '<div class="empty-state__title">' . rf_term_html("falta-guardia-completa") . '</div>'
+            . '<div class="empty-state__hint">' . rf_term_html("falta-guardia-hint") . '</div></div>';
     }
     $loc = DB::selectOne("SELECT hora_entrada1, hora_entrada2, jornada_partida FROM locales WHERE id = ?", [(int)$local_id]);
     $hora_esp = $loc && $loc["hora_entrada1"] ? substr($loc["hora_entrada1"], 0, 5) : "";
@@ -469,7 +472,7 @@ function dash_fichajes_html($local_id) {
     if (!$rows) {
         return '<div class="empty-state"><div class="empty-state__icon">🕰️</div>'
             . '<div class="empty-state__title">Aún no hay fichajes hoy</div>'
-            . '<div class="empty-state__hint">El Conciliador los genera cuando los trabajadores cruzan la puerta. Si nadie ha llegado, el reloj sigue en silencio.</div></div>';
+            . '<div class="empty-state__hint">' . rf_term_html("fichajes-vacio-hint") . '</div></div>';
     }
 
     $js_quote = function ($s) {
@@ -533,7 +536,7 @@ function dash_daemons_html() {
             . '<div class="daemon-tile__emoji" aria-hidden="true">' . $d["emoji"] . '</div>'
             . '<div class="daemon-tile__name">' . htmlspecialchars($d["nombre"]) . '</div>'
             . '<div class="daemon-tile__svc">' . htmlspecialchars($d["svc"]) . '</div>'
-            . '<div class="daemon-tile__estado">' . htmlspecialchars($d["texto"]) . '</div>'
+            . '<div class="daemon-tile__estado">' . rf_term_html($d["term_estado"]) . '</div>'
             . '</div>';
     }
     return $out;

@@ -69,9 +69,10 @@ switch ($_GET["a"]) {
         if ($max > 0 && $nuevo > $max) { $nuevo = $max; }
         DB::execute("UPDATE locales SET aforo_actual = ? WHERE id = ?", [$nuevo, $local_id]);
         $a = dash_aforo($local_id);
-        $sem_txt = $a["estado"] === "full"
-            ? "🔴 Asedio · " . $a["pct"] . "%"
-            : ($a["estado"] === "warn" ? "🟡 Animado · " . $a["pct"] . "%" : "🟢 Tranquilo · " . $a["pct"] . "%");
+        $sem_estado = $a["estado"] === "full"
+            ? ("🔴 " . rf_term("aforo-full"))
+            : ($a["estado"] === "warn" ? ("🟡 " . rf_term("aforo-warn")) : ("🟢 " . rf_term("aforo-ok")));
+        $sem_txt = $sem_estado . " · " . $a["pct"] . "%";
         echo json_encode([
             "ok" => true, "actual" => $a["actual"], "max" => $a["max"],
             "pct" => $a["pct"], "estado" => $a["estado"], "sem_txt" => $sem_txt,
@@ -92,8 +93,8 @@ switch ($_GET["a"]) {
         );
         $aforo = dash_aforo($local_id);
         $anomalias = 0; $detalle = [];
-        if ((int)($cam["apagadas"] ?? 0) > 0) { $anomalias++; $detalle[] = (int)$cam["apagadas"] . " cámara(s) apagada(s)"; }
-        if (count($caidos) > 0)               { $anomalias++; $detalle[] = count($caidos) . " centinela(s) caído(s)"; }
+        if ((int)($cam["apagadas"] ?? 0) > 0) { $anomalias++; $detalle[] = (int)$cam["apagadas"] . " " . rf_term("camaras-apagadas"); }
+        if (count($caidos) > 0)               { $anomalias++; $detalle[] = count($caidos) . " " . rf_term("centinelas-caidos"); }
         if ((int)$aforo["pct"] >= 85)         { $anomalias++; $detalle[] = "aforo al " . $aforo["pct"] . "%"; }
         echo json_encode([
             "ok"        => true,

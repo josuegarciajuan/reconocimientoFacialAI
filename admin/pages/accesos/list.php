@@ -32,7 +32,7 @@ $videos_por_cam = [];
 ?>
 
 <div class="intro-y flex flex-col sm:flex-row items-center mt-8">
-    <h2 class="text-lg font-medium mr-auto">Listado Movimientos</h2>
+    <h2 class="text-lg font-medium mr-auto"><?= rf_term_html("movimientos"); ?></h2>
     <div class="filter-bar mt-4 sm:mt-0">
         <div class="filter-item">
             <label for="camara">Cámara</label>

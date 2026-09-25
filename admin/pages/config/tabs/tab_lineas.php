@@ -44,7 +44,7 @@ require_once __DIR__ . "/../../../../libs/etiquetas.php";
         </div>
         <div class="form-grid__full">
             <p class="text-xs text-gray-500 dark:text-gray-600">
-                La posición de la línea en el plano 2D se ajusta en «El Yunque» arrastrándola sobre el plano.
+                La posición de la línea en el plano 2D se ajusta en «<?= rf_term_html("el-yunque-corto"); ?>» arrastrándola sobre el plano.
             </p>
         </div>
     </div>

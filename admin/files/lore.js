@@ -19,6 +19,17 @@
 
   var GLOSARIO = win.RF_GLOSARIO || {};
 
+  /* Tema activo: "pro" (profesional, por defecto) o "mordor". */
+  function temaActivo() {
+    return doc.documentElement.classList.contains("theme-pro") ? "pro" : "mordor";
+  }
+
+  /* ¿La entrada pertenece al tema activo? (sin "tema" => "mordor"). */
+  function encaja(entrada, tema) {
+    var t = (entrada && entrada.tema) ? entrada.tema : "mordor";
+    return t === "ambos" || t === tema;
+  }
+
   /* Normalización de texto: minúsculas, sin emojis/puntuación,
      espacios colapsados. Mantiene acentos (á é í ó ú ñ ü). */
   var EMOJI_RE = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}\u{20E3}]/gu;
@@ -42,7 +53,7 @@
     var e = GLOSARIO[clave];
     POR_CLAVE[clave] = e;
     if (e && e.termino) {
-      TERMINOS.push({ clave: clave, limpio: limpiar(e.termino), match: e.match || "auto" });
+      TERMINOS.push({ clave: clave, limpio: limpiar(e.termino), match: e.match || "auto", tema: e.tema || "mordor" });
     }
   });
 
@@ -63,14 +74,19 @@
   function resolver(el) {
     if (!el || !el.closest) return null;
 
-    // 1) data-lore explícito (elemento o ancestro)
-    var marcado = el.closest("[data-lore]");
+    var tema = temaActivo();
+
+    // 1) data-lore explícito (o data-lore-pro en el tema profesional)
+    var marcado = el.closest("[data-lore], [data-lore-pro]");
     if (marcado) {
-      var clave = marcado.getAttribute("data-lore");
-      if (POR_CLAVE[clave]) return POR_CLAVE[clave];
+      var clave = (tema === "pro" && marcado.getAttribute("data-lore-pro"))
+        ? marcado.getAttribute("data-lore-pro")
+        : marcado.getAttribute("data-lore");
+      var entrada = clave ? POR_CLAVE[clave] : null;
+      if (entrada && encaja(entrada, tema)) return entrada;
     }
 
-    // 2) match automático por texto (solo match:"auto")
+    // 2) match automático por texto (solo match:"auto" del tema activo)
     var candidato = el.closest(SEL_TITULO) || el;
     var texto = limpiar(textoDe(candidato));
     if (!texto) return null;
@@ -78,7 +94,7 @@
     // 2a) igualdad exacta primero (gana sobre la contención)
     for (var i = 0; i < TERMINOS.length; i++) {
       var t = TERMINOS[i];
-      if (t.match === "auto" && texto === t.limpio) {
+      if (t.match === "auto" && encaja(t, tema) && texto === t.limpio) {
         return GLOSARIO[t.clave];
       }
     }
@@ -86,7 +102,7 @@
     if (texto.length <= 90) {
       for (var j = 0; j < TERMINOS.length; j++) {
         var u = TERMINOS[j];
-        if (u.match !== "auto" || u.limpio.length < 3) continue;
+        if (u.match !== "auto" || u.limpio.length < 3 || !encaja(u, tema)) continue;
         var re = new RegExp("(^|\\s)" + escRe(u.limpio) + "(?=\\s|$)", "i");
         if (re.test(texto)) {
           return GLOSARIO[u.clave];

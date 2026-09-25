@@ -11,6 +11,8 @@ require_once '../libs/auth.php';
 require_once '../libs/autologin.php';
 // Lore: glosario de terminología temática (Barad-dûr/Mordor) -> window.RF_GLOSARIO
 require_once __DIR__ . '/includes/glosario.php';
+// Terminología por tema (Mordor <-> Profesional)
+require_once __DIR__ . '/includes/terminos.php';
 
 $login_error = "";
 
@@ -68,35 +70,46 @@ if(isset($_GET["login"]) and $_GET["login"]==1 and $_SERVER["REQUEST_METHOD"]===
             exit;
         }
         rate_limit_record("login_" . $ip);
-        $login_error = "La Puerta Negra te ha rechazado. Usuario o contraseña incorrectos.";
+        $login_error = rf_term("login-error");
     }
 }
 ?>
 <!DOCTYPE html>
-<html lang="es" class="dark"><!-- BEGIN: Head --><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<html lang="es" class="theme-pro" data-theme="pro"><!-- BEGIN: Head --><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         
         <link href="./files_login/logo-sauron.png" rel="shortcut icon">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="Mordor · La Puerta Negra. Acceso restringido: El Ojo que Todo lo Ve vigila cada entrada.">
+        <meta name="description" content="Acceso al panel de vigilancia y control de accesos por reconocimiento facial.">
         <meta name="keywords" content="Reconocimiento Facial">
         <meta name="author" content="Josue">
-        <title>Mordor · La Puerta Negra</title>
+        <title><?= htmlspecialchars(rf_term("login-marca"), ENT_QUOTES); ?> · Acceso</title>
         <!-- PWA: manifest + instalación (el modal solo aparece en index.php tras el login) -->
         <link rel="manifest" href="./manifest.json">
-        <meta name="theme-color" content="#16121a">
+        <meta name="theme-color" id="rf-theme-color" content="#F5F3EC">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
         <meta name="apple-mobile-web-app-title" content="Barad-dûr">
         <link rel="apple-touch-icon" href="./files/icon-192.png">
-        <!-- Fuerza el tema oscuro (Mordor) antes de que cargue app.js -->
-        <script>document.documentElement.classList.add('dark');</script>
+        <!-- Login en tema profesional (v1). El login por cookie llegará en el refinado. -->
+        <script>
+        (function () {
+          try {
+            var r = document.documentElement;
+            r.classList.remove("dark");
+            r.classList.add("theme-pro");
+            r.setAttribute("data-theme", "pro");
+            r.style.colorScheme = "light";
+          } catch (e) {}
+        })();
+        </script>
         <!-- BEGIN: CSS Assets-->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cinzel:wght@500;600;700;800&family=Cinzel+Decorative:wght@700;900&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Cinzel:wght@500;600;700;800&family=Cinzel+Decorative:wght@700;900&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="./files_login/app.css">
         <link rel="stylesheet" href="./files/custom.css?v=3">
+        <link rel="stylesheet" href="./files/theme-pro.css?v=1">
         <!-- END: CSS Assets-->
     <style type="text/css">/*!
  * 
@@ -1625,9 +1638,9 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
                 <div class="h-screen xl:h-auto flex py-5 xl:py-0 my-10 xl:my-0">
                     <div class="my-auto mx-auto xl:ml-20 bg-white xl:bg-transparent px-5 sm:px-8 py-8 xl:p-0 rounded-md shadow-md xl:shadow-none w-full sm:w-3/4 lg:w-2/4 xl:w-auto">
                         <h2 class="intro-x font-bold text-2xl xl:text-3xl text-center xl:text-left">
-                            👁️ La Puerta Negra
+                            <?= rf_term_html("login-titulo"); ?>
                         </h2>
-                        <div class="intro-x mt-2 text-gray-500 xl:hidden text-center">El Ojo vigila a quien osa cruzar. Identifícate, o la torre te rechazará.</div>
+                        <div class="intro-x mt-2 text-gray-500 xl:hidden text-center"><?= rf_term_html("login-sub"); ?></div>
                         <form action="?login=1" method="POST">
                             <?= csrf_field(); ?>
                             <div class="intro-x mt-8">
@@ -1650,7 +1663,7 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
                                 </div>
                             <?php endif; ?>
                             <div class="intro-x mt-5 xl:mt-8 text-center xl:text-left">
-                                <button id="boton_acceder" class="button button--lg w-full xl:w-32 btn-login xl:mr-3">🔥 Entrar a Mordor</button>
+                                <button id="boton_acceder" class="button button--lg w-full xl:w-32 btn-login xl:mr-3"><?= rf_term_html("login-entrar"); ?></button>
                             </div>
                         </form>    
                             
@@ -1661,12 +1674,24 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
                 <!-- BEGIN: Brand Panel -->
                 <div class="hidden xl:flex py-5 my-10 justify-end">
                     <div class="login-brand w-3/4 max-w-lg">
-                        <img class="login-brand__hero" src="./files_login/hero-sauron.png" alt="El ojo que todo lo ve">
+                        <img class="login-brand__hero login-brand__hero--mordor" src="./files_login/hero-sauron.png" alt="El ojo que todo lo ve">
+                        <div class="login-brand__aperture-wrap" aria-hidden="true">
+                            <svg class="login-brand__aperture" viewBox="0 0 48 48" fill="none" stroke="currentColor">
+                                <circle cx="24" cy="24" r="21" stroke-width="1.6"/>
+                                <circle cx="24" cy="24" r="8" stroke-width="1.2" opacity=".65"/>
+                                <path d="M32 24 L45 24" stroke-width="1.4" stroke-linecap="round"/>
+                                <path d="M28 30.93 L34.5 42.19" stroke-width="1.4" stroke-linecap="round"/>
+                                <path d="M20 30.93 L13.5 42.19" stroke-width="1.4" stroke-linecap="round"/>
+                                <path d="M16 24 L3 24" stroke-width="1.4" stroke-linecap="round"/>
+                                <path d="M20 17.07 L13.5 5.81" stroke-width="1.4" stroke-linecap="round"/>
+                                <path d="M28 17.07 L34.5 5.81" stroke-width="1.4" stroke-linecap="round"/>
+                            </svg>
+                        </div>
                         <div class="login-brand__overlay">
-                            <img class="login-brand__logo" src="./files_login/logo-sauron.png" alt="Barad-dûr">
-                            <div class="login-brand__title">Mordor</div>
-                            <div class="login-brand__tagline" data-lore="inscripcion-anillo">“Ash nazg durbatulûk, ash nazg gimbatul, ash nazg thrakatulûk agh burzum-ishi krimpatul.”</div>
-                            <div class="login-brand__tagline mt-2" style="font-size:0.85rem" data-lore="ojo-todo-lo-ve">Un Anillo para gobernarlos a todos… y El Ojo que todo lo ve vigila cada acceso por reconocimiento facial.</div>
+                            <img class="login-brand__logo login-brand__logo--mordor" src="./files_login/logo-sauron.png" alt="Barad-dûr">
+                            <div class="login-brand__title"><?= rf_term_html("login-marca"); ?></div>
+                            <div class="login-brand__tagline" data-lore="inscripcion-anillo"><?= rf_term_html("login-tagline1"); ?></div>
+                            <div class="login-brand__tagline mt-2" style="font-size:0.85rem" data-lore="ojo-todo-lo-ve"><?= rf_term_html("login-tagline2"); ?></div>
                         </div>
                     </div>
                 </div>
@@ -1695,7 +1720,7 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
                 var boton = document.getElementById("boton_acceder");
                 if (boton) {
                     boton.disabled = true;
-                    boton.textContent = "El Ojo te observa…";
+                    boton.textContent = <?= json_encode(rf_term("login-espera"), JSON_UNESCAPED_UNICODE); ?>;
                 }
             });
         })();

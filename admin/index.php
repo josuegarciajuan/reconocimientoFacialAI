@@ -44,6 +44,8 @@ require_once '../config/rutas.php';
 require_once '../libs/db.php';
 // Lore: glosario de terminología temática (Barad-dûr/Mordor) -> window.RF_GLOSARIO
 require_once __DIR__ . '/includes/glosario.php';
+// Terminología por tema (Mordor <-> Profesional) -> helpers rf_term()/rf_term_html()
+require_once __DIR__ . '/includes/terminos.php';
 
 // B9: consulta del local actual con PDO
 $local = DB::selectOne("SELECT * FROM locales WHERE id = ?", [(int)($_SESSION["local_id"] ?? 0)]);
@@ -58,7 +60,13 @@ $power_estado = dash_power_estado();
 
 ?>
 <!DOCTYPE html>
-<html lang="es" class="dark"><!-- BEGIN: Head --><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style>.gm-style .gm-style-mtc label,.gm-style .gm-style-mtc div{font-weight:400}
+<?php
+// Tema activo: cookie rf_theme (mordor|pro). Por defecto: profesional (pro).
+$rf_tema = (($_COOKIE["rf_theme"] ?? "") === "mordor") ? "mordor" : "pro";
+$rf_tema_clase = ($rf_tema === "mordor") ? "dark" : "theme-pro";
+$rf_tema_color = ($rf_tema === "mordor") ? "#16121a" : "#F5F3EC";
+?>
+<html lang="es" class="<?= $rf_tema_clase; ?>" data-theme="<?= $rf_tema; ?>"><!-- BEGIN: Head --><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style>.gm-style .gm-style-mtc label,.gm-style .gm-style-mtc div{font-weight:400}
 </style><style>.gm-control-active>img{box-sizing:content-box;display:none;left:50%;pointer-events:none;position:absolute;top:50%;transform:translate(-50%,-50%)}.gm-control-active>img:nth-child(1){display:block}.gm-control-active:hover>img:nth-child(1),.gm-control-active:active>img:nth-child(1){display:none}.gm-control-active:hover>img:nth-child(2),.gm-control-active:active>img:nth-child(3){display:block}
 </style><link type="text/css" rel="stylesheet" href="./files/css"><style>.gm-ui-hover-effect{opacity:.6}.gm-ui-hover-effect:hover{opacity:1}
 </style><style>.gm-style .gm-style-cc span,.gm-style .gm-style-cc a,.gm-style .gm-style-mtc div{font-size:10px;box-sizing:border-box}
@@ -73,24 +81,44 @@ $power_estado = dash_power_estado();
         <title>Mordor · El Ojo que Todo lo Ve</title>
         <!-- PWA: manifest + instalación (ver files/pwa-install.js) -->
         <link rel="manifest" href="./manifest.json">
-        <meta name="theme-color" content="#16121a">
+        <meta name="theme-color" id="rf-theme-color" content="<?= $rf_tema_color; ?>">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
         <meta name="apple-mobile-web-app-title" content="Barad-dûr">
         <link rel="apple-touch-icon" href="./files/icon-192.png">
-        <!-- Fuerza el tema oscuro (Mordor) antes de que cargue app.js -->
-        <script>document.documentElement.classList.add('dark');</script>
+        <!-- Tema antes del primer pintado (anti-FOUC): localStorage > cookie > profesional -->
+        <script>
+        (function () {
+          try {
+            var k = localStorage.getItem("rf-theme");
+            var c = (document.cookie.match(/(?:^|;\s*)rf_theme=(mordor|pro)/) || [])[1];
+            var t = (k === "mordor" || k === "pro") ? k : (c || "pro");
+            var pro = t !== "mordor";
+            var r = document.documentElement;
+            r.classList.toggle("dark", !pro);
+            r.classList.toggle("theme-pro", pro);
+            r.setAttribute("data-theme", pro ? "pro" : "mordor");
+            r.style.colorScheme = pro ? "light" : "dark";
+            var mt = document.getElementById("rf-theme-color");
+            if (mt) { mt.setAttribute("content", pro ? "#F5F3EC" : "#16121a"); }
+          } catch (e) {
+            document.documentElement.classList.add("theme-pro");
+          }
+        })();
+        </script>
         <!-- BEGIN: CSS Assets-->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cinzel:wght@500;600;700;800&family=Cinzel+Decorative:wght@700;900&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Cinzel:wght@500;600;700;800&family=Cinzel+Decorative:wght@700;900&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="./files/app.css">
         <link rel="stylesheet" href="./files/custom.css?v=6">
         <link rel="stylesheet" href="./files/sections.css?v=20260819b">
         <?php if (($_GET["page"] ?? "dash") === "dash"): ?>
         <link rel="stylesheet" href="./files/dashboard.css?v=20260819">
         <?php endif; ?>
+        <!-- Tema profesional "Iris" (claro). Cargado el último para ganar en cascada. -->
+        <link rel="stylesheet" href="./files/theme-pro.css?v=1">
         <!-- END: CSS Assets-->
         <script type="text/javascript" src="./includes/jquery.js"></script>
         <script type="text/javascript" src="./includes/ajax.js"></script>
@@ -1676,7 +1704,7 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
                 <!-- END: Hamburguesa -->
                 <!-- BEGIN: Logo -->
                 <a href="?" class="-intro-x hidden md:flex baradur-brand">
-                    <svg class="sauron-eye" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+                    <svg class="sauron-eye rf-brand-eye" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
                         <defs>
                             <radialGradient id="sauron-iris-grad" cx="50%" cy="38%" r="75%">
                                 <stop offset="0%" stop-color="#ffd9a0"/>
@@ -1697,14 +1725,29 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
                         <!-- brillo -->
                         <circle class="sauron-eye__shine" cx="27.4" cy="20.5" r="1.5" fill="rgba(255,235,205,0.95)"/>
                     </svg>
-                    <span class="baradur-brand__word">Barad-<span class="font-medium">dûr</span>
-                        <span class="baradur-brand__sub">El Ojo que Todo lo Ve</span>
+                    <!-- Marca del tema profesional: diafragma/apertura de lente -->
+                    <svg class="rf-brand-aperture" viewBox="0 0 48 48" aria-hidden="true" focusable="false" fill="none" stroke="currentColor">
+                        <circle cx="24" cy="24" r="21" stroke-width="2"/>
+                        <circle cx="24" cy="24" r="8" stroke-width="1.4" opacity=".7"/>
+                        <path d="M32 24 L45 24" stroke-width="1.6" stroke-linecap="round"/>
+                        <path d="M28 30.93 L34.5 42.19" stroke-width="1.6" stroke-linecap="round"/>
+                        <path d="M20 30.93 L13.5 42.19" stroke-width="1.6" stroke-linecap="round"/>
+                        <path d="M16 24 L3 24" stroke-width="1.6" stroke-linecap="round"/>
+                        <path d="M20 17.07 L13.5 5.81" stroke-width="1.6" stroke-linecap="round"/>
+                        <path d="M28 17.07 L34.5 5.81" stroke-width="1.6" stroke-linecap="round"/>
+                    </svg>
+                    <span class="baradur-brand__word">
+                        <span class="rf-brand-mordor">Barad-<span class="font-medium">dûr</span></span>
+                        <span class="rf-brand-pro">Panel de <span class="font-medium">Vigilancia</span></span>
+                        <span class="baradur-brand__sub rf-brand-mordor">El Ojo que Todo lo Ve</span>
+                        <span class="baradur-brand__sub rf-brand-pro">Reconocimiento facial · Control de accesos</span>
                     </span>
                 </a>
                 <!-- END: Logo -->
                 <?php require_once "breadcrumb.php"; ?>
                 <?php require_once "search.php"; ?>
                 <?php require_once "notificaciones.php"; ?>
+                <?php require_once "themeToggle.php"; ?>
                 
                 <?php 
                 require_once "seleccionCuenta.php";
@@ -1721,7 +1764,7 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
         <a href="?page=alarmas" id="banner_alarma" class="banner-alarma" role="alert" style="display:none">
             <span class="banner-alarma__icon" aria-hidden="true">🚨</span>
             <span class="banner-alarma__text" id="banner_alarma_texto">Alarma sin revisar</span>
-            <span class="banner-alarma__cta">Ir a La Almenara →</span>
+            <span class="banner-alarma__cta"><?= rf_term_html("banner-cta"); ?></span>
         </a>
         <!-- END: Banner de alarma -->
         
@@ -1733,21 +1776,21 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
         <div class="ring-hub-root">
             <button type="button" class="ring-widget" id="ring-widget"
                     aria-haspopup="dialog" aria-expanded="false" aria-controls="ring-hub"
-                    aria-label="Un Anillo para gobernarlos a todos — abre el centro de mando">
+                    aria-label="<?= htmlspecialchars(rf_term("anillo-aria"), ENT_QUOTES); ?>">
                 <span class="ring-widget__emoji" aria-hidden="true">💍</span>
-                <span class="ring-widget__label">Un Anillo</span>
+                <span class="ring-widget__label"><?= rf_term_html("anillo"); ?></span>
                 <span class="ring-widget__badge" id="ring-hub-badge" aria-hidden="true"></span>
             </button>
 
             <div class="ring-hub" id="ring-hub" role="dialog" aria-label="Centro de mando del Anillo" aria-hidden="true">
                 <div class="ring-hub__head">
-                    <div class="ring-hub__title">💍 Un Anillo para gobernarlos</div>
-                    <div class="ring-hub__estado" id="ring-hub-estado">El Ojo vigila</div>
+                    <div class="ring-hub__title">💍 <?= rf_term_html("anillo-titulo"); ?></div>
+                    <div class="ring-hub__estado" id="ring-hub-estado"><?= rf_term_html("vigila"); ?></div>
                     <button type="button" class="ring-hub__close" id="ring-hub-cerrar" aria-label="Cerrar el centro de mando">✕</button>
                 </div>
 
                 <form class="ring-hub__search" id="ring-hub-form" role="search">
-                    <label class="ring-hub__search-label" for="ring-hub-buscar">🔍 Buscar en Mordor</label>
+                    <label class="ring-hub__search-label" for="ring-hub-buscar">🔍 <?= rf_term_html("buscar"); ?></label>
                     <div class="ring-hub__search-row">
                         <input type="text" id="ring-hub-buscar" class="ring-hub__search-input"
                                placeholder="Persona, código, cámara…" autocomplete="off">
@@ -1756,24 +1799,24 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
                 </form>
 
                 <nav class="ring-hub__nav" aria-label="Accesos rápidos del panel">
-                    <a class="ring-hub__nav-link" href="?page=dash"><span aria-hidden="true">👁️</span> La Torre</a>
-                    <a class="ring-hub__nav-link ring-hub__nav-link--featured" href="?page=camaras"><span aria-hidden="true">📡</span> El Ojo en Vivo</a>
-                    <a class="ring-hub__nav-link" href="?page=accesos"><span aria-hidden="true">⚔️</span> Movimientos</a>
-                    <a class="ring-hub__nav-link" href="?page=visitantes"><span aria-hidden="true">👹</span> Pueblos</a>
-                    <a class="ring-hub__nav-link" href="?page=rutas"><span aria-hidden="true">🗺️</span> Caminos</a>
-                    <a class="ring-hub__nav-link" href="?page=lineas"><span aria-hidden="true">📐</span> Líneas</a>
-                    <a class="ring-hub__nav-link" href="?page=config"><span aria-hidden="true">⚒️</span> La Forja</a>
-                    <a class="ring-hub__nav-link" href="?page=ayuda"><span aria-hidden="true">📜</span> El Concilio</a>
+                    <a class="ring-hub__nav-link" href="?page=dash"><span aria-hidden="true">👁️</span> <?= rf_term_html("nav-torre"); ?></a>
+                    <a class="ring-hub__nav-link ring-hub__nav-link--featured" href="?page=camaras"><span aria-hidden="true">📡</span> <?= rf_term_html("nav-camaras"); ?></a>
+                    <a class="ring-hub__nav-link" href="?page=accesos"><span aria-hidden="true">⚔️</span> <?= rf_term_html("nav-accesos"); ?></a>
+                    <a class="ring-hub__nav-link" href="?page=visitantes"><span aria-hidden="true">👹</span> <?= rf_term_html("nav-visitantes"); ?></a>
+                    <a class="ring-hub__nav-link" href="?page=rutas"><span aria-hidden="true">🗺️</span> <?= rf_term_html("nav-rutas"); ?></a>
+                    <a class="ring-hub__nav-link" href="?page=lineas"><span aria-hidden="true">📐</span> <?= rf_term_html("nav-lineas"); ?></a>
+                    <a class="ring-hub__nav-link" href="?page=config"><span aria-hidden="true">⚒️</span> <?= rf_term_html("nav-config"); ?></a>
+                    <a class="ring-hub__nav-link" href="?page=ayuda"><span aria-hidden="true">📜</span> <?= rf_term_html("nav-ayuda"); ?></a>
                 </nav>
 
                 <div class="ring-hub__daemons">
-                    <div class="ring-hub__section-title">Los Seis Centinelas <span class="ring-hub__hint">· en vivo</span></div>
+                    <div class="ring-hub__section-title"><?= rf_term_html("centinelas"); ?> <span class="ring-hub__hint">· en vivo</span></div>
                     <?php if ($es_admin_power): ?>
                     <button type="button" class="power-btn power-btn--<?= $power_estado; ?> power-btn--hub" id="ring-hub-power"
                             data-estado="<?= $power_estado; ?>" aria-pressed="true"
                             title="Apagar o encender todo el motor de visión (captura, detector, clasificador…)">
                         <span class="power-btn__led" aria-hidden="true"></span>
-                        <span class="power-btn__label" id="ring-hub-power-label"><?= $power_estado === "on" ? "Apagar el Ojo" : "Encender el Ojo"; ?></span>
+                        <span class="power-btn__label" id="ring-hub-power-label"><?= $power_estado === "on" ? rf_term("power-off") : rf_term("power-on"); ?></span>
                     </button>
                     <?php endif; ?>
                     <div class="ring-hub__daemons-grid" id="ring-hub-daemons"><div class="ring-hub__daemons-hint">Revisando los centinelas…</div></div>
@@ -1790,6 +1833,11 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
         <script src="./files/sauron-eye.js"></script>
         <script src="./files/ui-common.js"></script>
         <script src="./files/ring-hub.js?v=20260823"></script>
+        <!-- Conmutador de tema (Mordor / Profesional) -->
+        <script src="./files/theme-switch.js?v=1"></script>
+        <!-- Terminología por tema (intercambio en caliente) -->
+        <script>window.RF_TERMINOS = <?= rf_terminos_json(); ?>;</script>
+        <script src="./files/terminos.js?v=1"></script>
         <!-- Lore: glosario temático + motor de bocadillos -->
         <script>window.RF_GLOSARIO = <?= rf_glosario_json(); ?>;</script>
         <script src="./files/lore.js"></script>

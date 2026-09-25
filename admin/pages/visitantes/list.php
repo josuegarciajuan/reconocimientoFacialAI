@@ -181,7 +181,7 @@ $js_quote = function ($s) {
                             <a href="?page=visitantes&mode=editar&id=<?= $pid; ?>" data-tip="Ver y editar los datos de la persona">Ver</a>
                         </div>
                         <div class="accion-item">
-                            <a href="?page=accesos&persona_id=<?= $pid; ?>" data-tip="Ver los movimientos y accesos de la persona">Movimientos</a>
+                            <a href="?page=accesos&persona_id=<?= $pid; ?>" data-tip="Ver los movimientos y accesos de la persona"><?= rf_term_html("nav-accesos"); ?></a>
                         </div>
                         <div class="accion-item">
                             <a href="?page=visitantes&mode=editar&id=<?= $pid; ?>#videos" data-tip="Ver los vídeos vinculados a la persona">Vídeos</a>
