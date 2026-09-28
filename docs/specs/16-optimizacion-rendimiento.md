@@ -1,6 +1,6 @@
 # Spec 16 — Optimización de rendimiento del motor (CPU/RAM)
 
-Estado: **F0 + F1 en curso** (2026-09-28).
+Estado: **ciclo cerrado** (2026-09-28). Ver §7 (conclusiones) al final.
 Restricción del proyecto: **solo infraestructura, SIN tocar precisión**. Ningún
 cambio de este plan modifica modelos, umbrales, `det_size`, `face_every`,
 `min_sharpness`, capas de decisión ni el resultado de matching (TAR/FAR). Todo
@@ -203,3 +203,53 @@ controlar hilos: empeora la contención.
 | `RF_ORT_THREADS` | 2 | Hilos intra-op por sesión ONNX (no cambia resultados) |
 | `RF_CV_THREADS` | 1 | Hilos internos de OpenCV |
 | `RF_TORCH_THREADS` | 1 | Hilos de torch (rf-photo=4) |
+| `RF_ORT_PROVIDER` | cpu | `auto\|cpu\|openvino` (prod es AMD → cpu) |
+| `RF_OV_CACHE_DIR` | motor/models/ov_cache | Caché del modelo compilado de OpenVINO |
+| `RF_MARCADOR_HUERFANO_SEGS` | 90 | Reapeo de marcadores huérfanos de procesa/archiva |
+
+## 7. Cierre del ciclo (2026-09-28)
+
+### 7.1 Diagnóstico P0 (`motor/scripts/perf_procesa.py`)
+Sobre un vídeo real (cam 19, det_size 1280):
+- `RetinaFace (analyze)` = **89 %** del tiempo, **7,3 s/frame** (OpenVINO) /
+  **2,44 s/frame** (CPU EP) **bajo carga** — vs 0,56 s medidos aislados. El
+  multiplicador es la **contención**.
+- Arranque de modelos: **17-20 s por proceso** (cargar 333 MB de ONNX); como
+  `procesa_video` es un proceso por vídeo, se paga en cada uno.
+- **Déficit en hora punta ~4×**: genera ~2,4 clips/min, procesa ~0,6/min.
+
+### 7.2 Palancas de aceleración evaluadas (todas con A/B real en prod)
+
+| Vía | Resultado | Veredicto |
+|---|---|---|
+| Batching del detector | El ONNX de detección tiene **batch fijo = 1** (`[1,3,?,?]`) | **Imposible** sin re-exportar el modelo |
+| SCRFD `det_500m` (0.5G) | 3× más rápido, pero **recall 48-53 %** en cams 17/24 | **Descartado** (pierde caras) |
+| SCRFD `scrfd_10g_bnkps` | **Mismo modelo** que `det_10g` (16.923.827 bytes idénticos) | **Sin cambio** |
+| `det_size` 960 | recall 80 % (cam17) / 46 % (cam24) | **Degrada recall** |
+| ROI por moción (`PersonDetector`) | las cajas cubren solo **20-38 %** de las caras | **No viable** |
+| ROI con MobileNet-SSD | **0 personas** detectadas a esas distancias | **No viable** |
+
+Herramientas dejadas: `motor/scripts/eval_deteccion.py`, `motor/scripts/eval_roi.py`.
+
+### 7.3 Conclusión
+En este **AMD EPYC de 10 cores**, `RetinaFace@1280` tarda **2,5-5 s/frame** bajo
+carga; cerrar el 4× **sin perder recall** no es posible con estos modelos y este
+hardware. **No se despliega ninguna degradación de precisión.** Se acepta la cola
+en horas punta, mitigada por:
+- **`admin/pages/sin_clasificar/`** — página "Movimientos sin clasificar":
+  publica cada clip (miniatura, cámara, hora) en cuanto `archiva_video` lo
+  archiva, sin esperar a la identidad; + indicadores (cola real del detector,
+  antigüedad, última clasificación). Implementa la idea de "mostrar ya,
+  clasificar después" y da visibilidad del retraso.
+- Indicador de cola integrado en esa página.
+
+**Revisar solo si cambia el hardware** (CPU Intel→OpenVINO, GPU) o si se acepta
+explícitamente una pérdida de recall medida con etiquetado real (p. ej.
+`det_size` 1024).
+
+### 7.4 Estado final de producción
+- Panel: **8,37 s → ~0,005 s** (causa: `password_hash`/bcrypt por request).
+- CPU: 79.000 → ~2.500 ctx-switch/s; hilos/proceso 65 → 6; `RF_ORT_PROVIDER=cpu`.
+- Captura 11-12 guardas activos; servicios systemd en verde.
+- `RF_LIMITE_VIDEOS=3`, afinidad 0-1 web / 2-4 captura / 5-9 inferencia.
+- `.env` de prod con backups `*.env.bak-perf-*`.
