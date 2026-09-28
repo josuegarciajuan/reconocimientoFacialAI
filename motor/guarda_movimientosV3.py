@@ -83,15 +83,33 @@ FTP_PASS = sys.argv[14] if len(sys.argv) > 14 else "-"
 URL_CONEXION = sys.argv[15] if len(sys.argv) > 15 else (sys.argv[13] if len(sys.argv) > 13 else "")
 BASE_URL = sys.argv[16] if len(sys.argv) > 16 else "http://localhost/reconocimientoFacial/"
 
-# Umbrales globales del análisis (antes hardcodeados 21/21/2). Se leen de .env
-# (RF_MOV_*); si faltan, se usan estos defaults = valores legacy (sin cambio de
-# comportamiento). CRF: calidad prioritaria -> 20 (no 26: a 10 fps y caras
-# pequeñas, 26 degrada el detalle que alimenta SR/GFPGAN). Sobreducible con
-# RF_VIDEO_CRF en .env.
-THRESHOLD = get_int(None, "RF_MOV_THRESHOLD", 21)
-BLUR = get_int(None, "RF_MOV_BLUR", 21)
-DILATE = get_int(None, "RF_MOV_DILATE", 2)
+# Umbrales del análisis. Prioridad: parámetro POR CÁMARA (argv 17/18/19,
+# enviado por capturador.php desde la tabla `camaras`); si viene vacío (-1),
+# se usa el global de .env (RF_MOV_*) y, si no, el default. CRF: calidad
+# prioritaria -> 20 (no 26: a 10 fps y caras pequeñas, 26 degrada el detalle
+# que alimenta SR/GFPGAN). Sobreducible con RF_VIDEO_CRF en .env.
+def _arg_int(idx, default, minimo=None):
+    """Entero de argv[idx] o `default` si falta/está vacío/'-1'/no es número."""
+    if len(sys.argv) > idx:
+        raw = str(sys.argv[idx]).strip()
+        if raw not in ("", "-1", "None"):
+            try:
+                v = int(float(raw))
+                if minimo is None or v >= minimo:
+                    return v
+            except ValueError:
+                pass
+    return default
+
+
+THRESHOLD = _arg_int(17, get_int(None, "RF_MOV_THRESHOLD", 15), 1)
+BLUR = _arg_int(18, get_int(None, "RF_MOV_BLUR", 15), 3)
+DILATE = _arg_int(19, get_int(None, "RF_MOV_DILATE", 2), 0)
 CRF = get_int(None, "RF_VIDEO_CRF", 20)
+# Factor de la SUMA de contornos (multicontorno): recupera varias personas
+# pequeñas que juntas mueven área aunque ninguna supere `dontCare`. 0 lo desactiva.
+SUM_FACTOR = float(os.environ.get("RF_MOV_SUM_FACTOR", "2.0") or 2.0)
+DONTCARE_TOTAL = int(dontCare * SUM_FACTOR) if SUM_FACTOR > 0 else None
 
 printLog("seg_antes=" + str(SEG_ANTES) + " seg_despues=" + str(SEG_DESPUES))
 printLog("url=" + URL_CONEXION)
@@ -103,6 +121,8 @@ cfg_mov = MotionConfig(segundos_analizar=segundos_analizar,
                        fps=int(FPS),
                        sensibilidad=SENSIBILIDAD,
                        threshold=THRESHOLD, blur=BLUR, dilate=DILATE,
+                       dontCare_total=DONTCARE_TOTAL,
+                       count_min_area=max(1.0, dontCare / 4.0),
                        # Modo asedio (alarmas "La Almenara"): cualquier mínimo
                        # movimiento cuenta (1 frame dispara) y el área mínima se
                        # reduce a un tercio. Lo activa/desactiva detector.set_boost().
@@ -193,14 +213,35 @@ def alarma_ttl():
         return 3
 
 
+# Reconexión RTSP: si el stream deja de dar frames (corte de red, cámara
+# reiniciada), antes se hacía `continue` para siempre -> la cámara quedaba ciega
+# sin aviso. Tras N fallos seguidos se reabre la conexión (recall: no perder
+# movimiento por un stream muerto).
+fallos_lectura = 0
+FALLOS_RECONECTAR = int(os.environ.get("RF_CAMARA_FALLOS_RECONECTAR", "20") or 20)
+
 while(True):
     # headless (opencv-python-headless): cv2.waitKey no está disponible -> time.sleep
     time.sleep(tiempo_espera_fps/1000.0)
 
     try:
         ret, frame = cap.read()
-        if not ret or frame is None:
-            continue
+    except Exception:
+        ret, frame = False, None
+    if not ret or frame is None:
+        fallos_lectura += 1
+        if fallos_lectura >= FALLOS_RECONECTAR:
+            printLog("Camara sin frames (" + str(fallos_lectura) + "), reconectando RTSP...")
+            try:
+                cap.release()
+            except Exception:
+                pass
+            time.sleep(2)
+            cap = cv2.VideoCapture(URL_CONEXION)
+            fallos_lectura = 0
+        continue
+    fallos_lectura = 0
+    try:
         frame_original = frame
         # primera lectura: si CAP_PROP devolvió 0, fijar el tamaño real del stream
         if size is None:

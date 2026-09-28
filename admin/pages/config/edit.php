@@ -41,12 +41,17 @@ if (isset($_GET["camara"]) && $_GET["camara"] !== "" && $_GET["camara"] !== "-")
 /* Por defecto se usan los valores globales del motor (config/config.php) */
 $cfg_def = [
     "segundos_analizar" => defined("CONFIG_segundos_analizar") ? CONFIG_segundos_analizar : 2,
-    "porcentaje_mov"    => defined("CONFIG_porcentaje_mov") ? CONFIG_porcentaje_mov : 60,
-    "dontCare"          => defined("CONFIG_dontCare") ? CONFIG_dontCare : 220,
+    "porcentaje_mov"    => defined("CONFIG_porcentaje_mov") ? CONFIG_porcentaje_mov : 35,
+    "dontCare"          => defined("CONFIG_dontCare") ? CONFIG_dontCare : 120,
     "fps"               => defined("CONFIG_fps") ? CONFIG_fps : 14,
     "maximo_videos"     => defined("CONFIG_maximo_videos") ? CONFIG_maximo_videos : 60,
     "redimesionframe"   => defined("CONFIG_redimesionframe") ? CONFIG_redimesionframe : 60,
     "sensibilidad"      => defined("CONFIG_sensibilidad") ? CONFIG_sensibilidad : 1,
+    // Fase 1 (recall): sensibilidad fina por cámara.
+    "threshold"         => defined("CONFIG_threshold") ? CONFIG_threshold : 15,
+    "dilate"            => defined("CONFIG_dilate") ? CONFIG_dilate : 2,
+    "seg_antes"         => defined("CONFIG_VIDEO_SEG_ANTES") ? CONFIG_VIDEO_SEG_ANTES : 4,
+    "seg_despues"       => defined("CONFIG_VIDEO_SEG_DESPUES") ? CONFIG_VIDEO_SEG_DESPUES : 4,
 ];
 
 $cfg = $cfg_def;

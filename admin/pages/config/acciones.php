@@ -22,8 +22,8 @@ switch ($_GET["accion"] ?? "") {
     case "crear":
         $url_conexion = str_replace("--jos--", "&", $_GET["url_conexion"] ?? "");
         $id = DB::insert(
-            "INSERT INTO camaras (local_id, descripcion, url_conexion, sistema, puerta, salida, encendida, ipcamlive_alias, segundos_analizar, porcentaje_mov, dontCare, fps, maximo_videos, redimesionframe, sensibilidad, alarma_heredar, alarma_24h)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)",
+            "INSERT INTO camaras (local_id, descripcion, url_conexion, sistema, puerta, salida, encendida, ipcamlive_alias, segundos_analizar, porcentaje_mov, dontCare, fps, maximo_videos, redimesionframe, sensibilidad, alarma_heredar, alarma_24h, threshold, blur, dilate, seg_antes, seg_despues)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)",
             [
                 (int)$_SESSION["local_id"], $_GET["nombre_nueva"], $url_conexion, 0,
                 (int)($_GET["puerta"] ?? 0), (int)($_GET["salida"] ?? 0), (int)($_GET["encendida_nueva"] ?? 0),
@@ -31,6 +31,8 @@ switch ($_GET["accion"] ?? "") {
                 CONFIG_segundos_analizar, CONFIG_porcentaje_mov, CONFIG_dontCare, CONFIG_fps,
                 CONFIG_maximo_videos, CONFIG_redimesionframe, CONFIG_sensibilidad,
                 (int)($_GET["alarma_24h"] ?? 0),
+                CONFIG_threshold, CONFIG_blur, CONFIG_dilate,
+                CONFIG_VIDEO_SEG_ANTES, CONFIG_VIDEO_SEG_DESPUES,
             ]
         );
 
@@ -55,7 +57,7 @@ switch ($_GET["accion"] ?? "") {
         $alarma_hora_inicio = ($_GET["alarma_hora_inicio"] ?? "") !== "" ? $_GET["alarma_hora_inicio"] : null;
         $alarma_hora_fin    = ($_GET["alarma_hora_fin"] ?? "") !== "" ? $_GET["alarma_hora_fin"] : null;
         DB::execute(
-            "UPDATE camaras SET local_id=?, descripcion=?, url_conexion=?, sistema=?, puerta=?, salida=?, encendida=?, ipcamlive_alias=?, url_desdeserver=?, segundos_analizar=?, porcentaje_mov=?, dontCare=?, fps=?, maximo_videos=?, redimesionframe=?, sensibilidad=?, alarma_heredar=?, alarma_hora_inicio=?, alarma_hora_fin=?, alarma_24h=? WHERE id=?",
+            "UPDATE camaras SET local_id=?, descripcion=?, url_conexion=?, sistema=?, puerta=?, salida=?, encendida=?, ipcamlive_alias=?, url_desdeserver=?, segundos_analizar=?, porcentaje_mov=?, dontCare=?, fps=?, maximo_videos=?, redimesionframe=?, sensibilidad=?, alarma_heredar=?, alarma_hora_inicio=?, alarma_hora_fin=?, alarma_24h=?, threshold=?, blur=?, dilate=?, seg_antes=?, seg_despues=? WHERE id=?",
             [
                 (int)$_SESSION["local_id"], $_GET["nombre"], $url_conexion, 0,
                 (int)($_GET["puerta"] ?? 0), (int)($_GET["salida"] ?? 0), (int)($_GET["encendida"] ?? 0),
@@ -64,6 +66,11 @@ switch ($_GET["accion"] ?? "") {
                 (int)($_GET["fps"] ?? 0), (int)($_GET["maximo_videos"] ?? 0), (int)($_GET["redimesionframe"] ?? 0),
                 (int)($_GET["sensibilidad"] ?? 0),
                 $alarma_heredar, $alarma_hora_inicio, $alarma_hora_fin, $alarma_24h,
+                (int)($_GET["threshold"] ?? CONFIG_threshold),
+                (int)($_GET["blur"] ?? CONFIG_blur),
+                (int)($_GET["dilate"] ?? CONFIG_dilate),
+                (int)($_GET["seg_antes"] ?? CONFIG_VIDEO_SEG_ANTES),
+                (int)($_GET["seg_despues"] ?? CONFIG_VIDEO_SEG_DESPUES),
                 (int)$_GET["camara"],
             ]
         );

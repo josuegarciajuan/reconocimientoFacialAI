@@ -35,6 +35,12 @@ class MotionConfig:
     threshold: int = 21             # umbral de diferencia de píxel (RF_MOV_THRESHOLD)
     blur: int = 21                  # kernel GaussianBlur (RF_MOV_BLUR)
     dilate: int = 2                 # iteraciones de dilate (RF_MOV_DILATE)
+    # Multicontorno (recall): si el contorno MAYOR no llega a `dontCare`, dispara
+    # igual cuando la SUMA de los contornos significativos (>= `count_min_area`)
+    # alcanza `dontCare_total`. Recupera varias personas pequeñas/lejanas que,
+    # por separado, no superaban el área mínima. None = desactivado.
+    dontCare_total: int | None = None
+    count_min_area: float = 0.0      # área mínima por contorno para sumar (0 => dontCare/4)
     dontCare_boost: int | None = None                # área mínima en modo asedio (None = sin cambio)
     frames_con_movimiento_boost: int | None = None   # frames para disparar en modo asedio (None = sin cambio)
 
@@ -141,12 +147,21 @@ class MotionDetector:
         cnts, _ = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
                                    cv2.CHAIN_APPROX_SIMPLE)
 
-        # Solo el contorno de mayor área: como la decisión es un umbral
-        # (`area >= dontCare`), comprobar el máximo es equivalente a "¿alguno
-        # supera dontCare?" (si el máximo no lo supera, ninguno lo hace).
+        # Contorno MAYOR: como la decisión es un umbral (`area >= dontCare`),
+        # comprobar el máximo equivale a "¿alguno supera dontCare?". Si el mayor
+        # no llega, se prueba la SUMA de contornos significativos (multicontorno):
+        # varias personas pequeñas/lejanas juntas sí disparan aunque ninguna
+        # supere `dontCare` por sí sola.
         if cnts:
-            max_area = max(cv2.contourArea(c) for c in cnts)
+            areas = [cv2.contourArea(c) for c in cnts]
+            max_area = max(areas)
             motion = 1 if max_area >= self._dontCare() else 0
+            total = self.cfg.dontCare_total
+            if not motion and total is not None:
+                floor = (self.cfg.count_min_area if self.cfg.count_min_area > 0
+                         else max(1.0, self._dontCare() / 4.0))
+                if sum(a for a in areas if a >= floor) >= total:
+                    motion = 1
         else:
             motion = 0
 
