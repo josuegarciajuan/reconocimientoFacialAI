@@ -44,7 +44,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from motor.core.config import Config            # noqa: E402
 from motor.core.embudo import log_evento        # noqa: E402
-from motor.core.matching import LayerScore, match_group, scores_per_person, scores_per_person_pose_aware  # noqa: E402
+from motor.core.matching import LayerScore, face_scores_per_person, match_group  # noqa: E402
 from motor.core.model import analyze            # noqa: E402
 from motor.core.quality import face_sharpness, pose_label, pose_valida  # noqa: E402
 from motor.core.store import FaceStore          # noqa: E402
@@ -277,7 +277,12 @@ def _cfg_snapshot(cfg: Config) -> dict:
             "match_min_face_side", "admission_margin", "silueta_confirm_enabled",
             "new_low_floor", "low_band_min_agreements", "early_exit_min_margin",
             "silueta_min_score", "min_layer_conf", "llm_min_conf", "veto_conf",
-            "gray_low", "gray_high", "exact_match_cos", "batch_seconds")
+            "gray_low", "gray_high", "exact_match_cos", "batch_seconds",
+            # scoring por centroide (auditoría/replay de la escala activa)
+            "face_score_mode", "face_centroid_w", "centroid_match_threshold",
+            "centroid_secure_threshold", "centroid_margin",
+            "centroid_admission_cosine", "centroid_gray_low",
+            "centroid_gray_high", "centroid_new_low_floor")
     out = {}
     for k in keys:
         v = getattr(cfg, k, None)
@@ -375,17 +380,17 @@ def split_coherent_clusters(cluster: list[int], face_list: list[tuple],
 
 def _face_scores(embs: list[np.ndarray], store: FaceStore, cfg: Config,
                  pose: str | None) -> dict[str, float]:
-    """Similitudes por persona agregadas con MAX (una cara fuerte no se diluye).
+    """Similitudes por persona agregadas con MAX entre las caras del grupo.
 
-    Si cfg.zones_enabled, el ranking es pose-consciente (solo encodings de
-    clase de pose comparable con la del query).
+    El score de CADA cara lo calcula `face_scores_per_person`, que elige la
+    escala según `cfg.face_score_mode` (max / centroid / blend) y aplica el
+    matching pose-consciente si corresponde. La agregación ENTRE caras del
+    sub-clúster sigue siendo MAX: una cara fuerte no se diluye por otras
+    débiles de la misma batería.
     """
     agg: dict[str, list[float]] = {}
     for q in embs:
-        if cfg.zones_enabled and pose is not None:
-            sp = scores_per_person_pose_aware(q, store, cfg, pose)
-        else:
-            sp = scores_per_person(q, store)
+        sp = face_scores_per_person(q, store, cfg, pose)
         for cod, s in sp.items():
             agg.setdefault(cod, []).append(s)
     return {cod: float(np.max(v)) for cod, v in agg.items()}
@@ -1190,7 +1195,7 @@ def _store_add(store: FaceStore, person: str, members, battery, cfg: Config,
     "mover foto"/"separar" pueda quitarlos de forma EXACTA (move_by_source).
     """
     from motor.core.quality import face_sharpness as _fs, pose_label as _pl
-    from motor.core.matching import scores_per_person, scores_per_person_pose_aware
+    from motor.core.matching import face_scores_per_person
     from motor.core.zones import silhouette_descriptor
 
     gal_encs = store.person_encodings(person)
@@ -1216,12 +1221,14 @@ def _store_add(store: FaceStore, person: str, members, battery, cfg: Config,
             admit = False                 # sin galería no puede confirmar (no ocurre en match)
         elif cfg.zones_enabled and cfg.admission_pose_aware:
             pose = _pl(f, cfg.yaw_frontal, cfg.yaw_45, cfg.yaw_90, cfg.pitch_frontal)
-            sp = scores_per_person_pose_aware(f.embedding, store, cfg, pose)
+            # Admisión con el MISMO scoring que la decisión (max/centroid/blend):
+            # una cara solo contamina la galería si es genuina en esa escala.
+            sp = face_scores_per_person(f.embedding, store, cfg, pose)
             own = float(sp.get(person, 0.0))
             best_other = max((s for c, s in sp.items() if c != person), default=0.0)
             admit = admitir_encoding(own, best_other, cfg, new_person=False)
         else:
-            sp = scores_per_person(f.embedding, store)
+            sp = face_scores_per_person(f.embedding, store, cfg, None)
             own = float(sp.get(person, 0.0))
             best_other = max((s for c, s in sp.items() if c != person), default=0.0)
             admit = admitir_encoding(own, best_other, cfg, new_person=False)

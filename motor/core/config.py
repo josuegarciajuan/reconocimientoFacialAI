@@ -81,6 +81,15 @@ class Config:
     # una cara ambigua que "se parece a todas" contamine la identidad asignada.
     admission_margin: float = 0.05
 
+    # --- scoring por centroide (configurable, default = comportamiento histórico) ---
+    # La calibración sobre datos reales mostró que el `max` (mejor coseno contra
+    # cualquier encoding) separa mal: genuino mediana 0.363 vs impostor 0.258.
+    # Puntuar contra el CENTROIDE de la galería mejora la separación: genuino
+    # 0.402 vs impostor 0.186. Default "max" (retrocompatible); "centroid" o
+    # "blend" activan la escala nueva con sus umbrales centroid_*.
+    face_score_mode: str = "max"          # RF_FACE_SCORE_MODE: max|centroid|blend
+    face_centroid_w: float = 0.7          # RF_FACE_CENTROID_W (solo en blend)
+
     # --- agrupación temporal ---
     batch_seconds: float = 6.0       # ventana para agrupar fotos de un mismo evento
 
@@ -251,6 +260,19 @@ class Config:
     # exige un acuerdo MUY fuerte de capas independientes antes de asociar a top1.
     new_low_floor: float = 0.30         # s1 < esto => "new" directo sin corroboración
     low_band_min_agreements: int = 2    # capas independientes que deben coincidir
+
+    # --- umbrales de la escala CENTROIDE (solo si face_score_mode != "max") ---
+    # Calibrados sobre datos reales: genuino centroide mediana 0.402 vs impostor
+    # 0.186 -> match 0.40 deja fuera el impostor y secure 0.50 exige separación
+    # clara. En modo "max" estos valores se LEEN (auditoría) pero NO se aplican:
+    # los umbrales efectivos y sus overrides RF_* históricos quedan intactos.
+    centroid_match_threshold: float = 0.40     # RF_CENTROID_MATCH_THRESHOLD
+    centroid_secure_threshold: float = 0.50    # RF_CENTROID_SECURE_THRESHOLD
+    centroid_margin: float = 0.05              # RF_CENTROID_MARGIN
+    centroid_admission_cosine: float = 0.40    # RF_CENTROID_ADMISSION_COSINE
+    centroid_gray_low: float = 0.25            # RF_CENTROID_GRAY_LOW
+    centroid_gray_high: float = 0.42           # RF_CENTROID_GRAY_HIGH
+    centroid_new_low_floor: float = 0.20       # RF_CENTROID_NEW_LOW_FLOOR
 
     # --- early-exit frontal: margen mínimo top1-top2 ---
     # ENDURECIDO 2026-09-01: 0.06 -> 0.09 (la cara sola solo decide con margen limpio).
@@ -517,6 +539,35 @@ class Config:
         cfg.new_low_floor = get_float(ruta, "RF_NEW_LOW_FLOOR", cfg.new_low_floor)
         cfg.low_band_min_agreements = get_int(ruta, "RF_LOW_BAND_AGREEMENTS", cfg.low_band_min_agreements)
         cfg.early_exit_min_margin = get_float(ruta, "RF_EARLY_EXIT_MIN_MARGIN", cfg.early_exit_min_margin)
+        # Scoring por centroide (configurable y retrocompatible). En modo "max"
+        # NO se toca ningún umbral RF_* histórico: los centroid_* se leen para
+        # auditoría, pero solo se APLICAN si face_score_mode != "max".
+        mode = get(ruta, "RF_FACE_SCORE_MODE", cfg.face_score_mode).strip().lower()
+        cfg.face_score_mode = mode if mode in ("max", "centroid", "blend") else "max"
+        cfg.face_centroid_w = get_float(ruta, "RF_FACE_CENTROID_W", cfg.face_centroid_w)
+        cfg.centroid_match_threshold = get_float(
+            ruta, "RF_CENTROID_MATCH_THRESHOLD", cfg.centroid_match_threshold)
+        cfg.centroid_secure_threshold = get_float(
+            ruta, "RF_CENTROID_SECURE_THRESHOLD", cfg.centroid_secure_threshold)
+        cfg.centroid_margin = get_float(ruta, "RF_CENTROID_MARGIN", cfg.centroid_margin)
+        cfg.centroid_admission_cosine = get_float(
+            ruta, "RF_CENTROID_ADMISSION_COSINE", cfg.centroid_admission_cosine)
+        cfg.centroid_gray_low = get_float(ruta, "RF_CENTROID_GRAY_LOW", cfg.centroid_gray_low)
+        cfg.centroid_gray_high = get_float(ruta, "RF_CENTROID_GRAY_HIGH", cfg.centroid_gray_high)
+        cfg.centroid_new_low_floor = get_float(
+            ruta, "RF_CENTROID_NEW_LOW_FLOOR", cfg.centroid_new_low_floor)
+        if cfg.face_score_mode != "max":
+            # Escala centroide: los umbrales EFECTIVOS pasan a los centroid_*
+            # (a su vez configurables vía RF_CENTROID_*).
+            cfg.match_threshold = cfg.centroid_match_threshold
+            cfg.secure_threshold = cfg.centroid_secure_threshold
+            cfg.margin = cfg.centroid_margin
+            cfg.admission_cosine = cfg.centroid_admission_cosine
+            cfg.gray_low = cfg.centroid_gray_low
+            cfg.gray_high = cfg.centroid_gray_high
+            cfg.new_low_floor = cfg.centroid_new_low_floor
+            # Invariante G2 reaplicado tras el override de escala.
+            cfg.secure_threshold = max(cfg.secure_threshold, cfg.match_threshold + 0.03)
         cfg.calib_apply = get_bool(ruta, "RF_CALIB_APPLY", cfg.calib_apply)
         # Enrolamiento: umbral de nitidez de las caras del registro (ajustable sin código).
         cfg.enrollment_min_sharpness = get_float(ruta, "RF_ENROLL_MIN_SHARPNESS", cfg.enrollment_min_sharpness)

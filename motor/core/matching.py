@@ -78,6 +78,119 @@ def scores_per_person_pose_aware(query: np.ndarray, store: FaceStore,
     return out
 
 
+def centroid_cosine(query: np.ndarray, gallery: np.ndarray,
+                    qualities: np.ndarray | None = None) -> float:
+    """Similitud coseno del query contra el CENTROIDE L2-normalizado de la galería.
+
+    El centroide es la media de las filas (embeddings ya L2-normalizados),
+    ponderada por `qualities` cuando se da y su suma es > 0; después se
+    L2-normaliza. Puntuar contra el centroide reduce la varianza frente al
+    `max` (una plantilla atípica aislada no arrastra el score) y, medido sobre
+    datos reales de videovigilancia, separa mejor genuino/impostor.
+
+    Args:
+        query: embedding del query, ya L2-normalizado.
+        gallery: matriz (n, d) de embeddings L2-normalizados; un único
+            embedding (d,) se trata como n=1.
+        qualities: pesos opcionales (n,) alineados por fila con `gallery`.
+            Si es None, su suma no es > 0 o su longitud no coincide con el
+            número de filas, se usa la media uniforme (degradación segura:
+            nunca lanza excepción por pesos malformados).
+
+    Returns:
+        `dot(query, centroide)`; 0.0 si la galería está vacía o el centroide
+        es degenerado (norma ~0, p. ej. vectores opuestos).
+    """
+    if gallery is None:
+        return 0.0
+    g = np.asarray(gallery, dtype=np.float32)
+    if g.ndim == 1:
+        g = g[None, :]
+    n = int(g.shape[0])
+    if n == 0:
+        return 0.0
+
+    weights = None
+    if qualities is not None:
+        q = np.asarray(qualities, dtype=np.float32).reshape(-1)
+        q = np.clip(q, 0.0, None)                    # calidades negativas -> 0
+        if q.shape[0] == n and float(q.sum()) > 0.0:
+            weights = q / float(q.sum())
+    if weights is None:
+        centroid = g.mean(axis=0)
+    else:
+        centroid = (g * weights[:, None]).sum(axis=0)
+
+    norm = float(np.linalg.norm(centroid))
+    if norm <= 1e-12:
+        return 0.0
+    centroid = centroid / norm
+    return float(np.dot(np.asarray(query, dtype=np.float32), centroid))
+
+
+def scores_per_person_centroid(query: np.ndarray, store: FaceStore,
+                               cfg: Config, pose: str | None = None) -> dict[str, float]:
+    """Similitudes por persona contra el CENTROIDE de cada galería.
+
+    Igual que `scores_per_person_pose_aware` pero agregando las plantillas en
+    un centroide (media ponderada por calidad, `centroid_cosine`) en vez de
+    tomar el máximo. Con `pose` y `zones_enabled` se filtra a poses
+    compatibles; si la persona NO tiene ninguna pose comparable se cae al
+    centroide GLOBAL (mismo fallback anti-fragmentación: la galería nunca
+    queda invisible en el ranking).
+    """
+    out: dict[str, float] = {}
+    for cod in store.persons():
+        p = store.person(cod)
+        if not p or not p.get("encodings"):
+            continue
+        encs = np.asarray(p["encodings"], dtype=np.float32)
+        quals = np.asarray(p.get("quality") or [0.0] * len(encs), dtype=np.float32)
+        if cfg.zones_enabled and pose is not None:
+            poses = p.get("poses") or [None] * len(encs)
+            mask = np.asarray([pose_compatible(pose, po) for po in poses], dtype=bool)
+            if mask.any():
+                out[cod] = centroid_cosine(query, encs[mask], quals[mask])
+            else:
+                out[cod] = centroid_cosine(query, encs, quals)  # fallback global
+        else:
+            out[cod] = centroid_cosine(query, encs, quals)
+    return out
+
+
+def face_scores_per_person(query: np.ndarray, store: FaceStore, cfg: Config,
+                           pose: str | None = None) -> dict[str, float]:
+    """Dispatcher del scoring por persona según `cfg.face_score_mode`.
+
+    - "max" (default, retrocompatible): mejor coseno de la galería, pose
+      consciente si `zones_enabled` y hay pose; si no, coseno global. Es
+      exactamente el comportamiento histórico.
+    - "centroid": coseno contra el centroide de la galería
+      (`scores_per_person_centroid`).
+    - "blend": `w*centroid + (1-w)*max`, con `w = cfg.face_centroid_w`.
+
+    Cualquier valor de modo no reconocido degrada a "max" (nunca rompe). Es la
+    función que deben usar el clasificador y la admisión para respetar el modo.
+    """
+    mode = str(getattr(cfg, "face_score_mode", "max") or "max").strip().lower()
+    pose_aware = bool(getattr(cfg, "zones_enabled", False)) and pose is not None
+    if mode == "centroid":
+        return scores_per_person_centroid(query, store, cfg, pose)
+    if mode == "blend":
+        w = float(getattr(cfg, "face_centroid_w", 0.7))
+        w = min(max(w, 0.0), 1.0)
+        cent = scores_per_person_centroid(query, store, cfg, pose)
+        maxs = (scores_per_person_pose_aware(query, store, cfg, pose)
+                if pose_aware else scores_per_person(query, store))
+        keys = set(cent) | set(maxs)
+        return {cod: float(w * cent.get(cod, 0.0) + (1.0 - w) * maxs.get(cod, 0.0))
+                for cod in keys}
+    # "max" (default) o modo desconocido: comportamiento histórico
+    if pose_aware:
+        return scores_per_person_pose_aware(query, store, cfg, pose)
+    return scores_per_person(query, store)
+
+
 def face_confidence(s1: float, s2: float, sharpness: float, cfg: Config) -> float:
     """Confianza de instancia de la capa cara (F2+).
 
