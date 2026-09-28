@@ -63,6 +63,14 @@ switch($server){
 
         define("URL_BASE_SERVER", env_or('RF_URL', "http://localhost/reconocimientoFacial/"));
 
+        // URL para las llamadas INTERNAS del motor al ws.php (mismo host, p. ej.
+        // capturador.php consultando camaras). No debe depender de la IP pública:
+        // muchos hosts cloud no tienen hairpin NAT y una petición del host a su
+        // propia IP pública se queda en timeout (rompió la captura al reiniciar
+        // rf-capturador). 127.0.0.1 con el puerto del vhost (8090) SIEMPRE
+        // resuelve. Override con RF_URL_INTERNAL (p. ej. en dev/prod).
+        define("URL_BASE_LOCAL", env_or('RF_URL_INTERNAL', "http://127.0.0.1:8090/reconocimientoFacial/"));
+
         // FTP legacy (M12): pendiente de sustituir por transferencia local/pysftp en Fase 2
         define("FTP_SERVER", env_or('RF_FTP_HOST', "localhost"));
         define("FTP_USER", env_or('RF_FTP_USER', ""));
@@ -85,6 +93,7 @@ switch($server){
         define("RUTA_PYTHON","/root/reconocimientoFacial/motor/venv/bin/python");
 
         define("URL_BASE_SERVER","http://localhost/reconocimientofacialV2/");
+        define("URL_BASE_LOCAL","http://localhost/reconocimientofacialV2/");
         define("FTP_SERVER","localhost");
         define("FTP_USER","");
         define("FTP_PASS","");
