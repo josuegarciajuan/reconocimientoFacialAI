@@ -43,6 +43,7 @@ import numpy as np
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from motor.core.config import Config            # noqa: E402
+from motor.core.embudo import log_evento        # noqa: E402
 from motor.core.matching import LayerScore, match_group, scores_per_person, scores_per_person_pose_aware  # noqa: E402
 from motor.core.model import analyze            # noqa: E402
 from motor.core.quality import face_sharpness, pose_label  # noqa: E402
@@ -1017,6 +1018,14 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
         os.remove(busto_path)
 
     log(f"[{result.verdict}] {len(item_idxs)} foto(s) -> {person} (best={result.best_score:.3f})")
+    # Fase 0 (embudo): veredicto por sub-clúster con su calidad para poder medir
+    # después cuánta gente se pierde por encima/por debajo de los umbrales.
+    _rw = rep_face.bbox[2] - rep_face.bbox[0]
+    _rh = rep_face.bbox[3] - rep_face.bbox[1]
+    log_evento(ruta, local_id, "decision", cam=camara_id,
+               verdict=result.verdict, branch=audit_meta.get("branch"),
+               sharp=round(float(best_sharp), 1), size=int(max(_rw, _rh)),
+               best=round(float(result.best_score), 4), pose=query_pose)
 
 
 def torso_bbox_local(face, img, cfg):
@@ -1169,6 +1178,8 @@ def process_body_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
         if not scores:
             # sin galería de torso todavía: revisión manual, nunca persona nueva
             _body_to_revision(ruta, local_id, camara_id, [x["path"] for x in bat], cfg)
+            log_evento(ruta, local_id, "cuerpo", cam=camara_id,
+                       resultado="revision", n=len(bat))
             n += 1
             continue
 
@@ -1206,9 +1217,13 @@ def process_body_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
                 if os.path.exists(x["path"]):
                     os.remove(x["path"])
             log(f"[body-match] {len(bat)} crop(s) -> {result.person} (torso+VLM)")
+            log_evento(ruta, local_id, "cuerpo", cam=camara_id,
+                       resultado="match", n=len(bat))
         else:
             _body_to_revision(ruta, local_id, camara_id, [x["path"] for x in bat], cfg)
             log(f"[body-revision] {len(bat)} crop(s) sin identidad concluyente -> revisión")
+            log_evento(ruta, local_id, "cuerpo", cam=camara_id,
+                       resultado="revision", n=len(bat))
         n += 1
     return n
 
@@ -1234,6 +1249,10 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
         return 0
 
     items = []
+    # Fase 0 (embudo): por qué se descartan crops antes de clasificar.
+    desc_notienecaras = 0
+    desc_nopasafiltros = 0
+    desc_ilegible = 0
     for f in sorted(os.listdir(dir_in)):
         if not f.lower().endswith(IMG_EXTS):
             continue
@@ -1241,10 +1260,12 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
         img = cv2.imread(p)
         if img is None:
             shutil.move(p, os.path.join(nopasafiltros, f))
+            desc_ilegible += 1
             continue
         faces = analyze(img, det_size=(cfg.crop_det_size, cfg.crop_det_size), min_score=cfg.min_det_score)
         if not faces:
             shutil.move(p, os.path.join(notienecaras, f))
+            desc_notienecaras += 1
             continue
         # B2 (2026-08-26): además de nitidez, exigir un tamaño mínimo de cara.
         # Una cara diminuta (< cfg.face_min_side) tiene tan poca información que
@@ -1257,6 +1278,7 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
         ]
         if not focused:
             shutil.move(p, os.path.join(nopasafiltros, f))
+            desc_nopasafiltros += 1
             continue
         # C (2 caras en el mismo crop): dedup de detecciones casi idénticas del
         # MISMO rostro dentro del crop (ver dedup_faces_near_duplicates).
@@ -1266,6 +1288,17 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
         for fc in focused:
             fc.embedding = enhance_embedding(img, fc, cfg)
         items.append({"file": f, "path": p, "img": img, "faces": focused, "ts": parse_timestamp(f)})
+
+    # Fase 0: registrar descartes (aunque no quede ningún item que clasificar).
+    if desc_notienecaras:
+        log_evento(ruta, local_id, "descarte", cam=camara_id,
+                   motivo="notienecaras", n=desc_notienecaras)
+    if desc_nopasafiltros:
+        log_evento(ruta, local_id, "descarte", cam=camara_id,
+                   motivo="nopasafiltros", n=desc_nopasafiltros)
+    if desc_ilegible:
+        log_evento(ruta, local_id, "descarte", cam=camara_id,
+                   motivo="ilegible", n=desc_ilegible)
 
     if not items:
         return 0

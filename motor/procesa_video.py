@@ -28,6 +28,7 @@ import cv2
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from motor.core.config import Config                       # noqa: E402
+from motor.core.embudo import log_evento                   # noqa: E402
 from motor.core.model import analyze                       # noqa: E402
 from motor.core.quality import face_sharpness              # noqa: E402
 from motor.cruces import (CrossingConfig, CrossingDetector, Line,  # noqa: E402
@@ -147,13 +148,15 @@ def busto_bbox(face, frame_w: int, frame_h: int, cfg: Config):
 
 
 def guardar_cara(ruta: str, local_id: str, camara_id: str, fichero: str, frame,
-                 face, segs: float, cfg: Config, buffer: list, face_idx: int = 0) -> None:
+                 face, segs: float, cfg: Config, buffer: list, face_idx: int = 0) -> str:
+    """Guarda el crop de una cara. Devuelve el motivo para el embudo (Fase 0):
+    'dedup' | 'blur' | 'empty' | 'saved'."""
     # dedup: si ya guardamos una cara casi idéntica hace poco, la saltamos
     for b in buffer:
         if float(face.embedding @ b) > cfg.dedup_cosine:
-            return
+            return "dedup"
     if face_sharpness(frame, face) < cfg.min_sharpness:
-        return
+        return "blur"
     buffer.append(face.embedding)
     if len(buffer) > 8:
         buffer.pop(0)
@@ -167,7 +170,7 @@ def guardar_cara(ruta: str, local_id: str, camara_id: str, fichero: str, frame,
     x2, y2 = min(w, x2 + pad), min(h, y2 + pad)
     crop = frame[y1:y2, x1:x2]
     if crop.size == 0:
-        return
+        return "empty"
 
     out_dir = os.path.join(ruta, "motor/caras/sinclasificar", local_id, camara_id)
     os.makedirs(out_dir, exist_ok=True)
@@ -202,10 +205,11 @@ def guardar_cara(ruta: str, local_id: str, camara_id: str, fichero: str, frame,
             torso_dir = os.path.join(ruta, "motor/caras/sinclasificar", local_id, f"{camara_id}_cuerpo")
             os.makedirs(torso_dir, exist_ok=True)
             cv2.imwrite(os.path.join(torso_dir, nombre + ".jpg"), torso)
+    return "saved"
 
 
 def guardar_cuerpo_sin_cara(ruta: str, local_id: str, camara_id: str, fichero: str,
-                            frame, bbox, segs: float, cfg: Config, body_buffer: list) -> None:
+                            frame, bbox, segs: float, cfg: Config, body_buffer: list) -> bool:
     """F7: guarda el crop de CUERPO de una persona SIN cara visible (de espaldas).
 
     Contrato de nombres: `<cam>_cuerpo/<fichero>_<segs>_nocara.jpg` — el sufijo
@@ -220,11 +224,11 @@ def guardar_cuerpo_sin_cara(ruta: str, local_id: str, camara_id: str, fichero: s
     x2, y2 = min(w, int(x + bw * 1.1)), min(h, int(y + bh * 1.05))
     crop = frame[y1:y2, x1:x2]
     if crop.size == 0:
-        return
+        return False
     # dedup por IoU con crops recientes de la misma persona
     for b in body_buffer:
         if bbox_iou((x, y, bw, bh), b) > 0.85:
-            return
+            return False
     body_buffer.append((x, y, bw, bh))
     if len(body_buffer) > 12:
         body_buffer.pop(0)
@@ -233,6 +237,7 @@ def guardar_cuerpo_sin_cara(ruta: str, local_id: str, camara_id: str, fichero: s
     os.makedirs(out_dir, exist_ok=True)
     nombre = f"{fichero}_{segs:.6f}_nocara"
     cv2.imwrite(os.path.join(out_dir, nombre + ".jpg"), crop)
+    return True
 
 
 def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,
@@ -255,7 +260,11 @@ def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,
     buffer = []
     body_buffer = []
     cruces = 0
-    caras = 0
+    # Fase 0 (embudo): desglose de lo que ocurre con las caras detectadas.
+    caras_detect = 0
+    caras_guard = 0
+    caras_borroso = 0
+    caras_dedup = 0
     cuerpos = 0
 
     while True:
@@ -273,17 +282,24 @@ def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,
         # caras (muestreo para no saturar CPU)
         if frame_idx % face_every == 0:
             faces = analyze(frame, det_size=(cfg.det_size, cfg.det_size), min_score=cfg.min_det_score)
+            caras_detect += len(faces)
             for fi, f in enumerate(faces):
-                guardar_cara(ruta, local_id, camara_id, fichero, frame, f, ts, cfg, buffer, face_idx=fi)
-                caras += 1
+                estado = guardar_cara(ruta, local_id, camara_id, fichero, frame, f, ts,
+                                      cfg, buffer, face_idx=fi)
+                if estado == "saved":
+                    caras_guard += 1
+                elif estado == "blur":
+                    caras_borroso += 1
+                elif estado == "dedup":
+                    caras_dedup += 1
 
             # F7: personas SIN cara (de espaldas) -> crop de cuerpo
             for bb in persona_det.process(frame):
                 tiene_cara = any(bbox_overlap(bb, tuple(f.bbox)) for f in faces)
                 if not tiene_cara:
-                    guardar_cuerpo_sin_cara(ruta, local_id, camara_id, fichero,
-                                            frame, bb, ts, cfg, body_buffer)
-                    cuerpos += 1
+                    if guardar_cuerpo_sin_cara(ruta, local_id, camara_id, fichero,
+                                               frame, bb, ts, cfg, body_buffer):
+                        cuerpos += 1
 
         frame_idx += 1
 
@@ -294,8 +310,15 @@ def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,
     if os.path.exists(marker):
         os.remove(marker)
 
+    # Fase 0: registrar el resultado del vídeo para el embudo de recall.
+    log_evento(ruta, local_id, "video", cam=camara_id, fichero=fichero,
+               frames=frame_idx, caras_detect=caras_detect, caras_guard=caras_guard,
+               caras_borroso=caras_borroso, caras_dedup=caras_dedup,
+               cuerpos=cuerpos, cruces=cruces)
+
     print(f"procesa_video {local_id}/{camara_id} {fichero}: {frame_idx} frames, {cruces} cruces, "
-          f"{caras} caras, {cuerpos} cuerpos-sin-cara", flush=True)
+          f"{caras_detect} caras detectadas, {caras_guard} guardadas "
+          f"({caras_borroso} borrosas, {caras_dedup} dedup), {cuerpos} cuerpos-sin-cara", flush=True)
     return frame_idx
 
 

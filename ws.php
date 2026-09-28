@@ -218,6 +218,72 @@ switch ($accion) {
         echo json_encode($disparo);
         exit;
 
+    case "embudo_datos":
+        // Fase 0 (recall): conteos de BD para el embudo (motor/embudo.py).
+        // argv/GET: local_id [desde YYYY-MM-DD] -> JSON con cruces, estancias,
+        // personas, videos y desglose por cámara. Solo lectura.
+        $local_f = (int)($_GET["local_id"] ?? arg(2) ?? 0);
+        $desde_f = (string)($_GET["desde"] ?? arg(3) ?? "");
+        $filtro_cruce = $desde_f !== "" ? " AND c.fecha >= ?" : "";
+        $filtro_est = $desde_f !== "" ? " AND e.fecha_ini >= ?" : "";
+        $filtro_vid = $desde_f !== "" ? " AND fecha_ini >= ?" : "";
+        $p_cruce = $desde_f !== "" ? [$local_f, $desde_f] : [$local_f];
+        $p_est = $desde_f !== "" ? [$local_f, $desde_f] : [$local_f];
+        $p_vid = $desde_f !== "" ? [$local_f, $desde_f] : [$local_f];
+
+        $cruces = (int)(DB::selectOne(
+            "SELECT COUNT(*) AS n FROM cruces_lineas c
+             JOIN lineas l ON l.id = c.linea_id
+             JOIN camaras ca ON ca.id = l.camara_id
+             WHERE ca.local_id = ?" . $filtro_cruce,
+            $p_cruce
+        )["n"] ?? 0);
+        $estancias = (int)(DB::selectOne(
+            "SELECT COUNT(*) AS n FROM estancias e
+             JOIN camaras ca ON ca.id = e.camara_id
+             WHERE ca.local_id = ?" . $filtro_est,
+            $p_est
+        )["n"] ?? 0);
+        $personas = (int)(DB::selectOne(
+            "SELECT COUNT(*) AS n FROM personas WHERE local_id = ?", [$local_f]
+        )["n"] ?? 0);
+        $videos = (int)(DB::selectOne(
+            "SELECT COUNT(*) AS n FROM videos WHERE local_id = ?" . $filtro_vid,
+            $p_vid
+        )["n"] ?? 0);
+
+        $por_camara = [];
+        $rows_c = DB::select(
+            "SELECT l.camara_id AS cam, COUNT(*) AS n FROM cruces_lineas c
+             JOIN lineas l ON l.id = c.linea_id
+             JOIN camaras ca ON ca.id = l.camara_id
+             WHERE ca.local_id = ?" . $filtro_cruce . "
+             GROUP BY l.camara_id",
+            $p_cruce
+        );
+        foreach ($rows_c as $r) {
+            $por_camara[(string)$r["cam"]] = ["cruces" => (int)$r["n"], "estancias" => 0];
+        }
+        $rows_e = DB::select(
+            "SELECT e.camara_id AS cam, COUNT(*) AS n FROM estancias e
+             JOIN camaras ca ON ca.id = e.camara_id
+             WHERE ca.local_id = ?" . $filtro_est . "
+             GROUP BY e.camara_id",
+            $p_est
+        );
+        foreach ($rows_e as $r) {
+            $cam = (string)$r["cam"];
+            if (!isset($por_camara[$cam])) { $por_camara[$cam] = ["cruces" => 0, "estancias" => 0]; }
+            $por_camara[$cam]["estancias"] = (int)$r["n"];
+        }
+        echo json_encode([
+            "local_id" => $local_f, "desde" => $desde_f,
+            "cruces" => $cruces, "estancias" => $estancias,
+            "personas" => $personas, "videos" => $videos,
+            "por_camara" => $por_camara,
+        ]);
+        exit;
+
     default:
         $return["cod"] = "200";
         $return["resp"] = "La accion solicitada no puede ser procesada";
