@@ -49,7 +49,7 @@ if(isset($_GET["login"]) and $_GET["login"]==1 and $_SERVER["REQUEST_METHOD"]===
         $pass = $_POST["contrasenya"] ?? "";
         $autenticado = false;
 
-        if ($usuario === ADMIN_USER && password_verify($pass, ADMIN_PASS_HASH)) {
+        if ($usuario === ADMIN_USER && password_verify($pass, admin_pass_hash())) {
             $_SESSION["user"] = session_user_id();
             $_SESSION["local_id"] = 1;
             $_SESSION["admin"] = 1;
