@@ -85,9 +85,20 @@ def ort_providers():
         return cpu
     if "OpenVINOExecutionProvider" not in available:
         return cpu
-    ov = [("OpenVINOExecutionProvider",
-           {"device_type": "CPU_FP32", "num_of_threads": str(ort_threads())}),
-          "CPUExecutionProvider"]
+    opts = {"device_type": "CPU_FP32", "num_of_threads": str(ort_threads())}
+    # Caché de modelo COMPILADO de OpenVINO: sin ella, cada proceso recompila las
+    # 5 sesiones de buffalo_l. Como procesa_video es un proceso nuevo POR VÍDEO,
+    # pagaba ~20 s de compilación en cada uno (medido en prod). Con cache_dir,
+    # los procesos siguientes reutilizan los blobs (~1-2 s). El directorio vive en
+    # motor/models/ (gitignored). Configurable con RF_OV_CACHE_DIR.
+    cache_dir = os.environ.get("RF_OV_CACHE_DIR") or os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..", "motor", "models", "ov_cache"))
+    try:
+        os.makedirs(cache_dir, exist_ok=True)
+        opts["cache_dir"] = cache_dir
+    except OSError:
+        pass
+    ov = [("OpenVINOExecutionProvider", opts), "CPUExecutionProvider"]
     return ov if mode in ("auto", "openvino", "ov", "") else cpu
 
 
