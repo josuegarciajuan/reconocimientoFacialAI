@@ -168,9 +168,21 @@ Benchmark en el Xeon Gold 6230R (AVX-512 + `avx512_vnni`), `num_of_threads=2`
 | w600k_r50 (ArcFace) | 304 ms | 259 ms* | ~1,2-2,7x | **coseno 1.000000** |
 
 (*) A 112px el tope de hilos penaliza; a 1280 es donde importa.
-Arranque en frío por proceso: +0,18 s/modelo (compilación OpenVINO), despreciable
-frente al timepo de procesado de un vídeo. No cambia la decisión de reconocimiento
-(salidas numéricamente equivalentes); para revertir: `RF_ORT_PROVIDER=cpu`.
+
+**CORRECCIÓN (2026-09-28, medición en prod):** el servidor de producción es un
+**AMD EPYC**, no el Xeon Intel del entorno de desarrollo. OpenVINO está
+optimizado para Intel y en EPYC rinde **peor** que ONNX Runtime CPU:
+
+| det_10g @1280 (prod, bajo carga) | ms/frame |
+|---|---:|
+| CPU EP, 2 hilos | **2.439** |
+| OpenVINO, 2 hilos | 3.961 |
+| OpenVINO, 4 hilos | 6.775 |
+
+Por eso los units fuerzan `RF_ORT_PROVIDER=cpu`. En un host Intel sí conviene
+`openvino` (en dev, Xeon, daba 2,3x). La conclusión de P0 es que el cuello es la
+**contención** (4 `procesa` + 11 guardas + ffmpeg sobre 10 cores), que multiplica
+×4-13 el tiempo por frame, no el provider.
 
 ### F6 — Verificación y rollout
 - Cada fase: worktree → commit → merge a `main` → `bash deploy/deploy_prod.sh`.

@@ -31,9 +31,11 @@ Environment=RF_CV_THREADS=1
 # y ~79k cambios de contexto/s. 2 hilos/sesión mantiene los 10 cores ocupados
 # sin thrashing y NO cambia el resultado.
 Environment=RF_ORT_THREADS=2
-# Aceleración de inferencia: OpenVINO EP (~2,3x en Xeon) si está instalado, con
-# fallback automático a CPU. Revertir sin tocar código: RF_ORT_PROVIDER=cpu.
-Environment=RF_ORT_PROVIDER=openvino
+# Provider de inferencia. OpenVINO se midió MÁS LENTO que CPU en este servidor
+# (AMD EPYC, sin AVX-512; OpenVINO está optimizado para Intel): 3,96 s/frame vs
+# 2,44 s/frame de CPU EP con el mismo modelo a 1280. Por eso se fuerza CPU. En un
+# host Intel sí conviene openvino (en dev daba 2,3x). Cambiar aquí si migra.
+Environment=RF_ORT_PROVIDER=cpu
 # Tope de memoria del cgroup (detector + pool de clasificadores + procesa_video):
 # con el pool (RF_CLASIF_CAMS_POR_PROC=8 -> 1 clasificador/8 cámaras) y la foto
 # HQ fuera (worker único rf-photo), el pico baja de ~9G a ~5G. Si se supera, el
