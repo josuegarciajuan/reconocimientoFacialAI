@@ -736,7 +736,13 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     exact_match = len(exact_persons) == 1
     exact_conflict = len(exact_persons) > 1
 
-    if exact_conflict:
+    # Fase 2 (recall): sub-clúster de BAJA calidad (ninguna cara alcanzó la
+    # admisión). Se captura la persona pero NO se decide identidad: los
+    # embeddings ruidosos no contaminan galerías. Va a revisión/provisional y la
+    # consolidación (Fase 3) la reconcilia después.
+    low_q = bool(item_idxs) and all(battery[i].get("low_quality") for i in item_idxs)
+
+    if exact_conflict and not low_q:
         # conservar el crop como evidencia y consumir la batería sin tocar BD
         _preserve_evidence(ruta, local_id, camara_id, rep_item["path"], rep_stem,
                            "conflicto-exacto")
@@ -767,7 +773,17 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
             })
         return
 
-    if exact_match:
+    if low_q:
+        # Baja calidad: nunca match/exact (evita contaminar). El veredicto
+        # "uncertain" crea persona nueva/provisional + revisión + consolidación.
+        exact_match = False
+        face_scores = _face_scores(embs, store, cfg, query_pose)
+        result = MatchResult(
+            verdict="uncertain", person=None, best_score=0.0, second_score=0.0,
+            scores=dict(face_scores), confidence=0.0,
+            layer_scores={"cara": LayerScore(score=0.0, confidence=0.0)},
+            candidates=select_candidates(face_scores, cfg))
+    elif exact_match:
         face_scores = _face_scores(embs, store, cfg, query_pose)
         result = MatchResult(
             verdict="match", person=exact_persons[0],
@@ -865,7 +881,9 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     audit_meta = {
         "exact_match": bool(exact_match),
         "exact_conflict": False,
-        "branch": "exact" if exact_match else ("cascade" if cfg.cascade_enabled else "scalar"),
+        "branch": ("low_quality" if low_q else
+                   ("exact" if exact_match else ("cascade" if cfg.cascade_enabled else "scalar"))),
+        "low_quality": bool(low_q),
         "top_scores": top_scores(face_scores, n=5),
         "cfg": _cfg_snapshot(cfg),
         "stem": rep_stem,
@@ -932,7 +950,8 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
         # (split_coherent_clusters + C1) -> se construye su galería desde cero
         # (new_person=True), sin contaminar a nadie. `review` NUNCA toca la
         # galería del candidato existente (antes lo hacía vía new_person=True).
-        _store_add(store, person, members, battery, cfg, new_person=True, foto_id=foto_id)
+        _store_add(store, person, members, battery, cfg, new_person=True,
+                   foto_id=foto_id, low_quality=low_q)
 
     # F1/F3: galería de apariencia (cuerpo/media superior) por persona.
     # Fase 1: preferir el BUSTO (cabeza-hombros/pecho del frame completo) sobre
@@ -1037,7 +1056,8 @@ def torso_bbox_local(face, img, cfg):
 
 
 def _store_add(store: FaceStore, person: str, members, battery, cfg: Config,
-               new_person: bool = False, foto_id: str | None = None) -> None:
+               new_person: bool = False, foto_id: str | None = None,
+               low_quality: bool = False) -> None:
     """Añade encodings a la galería de `person` con CONTROL DE ADMISIÓN (F1.2).
 
     C1 (2026-09-02): `members` son (emb, item_idx, face_idx) — las caras EXACTAS
@@ -1076,7 +1096,11 @@ def _store_add(store: FaceStore, person: str, members, battery, cfg: Config,
         # de una cara demasiado pequeña aunque pase admission_cosine: su
         # embedding es poco fiable y con la agregación MAX puede arrastrar
         # el score de la persona. (La nitidez ya está filtrada aguas arriba.)
-        if max(f.bbox[2] - f.bbox[0], f.bbox[3] - f.bbox[1]) < cfg.face_min_side:
+        # Fase 2: excepción para personas PROVISIONALES de baja calidad — se
+        # enrolan (aunque sean pequeñas) para que la consolidación futura pueda
+        # compararlas; nunca entran en la galería de una identidad existente.
+        if not (low_quality and new_person) and \
+                max(f.bbox[2] - f.bbox[0], f.bbox[3] - f.bbox[1]) < cfg.face_min_side:
             continue
         if new_person:
             admit = True
@@ -1276,10 +1300,20 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
             if face_sharpness(img, fc) >= cfg.min_sharpness
             and max(fc.bbox[2] - fc.bbox[0], fc.bbox[3] - fc.bbox[1]) >= cfg.face_min_side
         ]
+        low_quality = False
         if not focused:
-            shutil.move(p, os.path.join(nopasafiltros, f))
-            desc_nopasafiltros += 1
-            continue
+            if not cfg.capture_keep_all:
+                shutil.move(p, os.path.join(nopasafiltros, f))
+                desc_nopasafiltros += 1
+                continue
+            # Fase 2 (recall): hay cara pero no alcanza la calidad de admisión. Se
+            # captura igual (mejor cara por nitidez×área) y se marca baja calidad:
+            # el sub-clúster irá a revisión/provisional, NUNCA a la galería de una
+            # identidad existente (no contamina). Antes se descartaba aquí para
+            # siempre (pozo de `nopasafiltros`).
+            focused = [max(faces, key=lambda fc: face_sharpness(img, fc) * (
+                max(1, (fc.bbox[2] - fc.bbox[0]) * (fc.bbox[3] - fc.bbox[1])) ** 0.5))]
+            low_quality = True
         # C (2 caras en el mismo crop): dedup de detecciones casi idénticas del
         # MISMO rostro dentro del crop (ver dedup_faces_near_duplicates).
         focused = dedup_faces_near_duplicates(focused, img, cfg)
@@ -1287,7 +1321,8 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
         # su embedding sobre el recorte super-resuelto -> matching más fiable.
         for fc in focused:
             fc.embedding = enhance_embedding(img, fc, cfg)
-        items.append({"file": f, "path": p, "img": img, "faces": focused, "ts": parse_timestamp(f)})
+        items.append({"file": f, "path": p, "img": img, "faces": focused,
+                      "ts": parse_timestamp(f), "low_quality": low_quality})
 
     # Fase 0: registrar descartes (aunque no quede ningún item que clasificar).
     if desc_notienecaras:

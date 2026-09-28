@@ -155,7 +155,12 @@ def guardar_cara(ruta: str, local_id: str, camara_id: str, fichero: str, frame,
     for b in buffer:
         if float(face.embedding @ b) > cfg.dedup_cosine:
             return "dedup"
-    if face_sharpness(frame, face) < cfg.min_sharpness:
+    # Fase 2: en captura solo se filtra puro ruido (capture_min_sharpness). El
+    # umbral de admisión (min_sharpness) se aplica al decidir identidad, NO aquí:
+    # descartar aquí a una persona solo porque su único frame salió borroso la
+    # hacía desaparecer para siempre (fuga de recall).
+    _min_sharp = cfg.capture_min_sharpness if cfg.capture_keep_all else cfg.min_sharpness
+    if face_sharpness(frame, face) < _min_sharp:
         return "blur"
     buffer.append(face.embedding)
     if len(buffer) > 8:
@@ -281,7 +286,7 @@ def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,
 
         # caras (muestreo para no saturar CPU)
         if frame_idx % face_every == 0:
-            faces = analyze(frame, det_size=(cfg.det_size, cfg.det_size), min_score=cfg.min_det_score)
+            faces = analyze(frame, det_size=(cfg.det_size, cfg.det_size), min_score=cfg.capture_min_det_score)
             caras_detect += len(faces)
             for fi, f in enumerate(faces):
                 estado = guardar_cara(ruta, local_id, camara_id, fichero, frame, f, ts,

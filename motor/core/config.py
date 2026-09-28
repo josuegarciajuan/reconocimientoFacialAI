@@ -75,6 +75,16 @@ class Config:
     dedup_cosine: float = 0.97       # salta caras casi idénticas a las ya guardadas
     face_every: int = 2              # muestreo: analiza 1 de cada N frames (más muestras MF-SR/HQ)
 
+    # --- Fase 2 (recall): separar "capturar" de "admitir" ---
+    # En la extracción NO se descarta una cara por nitidez/tamaño (eso decidía
+    # perder a la persona para siempre): se guarda igualmente y el clasificador
+    # decide. `capture_keep_all` mantiene este comportamiento; el suelo
+    # `capture_min_sharpness` solo evita guardar puro ruido. La admisión a la
+    # galería sigue rigiéndose por min_sharpness/face_min_side/admission_cosine.
+    capture_keep_all: bool = True
+    capture_min_sharpness: float = 20.0   # suelo de captura (mucho más laxo que min_sharpness=70)
+    capture_min_det_score: float = 0.3    # min_score de RetinaFace en extracción (menos estricto que 0.4)
+
     # --- RAM-gate (clasificador.py) ---
     # Si la memoria disponible (MemAvailable) baja de este umbral, el clasificador
     # duerme y no procesa: evita que 12 instancias de insightface pidan RAM a la vez
@@ -392,6 +402,13 @@ class Config:
         cfg.display_face_min_cosine = get_float(ruta, "RF_DISPLAY_FACE_MIN_COS", cfg.display_face_min_cosine)
         cfg.face_every = get_int(ruta, "RF_FACE_EVERY", cfg.face_every)
         cfg.min_sharpness = get_float(ruta, "RF_MIN_SHARPNESS", cfg.min_sharpness)
+        # Fase 2 (recall): capturar≠admitir.
+        cfg.capture_keep_all = get_bool(ruta, "RF_CAPTURE_KEEP_ALL", cfg.capture_keep_all)
+        cfg.capture_min_sharpness = get_float(ruta, "RF_CAPTURE_MIN_SHARPNESS", cfg.capture_min_sharpness)
+        cfg.capture_min_det_score = get_float(ruta, "RF_CAPTURE_MIN_DET", cfg.capture_min_det_score)
+        # El suelo de captura nunca debe ser más estricto que el de admisión.
+        cfg.capture_min_sharpness = min(cfg.capture_min_sharpness, cfg.min_sharpness)
+        cfg.capture_min_det_score = min(cfg.capture_min_det_score, cfg.min_det_score)
         cfg.face_min_side = get_int(ruta, "RF_FACE_MIN_SIDE", cfg.face_min_side)
         cfg.face_restore_min_side = get_int(ruta, "RF_FACE_RESTORE_MIN_SIDE", cfg.face_restore_min_side)
         cfg.sr_embed_enabled = get_bool(ruta, "RF_SR_EMBED_ENABLED", cfg.sr_embed_enabled)
