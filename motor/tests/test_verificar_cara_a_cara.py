@@ -146,12 +146,17 @@ def test_lado_menor_que_guardia_queda_provisional():
     assert r["acierto"] is False
 
 
-def test_pose_invalida_queda_provisional_aunque_cos_alto():
+def test_pose_invalida_ya_no_es_provisional():
+    """CORRECCIÓN: una pose inválida NO fuerza provisional; solo desactiva el
+    filtrado pose-consciente (matching global) y la decisión sigue su curso."""
     galerias, queries = _escena()
     q = dict(queries[0])
     q["pose_valida"] = False
-    res = vc.evaluar_queries(galerias, [q], Config())
-    assert res[0]["resultado_actual"] == "provisional"
+    r = vc.evaluar_queries(galerias, [q], Config())[0]
+    # cos genuino ~0.906 >= secure 0.55 -> match (no provisional)
+    assert r["resultado_actual"] == "match"
+    assert r["resultado_cara"] == "match"
+    assert r["acierto"] is True
 
 
 def test_banda_match_secure_es_uncertain():
@@ -166,6 +171,81 @@ def test_banda_match_secure_es_uncertain():
     assert abs(float(r["genuino"]) - 0.5) < 1e-6
     assert r["resultado_actual"] == "uncertain"
     assert r["acierto"] is False
+
+
+# ---------------------------------------------------------------------------
+# Scoring configurable (centroid/blend) y filtrado pose-consciente
+# ---------------------------------------------------------------------------
+def test_score_galeria_max_centroid_blend():
+    """max=cos30, centroid=cos45 y blend = w*centroid + (1-w)*max."""
+    ref = np.stack([_rot(30.0), _rot(60.0)])
+    q = _rot(0.0)
+    smax = vc.score_galeria(ref, q, "max", 0.5)
+    scent = vc.score_galeria(ref, q, "centroid", 0.5)
+    sblend = vc.score_galeria(ref, q, "blend", 0.5)
+    assert abs(smax - math.cos(math.radians(30.0))) < 1e-6
+    assert abs(scent - math.cos(math.radians(45.0))) < 1e-6
+    assert abs(sblend - (0.5 * scent + 0.5 * smax)) < 1e-6
+    # modo desconocido degrada a max
+    assert vc.score_galeria(ref, q, "banana", 0.5) == smax
+    # referencia vacía -> 0.0
+    assert vc.score_galeria(np.zeros((0, DIM)), q, "centroid", 0.5) == 0.0
+
+
+def test_score_galeria_pose_filtra_y_hace_fallback():
+    ref = np.stack([_eje(0), _eje(1)])
+    poses = np.asarray(["f", "pi"], dtype=object)
+    q = _eje(1)
+    # query "f": solo puntúa la fila frontal -> cos 0 con e1
+    assert abs(vc.score_galeria(ref, q, "max", 0.5, poses, "f", True)) < 1e-9
+    # query "pi": solo la fila de perfil -> cos 1
+    assert abs(vc.score_galeria(ref, q, "max", 0.5, poses, "pi", True) - 1.0) < 1e-9
+    # sin pose de query o con zones desactivado -> sin filtrado (global)
+    assert abs(vc.score_galeria(ref, q, "max", 0.5, poses, None, True) - 1.0) < 1e-9
+    assert abs(vc.score_galeria(ref, q, "max", 0.5, poses, "f", False) - 1.0) < 1e-9
+
+
+def test_score_galeria_fallback_global_si_no_compatible():
+    """Sin ninguna pose compatible, la persona no queda invisible: matriz completa."""
+    ref = np.stack([_eje(0), _eje(1)])
+    poses = np.asarray(["pi", "pd"], dtype=object)
+    assert abs(vc.score_galeria(ref, _eje(0), "max", 0.5, poses, "f", True) - 1.0) < 1e-9
+
+
+def test_simular_actual_independiente_de_la_pose():
+    cfg = Config(match_min_face_side=96, secure_threshold=0.55, match_threshold=0.48)
+    assert vc.simular_actual(0.60, 50.0, cfg) == "provisional"   # baja info
+    assert vc.simular_actual(0.60, 200.0, cfg) == "match"
+    assert vc.simular_actual(0.50, 200.0, cfg) == "uncertain"
+    assert vc.simular_actual(0.40, 200.0, cfg) == "new"
+
+
+def test_evaluar_modo_centroid_cambia_veredicto():
+    """max 0.866 vs centroid 0.707: con secure=0.80 pasan de match a uncertain."""
+    galerias = {"Ana": [("f1", _rot(0.0)), ("f2", _rot(30.0)), ("f3", _rot(60.0))]}
+    q = {"persona_real": "Ana", "fragmento": "f1", "foto_id": "a1",
+         "vector": _rot(0.0), "lado_cara": 200.0, "sharpness": 150.0,
+         "pose_valida": True, "pose": "f"}
+    cmn = dict(zones_enabled=False, secure_threshold=0.80, match_threshold=0.60,
+               margin=0.05)
+    rmax = vc.evaluar_queries(galerias, [q], Config(face_score_mode="max", **cmn))[0]
+    rcen = vc.evaluar_queries(galerias, [q], Config(face_score_mode="centroid", **cmn))[0]
+    assert abs(float(rmax["genuino"]) - math.cos(math.radians(30.0))) < 1e-6
+    assert abs(float(rcen["genuino"]) - math.cos(math.radians(45.0))) < 1e-6
+    assert rmax["resultado_actual"] == "match"
+    assert rcen["resultado_actual"] == "uncertain"
+
+
+def test_evaluar_modo_blend_valor_intermedio():
+    galerias = {"Ana": [("f1", _rot(0.0)), ("f2", _rot(30.0)), ("f3", _rot(60.0))]}
+    q = {"persona_real": "Ana", "fragmento": "f1", "foto_id": "a1",
+         "vector": _rot(0.0), "lado_cara": 200.0, "sharpness": 150.0,
+         "pose_valida": True, "pose": "f"}
+    cfg = Config(face_score_mode="blend", face_centroid_w=0.5, zones_enabled=False)
+    r = vc.evaluar_queries(galerias, [q], cfg)[0]
+    smax = math.cos(math.radians(30.0))
+    scent = math.cos(math.radians(45.0))
+    assert abs(float(r["genuino"]) - (0.5 * scent + 0.5 * smax)) < 1e-6
 
 
 # ---------------------------------------------------------------------------
@@ -216,3 +296,46 @@ def test_stats_y_pct():
     assert vc._pct(1, 4) == 0.25
     assert vc._pct(1, 0) is None
     assert vc._stats([None, None])["n"] == 0
+
+
+def test_construir_galerias_incluye_pose():
+    med = [_medida("Ana", "f1", "a1", _eje(0)), _medida("Ana", "f2", "a2", _eje(1))]
+    galerias, _ = vc.construir_galerias_y_queries(med)
+    assert all(len(t) == 3 for t in galerias["Ana"])
+    assert {t[2] for t in galerias["Ana"]} == {"f"}
+
+
+# ---------------------------------------------------------------------------
+# Exclusiones (--excluir-fotos, coladas conocidas)
+# ---------------------------------------------------------------------------
+def test_cargar_exclusiones_lista_y_dict(tmp_path):
+    p1 = tmp_path / "lista.json"
+    p1.write_text('["x", "y", "x"]', encoding="utf-8")
+    assert vc.cargar_exclusiones(str(p1)) == {"x", "y"}
+    p2 = tmp_path / "dict.json"
+    p2.write_text('{"identificador_unico": ["z", 7]}', encoding="utf-8")
+    assert vc.cargar_exclusiones(str(p2)) == {"z", "7"}
+    assert vc.cargar_exclusiones(None) == set()
+
+
+def test_excluir_medidas_quita_del_calculo():
+    medidas = [
+        _medida("Ana", "f1", "a1", _eje(0)),
+        _medida("Ana", "f2", "a2", _eje(1)),
+        _medida("Beto", "g1", "b1", _eje(2)),
+    ]
+    filtradas, n = vc.excluir_medidas(medidas, {"a2"})
+    assert n == 1
+    assert {m["foto_id"] for m in filtradas} == {"a1", "b1"}
+    # sin exclusiones devuelve copia completa
+    todas, n0 = vc.excluir_medidas(medidas, set())
+    assert n0 == 0 and len(todas) == 3
+
+
+def test_exclusion_reduce_galeria_y_queries():
+    med = [_medida("Ana", "f1", "a1", _eje(0)), _medida("Ana", "f2", "a2", _eje(1))]
+    filtradas, _ = vc.excluir_medidas(med, {"a1"})
+    galerias, queries = vc.construir_galerias_y_queries(filtradas)
+    # Ana queda con un solo fragmento -> sin queries evaluables
+    assert queries == []
+    assert len(galerias["Ana"]) == 1

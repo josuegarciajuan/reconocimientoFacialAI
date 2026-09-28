@@ -14,18 +14,28 @@ Diseño **leave-one-fragment-out (LOFO)**:
 3. Para cada fragmento ``F`` de la persona ``P``, la galería LIMPIA de ``P`` son
    los embeddings de los DEMÁS fragmentos de ``P``; las fotos de ``F`` son las
    queries. Así ningún embedding de la query está en su galería (sin fuga).
-4. Por query se calculan los scores por persona real (max coseno contra cada
-   galería), se ejecuta :func:`motor.core.matching.decide` y se SIMULA la cascada
-   con la config actual, sin capas de apoyo (no hay torso/VLM para fotos
+4. Por query se calculan los scores por persona real con el MISMO scoring que el
+   clasificador según ``cfg.face_score_mode`` (max / centroid / blend), aplicando
+   el filtrado pose-consciente si ``cfg.zones_enabled`` y la pose de la query es
+   válida (con fallback global si la persona no tiene ninguna pose compatible).
+   Se ejecuta :func:`motor.core.matching.decide` como referencia y se SIMULA la
+   cascada con la config actual, sin capas de apoyo (no hay torso/VLM para fotos
    publicadas y la silueta está desactivada con ``silueta_confirm_enabled=False``)::
 
-       lado_cara < cfg.match_min_face_side  o  pose no válida  -> "provisional"
-       s1 >= secure_threshold                                  -> "match"
-       s1 >= match_threshold                                   -> "uncertain"
-       s1 <  match_threshold                                   -> "new"
+       lado_cara < cfg.match_min_face_side  -> "provisional" (baja información)
+       s1 >= secure_threshold               -> "match"
+       s1 >= match_threshold                -> "uncertain"
+       s1 <  match_threshold                -> "new"
 
-   Como no hay confirmación por capas de apoyo, la banda ``[match, secure)``
-   NUNCA se auto-confirma: queda en ``uncertain``.
+   Una pose inválida NO fuerza "provisional": solo se ignora para el filtrado
+   (se usa ``pose=None``, matching global) y la decisión sigue su curso. Como no
+   hay confirmación por capas de apoyo, la banda ``[match, secure)`` NUNCA se
+   auto-confirma: queda en ``uncertain``.
+
+Opcionalmente ``--excluir-fotos`` descarta del cálculo (galerías y queries) los
+``identificador_unico`` (foto_id) de un JSON, útil para coladas conocidas. El
+informe muestra el resultado efectivo y, si hay exclusiones, también el de
+referencia sin excluir.
 
 El módulo **no escribe nada**: solo imprime por stdout. No toca la BD salvo
 ``SELECT`` y los modelos/ficheros los importa de forma perezosa (es importable y
@@ -35,7 +45,8 @@ Uso::
 
     motor/venv/bin/python -m motor.audit.verificar_cara_a_cara \
         --local 1 --ruta /root/reconocimientoFacial \
-        --etiquetas /ruta/etiquetas.json --max-por-persona 40 --json
+        --etiquetas /ruta/etiquetas.json --max-por-persona 40 --json \
+        --excluir-fotos /ruta/coladas.json
 
 La parte pura (:func:`evaluar_queries`, :func:`resumen`) no toca BD ni modelos y
 se testea con embeddings sintéticos.
@@ -57,7 +68,7 @@ from ..core.config import Config
 from .auditar_identidades import cargar_etiquetas
 from .medir_banco import RAIZ, construir_fotos
 
-VERSION = 1
+VERSION = 2
 
 DEFAULT_MAX_POR_PERSONA = 40
 DEFAULT_DET_SIZE = 640
@@ -104,26 +115,138 @@ def _mat_norm(vecs: Sequence[Any]) -> np.ndarray:
 
 
 def _preparar_galerias(
-    galerias: Mapping[str, Sequence[tuple[Any, Any]]],
-) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
-    """Convierte ``{persona: [(fragmento, vector), ...]}`` en matrices + fragmentos.
+    galerias: Mapping[str, Sequence[tuple[Any, ...]]],
+) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray], dict[str, np.ndarray]]:
+    """Convierte ``{persona: [(fragmento, vector[, pose]), ...]}`` en matrices.
+
+    Cada item admite la forma ``(fragmento, vector)`` (pose desconocida ->
+    ``None``) o ``(fragmento, vector, pose)``. La pose es necesaria para el
+    filtrado pose-consciente del scoring y para el fallback global.
 
     Returns:
-        ``(matrices, fragmentos)``: ``matrices[p]`` es ``(n, d)`` normalizada y
-        ``fragmentos[p]`` un array object de etiquetas de fragmento alineado por
-        fila (para poder excluir el fragmento de la query).
+        ``(matrices, fragmentos, poses)``: ``matrices[p]`` es ``(n, d)``
+        normalizada, ``fragmentos[p]`` un array object de etiquetas de fragmento
+        y ``poses[p]`` un array object de etiquetas de pose (``None`` si falta),
+        ambos alineados por fila con la matriz (para poder excluir el fragmento
+        de la query y filtrar por pose).
     """
     matrices: dict[str, np.ndarray] = {}
     fragmentos: dict[str, np.ndarray] = {}
+    poses: dict[str, np.ndarray] = {}
     for persona, items in galerias.items():
         vecs: list[Any] = []
         frags: list[str] = []
-        for frag, vec in items:
+        poes: list[Any] = []
+        for it in items:
+            frag, vec = it[0], it[1]
+            po = it[2] if len(it) >= 3 else None
+            if po is not None and str(po) == "":
+                po = None
             vecs.append(vec)
             frags.append(str(frag))
+            poes.append(po)
         matrices[persona] = _mat_norm(vecs)
         fragmentos[persona] = np.asarray(frags, dtype=object)
-    return matrices, fragmentos
+        poses[persona] = np.asarray(poes, dtype=object)
+    return matrices, fragmentos, poses
+
+
+def _filtrar_pose(
+    ref: np.ndarray,
+    poses: np.ndarray | None,
+    q_pose: str | None,
+    zones_enabled: bool,
+) -> np.ndarray:
+    """Sub-matriz de ``ref`` con poses compatibles (fallback global si no hay).
+
+    Mismo criterio que :func:`motor.core.matching.scores_per_person_centroid`:
+    solo filtra si ``zones_enabled`` y la pose de la query es conocida; si
+    ninguna fila es compatible devuelve la matriz COMPLETA (la persona nunca
+    queda invisible por una etiqueta de pose).
+    """
+    if not zones_enabled or q_pose is None or poses is None:
+        return ref
+    if len(poses) != ref.shape[0]:
+        return ref
+    from ..core.zones import pose_compatible  # perezoso: no exige cv2 al importar
+    mask = np.asarray([pose_compatible(q_pose, p) for p in poses], dtype=bool)
+    if mask.any():
+        return ref[mask]
+    return ref
+
+
+def score_galeria(
+    ref: np.ndarray,
+    qv: np.ndarray,
+    mode: str,
+    w: float,
+    poses: np.ndarray | None = None,
+    q_pose: str | None = None,
+    zones_enabled: bool = False,
+) -> float:
+    """Score de una query contra una matriz de referencia con el modo configurado.
+
+    - ``"max"``: mejor coseno (comportamiento histórico).
+    - ``"centroid"``: coseno contra el centroide de la referencia
+      (:func:`motor.core.matching.centroid_cosine`).
+    - ``"blend"``: ``w*centroid + (1-w)*max``.
+
+    El filtrado pose-consciente se aplica ANTES de agregar (mismo criterio que el
+    clasificador). Un modo desconocido degrada a ``"max"``. Devuelve 0.0 si la
+    referencia queda vacía tras el filtrado.
+    """
+    if ref is None or ref.shape[0] == 0:
+        return 0.0
+    sub = _filtrar_pose(ref, poses, q_pose, zones_enabled)
+    if sub.shape[0] == 0:
+        return 0.0
+    max_cos = float(np.max(sub @ qv))
+    mode = str(mode or "max").strip().lower()
+    if mode == "centroid":
+        from ..core.matching import centroid_cosine
+        return float(centroid_cosine(qv, sub))
+    if mode == "blend":
+        from ..core.matching import centroid_cosine
+        ww = min(max(float(w), 0.0), 1.0)
+        cent = float(centroid_cosine(qv, sub))
+        return float(ww * cent + (1.0 - ww) * max_cos)
+    return max_cos
+
+
+def simular_actual(s1: float, lado_cara: float, cfg: Config) -> str:
+    """Simula el veredicto del clasificador SIN capas de apoyo.
+
+    - ``lado_cara < cfg.match_min_face_side``: cara de baja información ->
+      ``"provisional"`` (no se decide identidad).
+    - ``s1 >= cfg.secure_threshold`` -> ``"match"``.
+    - ``s1 >= cfg.match_threshold`` -> ``"uncertain"`` (sin torso/VLM/silueta en
+      esta simulación la banda no se auto-confirma).
+    - si no -> ``"new"``.
+
+    Una pose inválida NO fuerza ``"provisional"``: solo se ignora para el
+    filtrado pose-consciente (la decisión es global).
+    """
+    if lado_cara < float(cfg.match_min_face_side):
+        return "provisional"
+    if float(s1) >= float(cfg.secure_threshold):
+        return "match"
+    if float(s1) >= float(cfg.match_threshold):
+        return "uncertain"
+    return "new"
+
+
+def _modo_scoring(cfg: Config) -> tuple[str, float, bool]:
+    """Extrae ``(modo, w, zones_enabled)`` validados de la config.
+
+    Modo desconocido -> ``"max"`` (degradación segura). ``w`` es el peso del
+    centroide en ``"blend"``.
+    """
+    mode = str(getattr(cfg, "face_score_mode", "max") or "max").strip().lower()
+    if mode not in ("max", "centroid", "blend"):
+        mode = "max"
+    w = float(getattr(cfg, "face_centroid_w", 0.7))
+    zones = bool(getattr(cfg, "zones_enabled", False))
+    return mode, w, zones
 
 
 def _stats(vals: Sequence[float | None]) -> dict:
@@ -199,6 +322,45 @@ def limitar_por_persona(
     return out
 
 
+def cargar_exclusiones(path: str | None) -> set[str]:
+    """Carga el set de ``identificador_unico`` (foto_id) a excluir del cálculo.
+
+    Acepta un JSON con una **lista** de ids o un objeto con la lista bajo alguna
+    de las claves habituales (``identificador_unico``, ``foto_ids``, ``fotos``,
+    ``excluir``, ``ids``). ``path`` nulo/vacío -> conjunto vacío. Los ids se
+    normalizan a ``str`` para comparar con ``foto_id`` (que puede venir como int).
+    """
+    if not path:
+        return set()
+    with open(path, encoding="utf-8") as fh:
+        data = json.load(fh)
+    ids: list[Any] = []
+    if isinstance(data, dict):
+        for k in ("identificador_unico", "foto_ids", "fotos", "excluir", "ids"):
+            v = data.get(k)
+            if isinstance(v, list):
+                ids = v
+                break
+    elif isinstance(data, list):
+        ids = data
+    return {str(x) for x in ids if x not in (None, "")}
+
+
+def excluir_medidas(
+    medidas: Sequence[Mapping[str, Any]],
+    excluidos: set[str] | None,
+) -> tuple[list[Mapping[str, Any]], int]:
+    """Devuelve ``(medidas_filtradas, n_excluidas)`` quitando los foto_id dados.
+
+    Se aplica ANTES de construir galerías/queries: una colada excluida no
+    contamina la galería de su persona real NI se evalúa como query.
+    """
+    if not excluidos:
+        return list(medidas), 0
+    out = [m for m in medidas if str(m.get("foto_id")) not in excluidos]
+    return out, len(medidas) - len(out)
+
+
 # ---------------------------------------------------------------------------
 # Núcleo puro: evaluación LOFO y resumen
 # ---------------------------------------------------------------------------
@@ -209,15 +371,20 @@ def evaluar_queries(
 ) -> list[dict]:
     """Evalúa cada query contra la galería LOFO y simula la cascada actual.
 
+    El score por persona usa el MISMO modo que el clasificador
+    (``cfg.face_score_mode``: max / centroid / blend) con filtrado
+    pose-consciente si ``cfg.zones_enabled`` y la pose de la query es válida.
+
     Args:
-        galerias: ``{persona_real: [(fragmento, embedding), ...]}`` con TODAS las
-            fotos medidas. La exclusión del fragmento de la query se hace aquí.
+        galerias: ``{persona_real: [(fragmento, embedding[, pose]), ...]}`` con
+            TODAS las fotos medidas. La exclusión del fragmento de la query se
+            hace aquí.
         queries: secuencia de dicts con ``persona_real``, ``fragmento``,
             ``vector`` y, opcionalmente, ``lado_cara``, ``sharpness``,
             ``pose_valida`` (def. ``True``), ``pose`` (etiqueta o ``None``) y
             ``foto_id``.
         cfg: config real de clasificación (``match_threshold``,
-            ``secure_threshold``, ``match_min_face_side``...).
+            ``secure_threshold``, ``match_min_face_side``, ``face_score_mode``...).
 
     Returns:
         Lista de dicts (uno por query) con ``genuino``/``impostor``, ``top1``,
@@ -225,11 +392,9 @@ def evaluar_queries(
         la cascada simulada (``resultado_actual``), además de ``acierto``,
         ``falso_match`` y ``evaluable`` (hay galería propia con otro fragmento).
     """
-    matrices, fragmentos = _preparar_galerias(galerias)
+    matrices, fragmentos, poses = _preparar_galerias(galerias)
     from ..core.matching import decide  # import tardío: no exige cv2 al importar el módulo
-    min_side = int(cfg.match_min_face_side)
-    secure = float(cfg.secure_threshold)
-    match = float(cfg.match_threshold)
+    mode, w, zones = _modo_scoring(cfg)
 
     resultados: list[dict] = []
     for q in queries:
@@ -239,6 +404,9 @@ def evaluar_queries(
         sharpness = float(q.get("sharpness") or 0.0)
         pose_valida = bool(q.get("pose_valida", True))
         pose = q.get("pose")
+        # Pose inválida -> solo se ignora para el enrutado/filtrado (global);
+        # NO fuerza "provisional".
+        q_pose = pose if pose_valida else None
         lado = float(q.get("lado_cara") or 0.0)
 
         scores: dict[str, float] = {}
@@ -247,14 +415,18 @@ def evaluar_queries(
             for persona, M in matrices.items():
                 if M.shape[0] == 0 or M.shape[1] != qv.shape[0]:
                     continue
+                p_poses = poses.get(persona)
                 if persona == persona_q:
                     mask = fragmentos[persona] != frag_q   # leave-one-fragment-out
                     if not mask.any():
                         continue
                     ref = M[mask]
+                    ref_poses = p_poses[mask] if p_poses is not None else None
                 else:
                     ref = M
-                scores[str(persona)] = float(np.max(ref @ qv))
+                    ref_poses = p_poses
+                scores[str(persona)] = score_galeria(
+                    ref, qv, mode, w, ref_poses, q_pose, zones)
 
         genuino = scores.get(persona_q)
         extr = [v for p, v in scores.items() if p != persona_q]
@@ -268,18 +440,8 @@ def evaluar_queries(
         ranked = sorted(scores.values(), reverse=True)
         s2 = float(ranked[1]) if len(ranked) > 1 else 0.0
 
-        res_cara = decide(scores, cfg, sharpness=sharpness,
-                          pose=pose if pose_valida else None)
-
-        # Guardia de información + validez de pose -> provisional (revisión).
-        if lado < min_side or not pose_valida:
-            actual = "provisional"
-        elif s1 >= secure:
-            actual = "match"
-        elif s1 >= match:
-            actual = "uncertain"   # sin capas de apoyo que confirmen la banda
-        else:
-            actual = "new"
+        res_cara = decide(scores, cfg, sharpness=sharpness, pose=q_pose)
+        actual = simular_actual(s1, lado, cfg)
 
         evaluable = genuino is not None
         acierto = bool(actual == "match" and top1 == persona_q)
@@ -357,8 +519,9 @@ def resumen(
         Dict JSON-safe con ``por_persona_real``, ``cosenos``, ``pares_cara_a_cara``
         y ``global`` (TAR/FAR y veredicto con números).
     """
-    matrices, fragmentos = _preparar_galerias(galerias)
+    matrices, fragmentos, _poses = _preparar_galerias(galerias)
     match_umbral = float(cfg.match_threshold)
+    mode, w, _zones = _modo_scoring(cfg)
 
     personas = sorted(set(galerias) | {r.get("persona_real") for r in resultados},
                       key=lambda p: (p is None, str(p)))
@@ -377,6 +540,8 @@ def resumen(
     cosenos = {
         "genuino": _stats(genuinos),
         "impostor": _stats(impostores),
+        "face_score_mode": mode,
+        "face_centroid_w": _f(w) if mode == "blend" else None,
         "match_threshold": match_umbral,
         "n_genuinos_ge_match": sum(
             1 for g in genuinos if g is not None and float(g) >= match_umbral
@@ -553,18 +718,22 @@ def construir_galerias_y_queries(
 
     Returns:
         ``(galerias, queries)`` con
-        ``galerias: {persona_real: [(fragmento, embedding), ...]}``.
+        ``galerias: {persona_real: [(fragmento, embedding, pose), ...]}``
+        (la pose permite el filtrado pose-consciente del scoring).
     """
     por_persona: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
     for m in medidas:
         por_persona[m.get("persona_real")].append(m)
 
-    galerias: dict[str, list[tuple[str, Any]]] = {}
+    galerias: dict[str, list[tuple[str, Any, Any]]] = {}
     queries: list[dict] = []
     for persona, ms in por_persona.items():
         if persona is None:
             continue
-        galerias[persona] = [(str(m.get("fragmento")), m.get("embedding")) for m in ms]
+        galerias[persona] = [
+            (str(m.get("fragmento")), m.get("embedding"), m.get("pose"))
+            for m in ms
+        ]
         n_frags = len({str(m.get("fragmento")) for m in ms})
         if n_frags < 2:
             continue
@@ -612,6 +781,8 @@ def formato_texto(salida: Mapping[str, Any]) -> str:
         f"sr_min_face={p.get('sr_min_face')}",
         f"config: match={_num(c.get('match_threshold'))} "
         f"secure={_num(c.get('secure_threshold'))} "
+        f"scoring={c.get('face_score_mode')}"
+        f"(w={_num(c.get('face_centroid_w'), 2) if c.get('face_centroid_w') is not None else '-'}) "
         f"guardia_lado={c.get('match_min_face_side')} "
         f"silueta_confirm={c.get('silueta_confirm_enabled')}",
         "",
@@ -625,6 +796,15 @@ def formato_texto(salida: Mapping[str, Any]) -> str:
         f"pose inválida: {m.get('n_pose_invalida')}",
         f"personas reales: {m.get('n_personas_reales')}  "
         f"queries: {m.get('n_queries')}  evaluables: {m.get('n_evaluables')}",
+    ]
+    ex = salida.get("exclusion") or {}
+    if ex.get("fichero"):
+        lineas.append(
+            f"excluidas: {ex.get('n_ids')} id(s) -> "
+            f"{ex.get('n_medidas_excluidas')} medida(s) fuera del cálculo "
+            f"({ex.get('fichero')})"
+        )
+    lineas += [
         "",
         "-- Por persona real --",
     ]
@@ -672,6 +852,13 @@ def formato_texto(salida: Mapping[str, Any]) -> str:
         f"new={_pct_s(g.get('pct_new'))}",
         f"{g.get('conclusion')}",
     ]
+    inf_ex = salida.get("informe_sin_exclusion")
+    if inf_ex:
+        gx = inf_ex.get("global") or {}
+        lineas.append(
+            f"sin exclusión (referencia): TAR={_num(gx.get('tar'))} "
+            f"FAR={_num(gx.get('far'))} n_evaluables={gx.get('n_evaluables')}"
+        )
     for aviso in salida.get("avisos") or []:
         lineas.append(f"AVISO: {aviso}")
     return "\n".join(lineas)
@@ -695,6 +882,10 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--sr-min-face", type=int, default=DEFAULT_SR_MIN_FACE,
                     help="lado mayor de cara bajo el que aplica SR-before-embedding "
                          "(def. 160; sobrescribe cfg.sr_embed_min_face)")
+    ap.add_argument("--excluir-fotos", default=None,
+                    help="JSON con lista de identificador_unico (foto_id) a excluir "
+                         "del cálculo (coladas conocidas); también acepta "
+                         "{\"identificador_unico\": [...]}")
     ap.add_argument("--json", action="store_true", help="emitir el informe como JSON")
     return ap.parse_args(argv)
 
@@ -758,11 +949,24 @@ def main(argv: Sequence[str] | None = None) -> int:
               f"sin cara={contadores['n_sin_cara']}).", file=sys.stderr)
         return 1
 
-    # 4) Galerías LOFO + queries y evaluación.
-    galerias, queries = construir_galerias_y_queries(medidas)
+    # 4) Exclusiones opcionales (coladas conocidas) y galerías LOFO + queries.
+    excluidos: set[str] = set()
+    if args.excluir_fotos:
+        try:
+            excluidos = cargar_exclusiones(args.excluir_fotos)
+        except (OSError, ValueError, json.JSONDecodeError) as e:
+            print(f"ERROR: no se pudo leer --excluir-fotos ({args.excluir_fotos}): {e}",
+                  file=sys.stderr)
+            return 1
+    medidas_sin, n_medidas_excluidas = excluir_medidas(medidas, excluidos)
+    if not medidas_sin:
+        print("ERROR: --excluir-fotos dejó el cálculo sin medidas.", file=sys.stderr)
+        return 1
+
+    galerias, queries = construir_galerias_y_queries(medidas_sin)
     personas_multi = sum(
-        1 for persona, ms in galerias.items()
-        if len({frag for frag, _ in ms}) >= 2
+        1 for _persona, ms in galerias.items()
+        if len({item[0] for item in ms}) >= 2
     )
     if not queries:
         avisos.append(
@@ -776,6 +980,17 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     resultados = evaluar_queries(galerias, queries, cfg)
     informe = resumen(resultados, galerias, cfg)
+
+    # 4b) Referencia SIN exclusión (solo si se excluyó algo): mismo pipeline.
+    informe_sin_exclusion = None
+    if excluidos:
+        gal_f, q_f = construir_galerias_y_queries(medidas)
+        informe_sin_exclusion = resumen(
+            evaluar_queries(gal_f, q_f, cfg), gal_f, cfg)
+        avisos.append(
+            f"excluidas {n_medidas_excluidas} medida(s) de {len(excluidos)} id(s): "
+            f"el informe efectivo las omite y 'informe_sin_exclusion' las incluye."
+        )
 
     personas_medidas = {m.get("persona_real") for m in medidas}
     salida = {
@@ -792,6 +1007,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             "match_threshold": _f(cfg.match_threshold),
             "secure_threshold": _f(cfg.secure_threshold),
             "margin": _f(cfg.margin),
+            "face_score_mode": str(cfg.face_score_mode),
+            "face_centroid_w": _f(cfg.face_centroid_w),
+            "zones_enabled": bool(cfg.zones_enabled),
             "match_min_face_side": int(cfg.match_min_face_side),
             "admission_margin": _f(cfg.admission_margin),
             "sr_embed_min_face": int(cfg.sr_embed_min_face),
@@ -807,6 +1025,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             "n_sin_etiqueta": n_sin_etiqueta,
             "n_seleccionadas": len(seleccion),
             "n_medidas": len(medidas),
+            "n_medidas_excluidas": n_medidas_excluidas,
             "n_sin_imagen": contadores["n_sin_imagen"],
             "n_sin_cara": contadores["n_sin_cara"],
             "n_sr": contadores["n_sr"],
@@ -817,7 +1036,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             "n_queries": len(queries),
             "n_evaluables": informe["global"]["n_evaluables"],
         },
+        "exclusion": {
+            "fichero": (os.path.abspath(args.excluir_fotos)
+                        if args.excluir_fotos else None),
+            "n_ids": len(excluidos),
+            "n_medidas_excluidas": n_medidas_excluidas,
+            "ids": sorted(excluidos),
+        },
         "informe": informe,
+        "informe_sin_exclusion": informe_sin_exclusion,
         "avisos": avisos,
     }
     if args.json:
