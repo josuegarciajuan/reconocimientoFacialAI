@@ -60,6 +60,12 @@ ok(rf_revision_es_imagen("a.jpg") === true && rf_revision_es_imagen("a.JPEG") ==
 ok(rf_revision_es_imagen("a.png") === true, "2. png -> imagen");
 ok(rf_revision_es_imagen("a.gif") === false && rf_revision_es_imagen("a.txt") === false, "2. gif/txt -> no imagen");
 
+// --- 2b. solo caras (los `_nocara` no entran en la bandeja) ---
+ok(rf_revision_es_cara("19_2026-09-28_17:10:03.604617.mp4_1.5_0.jpg") === true, "2b. cara normal -> true");
+ok(rf_revision_es_cara("14_2026-09-28_10:14:08_nocara.jpg") === false, "2b. crop _nocara -> no es cara");
+ok(rf_revision_es_cara("algo_nocara.png") === false, "2b. png _nocara -> no es cara");
+ok(rf_revision_es_cara("a.gif") === false, "2b. no imagen -> no es cara");
+
 // --- 3. ruta válida ---
 $esperada = realpath($root . "/motor/revision/1/2/a.jpg");
 ok(rf_revision_ruta_segura($root, "1", "2", "a.jpg") === $esperada, "3. ruta válida devuelve realpath");

@@ -424,6 +424,9 @@ class Config:
     # --- rutas runtime (gitignored: git = código, no datos) ---
     feedback_dir: str = "motor/feedback"
     revision_dir: str = "motor/revision"
+    # Crops de CUERPO sin cara (`*_nocara`): NO son caras y no deben aparecer en
+    # la bandeja de revisión de identidades (van a un directorio aparte).
+    revision_cuerpos_dir: str = "motor/revision_cuerpos"
     backups_dir: str = "motor/backups"
     calib_dir: str = "motor/calib"
     llm_cache_dir: str = "motor/llm_cache"

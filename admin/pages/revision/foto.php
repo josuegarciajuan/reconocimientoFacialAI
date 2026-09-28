@@ -19,7 +19,7 @@ $cam = (string)($_GET["cam"] ?? "");
 $file = (string)($_GET["f"] ?? "");
 
 $ruta = rf_revision_ruta_segura(RUTA_PROYECTO, (string)$local_id, $cam, $file);
-if ($ruta === null || !is_file($ruta)) {
+if ($ruta === null || !is_file($ruta) || !rf_revision_es_cara($file)) {
     http_response_code(404);
     exit;
 }
