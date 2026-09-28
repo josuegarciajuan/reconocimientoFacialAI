@@ -3,8 +3,14 @@
  * RF Live — servidor MJPEG (RTSP → navegador) para la sección "En Directo" del panel.
  *
  * Sustituye al iframe de ipcamlive.com (alias sin configurar -> no cargaba).
- * Para cada cámara lanza `ffmpeg` (RTSP sobre TCP) y sirve el resultado como
- * multipart/x-mixed-replace (MJPEG), que el navegador muestra con un <img> nativo.
+ * Para cada cámara lanza UN solo `ffmpeg` (RTSP sobre TCP) y sirve el resultado
+ * como multipart/x-mixed-replace (MJPEG) a TODOS los espectadores a la vez.
+ *
+ * F5 (rendimiento): antes cada espectador lanzaba su propio ffmpeg (decodificación
+ * RTSP completa por pestaña/cliente) -> con varias pestañas abiertas el coste se
+ * multiplicaba. Ahora hay un único ffmpeg por cámara con fan-out a N clientes; el
+ * proceso se mantiene IDLE_MS tras quedarse sin espectadores (tolera reconexiones)
+ * y se mata al agotarse. La salida por cliente es idéntica.
  *
  * Uso:
  *   node live/mjpeg-stream.js
@@ -17,6 +23,7 @@
  *   LIVE_FPS         fps del stream                (def: 5)
  *   LIVE_SCALE       escala (ffmpeg -vf)           (def: 640:-2)
  *   LIVE_QUALITY     calidad JPEG (-q:v)           (def: 6)
+ *   LIVE_IDLE_MS     ms que se mantiene el ffmpeg sin espectadores (def: 5000)
  *
  * Nota de seguridad: no se registran las URL RTSP (contienen credenciales); solo
  * el id de cámara y códigos de salida.
@@ -37,9 +44,13 @@ const FPS = parseInt(process.env.LIVE_FPS || "5", 10);
 const SCALE = process.env.LIVE_SCALE || "640:-2";
 const QUALITY = process.env.LIVE_QUALITY || "6";
 const REFRESH_MS = parseInt(process.env.LIVE_REFRESH_MS || "10000", 10);
+const IDLE_MS = parseInt(process.env.LIVE_IDLE_MS || "5000", 10);
 const TOKEN_WINDOW_S = 300; // validez del token: 5 min (2 ventanas por holgura)
+const MAX_BUFFER = 5 * 1024 * 1024; // descarte de un frame incompleto gigante
+const MAX_CLIENT_BACKLOG = 1024 * 1024; // backpressure por cliente
 
 const cameras = new Map(); // id -> fila de ws.php (camaras)
+const streams = new Map(); // id -> { proc, subs:Set<res>, buf, idle }
 let lastRefresh = null;
 
 function log(...args) {
@@ -106,7 +117,7 @@ function tokenValido(id, token) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Stream MJPEG por cámara                                             */
+/* Stream MJPEG compartido por cámara                                  */
 /* ------------------------------------------------------------------ */
 
 function urlDeLaCamara(cam) {
@@ -119,6 +130,97 @@ function frameMjpeg(frame) {
     `--frame\r\nContent-Type: image/jpeg\r\nContent-Length: ${frame.length}\r\n\r\n`
   );
   return Buffer.concat([header, frame, Buffer.from("\r\n")]);
+}
+
+const SOI = Buffer.from([0xff, 0xd8]);
+const EOI = Buffer.from([0xff, 0xd9]);
+
+/** Reparte un frame JPEG a todos los espectadores (con backpressure por cliente). */
+function fanout(st, frame) {
+  if (st.subs.size === 0) return;
+  const packet = frameMjpeg(frame);
+  for (const res of st.subs) {
+    if (res.writable && res.writableLength < MAX_CLIENT_BACKLOG) {
+      try {
+        res.write(packet);
+      } catch (_) {
+        /* el cliente se fue: su handler close lo limpiará */
+      }
+    }
+  }
+}
+
+/** Cierra el stream y termina a todos los espectadores (proceso muerto). */
+function teardown(id, code) {
+  const st = streams.get(id);
+  if (!st) return;
+  streams.delete(id);
+  if (st.idle) clearTimeout(st.idle);
+  for (const res of st.subs) {
+    try {
+      res.end();
+    } catch (_) {}
+  }
+  st.subs.clear();
+  if (code !== undefined && code !== 0) {
+    log(`ffmpeg id=${id} salió con código ${code}`);
+  }
+}
+
+function killStream(id) {
+  const st = streams.get(id);
+  if (!st) return;
+  streams.delete(id);
+  if (st.idle) clearTimeout(st.idle);
+  try {
+    st.proc.kill("SIGKILL");
+  } catch (_) {}
+}
+
+/** Lanza (o reutiliza) el ffmpeg de una cámara y devuelve su entrada de stream. */
+function getStream(id, url) {
+  let st = streams.get(id);
+  if (st) return st;
+
+  const args = [
+    "-rtsp_transport", "tcp",
+    "-loglevel", "error",
+    "-i", url,
+    "-vf", `fps=${FPS},scale=${SCALE}`,
+    "-q:v", String(QUALITY),
+    "-f", "mjpeg",
+    "-",
+  ];
+  const ff = spawn(FFMPEG, args, { stdio: ["ignore", "pipe", "ignore"] });
+  st = { proc: ff, subs: new Set(), buf: Buffer.alloc(0), idle: null };
+  streams.set(id, st);
+
+  ff.stdout.on("data", (chunk) => {
+    st.buf = Buffer.concat([st.buf, chunk]);
+    for (;;) {
+      const ini = st.buf.indexOf(SOI);
+      if (ini === -1) {
+        st.buf = Buffer.alloc(0); // basura previa al primer JPEG
+        break;
+      }
+      if (ini > 0) st.buf = st.buf.subarray(ini);
+      const fin = st.buf.indexOf(EOI, 2);
+      if (fin === -1) {
+        if (st.buf.length > MAX_BUFFER) st.buf = Buffer.alloc(0);
+        break;
+      }
+      const frame = st.buf.subarray(0, fin + 2);
+      st.buf = st.buf.subarray(fin + 2);
+      fanout(st, frame);
+    }
+  });
+
+  ff.on("error", (e) => {
+    log(`ffmpeg id=${id} error: ${e.message}`);
+    teardown(id);
+  });
+  ff.on("close", (code) => teardown(id, code));
+  return st;
 }
 
 function handleLive(req, res) {
@@ -150,17 +252,6 @@ function handleLive(req, res) {
     return;
   }
 
-  const args = [
-    "-rtsp_transport", "tcp",
-    "-loglevel", "error",
-    "-i", url,
-    "-vf", `fps=${FPS},scale=${SCALE}`,
-    "-q:v", String(QUALITY),
-    "-f", "mjpeg",
-    "-",
-  ];
-  const ff = spawn(FFMPEG, args, { stdio: ["ignore", "pipe", "ignore"] });
-
   res.writeHead(200, {
     "Content-Type": "multipart/x-mixed-replace; boundary=frame",
     "Cache-Control": "no-store, no-cache, must-revalidate",
@@ -168,50 +259,29 @@ function handleLive(req, res) {
     "X-Accel-Buffering": "no", // desactiva buffering de proxy
   });
 
-  let buf = Buffer.alloc(0);
-  const SOI = Buffer.from([0xff, 0xd8]);
-  const EOI = Buffer.from([0xff, 0xd9]);
+  const st = getStream(String(id), url);
+  // Si el stream estaba en periodo de gracia, cancelar el cierre.
+  if (st.idle) {
+    clearTimeout(st.idle);
+    st.idle = null;
+  }
+  st.subs.add(res);
 
-  ff.stdout.on("data", (chunk) => {
-    buf = Buffer.concat([buf, chunk]);
-    for (;;) {
-      const ini = buf.indexOf(SOI);
-      if (ini === -1) {
-        buf = Buffer.alloc(0); // basura previa al primer JPEG
-        break;
-      }
-      if (ini > 0) buf = buf.subarray(ini);
-      const fin = buf.indexOf(EOI, 2);
-      if (fin === -1) {
-        // frame incompleto: esperar más bytes (descarte si crece demasiado)
-        if (buf.length > 5 * 1024 * 1024) buf = Buffer.alloc(0);
-        break;
-      }
-      const frame = buf.subarray(0, fin + 2);
-      buf = buf.subarray(fin + 2);
-      // backpressure: si el cliente va lento, descartar frames
-      if (res.writable && res.writableLength < 1024 * 1024) {
-        res.write(frameMjpeg(frame));
-      }
-    }
-  });
-
+  let cerrado = false;
   const cerrar = () => {
+    if (cerrado) return;
+    cerrado = true;
+    st.subs.delete(res);
     try {
       res.end();
     } catch (_) {}
+    // último espectador: mantener ffmpeg IDLE_MS por si vuelve a conectarse
+    if (st.subs.size === 0 && streams.get(String(id)) === st) {
+      st.idle = setTimeout(() => killStream(String(id)), IDLE_MS);
+    }
   };
-
-  ff.on("error", (e) => {
-    log(`ffmpeg id=${id} error: ${e.message}`);
-    cerrar();
-  });
-  ff.on("close", (code) => {
-    if (code !== 0) log(`ffmpeg id=${id} salió con código ${code}`);
-    cerrar();
-  });
-  res.on("close", () => ff.kill("SIGKILL"));
-  req.on("close", () => ff.kill("SIGKILL"));
+  res.on("close", cerrar);
+  req.on("close", cerrar);
 }
 
 /* ------------------------------------------------------------------ */
@@ -226,12 +296,18 @@ const server = http.createServer((req, res) => {
   }
   if (u.pathname === "/status") {
     res.writeHead(200, { "Content-Type": "application/json" });
+    const detalle = {};
+    for (const [id, st] of streams) {
+      detalle[id] = { espectadores: st.subs.size, idle: st.idle !== null };
+    }
     res.end(
       JSON.stringify({
         ok: true,
         cameras: cameras.size,
+        streams: streams.size,
         lastRefresh: lastRefresh ? lastRefresh.toISOString() : null,
         ids: [...cameras.keys()],
+        detalle,
       })
     );
     return;
@@ -241,10 +317,16 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
-  log(`escuchando en http://${HOST}:${PORT}`);
+  log(`escuchando en http://${HOST}:${PORT} (fan-out: 1 ffmpeg por cámara)`);
   refreshCameras();
   setInterval(refreshCameras, REFRESH_MS);
 });
 
-process.on("SIGTERM", () => server.close(() => process.exit(0)));
-process.on("SIGINT", () => server.close(() => process.exit(0)));
+process.on("SIGTERM", () => {
+  for (const id of [...streams.keys()]) killStream(id);
+  server.close(() => process.exit(0));
+});
+process.on("SIGINT", () => {
+  for (const id of [...streams.keys()]) killStream(id);
+  server.close(() => process.exit(0));
+});
