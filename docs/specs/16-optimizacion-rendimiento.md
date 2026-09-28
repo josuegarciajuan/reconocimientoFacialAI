@@ -98,17 +98,26 @@ esté saturado. Pendiente: afinar `RF_CLASIF_CAMS_POR_PROC` si la medición lo p
   ya está separado. **Descartado**: cuantizar/OpenVINO (riesgo numérico) y GPU
   (no hay).
 
-### F4 — Caché en RAM del `FaceStore`
-- `motor/core/store.py`: caché invalidada por `mtime`/tamaño. Hoy
-  `matching.py:67-77/166-174` hace *P* `pickle.load` completos por query.
-  Usa RAM (58 GB) y libera CPU/disco. Resultado idéntico.
+### F4 — Caché en RAM del `FaceStore`  *(hecho en este cambio)*
+`motor/core/store.py`: la galería se deserializaba con `pickle.load` COMPLETO en
+cada acceso (`persons`/`person`/`person_encodings`); el matching recorre todas
+las personas y hacía *P* lecturas completas por cada embedding query. Ahora hay
+una caché en memoria invalidada por `(mtime_ns, tamaño)`: si otro proceso
+escribe, se recarga. Los `_transaction` (read-modify-write) parten SIEMPRE de
+disco para no mutar una caché desfasada. Resultado idéntico; libera CPU y disco
+y aprovecha la RAM (58 GB).
 
-### F5 — Servicios y web
-- `rf-live`: 1 `ffmpeg` por cámara con fan-out a N clientes (hoy 1 por espectador).
-- PHP: quitar `ps aux`/`pgrep` de los bucles (`Jos_thread`, `detector.php`);
-  sustituir el escaneo recursivo de `clasificadorV2.php` por cola/`inotify`.
-- MariaDB: índices (`fotos`, `estancias`, `videos` por cámara+fecha) y *buffer
-  pool* (hoy usa 1,7 GB de 58).
+### F5 — Servicios y web  *(PHP hecho; resto diferido)*
+- **PHP (hecho)**: `admin/pages/dashboard/widgets.php` lanzaba un
+  `systemctl is-active` por servicio (6 forks) en cada poll de `a=5` (cada 10 s)
+  y `a=7` (cada 15 s, en todas las páginas) -> php-fpm al ~45 % de CPU. Ahora
+  `dash_daemons_estados()` hace UN solo `systemctl is-active svc1 svc2 ...` y
+  cachea el resultado 5 s en `/tmp` (compartido entre peticiones).
+- **Diferido**: fan-out de `rf-live` (1 `ffmpeg` por cámara para N
+  espectadores); quitar `ps aux`/`pgrep` de los bucles de `Jos_thread`/
+  `detector.php`; cola/`inotify` en `clasificadorV2.php`; índices y *buffer
+  pool* de MariaDB (el `innodb_buffer_pool_size` de 128 MB ya cubre una BD de
+  ~1500 vídeos/253 fotos, por lo que no es rentable reiniciar MariaDB).
 
 ### F6 — Verificación y rollout
 - Cada fase: worktree → commit → merge a `main` → `bash deploy/deploy_prod.sh`.

@@ -44,6 +44,7 @@ from __future__ import annotations
 
 import os
 import pickle
+import threading
 import time
 from typing import Callable, Iterable
 
@@ -86,23 +87,48 @@ class FaceStore:
     def __init__(self, path: str, max_per_person: int = 500):
         self.path = path
         self.max_per_person = max_per_person
+        # Caché en RAM del diccionario (F4, docs/specs/16): antes CADA acceso
+        # (persons/person/person_encodings) hacía un `pickle.load` COMPLETO del
+        # fichero; el matching recorre todas las personas y provocaba P lecturas
+        # completas por cada embedding query. La caché se invalida por
+        # (mtime_ns, tamaño): si otro proceso escribe, se recarga. No cambia el
+        # resultado, solo evita releer/deserializar la galería desde disco.
+        self._cache: dict | None = None
+        self._cache_key: tuple | None = None
+        self._cache_lock = threading.Lock()
 
     # --- I/O de bajo nivel ---
 
-    def _read_raw(self) -> dict:
-        if not os.path.exists(self.path):
-            return _empty()
+    def _stat_key(self) -> tuple | None:
+        """(mtime_ns, tamaño) del fichero, o None si no existe."""
         try:
-            with open(self.path, "rb") as fh:
-                data = pickle.load(fh)
-        except Exception:
-            return _empty()
-        if not isinstance(data, dict) or data.get("schema") != SCHEMA:
-            return _empty()
-        # retrocompat V3->V4: rellenar `sources` (y listas paralelas) si faltan
-        for p in data.get("persons", {}).values():
-            if isinstance(p, dict) and isinstance(p.get("encodings"), list):
-                _aligned_lists(p, len(p["encodings"]))
+            st = os.stat(self.path)
+            return (st.st_mtime_ns, st.st_size)
+        except OSError:
+            return None
+
+    def _read_raw(self) -> dict:
+        key = self._stat_key()
+        with self._cache_lock:
+            if self._cache is not None and self._cache_key == key:
+                return self._cache
+        data = _empty()
+        if os.path.exists(self.path):
+            try:
+                with open(self.path, "rb") as fh:
+                    data = pickle.load(fh)
+            except Exception:
+                data = _empty()
+            if not isinstance(data, dict) or data.get("schema") != SCHEMA:
+                data = _empty()
+            else:
+                # retrocompat V3->V4: rellenar `sources` (y listas paralelas) si faltan
+                for p in data.get("persons", {}).values():
+                    if isinstance(p, dict) and isinstance(p.get("encodings"), list):
+                        _aligned_lists(p, len(p["encodings"]))
+        with self._cache_lock:
+            self._cache = data
+            self._cache_key = self._stat_key()
         return data
 
     def _write(self, data: dict) -> None:
@@ -110,9 +136,17 @@ class FaceStore:
         with open(tmp, "wb") as fh:
             pickle.dump(data, fh)
         os.replace(tmp, self.path)
+        with self._cache_lock:
+            self._cache = data
+            self._cache_key = self._stat_key()
 
     def _transaction(self, fn: Callable[[dict], None]) -> None:
         with FileLock(self.path + ".lock"):
+            # El read-modify-write parte SIEMPRE de disco (no de la caché): una
+            # mutación nunca debe arrancar de un estado potencialmente desfasado.
+            with self._cache_lock:
+                self._cache = None
+                self._cache_key = None
             data = self._read_raw()
             fn(data)
             self._write(data)

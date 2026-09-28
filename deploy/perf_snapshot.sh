@@ -66,11 +66,12 @@ SNAP() {
     echo
 
     echo "### PROCESOS POR TIPO"
-    echo "guarda_movimientos=$(pgrep -c -f 'guarda_movimientosV3' 2>/dev/null || echo 0)"
-    echo "clasificador=$(pgrep -c -f 'motor/clasificador.py' 2>/dev/null || echo 0)"
-    echo "procesa_video=$(pgrep -c -f 'motor/procesa_video.py' 2>/dev/null || echo 0)"
-    echo "archiva_video=$(pgrep -c -f 'motor/archiva_video.py' 2>/dev/null || echo 0)"
-    echo "ffmpeg=$(pgrep -c -x ffmpeg 2>/dev/null || echo 0)"
+    cnt() { local n; n=$(pgrep -c -f "$1" 2>/dev/null); echo "${n:-0}"; }
+    echo "guarda_movimientos=$(cnt 'guarda_movimientosV3')"
+    echo "clasificador=$(cnt 'motor/clasificador.py')"
+    echo "procesa_video=$(cnt 'motor/procesa_video.py')"
+    echo "archiva_video=$(cnt 'motor/archiva_video.py')"
+    n=$(pgrep -c -x ffmpeg 2>/dev/null); echo "ffmpeg=${n:-0}"
     echo
 
     echo "### CGROUPS SERVICIOS RF"
