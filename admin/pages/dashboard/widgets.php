@@ -311,17 +311,49 @@ function dash_camaras_actividad($local_id, $limite = 5) {
  * Estado de los daemons (systemd)
  * ------------------------------------------------------------- */
 
+/**
+ * Estados de VARIOS servicios systemd en UNA sola llamada (con caché corta
+ * compartida entre peticiones).
+ *
+ * Antes cada `dash_daemon_estado()` lanzaba un `systemctl is-active` (fork +
+ * round-trip a systemd). Los polls del panel (a=5 cada 10 s y a=7 cada 15 s, en
+ * TODAS las páginas) pedían los 6 centinelas -> ~6 forks por petición, que es
+ * lo que mantenía php-fpm al ~45 % de CPU. Ahora: un único
+ * `systemctl is-active svc1 svc2 ...` y un fichero de caché con TTL de 5 s en
+ * /tmp para que N peticiones/clientes compartan el mismo sondeo. Solo afecta al
+ * semáforo del panel; nunca a la decisión de reconocimiento.
+ */
+function dash_daemons_estados(array $svcs) {
+    if (!$svcs) { return []; }
+    $ttl = 5; // segundos
+    $cache_file = sys_get_temp_dir() . "/rf_daemon_state_" . md5(RUTA_PROYECTO) . ".json";
+    $cached = [];
+    if (is_file($cache_file) && (time() - (int)@filemtime($cache_file)) < $ttl) {
+        $j = json_decode((string)@file_get_contents($cache_file), true);
+        if (is_array($j)) { $cached = $j; }
+    }
+    $missing = array_values(array_diff($svcs, array_keys($cached)));
+    if ($missing && function_exists("shell_exec")) {
+        $cmd = "systemctl is-active "
+            . implode(" ", array_map("escapeshellarg", $missing)) . " 2>/dev/null";
+        $out = preg_split('/\s+/', trim((string)@shell_exec($cmd)));
+        foreach ($missing as $i => $svc) {
+            $st = trim((string)($out[$i] ?? ""));
+            $cached[$svc] = ($st !== "") ? $st : "unknown";
+        }
+        @file_put_contents($cache_file, json_encode($cached), LOCK_EX);
+    }
+    $res = [];
+    foreach ($svcs as $svc) {
+        $res[$svc] = $cached[$svc] ?? "unknown";
+    }
+    return $res;
+}
+
 /** Estado de un servicio systemd ("active", "inactive", "failed", "unknown"). */
 function dash_daemon_estado($svc) {
-    static $cache = [];
-    if (isset($cache[$svc])) { return $cache[$svc]; }
-    $out = "";
-    if (function_exists("shell_exec")) {
-        $out = @shell_exec("systemctl is-active " . escapeshellarg($svc) . " 2>&1");
-    }
-    $cache[$svc] = trim((string)$out);
-    if ($cache[$svc] === "") { $cache[$svc] = "unknown"; }
-    return $cache[$svc];
+    $m = dash_daemons_estados([$svc]);
+    return $m[$svc] ?? "unknown";
 }
 
 /** Lista de daemons con estado (los 6 centinelas). */
@@ -334,9 +366,11 @@ function dash_daemons() {
         ["svc" => "rf-conciliador",  "term" => "daemon-conciliador", "emoji" => "⚖️", "rol" => "Fichajes diarios",  "lore" => "el-conciliador"],
         ["svc" => "rf-live",         "term" => "daemon-mensajero",   "emoji" => "📯", "rol" => "Snapshots en vivo", "lore" => "el-mensajero"],
     ];
+    // Un solo `systemctl is-active` (con caché de 5 s) para los 6 centinelas.
+    $estados = dash_daemons_estados(array_column($lista, "svc"));
     foreach ($lista as &$d) {
         $d["nombre"] = rf_term($d["term"]);
-        $st = dash_daemon_estado($d["svc"]);
+        $st = $estados[$d["svc"]] ?? "unknown";
         $d["estado"] = $st;
         if ($st === "active")       { $d["clase"] = "active";   $d["term_estado"] = "estado-en-pie"; }
         elseif ($st === "failed")   { $d["clase"] = "failed";   $d["term_estado"] = "estado-caido"; }
