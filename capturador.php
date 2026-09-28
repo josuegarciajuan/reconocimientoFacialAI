@@ -42,7 +42,9 @@ while(true){
     }
     
     
-    $url=URL_BASE_SERVER."ws.php?".$params;
+    // Llamada INTERNA al ws.php: URL_BASE_LOCAL (127.0.0.1) en vez de la IP
+    // pública, para no depender del hairpin NAT (rompía la captura al reiniciar).
+    $url=URL_BASE_LOCAL."ws.php?".$params;
     //echo $url."\n\n"; exit;
     $data= json_decode(file_get_contents($url),true);
     //var_dump($data); exit;
@@ -84,7 +86,7 @@ while(true){
             $cmd.=(FTP_USER !== "" ? FTP_USER : "-")." ";   // placeholder para no descolocar argv
             $cmd.=(FTP_PASS !== "" ? FTP_PASS : "-")." ";
             $cmd.="'".$cadena_conexion."' "; 
-            $cmd.=URL_BASE_SERVER." ";   // argv 16: base URL del ws (alarmas: alarma_estado/alarma_disparar)
+            $cmd.=URL_BASE_LOCAL." ";   // argv 16: base URL del ws (alarmas: alarma_estado/alarma_disparar). Interna (127.0.0.1).
             echo "\n\ncmd1->".$cmd."\n\n";
             // B20: eliminado el exit; de depuración que mataba el proceso tras la 1ª cámara
            
