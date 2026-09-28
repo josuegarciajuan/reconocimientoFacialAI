@@ -43,6 +43,7 @@ import numpy as np
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from motor.core.config import Config            # noqa: E402
+from motor.core.embudo import log_evento        # noqa: E402
 from motor.core.matching import LayerScore, match_group, scores_per_person, scores_per_person_pose_aware  # noqa: E402
 from motor.core.model import analyze            # noqa: E402
 from motor.core.quality import face_sharpness, pose_label  # noqa: E402
@@ -800,7 +801,13 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     exact_match = len(exact_persons) == 1
     exact_conflict = len(exact_persons) > 1
 
-    if exact_conflict:
+    # Fase 2 (recall): sub-clúster de BAJA calidad (ninguna cara alcanzó la
+    # admisión). Se captura la persona pero NO se decide identidad: los
+    # embeddings ruidosos no contaminan galerías. Va a revisión/provisional y la
+    # consolidación (Fase 3) la reconcilia después.
+    low_q = bool(item_idxs) and all(battery[i].get("low_quality") for i in item_idxs)
+
+    if exact_conflict and not low_q:
         # conservar el crop como evidencia y consumir la batería sin tocar BD
         _preserve_evidence(ruta, local_id, camara_id, rep_item["path"], rep_stem,
                            "conflicto-exacto")
@@ -831,7 +838,17 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
             })
         return
 
-    if exact_match:
+    if low_q:
+        # Baja calidad: nunca match/exact (evita contaminar). El veredicto
+        # "uncertain" crea persona nueva/provisional + revisión + consolidación.
+        exact_match = False
+        face_scores = _face_scores(embs, store, cfg, query_pose)
+        result = MatchResult(
+            verdict="uncertain", person=None, best_score=0.0, second_score=0.0,
+            scores=dict(face_scores), confidence=0.0,
+            layer_scores={"cara": LayerScore(score=0.0, confidence=0.0)},
+            candidates=select_candidates(face_scores, cfg))
+    elif exact_match:
         face_scores = _face_scores(embs, store, cfg, query_pose)
         result = MatchResult(
             verdict="match", person=exact_persons[0],
@@ -929,7 +946,9 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     audit_meta = {
         "exact_match": bool(exact_match),
         "exact_conflict": False,
-        "branch": "exact" if exact_match else ("cascade" if cfg.cascade_enabled else "scalar"),
+        "branch": ("low_quality" if low_q else
+                   ("exact" if exact_match else ("cascade" if cfg.cascade_enabled else "scalar"))),
+        "low_quality": bool(low_q),
         "top_scores": top_scores(face_scores, n=5),
         "cfg": _cfg_snapshot(cfg),
         "stem": rep_stem,
@@ -1001,7 +1020,8 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
         # (split_coherent_clusters + C1) -> se construye su galería desde cero
         # (new_person=True), sin contaminar a nadie. `review` NUNCA toca la
         # galería del candidato existente (antes lo hacía vía new_person=True).
-        _store_add(store, person, members, battery, cfg, new_person=True, foto_id=foto_id)
+        _store_add(store, person, members, battery, cfg, new_person=True,
+                   foto_id=foto_id, low_quality=low_q)
 
     # F1/F3: galería de apariencia (cuerpo/media superior) por persona.
     # Fase 1: preferir el BUSTO (cabeza-hombros/pecho del frame completo) sobre
@@ -1087,6 +1107,14 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
         os.remove(busto_path)
 
     log(f"[{result.verdict}] {len(item_idxs)} foto(s) -> {person} (best={result.best_score:.3f})")
+    # Fase 0 (embudo): veredicto por sub-clúster con su calidad para poder medir
+    # después cuánta gente se pierde por encima/por debajo de los umbrales.
+    _rw = rep_face.bbox[2] - rep_face.bbox[0]
+    _rh = rep_face.bbox[3] - rep_face.bbox[1]
+    log_evento(ruta, local_id, "decision", cam=camara_id,
+               verdict=result.verdict, branch=audit_meta.get("branch"),
+               sharp=round(float(best_sharp), 1), size=int(max(_rw, _rh)),
+               best=round(float(result.best_score), 4), pose=query_pose)
 
 
 def torso_bbox_local(face, img, cfg):
@@ -1098,7 +1126,8 @@ def torso_bbox_local(face, img, cfg):
 
 
 def _store_add(store: FaceStore, person: str, members, battery, cfg: Config,
-               new_person: bool = False, foto_id: str | None = None) -> None:
+               new_person: bool = False, foto_id: str | None = None,
+               low_quality: bool = False) -> None:
     """Añade encodings a la galería de `person` con CONTROL DE ADMISIÓN (F1.2).
 
     C1 (2026-09-02): `members` son (emb, item_idx, face_idx) — las caras EXACTAS
@@ -1137,7 +1166,11 @@ def _store_add(store: FaceStore, person: str, members, battery, cfg: Config,
         # de una cara demasiado pequeña aunque pase admission_cosine: su
         # embedding es poco fiable y con la agregación MAX puede arrastrar
         # el score de la persona. (La nitidez ya está filtrada aguas arriba.)
-        if max(f.bbox[2] - f.bbox[0], f.bbox[3] - f.bbox[1]) < cfg.face_min_side:
+        # Fase 2: excepción para personas PROVISIONALES de baja calidad — se
+        # enrolan (aunque sean pequeñas) para que la consolidación futura pueda
+        # compararlas; nunca entran en la galería de una identidad existente.
+        if not (low_quality and new_person) and \
+                max(f.bbox[2] - f.bbox[0], f.bbox[3] - f.bbox[1]) < cfg.face_min_side:
             continue
         if new_person:
             admit = True
@@ -1237,8 +1270,15 @@ def process_body_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
             if avail and c > 0:
                 scores[cod] = LayerScore(score=s, confidence=c)
         if not scores:
-            # sin galería de torso todavía: revisión manual, nunca persona nueva
-            _body_to_revision(ruta, local_id, camara_id, [x["path"] for x in bat], cfg)
+            # sin galería de torso todavía: provisional (recall) o revisión manual.
+            if cfg.provisional_backs:
+                _body_provisional(ruta, local_id, camara_id, it, query_desc, bat, cfg, store)
+                log_evento(ruta, local_id, "cuerpo", cam=camara_id,
+                           resultado="provisional", n=len(bat))
+            else:
+                _body_to_revision(ruta, local_id, camara_id, [x["path"] for x in bat], cfg)
+                log_evento(ruta, local_id, "cuerpo", cam=camara_id,
+                           resultado="revision", n=len(bat))
             n += 1
             continue
 
@@ -1276,9 +1316,21 @@ def process_body_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
                 if os.path.exists(x["path"]):
                     os.remove(x["path"])
             log(f"[body-match] {len(bat)} crop(s) -> {result.person} (torso+VLM)")
+            log_evento(ruta, local_id, "cuerpo", cam=camara_id,
+                       resultado="match", n=len(bat))
+        elif cfg.provisional_backs:
+            # Fase 3 (recall): persona vista solo de espaldas -> persona
+            # PROVISIONAL (solo apariencia). Se registra en vez de perderse; la
+            # consolidación la reconciliará por apariencia si aparece con cara.
+            prov = _body_provisional(ruta, local_id, camara_id, it, query_desc, bat, cfg, store)
+            log(f"[body-provisional] {len(bat)} crop(s) -> {prov} (sin cara, provisional)")
+            log_evento(ruta, local_id, "cuerpo", cam=camara_id,
+                       resultado="provisional", n=len(bat))
         else:
             _body_to_revision(ruta, local_id, camara_id, [x["path"] for x in bat], cfg)
             log(f"[body-revision] {len(bat)} crop(s) sin identidad concluyente -> revisión")
+            log_evento(ruta, local_id, "cuerpo", cam=camara_id,
+                       resultado="revision", n=len(bat))
         n += 1
     return n
 
@@ -1290,6 +1342,30 @@ def _body_to_revision(ruta: str, local_id: str, camara_id: str,
     for p in paths:
         if os.path.exists(p):
             shutil.move(p, os.path.join(rev_dir, os.path.basename(p)))
+
+
+def _body_provisional(ruta: str, local_id: str, camara_id: str, it: dict,
+                      query_desc, bat: list[dict], cfg: Config, store: FaceStore) -> str:
+    """F7/Fase 3: registra una persona PROVISIONAL desde un crop de cuerpo.
+
+    Crea una identidad nueva con SOLO apariencia (sin cara), guarda su foto en el
+    álbum y la encola para consolidación: si luego aparece con cara, se
+    reconciliará. Devuelve el cod_interno provisional.
+    """
+    person = random_code()
+    out_dir = os.path.join(ruta, "motor/caras", local_id, camara_id, person)
+    os.makedirs(out_dir, exist_ok=True)
+    foto_id = random_code()
+    out_name = f"{it['file'].rsplit('.', 1)[0]}_{foto_id}.jpg"
+    cv2.imwrite(os.path.join(out_dir, out_name), it["img"], [cv2.IMWRITE_JPEG_QUALITY, 95])
+    if query_desc is not None and getattr(query_desc, "size", 0) > 0:
+        store.add_appearance(person, query_desc, ts=it["ts"] or time.time(), src=out_name)
+    from motor.consolidar_nacidos import enqueue  # noqa: E402
+    enqueue(ruta, local_id, person, pose=None)
+    for x in bat:
+        if os.path.exists(x["path"]):
+            os.remove(x["path"])
+    return person
 
 
 def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
@@ -1304,6 +1380,10 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
         return 0
 
     items = []
+    # Fase 0 (embudo): por qué se descartan crops antes de clasificar.
+    desc_notienecaras = 0
+    desc_nopasafiltros = 0
+    desc_ilegible = 0
     for f in sorted(os.listdir(dir_in)):
         if not f.lower().endswith(IMG_EXTS):
             continue
@@ -1311,10 +1391,12 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
         img = cv2.imread(p)
         if img is None:
             shutil.move(p, os.path.join(nopasafiltros, f))
+            desc_ilegible += 1
             continue
         faces = analyze(img, det_size=(cfg.crop_det_size, cfg.crop_det_size), min_score=cfg.min_det_score)
         if not faces:
             shutil.move(p, os.path.join(notienecaras, f))
+            desc_notienecaras += 1
             continue
         # B2 (2026-08-26): además de nitidez, exigir un tamaño mínimo de cara.
         # Una cara diminuta (< cfg.face_min_side) tiene tan poca información que
@@ -1325,9 +1407,20 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
             if face_sharpness(img, fc) >= cfg.min_sharpness
             and max(fc.bbox[2] - fc.bbox[0], fc.bbox[3] - fc.bbox[1]) >= cfg.face_min_side
         ]
+        low_quality = False
         if not focused:
-            shutil.move(p, os.path.join(nopasafiltros, f))
-            continue
+            if not cfg.capture_keep_all:
+                shutil.move(p, os.path.join(nopasafiltros, f))
+                desc_nopasafiltros += 1
+                continue
+            # Fase 2 (recall): hay cara pero no alcanza la calidad de admisión. Se
+            # captura igual (mejor cara por nitidez×área) y se marca baja calidad:
+            # el sub-clúster irá a revisión/provisional, NUNCA a la galería de una
+            # identidad existente (no contamina). Antes se descartaba aquí para
+            # siempre (pozo de `nopasafiltros`).
+            focused = [max(faces, key=lambda fc: face_sharpness(img, fc) * (
+                max(1, (fc.bbox[2] - fc.bbox[0]) * (fc.bbox[3] - fc.bbox[1])) ** 0.5))]
+            low_quality = True
         # C (2 caras en el mismo crop): dedup de detecciones casi idénticas del
         # MISMO rostro dentro del crop (ver dedup_faces_near_duplicates).
         focused = dedup_faces_near_duplicates(focused, img, cfg)
@@ -1335,7 +1428,19 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
         # su embedding sobre el recorte super-resuelto -> matching más fiable.
         for fc in focused:
             fc.embedding = enhance_embedding(img, fc, cfg)
-        items.append({"file": f, "path": p, "img": img, "faces": focused, "ts": parse_timestamp(f)})
+        items.append({"file": f, "path": p, "img": img, "faces": focused,
+                      "ts": parse_timestamp(f), "low_quality": low_quality})
+
+    # Fase 0: registrar descartes (aunque no quede ningún item que clasificar).
+    if desc_notienecaras:
+        log_evento(ruta, local_id, "descarte", cam=camara_id,
+                   motivo="notienecaras", n=desc_notienecaras)
+    if desc_nopasafiltros:
+        log_evento(ruta, local_id, "descarte", cam=camara_id,
+                   motivo="nopasafiltros", n=desc_nopasafiltros)
+    if desc_ilegible:
+        log_evento(ruta, local_id, "descarte", cam=camara_id,
+                   motivo="ilegible", n=desc_ilegible)
 
     if not items:
         return 0

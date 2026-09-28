@@ -107,3 +107,33 @@ def test_robust_scores_per_person_fallback_sin_pose(tmp_path):
     store = _store(tmp_path, {"P": [_e(0, noise=0.01, seed=1)]})
     s = robust_scores_per_person([_e(0, noise=0.01, seed=2)], store, k=5, pose="pd")
     assert s["P"] > 0.5
+
+
+def test_blocked_pairs_no_fusiona(tmp_path):
+    """Fase 3: un par co-ocurrente (misma cámara a la vez = distintos) no se
+    fusiona aunque el coseno sea alto."""
+    cfg = _cfg()
+    base = _e(0)
+    store = _store(tmp_path, {"RICA": [base], "NUEVA": [base]})
+    # sin bloqueo fusionaría (coseno 1.0)
+    assert choose_merge_candidate(store, cfg, "NUEVA", exclude={"NUEVA"}) == "RICA"
+    blocked = {frozenset(("NUEVA", "RICA"))}
+    assert choose_merge_candidate(store, cfg, "NUEVA", exclude={"NUEVA"},
+                                  blocked=blocked) is None
+
+
+def test_cooccurring_pairs_misma_camara(tmp_path):
+    """Dos personas en la misma cámara a la vez son un par co-ocurrente;
+    en cámaras distintas no."""
+    from motor.core.feedback import FeedbackCollector, cooccurring_pairs
+    ruta = str(tmp_path)
+    fc = FeedbackCollector(ruta, "1")
+    fc.log_decision({"local": "1", "cam": "3", "verdict": "new", "person": "A",
+                     "layers": {}, "query_hash": "h1"})
+    fc.log_decision({"local": "1", "cam": "3", "verdict": "new", "person": "B",
+                     "layers": {}, "query_hash": "h2"})
+    fc.log_decision({"local": "1", "cam": "4", "verdict": "new", "person": "C",
+                     "layers": {}, "query_hash": "h3"})
+    pairs = cooccurring_pairs(ruta, "1", window_s=60.0)
+    assert frozenset(("A", "B")) in pairs
+    assert frozenset(("A", "C")) not in pairs

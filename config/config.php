@@ -184,13 +184,20 @@ define("CONFIG_UMBRAL_DIFERENCIA_ENFOQUE","450");  //al comparar una a una si al
 define("CONFIG_UMBRAL_ENFOQUE_GLOBALES","1200"); //para considrar una foto desenfocada despues de haber comparado con todas, ya pra el calculo de las medias
         
 //configuracion por defecto al crear una camara
+// Fase 1 (recall): defaults MÁS sensibles que el legacy (60/220) para no perder
+// personas rápidas/lejanas. Un parámetro por cámara en `camaras` los sobreescribe.
 define("CONFIG_segundos_analizar","2");
-define("CONFIG_porcentaje_mov","60");
-define("CONFIG_dontCare","220");
+define("CONFIG_porcentaje_mov","35");
+define("CONFIG_dontCare","120");
 define("CONFIG_fps","14");
 define("CONFIG_maximo_videos","60");
 define("CONFIG_redimesionframe","60");
 define("CONFIG_sensibilidad","1");
+// Umbral de diferencia de píxel, kernel de blur e iteraciones de dilate (global;
+// por cámara vía columnas `threshold`/`blur`/`dilate` de `camaras`).
+define("CONFIG_threshold","15");
+define("CONFIG_blur","15");
+define("CONFIG_dilate","2");
 
 /*
  *  detector.php -> motor/archiva_video.py  y  video.php  (vídeos de movimiento)
@@ -206,8 +213,8 @@ define("CONFIG_VIDEO_RETENCION_DIAS", env_or("RF_VIDEO_RETENCION_DIAS", "30")); 
 define("CONFIG_VIDEO_PURGA_LOOP", env_or("RF_VIDEO_PURGA_LOOP", "1800"));       // cada N iteraciones del detector (~30 min)
 define("CONFIG_LIMITE_ARCHIVA", env_or("RF_LIMITE_ARCHIVA", "3"));              // nº máx. de archiva simultáneos (2->3)
 define("CONFIG_REINTENTOS_ARCHIVA", env_or("RF_REINTENTOS_ARCHIVA", "3"));       // reintentos de archivado antes de descartar un vídeo corrupto (evita bucle infinito)
-define("CONFIG_VIDEO_SEG_ANTES", env_or("RF_VIDEO_SEG_ANTES", "2"));           // pre-roll: 1-2 s antes del movimiento
-define("CONFIG_VIDEO_SEG_DESPUES", env_or("RF_VIDEO_SEG_DESPUES", "2"));       // post-roll: 1-2 s después del movimiento
+define("CONFIG_VIDEO_SEG_ANTES", env_or("RF_VIDEO_SEG_ANTES", "4"));           // pre-roll: 1-2 s antes del movimiento
+define("CONFIG_VIDEO_SEG_DESPUES", env_or("RF_VIDEO_SEG_DESPUES", "4"));       // post-roll: 1-2 s después del movimiento
 define("CONFIG_VIDEO_MARGEN_ESTANCIA", "30"); // segundos máx. entre vídeo y estancia para enlazarlos en la UI
 
 /*

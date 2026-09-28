@@ -109,6 +109,9 @@ if printf '%s\n' "$CHANGED" | grep -qE '^(deploy/systemd/|deploy/install_service
     echo "[deploy] units/instalador cambiados -> reinstalando systemd"
     bash deploy/install_services.sh >/dev/null
     systemctl daemon-reload
+    # Timers one-shot: enable --now es idempotente y asegura que un timer nuevo
+    # (p. ej. rf-reprocesa, spec 17) quede armado aunque el instalador no lo arranque.
+    systemctl enable --now rf-calibra.timer rf-vigilar-deriva.timer rf-reprocesa.timer 2>/dev/null || true
 fi
 
 # Vhost Apache del panel.

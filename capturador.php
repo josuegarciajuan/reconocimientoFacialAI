@@ -67,6 +67,20 @@ while(true){
             $maximo_videos=$data["valores"][$i]["maximo_videos"];
             $redimesionframe=$data["valores"][$i]["redimesionframe"]/100;
             $sensibilidad=$data["valores"][$i]["sensibilidad"];
+            // Fase 1 (recall): parámetros de sensibilidad POR CÁMARA (columnas
+            // nuevas; NULL/'' => -1 para que guarda_movimientosV3 use el global .env).
+            $v_threshold = $data["valores"][$i]["threshold"] ?? "";
+            $v_blur      = $data["valores"][$i]["blur"] ?? "";
+            $v_dilate    = $data["valores"][$i]["dilate"] ?? "";
+            $v_seg_antes = $data["valores"][$i]["seg_antes"] ?? "";
+            $v_seg_despues = $data["valores"][$i]["seg_despues"] ?? "";
+            $threshold = ($v_threshold === null || $v_threshold === "") ? -1 : (int)$v_threshold;
+            $blur      = ($v_blur === null || $v_blur === "") ? -1 : (int)$v_blur;
+            $dilate    = ($v_dilate === null || $v_dilate === "") ? -1 : (int)$v_dilate;
+            $seg_antes = ($v_seg_antes === null || $v_seg_antes === "" || (float)$v_seg_antes <= 0)
+                ? CONFIG_VIDEO_SEG_ANTES : (float)$v_seg_antes;
+            $seg_despues = ($v_seg_despues === null || $v_seg_despues === "" || (float)$v_seg_despues <= 0)
+                ? CONFIG_VIDEO_SEG_DESPUES : (float)$v_seg_despues;
             
 
 
@@ -80,13 +94,14 @@ while(true){
             $cmd.=$maximo_videos." "; //#tiempo en segundos maximo de grabado
             $cmd.=$redimesionframe." "; //es para que el video ocupe menos
             $cmd.=$sensibilidad." "; //de cada cuantos frames se coge uno, conj un 1 se cogen todos con un 2 la mitad etc
-            $cmd.=CONFIG_VIDEO_SEG_ANTES." ";   // segundos previos al movimiento (pre-roll)
-            $cmd.=CONFIG_VIDEO_SEG_DESPUES." "; // segundos posteriores al movimiento (post-roll)
+            $cmd.=$seg_antes." ";   // segundos previos al movimiento (pre-roll; por cámara o global)
+            $cmd.=$seg_despues." "; // segundos posteriores al movimiento (post-roll; por cámara o global)
             $cmd.=FTP_SERVER." ";
             $cmd.=(FTP_USER !== "" ? FTP_USER : "-")." ";   // placeholder para no descolocar argv
             $cmd.=(FTP_PASS !== "" ? FTP_PASS : "-")." ";
             $cmd.="'".$cadena_conexion."' "; 
-            $cmd.=URL_BASE_LOCAL." ";   // argv 16: base URL del ws (alarmas: alarma_estado/alarma_disparar). Interna (127.0.0.1).
+            $cmd.=URL_BASE_LOCAL." ";   // argv 16: base URL del ws (interna 127.0.0.1)
+            $cmd.=$threshold." ".$blur." ".$dilate." ";   // argv 17-19: sensibilidad por cámara (-1 => global .env)
             echo "\n\ncmd1->".$cmd."\n\n";
             // B20: eliminado el exit; de depuración que mataba el proceso tras la 1ª cámara
            

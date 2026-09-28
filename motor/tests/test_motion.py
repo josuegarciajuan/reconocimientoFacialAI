@@ -187,3 +187,33 @@ def test_boost_se_puede_desactivar():
     motion_off, hay = det.process(_con_rect(x=10))
     assert motion_off == 1          # el contorno sigue siendo grande
     assert hay is False             # pero el buffer (1 frame) no llega al 60%
+
+
+# --------------------------------------------- Multicontorno (recall, Fase 1)
+
+def _con_dos_rects(x, w=320, h=240, size=30):
+    f = np.zeros((h, w, 3), dtype=np.uint8)
+    cv2.rectangle(f, (x, 60), (x + size, 60 + size), (255, 255, 255), -1)
+    cv2.rectangle(f, (x + 160, 150), (x + 160 + size, 150 + size), (255, 255, 255), -1)
+    return f
+
+
+def test_multicontorno_suma_dispara():
+    # Dos objetos pequeños por separado (cada contorno < dontCare) pero cuya SUMA
+    # supera dontCare_total: sin suma NO se detecta; con suma SÍ (recall).
+    base = dict(dontCare=3000, threshold=25, blur=5, dilate=1)
+    det_max = MotionDetector(MotionConfig(**base))
+    det_sum = MotionDetector(MotionConfig(**base, dontCare_total=600, count_min_area=50))
+    ok_max_filtra = False
+    ok_sum_detecta = False
+    for i in range(10):
+        f = _con_dos_rects(x=(i * 8) % 200)
+        m1, _ = det_max.process(f)
+        m2, _ = det_sum.process(f)
+        if m1 == 0:
+            ok_max_filtra = True
+        if m2 == 1:
+            ok_sum_detecta = True
+    assert ok_max_filtra, "sin multicontorno el contorno mayor no debería disparar"
+    assert ok_sum_detecta, "la suma de contornos debería disparar el movimiento"
+

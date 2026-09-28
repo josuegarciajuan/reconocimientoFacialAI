@@ -1,0 +1,11 @@
+[Unit]
+Description=RF Reprocesado diario (recall) — recupera caras de vídeos archivados
+
+[Timer]
+# Madrugada (bajo tráfico). Persistent=true: si el servidor estaba apagado,
+# se ejecuta al arrancar. La unidad es idempotente por vídeo (markers).
+OnCalendar=*-*-* 04:30:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
