@@ -128,6 +128,16 @@ y aprovecha la RAM (58 GB).
   pool* de MariaDB (el `innodb_buffer_pool_size` de 128 MB ya cubre una BD de
   ~1500 vídeos/253 fotos, por lo que no es rentable reiniciar MariaDB).
 
+### Backlog del detector (2026-09-28)  *(hecho en este cambio)*
+El detector acumulaba vídeos (57 → 97 en ~10 min). Causa: `detector.php` hacía
+un `sleep(6)` POR CÁMARA para comprobar la estabilidad del fichero en dos
+pasadas (~66 s por ciclo con 11 cámaras), lo que limitaba el ritmo de
+lanzamiento. Como `guarda_movimientosV3.py` publica el `.mp4` de forma atómica
+(`.tmp` → rename al cerrar ffmpeg), un `.mp4` presente ya está completo: ahora se
+encola de inmediato y solo los `.avi` legacy usan la ventana de 6 s. No cambia
+el resultado del análisis; permite vaciar el backlog al ritmo que marque
+`RF_LIMITE_VIDEOS`.
+
 ### F6 — Verificación y rollout
 - Cada fase: worktree → commit → merge a `main` → `bash deploy/deploy_prod.sh`.
 - `perf_snapshot` antes/después + gate `motor/eval`.

@@ -155,28 +155,38 @@ while (true) {
             $dir_videos = RUTA_PROYECTO . "motor/videos/" . $local_id . "/" . $cam_id . "/";
             $subidos = [];
             if (is_dir($dir_videos)) {
-                $pesos = [];
+                // Publicación atómica (guarda_movimientosV3.py escribe a `.tmp` y
+                // renombra a `.mp4` SOLO al cerrar ffmpeg): un `.mp4` en disco es
+                // SIEMPRE un fichero completo. Antes se comparaba el tamaño en dos
+                // pasadas con un `sleep(6)` POR CÁMARA -> ~66 s por ciclo con 11
+                // cámaras, lo que limitaba el ritmo de lanzamiento y hacía crecer
+                // el backlog de vídeos. Para `.mp4` ya no hace falta esperar; solo
+                // los `.avi` legacy (sin publicación atómica) se comprueban con la
+                // ventana de estabilidad de 6 s.
+                $avi_pesos = [];
                 $dir = opendir($dir_videos);
                 while (($el = readdir($dir)) !== false) {
-                    if ($el !== "." && $el !== "..") {
-                        // publicación atómica (moov-race): los .tmp los escribe
-                        // guarda_movimientosV3.py y se renombran a .mp4 al cerrar;
-                        // un .tmp huérfano (> 10 min) se limpia aquí.
-                        if (substr($el, -4) === ".tmp") {
-                            if (time() - @filemtime($dir_videos . $el) > CONFIG_MARCADOR_HUERFANO_SEGS) {
-                                @unlink($dir_videos . $el);
-                            }
-                            continue;
+                    if ($el === "." || $el === "..") { continue; }
+                    if (substr($el, -4) === ".tmp") {
+                        // un .tmp huérfano (> CONFIG_MARCADOR_HUERFANO_SEGS) se limpia
+                        if (time() - @filemtime($dir_videos . $el) > CONFIG_MARCADOR_HUERFANO_SEGS) {
+                            @unlink($dir_videos . $el);
                         }
-                        $pesos[$el] = filesize($dir_videos . $el);
+                        continue;
+                    }
+                    if (strtolower(substr($el, -4)) === ".mp4") {
+                        if (@filesize($dir_videos . $el) > 0) { $subidos[] = $el; }
+                    } else {
+                        $avi_pesos[$el] = @filesize($dir_videos . $el);
                     }
                 }
-                sleep(6);  // espera a que termine la subida/grabación
-                $dir = opendir($dir_videos);
-                while (($el = readdir($dir)) !== false) {
-                    if ($el !== "." && $el !== ".." && substr($el, -4) !== ".tmp"
-                        && isset($pesos[$el]) && $pesos[$el] === filesize($dir_videos . $el)) {
-                        $subidos[] = $el;
+                closedir($dir);
+                if ($avi_pesos) {
+                    sleep(6);  // legacy: solo si hay .avi (sin publicación atómica)
+                    foreach ($avi_pesos as $el => $sz) {
+                        if (is_file($dir_videos . $el) && @filesize($dir_videos . $el) === $sz) {
+                            $subidos[] = $el;
+                        }
                     }
                 }
             }
