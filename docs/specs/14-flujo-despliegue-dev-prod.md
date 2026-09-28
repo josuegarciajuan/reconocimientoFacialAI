@@ -119,18 +119,29 @@ líneas, plano, local, auto-login):
 # 1. Desplegar el script (si no está) y ejecutarlo en PRODUCCIÓN:
 cd /root/reconocimientoFacial
 git pull origin main
-bash deploy/reset_datos.sh              # detiene servicios → mata procesos → vacía BD → borra motor → rearranca
+bash deploy/reset_datos.sh              # detiene → mata+verifica → vacía BD → borra estado → rearranca
+bash deploy/reset_datos.sh --hold 10    # igual, con pausa de 10s verificando que todo queda caído
 bash deploy/reset_datos.sh --dry-run    # modo ensayo: solo muestra el plan
 ```
 
 Qué borra:
 - BD: `personas`, `estancias`, `fotos`, `videos`, `cruces_lineas`, `fichajes`,
-  `alarmas`, `calibraciones` (+ `foto_audits`/`foto_audit_events` si existen).
+  `alarmas` (+ `foto_audits`/`foto_audit_events`/`personas_avatar` si existen).
 - Galería y media del motor: `face_enc_v2`, `caras/`, `videos/`,
   `videos_archivo/`, `feedback/`, `revision/`, `dedup/`, `audit_queue/`, etc.
+- Estado runtime que antes sobrevivía (lección 2026-09-28): `motor/logs/`,
+  `motor/backups/` (incl. `.bak` de `face_enc_v2`), `motor/revision_cuerpos/`,
+  `motor/calibrador/deriva/` y la cola completa `aux/` (markers, `.intentos`,
+  `procesar_*.txt`).
 
 Qué conserva: `camaras`, `locales`, `lineas`, `lineas_plano`, `nodos`,
-`senderos`, `dispositivos_autologin`, `alarmas_telefonos`.
+`senderos`, `senderos_puntos`, `dispositivos_autologin`, `alarmas_telefonos` y la
+tabla de calibración `calibraciones` (journal de parámetros por cámara, no identidad).
+
+Parada total: la FASE A2 mata también `ffmpeg` del proyecto (por `cwd`, no por
+`pgrep -f`) y **verifica** que no queda ningún proceso RF vivo antes de tocar datos;
+`--hold N` añade una pausa con re-verificación. La FASE D rearma los timers
+`rf-calibra.timer`, `rf-vigilar-deriva.timer` y `rf-reprocesa.timer`.
 
 Verificación tras el reset:
 ```bash

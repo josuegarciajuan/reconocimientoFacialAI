@@ -15,6 +15,9 @@
 #                            revision/, removidas/, inicial/, alinear_caras/,
 #                            fotos_lineas/, videos_lineas/, photo_queue/,
 #                            dedup/, audit_queue/, llm_cache/
+#   Estado runtime (motor):  logs/, backups/ (incl. .bak de face_enc_v2),
+#                            revision_cuerpos/, calibrador/deriva/ y la cola de
+#                            marcadores aux/ (markers, .intentos, procesar_*.txt)
 #   Fotos publicadas (panel): admin/caras_procesadas/ (jpg + avatares/) y los
 #                            uploads de registro (admin/files/videos_registro*)
 #
@@ -24,19 +27,33 @@
 #                            alarmas_telefonos
 #   BD (calibración):        calibraciones (journal de parámetros de análisis
 #                            por cámara; NO es identidad)
-#   Runtime (motor):         models/, venv/, logs/, backups/, calibrador/
+#   Runtime (motor):         models/, venv/
 #
-# USO:  sudo bash deploy/reset_datos.sh
+# USO:  sudo bash deploy/reset_datos.sh [--hold N] [--dry-run]
 #   El script: (A) detiene los servicios, (A2) MATA TODOS los procesos RF
-#   (incluidos huérfanos/hijos que systemd no cubre), (B) vacía la BD,
-#   (C) borra la galería/media/markers del motor y (D) REARCA los servicios y
-#   rearma los timers. Robusto por SSH: mata por PID sin matarse a sí mismo.
-#   Pasa --dry-run para listar lo que se va a borrar sin tocar nada.
+#   (incluidos huérfanos/hijos/ffmpeg que systemd no cubre) y VERIFICA que no
+#   queda ninguno vivo, (B) vacía la BD, (C) borra galería/media/estado runtime
+#   y (D) REARCA los servicios y rearma los timers. Robusto por SSH: mata por
+#   PID sin matarse a sí mismo.
+#   --hold N : tras parar, espera N segundos y re-verifica que todo sigue caído
+#              antes de rearrancar (evidencia visible de parada total).
+#   --dry-run: lista lo que se va a borrar sin tocar nada.
 # =============================================================================
 set -euo pipefail
 
 DRY_RUN=0
-[[ "${1:-}" == "--dry-run" ]] && DRY_RUN=1
+HOLD=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dry-run) DRY_RUN=1 ;;
+    --hold) HOLD="${2:-0}"; shift ;;
+    --hold=*) HOLD="${1#--hold=}" ;;
+    -h|--help) sed -n '2,42p' "$0"; exit 0 ;;
+    *) printf '[reset] ERROR: flag desconocida: %s\n' "$1" >&2; exit 2 ;;
+  esac
+  shift
+done
+[[ "${HOLD}" =~ ^[0-9]+$ ]] || { printf '[reset] ERROR: --hold requiere un entero\n' >&2; exit 2; }
 
 # --- Localización del proyecto -----------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -116,6 +133,18 @@ RUTAS_BORRAR=(
   "admin/files/videos_registro_posiciones"
   "admin/files/videos_registro_pruebas"
   "admin/files/videos_registro_resultados"
+  # Estado runtime de identidad que antes SOBREVIVÍA al reset (lección 2026-09-28):
+  # logs del pipeline, backups de face_enc_v2 (identidad antigua), estado de deriva
+  # del calibrador y la bandeja de revisión de cuerpos. Se conservan solo models/ y
+  # venv/.
+  "motor/logs"
+  "motor/backups"
+  "motor/revision_cuerpos"
+  "motor/calibrador/deriva"
+  # Cola de marcadores del detector (markers .mp4.txt/.avi.txt, contadores
+  # .intentos, logs procesar_*.txt y archiva_*). Borrarla entera garantiza que el
+  # pipeline no arrastre historial de intentos ni parezca retomar vídeos previos.
+  "aux"
 )
 
 # =============================================================================
@@ -188,6 +217,18 @@ _arbol_no_tocar() {
   printf '%s' "$out"
 }
 
+# PIDs de ffmpeg cuyo cwd es el proyecto (los lanzadores usan rutas RELATIVAS
+# `motor/videos/...`, así que pgrep -f no los vería). Evita matar ffmpeg ajenos.
+pids_ffmpeg_proyecto() {
+  local pid cwd
+  for pid in $(pgrep -x ffmpeg 2>/dev/null || true); do
+    cwd=$(readlink "/proc/${pid}/cwd" 2>/dev/null || true)
+    case "${cwd}" in
+      "${PROYECTO}"|"${PROYECTO}"/*) printf '%s\n' "${pid}" ;;
+    esac
+  done
+}
+
 matar_procesos() { # mata por PID los procesos RF vivos, esperando a que terminen
   local no_tocar no_tocar_regex pat base pids pid seen="" targets=()
   no_tocar="$(_arbol_no_tocar)"
@@ -200,6 +241,7 @@ matar_procesos() { # mata por PID los procesos RF vivos, esperando a que termine
     pids="$pids $(pgrep -f -- "${pat}" 2>/dev/null || true)"
   done
   pids="$pids $(pgrep -f -- "${PROYECTO}/motor" 2>/dev/null || true)"
+  pids="$pids $(pids_ffmpeg_proyecto)"
   for base in capturador.php detector.php clasificadorV2.php conciliador.php \
               vinculador.php alarmador.php procesos_panel_control.php; do
     pids="$pids $(pgrep -f -- "${PROYECTO}/${base}" 2>/dev/null || true)"
@@ -228,7 +270,8 @@ matar_procesos() { # mata por PID los procesos RF vivos, esperando a que termine
   local i=0 restantes=999
   while (( i < 20 )); do
     restantes=$( { for pat in "${PATRONES_KILL[@]}"; do pgrep -f -- "$pat"; done
-                   pgrep -f -- "${PROYECTO}/motor"; } 2>/dev/null \
+                   pgrep -f -- "${PROYECTO}/motor"
+                   pids_ffmpeg_proyecto; } 2>/dev/null \
                  | grep -vE "^(${no_tocar_regex})$" | wc -l ) || restantes=0
     (( restantes == 0 )) && break
     sleep 1; i=$((i+1))
@@ -236,11 +279,59 @@ matar_procesos() { # mata por PID los procesos RF vivos, esperando a que termine
   log "  procesos RF restantes tras matar: ${restantes}"
 }
 
+# Verificación visible: lista servicios parados y procesos RF vivos (excluye la
+# sesión SSH actual). Devuelve 0 si no queda ninguno.
+vivos_rf() {
+  local no_tocar_regex pat
+  no_tocar_regex=$(printf '%s\n' "$(_arbol_no_tocar)" | tr ' ' '\n' | sed '/^$/d' | paste -sd'|' -)
+  { for pat in "${PATRONES_KILL[@]}"; do pgrep -f -- "$pat"; done
+    pgrep -f -- "${PROYECTO}/motor"
+    pids_ffmpeg_proyecto; } 2>/dev/null | grep -vE "^(${no_tocar_regex})$" | sort -u
+}
+
+verificar_parada() {
+  local titulo="$1" svc vivos
+  log "${titulo}"
+  for svc in "${SERVICIOS[@]}"; do
+    printf '[reset]   %-20s %s\n' "${svc}" "$(systemctl is-active "${svc}" 2>/dev/null || true)"
+  done
+  vivos="$(vivos_rf)"
+  if [[ -n "${vivos}" ]]; then
+    log "  ATENCIÓN: procesos RF aún vivos:"
+    for p in ${vivos}; do printf '[reset]   PID %s: %s\n' "${p}" "$(tr '\0' ' ' < "/proc/${p}/cmdline" 2>/dev/null)"; done
+    return 1
+  fi
+  log "  0 procesos RF vivos. Parada total confirmada."
+  return 0
+}
+
 # =============================================================================
-# FASE A2 — matar TODOS los procesos RF (hijos/huérfanos que systemd no cubre)
+# FASE A2 — matar TODOS los procesos RF (hijos/huérfanos/ffmpeg que systemd no cubre)
 # =============================================================================
 log "FASE A2: matando todos los procesos RF del proyecto..."
 cmd "Matar procesos RF" matar_procesos
+
+if [[ ${DRY_RUN} -eq 0 ]]; then
+  # Evidencia visible de que TODO quedó parado (no solo los servicios systemd).
+  if ! verificar_parada "FASE A2b: verificación de parada total"; then
+    log "  reintentando matar procesos residuales..."
+    cmd "Re-matar procesos RF" matar_procesos
+    verificar_parada "FASE A2b: re-verificación de parada total" \
+      || die "quedan procesos RF vivos; abortado antes de tocar datos"
+  fi
+
+  # --hold N: pausa con re-verificación (prueba de que nada se autola en solitario).
+  if (( HOLD > 0 )); then
+    log "FASE A2c: --hold ${HOLD}s — se re-verificará que todo sigue caído..."
+    while (( HOLD > 0 )); do
+      printf '[reset]   esperando... %ss\r' "${HOLD}"
+      sleep 1; HOLD=$((HOLD-1))
+    done
+    printf '\n'
+    verificar_parada "FASE A2c: verificación tras la pausa" \
+      || die "algo se levantó durante --hold; abortado antes de tocar datos"
+  fi
+fi
 
 # =============================================================================
 # FASE B — vaciar BD (tablas de datos)
@@ -306,17 +397,15 @@ cmd "Recrear ${PROYECTO}/motor/videos_archivo/${LOCAL_ID}" mkdir -p "${PROYECTO}
 # Fotos publicadas del panel: el clasificador la autocrea, pero la dejamos lista
 # para que Apache sirva el directorio aunque aún no haya capturas.
 cmd "Recrear ${PROYECTO}/admin/caras_procesadas" mkdir -p "${PROYECTO}/admin/caras_procesadas"
+# Cola de marcadores del detector: vacía y con permisos de escritura (php-fpm).
+cmd "Recrear ${PROYECTO}/aux" mkdir -p "${PROYECTO}/aux"
+cmd "Permisos ${PROYECTO}/aux" chmod 777 "${PROYECTO}/aux"
+# Logs del pipeline: directorio limpio (lo usan ffmpeg/procesa_video para >>).
+cmd "Recrear ${PROYECTO}/motor/logs" mkdir -p "${PROYECTO}/motor/logs"
 
-# Limpiar markers de procesado/archivado de aux/ (detector.php cuenta estos
-# markers como slots de CONFIG_LIMITE_VIDEOS/CONFIG_LIMITE_ARCHIVA). Un marker
-# huérfano de un vídeo ya borrado por el reset saturaría el slot y bloquearía
-# procesa_video.py (lección 2026-09-01). Se borran los markers .mp4.txt/.avi.txt
-# de procesa y los archiva_*.txt; se conservan los contadores .intentos.
-for m in "${PROYECTO}"/aux/*.mp4.txt "${PROYECTO}"/aux/*.avi.txt "${PROYECTO}"/aux/archiva_*.txt; do
-  if [[ -f "${m}" ]]; then
-    cmd "Borrar marker ${m}" rm -f "${m}"
-  fi
-done
+# aux/ ya se ha borrado entero en FASE C (markers, contadores .intentos y logs
+# procesar_*.txt), así que no quedan slot-markers huérfanos que saturarían
+# CONFIG_LIMITE_VIDEOS/CONFIG_LIMITE_ARCHIVA. La recreamos vacía arriba.
 
 # =============================================================================
 # FASE D — rearrancar servicios y timers (encendido total desde cero)
@@ -325,13 +414,25 @@ log "FASE D: rearrancando servicios y timers..."
 for svc in "${SERVICIOS[@]}"; do
   cmd "Arrancar ${svc}" systemctl restart "${svc}" 2>/dev/null || true
 done
-# Rearmar los timers de one-shots (rf-calibra, rf-vigilar-deriva): se lanzan en
-# su horario; restart del timer lo fuerza a reprogramarse tras el reset limpio.
-for t in rf-calibra.timer rf-vigilar-deriva.timer; do
+# Rearmar los timers de one-shots (rf-calibra, rf-vigilar-deriva, rf-reprocesa):
+# se lanzan en su horario; restart del timer lo fuerza a reprogramarse tras el
+# reset limpio. rf-reprocesa también: antes quedaba inactive/dead tras un reset.
+for t in rf-calibra.timer rf-vigilar-deriva.timer rf-reprocesa.timer; do
   if systemctl list-unit-files "${t}" >/dev/null 2>&1; then
-    cmd "Rearmar ${t}" systemctl restart "${t}" 2>/dev/null || true
+    cmd "Rearmar ${t}" systemctl enable --now "${t}" 2>/dev/null || true
   fi
 done
+
+# Evidencia del arranque limpio: PID y hora de arranque de cada servicio.
+if [[ ${DRY_RUN} -eq 0 ]]; then
+  log "FASE D2: estado de los servicios rearrancados:"
+  for svc in "${SERVICIOS[@]}"; do
+    printf '[reset]   %-20s %-8s pid=%-8s since=%s\n' "${svc}" \
+      "$(systemctl is-active "${svc}" 2>/dev/null || true)" \
+      "$(systemctl show "${svc}" -p MainPID --value 2>/dev/null || true)" \
+      "$(systemctl show "${svc}" -p ActiveEnterTimestamp --value 2>/dev/null || true)"
+  done
+fi
 
 log "Reset completado. Verificar con: systemctl status rf-* y el panel web."
 [[ ${DRY_RUN} -eq 1 ]] && log "DRY-RUN: nada se ha modificado."
