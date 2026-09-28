@@ -48,6 +48,7 @@ file_put_contents($root . "/outside/exterior.jpg", "x");
 
 // --- 1. componentes ---
 ok(rf_revision_componente_valido("abc_1.2-3") === true, "1. componente válido");
+ok(rf_revision_componente_valido("19_2026-09-25_17:10:03.604617.mp4_1.5_0") === true, "1. componente real con ':' -> válido");
 ok(rf_revision_componente_valido("") === false, "1. componente vacío -> inválido");
 ok(rf_revision_componente_valido(".") === false, "1. componente '.' -> inválido");
 ok(rf_revision_componente_valido("..") === false, "1. componente '..' -> inválido");

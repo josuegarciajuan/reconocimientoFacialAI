@@ -17,13 +17,14 @@ if (!defined('RF_REVISION_IMG_EXTS')) {
     define('RF_REVISION_IMG_EXTS', ['jpg', 'jpeg', 'png']);
 }
 
-/** ¿El componente es seguro? No vacío, no `.`/`..`, solo [A-Za-z0-9._-]. */
+/** ¿El componente es seguro? No vacío, no `.`/`..`, solo [A-Za-z0-9._:-]
+ *  (se admite `:` por la hora en los nombres del motor; `/` y `..` no). */
 function rf_revision_componente_valido(string $valor): bool
 {
     if ($valor === '' || $valor === '.' || $valor === '..') {
         return false;
     }
-    return preg_match('/^[A-Za-z0-9._-]+$/D', $valor) === 1;
+    return preg_match('/^[A-Za-z0-9._:-]+$/D', $valor) === 1;
 }
 
 /** ¿El nombre tiene extensión de imagen admitida? */

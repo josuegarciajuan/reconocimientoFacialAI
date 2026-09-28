@@ -20,6 +20,8 @@ def _mk(root, local, cam, nombre):
 
 def test_componente_valido():
     assert componente_valido("abc_1.2-3") is True
+    # Nombres reales del motor: llevan ':' en la hora.
+    assert componente_valido("19_2026-09-25_17:10:03.604617.mp4_1.500000_0") is True
     assert componente_valido("") is False
     assert componente_valido(".") is False
     assert componente_valido("..") is False

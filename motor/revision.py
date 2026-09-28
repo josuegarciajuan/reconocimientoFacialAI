@@ -43,7 +43,7 @@ import sys
 # daemon PHP, que solo mira el nombre de la carpeta.
 ALFABETO = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 IMG_EXTS = (".jpg", ".jpeg", ".png")
-_COMPONENTE_RE = re.compile(r"^[A-Za-z0-9._-]+$")
+_COMPONENTE_RE = re.compile(r"^[A-Za-z0-9._:-]+$")
 
 
 def random_code(n: int = 25) -> str:
@@ -52,7 +52,11 @@ def random_code(n: int = 25) -> str:
 
 
 def componente_valido(valor: str) -> bool:
-    """Componente de ruta seguro: no vacío, no `.`/`..`, solo [A-Za-z0-9._-]."""
+    """Componente de ruta seguro: no vacío, no `.`/`..`, solo [A-Za-z0-9._:-].
+
+    Se admite `:` porque los nombres de fichero del motor llevan la hora
+    (`cam_2026-09-28_17:10:03.604617.mp4_...`); `/` y `..` siguen prohibidos.
+    """
     return bool(valor) and valor not in (".", "..") and _COMPONENTE_RE.fullmatch(valor) is not None
 
 
@@ -66,7 +70,7 @@ def ruta_revision_segura(ruta: str, local: str, cam: str, file: str) -> str | No
     Función PURA (solo stdlib, sin modelos ni BD): testeable en aislamiento.
     Devuelve None si:
       - algún componente es vacío, `.`/`..` o contiene caracteres fuera de
-        `^[A-Za-z0-9._-]+$` (p. ej. `/` -> traversal),
+        `^[A-Za-z0-9._:-]+$` (p. ej. `/` -> traversal),
       - el fichero no tiene extensión de imagen,
       - la ruta resuelta no queda ESTRICTAMENTE dentro de
         `motor/revision/<local>/<cam>/` (defensa extra ante symlinks).
