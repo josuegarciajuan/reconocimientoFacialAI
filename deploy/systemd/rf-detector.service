@@ -13,10 +13,19 @@ User=root
 # Prioridad de CPU BAJA (Tier 2/3, diferible): clasificador.py y procesa_video
 # heredan Nice=10, por debajo de los capturadores en tiempo real (Nice=-10).
 Nice=10
-# Hilos OpenMP/onnxruntime fijos (1 por proceso): evita la sobresuscripción
-# cuando rf + autotube comparten CPU (menos RAM por stack de hilo y menos
-# contención). Los hijos (clasificador.py/procesa_video.py) lo heredan.
+# Hilos fijos por proceso (anti-sobresuscripción): OMP/OpenBLAS/MKL a 1 (numpy
+# del matching) y OpenCV a 1 (resize/blur/morph). Los hijos
+# (clasificador.py/procesa_video.py) lo heredan.
 Environment=OMP_NUM_THREADS=1
+Environment=OPENBLAS_NUM_THREADS=1
+Environment=MKL_NUM_THREADS=1
+Environment=RF_CV_THREADS=1
+# Hilos intra-op por sesión ONNX (motor/core/model.py). Con 5 sesiones por
+# FaceAnalysis y 5 procesos de inferencia a la vez, el default (=cores físicos
+# por sesión, ~50 hilos/proceso) hundía la máquina: runqueue ~50 sobre 10 cores
+# y ~79k cambios de contexto/s. 2 hilos/sesión mantiene los 10 cores ocupados
+# sin thrashing y NO cambia el resultado.
+Environment=RF_ORT_THREADS=2
 # Tope de memoria del cgroup (detector + pool de clasificadores + procesa_video):
 # con el pool (RF_CLASIF_CAMS_POR_PROC=8 -> 1 clasificador/8 cámaras) y la foto
 # HQ fuera (worker único rf-photo), el pico baja de ~9G a ~5G. Si se supera, el

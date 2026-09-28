@@ -310,6 +310,11 @@ def main() -> int:
     ap.add_argument("--dedup-cosine", type=float, default=0.97)
     args = ap.parse_args()
 
+    # F1: topes de hilos OpenCV/torch (anti-sobresuscripción con el resto del
+    # motor y con los clasificadores). No cambia los resultados del análisis.
+    from motor.core.threads import limit_threads
+    limit_threads()
+
     # Config.from_env (no Config()): aplica los overrides de .env (RF_MIN_SHARPNESS,
     # RF_DET_SIZE, etc.) igual que clasificador.py y reprocesar.py.
     cfg = Config.from_env(args.ruta)

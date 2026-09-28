@@ -13,6 +13,7 @@ import numpy as np
 
 _lock = threading.Lock()
 _apps: dict[tuple[int, int], object] = {}
+_ort_patched = False
 
 
 @dataclass
@@ -37,9 +38,58 @@ class Face:
         return self.pose[2]
 
 
+def _ort_session_options():
+    """SessionOptions con tope de hilos para CADA sesión ONNX.
+
+    Sin esto, cada sesión de `buffalo_l` usa por defecto un pool intra-op del
+    tamaño de cores físicos (10) y un proceso acaba con ~50 hilos; con varios
+    procesos del motor a la vez la máquina entra en sobresuscripción (runqueue
+    ~50 sobre 10 cores, ~79k cambios de contexto/s). El tope NO cambia el
+    resultado numérico, solo la paralelización interna de las operaciones.
+    """
+    import onnxruntime as ort
+
+    from .threads import ort_threads
+
+    so = ort.SessionOptions()
+    so.intra_op_num_threads = ort_threads()
+    so.inter_op_num_threads = 1
+    so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+    so.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+    return so
+
+
+def _patch_ort_sessions() -> None:
+    """Inyecta `sess_options` en todas las sesiones que crea insightface.
+
+    insightface 0.7.3 NO propaga `sess_options`: `model_zoo.get_model` solo
+    reenvía `providers`/`provider_options` al `InferenceSession`, así que el
+    tope de hilos hay que inyectarlo aquí. Idempotente y tolerante: si el
+    parche no aplica (otra versión de insightface), se sigue funcionando igual
+    que antes (solo se pierde la optimización).
+    """
+    global _ort_patched
+    if _ort_patched:
+        return
+    _ort_patched = True
+    try:
+        from insightface.model_zoo import model_zoo as _mz
+
+        _orig_get_model = _mz.ModelRouter.get_model
+
+        def _get_model(self, **kwargs):
+            kwargs.setdefault("sess_options", _ort_session_options())
+            return _orig_get_model(self, **kwargs)
+
+        _mz.ModelRouter.get_model = _get_model
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def _build_app(det_size: tuple[int, int]):
     from insightface.app import FaceAnalysis
 
+    _patch_ort_sessions()
     app = FaceAnalysis(name="buffalo_l", providers=["CPUExecutionProvider"])
     app.prepare(ctx_id=0, det_size=det_size)
     return app

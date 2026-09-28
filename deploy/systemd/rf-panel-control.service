@@ -9,6 +9,13 @@ ExecStart=/usr/bin/php /root/reconocimientoFacial/procesos_panel_control.php 0
 Restart=always
 RestartSec=5
 User=root
+# Hilos fijos: pose.py usa insightface (ORT) + OpenCV; no debe sobresuscribir
+# con el resto del motor (mismos topes que rf-detector).
+Environment=OMP_NUM_THREADS=1
+Environment=OPENBLAS_NUM_THREADS=1
+Environment=MKL_NUM_THREADS=1
+Environment=RF_CV_THREADS=1
+Environment=RF_ORT_THREADS=2
 
 [Install]
 WantedBy=multi-user.target
