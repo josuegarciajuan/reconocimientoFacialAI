@@ -119,8 +119,11 @@ y aprovecha la RAM (58 GB).
   dispara la latencia. Ahora el hash se calcula de forma perezosa
   (`admin_pass_hash()`, solo al verificar un login); opcionalmente se puede fijar
   `RF_ADMIN_PASS_HASH` precomputado en el `.env`.
-- **Diferido**: fan-out de `rf-live` (1 `ffmpeg` por cámara para N
-  espectadores); quitar `ps aux`/`pgrep` de los bucles de `Jos_thread`/
+- **`rf-live` (hecho)**: antes cada espectador lanzaba su propio `ffmpeg`
+  (decodificación RTSP completa por pestaña). Ahora hay UN `ffmpeg` por cámara
+  con fan-out a N clientes, con 5 s de gracia sin espectadores y `/status` con
+  `espectadores` por cámara. Salida idéntica.
+- **Diferido**: quitar `ps aux`/`pgrep` de los bucles de `Jos_thread`/
   `detector.php`; cola/`inotify` en `clasificadorV2.php`; índices y *buffer
   pool* de MariaDB (el `innodb_buffer_pool_size` de 128 MB ya cubre una BD de
   ~1500 vídeos/253 fotos, por lo que no es rentable reiniciar MariaDB).
