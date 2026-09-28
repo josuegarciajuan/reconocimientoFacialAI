@@ -5,7 +5,7 @@
  * Author: Josué García Juan
  * 06/08/2020
  */
-if($_GET["page"]==""){
+if(($_GET["page"] ?? "")==""){
     $page="Dashboard";
 }else{
     $page=$_GET["page"];

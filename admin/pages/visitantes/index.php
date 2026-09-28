@@ -12,7 +12,7 @@
 include "acciones.php";
 
 
-switch($_GET["mode"]){
+switch($_GET["mode"] ?? ""){
     case "registrar":
         include "registrar.php";
         break;
