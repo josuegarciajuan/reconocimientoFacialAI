@@ -46,7 +46,7 @@ from motor.core.config import Config            # noqa: E402
 from motor.core.embudo import log_evento        # noqa: E402
 from motor.core.matching import LayerScore, match_group, scores_per_person, scores_per_person_pose_aware  # noqa: E402
 from motor.core.model import analyze            # noqa: E402
-from motor.core.quality import face_sharpness, pose_label  # noqa: E402
+from motor.core.quality import face_sharpness, pose_label, pose_valida  # noqa: E402
 from motor.core.store import FaceStore          # noqa: E402
 from motor.core.superres import enhance_embedding, photo_busto  # noqa: E402
 from motor.core.photo_audit import (build_audit_record, layer_scores_json,
@@ -274,6 +274,7 @@ def _cfg_snapshot(cfg: Config) -> dict:
     """Config efectiva mínima para auditoría/replay (A1)."""
     keys = ("secure_threshold", "match_threshold", "margin", "group_threshold",
             "cluster_confirm", "admission_cosine", "min_sharpness", "face_min_side",
+            "match_min_face_side", "admission_margin", "silueta_confirm_enabled",
             "new_low_floor", "low_band_min_agreements", "early_exit_min_margin",
             "silueta_min_score", "min_layer_conf", "llm_min_conf", "veto_conf",
             "gray_low", "gray_high", "exact_match_cos", "batch_seconds")
@@ -410,6 +411,16 @@ def select_display_face(b_faces, ref_emb, min_cos: float):
     if best is not None and best_s >= min_cos:
         return best
     return None
+
+
+def hay_info_suficiente(sides: list[int], min_side: int) -> bool:
+    """True si AL MENOS una cara alcanza el lado mayor mínimo (`min_side`).
+
+    Función pura para testear la guardia de información: si TODAS las caras de
+    un crop son menores que `match_min_face_side`, el crop es de baja
+    información aunque sea nítido (su embedding no discrimina).
+    """
+    return any(int(s) >= int(min_side) for s in sides)
 
 
 def dedup_faces_near_duplicates(faces: list, img, cfg: Config) -> list:
@@ -733,7 +744,12 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     rep_item = battery[best[0]]
     rep_face = rep_item["faces"][best[1]]
     rep_stem = rep_item["file"].rsplit(".", 1)[0]
-    query_pose = pose_label(rep_face, cfg.yaw_frontal, cfg.yaw_45, cfg.yaw_90, cfg.pitch_frontal)
+    # Pose del representativo SOLO si es fiable: una pose fuera de rango o no
+    # finita (típico en caras pequeñas) se trata como "desconocida" para que no
+    # enrute ni filtre pose-conscientemente (router/matching global).
+    query_pose = (pose_label(rep_face, cfg.yaw_frontal, cfg.yaw_45, cfg.yaw_90,
+                             cfg.pitch_frontal)
+                  if pose_valida(rep_face, cfg) else None)
     rep_hash = embedding_hash(best[2]) if best[2] is not None else None
 
     # crop de torso compañero (mismo stem en <cam>_cuerpo/)
@@ -1125,6 +1141,28 @@ def torso_bbox_local(face, img, cfg):
     return torso_bbox(face, w, h, cfg)
 
 
+def admitir_encoding(own: float, best_other: float, cfg: Config,
+                     new_person: bool) -> bool:
+    """Decide la admisión de una cara en la galería de una persona.
+
+    Función pura (testeable) con el CONTROL DE ADMISIÓN de `_store_add`:
+
+    - new_person=True: el sub-clúster es coherente y se construye su galería
+      desde cero -> se admite (el filtro de tamaño ya lo aplica el llamador).
+    - new_person=False (match): se exige superar `admission_cosine` contra la
+      persona ASIGNADA (`own`) Y una VENTAJA mínima `admission_margin` sobre la
+      mejor persona EXTERNA (`best_other`). Sin esa ventaja, una cara ambigua
+      que se parece a varias identidades no se admite (evita contaminar).
+
+    `best_other` es el máximo coseno contra cualquier persona distinta de la
+    asignada; 0.0 si no hay ninguna otra en la galería.
+    """
+    if new_person:
+        return True
+    return (float(own) >= cfg.admission_cosine
+            and (float(own) - float(best_other)) >= cfg.admission_margin)
+
+
 def _store_add(store: FaceStore, person: str, members, battery, cfg: Config,
                new_person: bool = False, foto_id: str | None = None,
                low_quality: bool = False) -> None:
@@ -1152,7 +1190,7 @@ def _store_add(store: FaceStore, person: str, members, battery, cfg: Config,
     "mover foto"/"separar" pueda quitarlos de forma EXACTA (move_by_source).
     """
     from motor.core.quality import face_sharpness as _fs, pose_label as _pl
-    from motor.core.matching import best_cosine, scores_per_person_pose_aware
+    from motor.core.matching import scores_per_person, scores_per_person_pose_aware
     from motor.core.zones import silhouette_descriptor
 
     gal_encs = store.person_encodings(person)
@@ -1173,15 +1211,20 @@ def _store_add(store: FaceStore, person: str, members, battery, cfg: Config,
                 max(f.bbox[2] - f.bbox[0], f.bbox[3] - f.bbox[1]) < cfg.face_min_side:
             continue
         if new_person:
-            admit = True
+            admit = admitir_encoding(0.0, 0.0, cfg, new_person=True)
         elif gal_encs is None or len(gal_encs) == 0:
             admit = False                 # sin galería no puede confirmar (no ocurre en match)
         elif cfg.zones_enabled and cfg.admission_pose_aware:
             pose = _pl(f, cfg.yaw_frontal, cfg.yaw_45, cfg.yaw_90, cfg.pitch_frontal)
             sp = scores_per_person_pose_aware(f.embedding, store, cfg, pose)
-            admit = sp.get(person, 0.0) >= cfg.admission_cosine
+            own = float(sp.get(person, 0.0))
+            best_other = max((s for c, s in sp.items() if c != person), default=0.0)
+            admit = admitir_encoding(own, best_other, cfg, new_person=False)
         else:
-            admit = best_cosine(f.embedding, gal_encs) >= cfg.admission_cosine
+            sp = scores_per_person(f.embedding, store)
+            own = float(sp.get(person, 0.0))
+            best_other = max((s for c, s in sp.items() if c != person), default=0.0)
+            admit = admitir_encoding(own, best_other, cfg, new_person=False)
         if admit:
             sil = silhouette_descriptor(f)
             encs.append(f.embedding)
@@ -1424,6 +1467,14 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
         # C (2 caras en el mismo crop): dedup de detecciones casi idénticas del
         # MISMO rostro dentro del crop (ver dedup_faces_near_duplicates).
         focused = dedup_faces_near_duplicates(focused, img, cfg)
+        # Fase 2 (guardia de información): aunque la cara sea nítida, si TODAS
+        # las caras del crop son menores que `match_min_face_side` su embedding
+        # no es discriminativo (cos 0.83-0.85 entre personas distintas medido en
+        # prod). Se marca el crop como baja calidad: irá a provisional/revisión y
+        # NUNCA a la galería de una identidad existente (no contamina).
+        sides = [max(fc.bbox[2] - fc.bbox[0], fc.bbox[3] - fc.bbox[1]) for fc in focused]
+        if not hay_info_suficiente(sides, cfg.match_min_face_side):
+            low_quality = True
         # SR-before-embedding: las caras pequeñas (< sr_embed_min_face) recalculan
         # su embedding sobre el recorte super-resuelto -> matching más fiable.
         for fc in focused:

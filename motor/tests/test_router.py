@@ -11,6 +11,10 @@ from motor.core.router import Situation, route
 
 
 def _cfg(**kw):
+    # Estos tests ejercitan la silueta como co-autoridad/apoyo: se habilita su
+    # confirmación explícitamente. El default de producción es
+    # silueta_confirm_enabled=False (cubierto en test_guardia_embedding.py).
+    kw.setdefault("silueta_confirm_enabled", True)
     return Config(**kw)
 
 

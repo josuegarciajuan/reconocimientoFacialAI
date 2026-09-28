@@ -118,6 +118,10 @@ def _escalation(plan, cfg: Config, ctx: CascadeContext) -> list[str]:
     capa de cara), así que no puede corroborar ni vetar sin ser circular.
     """
     order = list(plan.support)
+    # Fase 2: nunca reintroducir silueta como evidencia si su confirmación está
+    # desactivada (defensa: el router ya no la pone en support/co_authority).
+    if not cfg.silueta_confirm_enabled:
+        order = [n for n in order if n != "silueta"]
     for name in ("torso", "vlm", "openai"):
         if name in order:
             continue
@@ -211,7 +215,10 @@ def decide_situational(face_scores: dict[str, float],
     if s1 >= cfg.secure_threshold:
         vetoes = 0
         for name in ("silueta", "torso"):
-            enabled = {"silueta": cfg.silueta_enabled, "torso": cfg.torso_enabled}[name]
+            # Fase 2: la silueta NO veta si su confirmación está desactivada
+            # (se registra sin voto, nunca decide).
+            enabled = {"silueta": cfg.silueta_enabled and cfg.silueta_confirm_enabled,
+                       "torso": cfg.torso_enabled}[name]
             if not enabled:
                 continue
             ls = ctx.layer(name, top)

@@ -1,14 +1,39 @@
 """Métricas de calidad: enfoque (Laplaciano) y pose."""
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import cv2
 import numpy as np
 
 from .model import Face
 
+if TYPE_CHECKING:  # evita el ciclo de importación config <-> quality
+    from .config import Config
+
 
 def laplacian_variance(gray: np.ndarray) -> float:
     return float(cv2.Laplacian(gray, cv2.CV_64F).var())
+
+
+def pose_valida(face: Face, cfg: "Config") -> bool:
+    """True solo si la pose es finita y |yaw|/|pitch|/|roll| no exceden los límites.
+
+    Una pose no fiable no debe usarse para enrutar ni para filtrar
+    pose-conscientemente (se trata como "desconocida"): las caras pequeñas suelen
+    traer yaw/pitch degenerados que clasificaban mal la situación.
+    """
+    try:
+        yaw = float(face.yaw)
+        pitch = float(face.pitch)
+        roll = float(face.roll)
+    except (TypeError, ValueError):
+        return False
+    if not (np.isfinite(yaw) and np.isfinite(pitch) and np.isfinite(roll)):
+        return False
+    return (abs(yaw) <= cfg.pose_valid_yaw
+            and abs(pitch) <= cfg.pose_valid_pitch
+            and abs(roll) <= cfg.pose_valid_roll)
 
 
 def face_sharpness(img: np.ndarray, face: Face, pad: int = 0) -> float:
