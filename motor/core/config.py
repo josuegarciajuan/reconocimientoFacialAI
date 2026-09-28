@@ -336,6 +336,15 @@ class Config:
     provisional_backs: bool = True
     provisional_min_cos: float = 0.55   # parecido de torso para reconciliar un provisional
 
+    # --- anti-fragmentación: freno de creación de identidades ---
+    # Si False (DEFAULT), los veredictos que NO son un `match` confirmado
+    # (new/uncertain/review, o match sin persona) NO crean identidad persistente:
+    # no tocan face_enc_v2 ni BD, solo dejan evidencia + sidecar de auditoría en
+    # la cola de revisión. Si True, se recupera el comportamiento anterior (alta
+    # de persona nueva). Reversible por `.env` (RF_AUTOENROLL_NEW=1) sin tocar
+    # código. Ver motor/clasificador.py::debe_crear_identidad.
+    autoenroll_new: bool = False   # RF_AUTOENROLL_NEW
+
     # --- pesos-prior (SOLO desempate/reporte; la decisión usa autoridad/veto) ---
     w_cara: float = 0.70                # peso-prior capa cara (L1a)
     w_torso: float = 0.10               # peso-prior capa torso/ropa (L1b, apoyo)
@@ -508,6 +517,9 @@ class Config:
         cfg.cooccur_window_s = get_float(ruta, "RF_COOCCUR_WINDOW_S", cfg.cooccur_window_s)
         cfg.provisional_backs = get_bool(ruta, "RF_PROVISIONAL_BACKS", cfg.provisional_backs)
         cfg.provisional_min_cos = get_float(ruta, "RF_PROVISIONAL_MIN_COS", cfg.provisional_min_cos)
+        # Freno anti-fragmentación: por defecto (False) los verdicts que no son
+        # `match` confirmado NO crean identidad persistente; solo revisión.
+        cfg.autoenroll_new = get_bool(ruta, "RF_AUTOENROLL_NEW", cfg.autoenroll_new)
         # Invariante anti-inconsistencia (G2): secure SIEMPRE por encima de match.
         # Producción llegó a correr secure=0.45 < match=0.48 (el gate s1<match se
         # ejecuta antes y el suelo seguro no rescataba la banda [0.45, 0.48)).
