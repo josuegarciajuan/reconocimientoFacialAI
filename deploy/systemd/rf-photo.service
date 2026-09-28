@@ -12,6 +12,8 @@ RestartSec=5
 User=root
 # Prioridad de CPU BAJA (diferible): la foto HQ llega ~40 s después, no es tiempo real.
 Nice=10
+# Comparte cores con el capturador (3-9), fuera de los 0-2 reservados a web/DB/OS.
+CPUAffinity=3-9
 # Hilos de CPU para x4plus/GFPGAN (único proceso torch pesado del motor):
 # 4 hilos mantienen la cola HQ al día sin monopolizar los cores de autotube.
 # (OMP_NUM_THREADS controla OpenMP; RF_TORCH_THREADS lo aplica torch en
