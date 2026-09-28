@@ -1,0 +1,13 @@
+[Unit]
+Description=RF Reprocesado diario de vídeos archivados (recall: recupera caras no extraídas)
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/reconocimientoFacial
+ExecStart=/root/reconocimientoFacial/motor/venv/bin/python /root/reconocimientoFacial/motor/reprocesar.py --todos --ruta /root/reconocimientoFacial --videos --face-every 2
+User=root
+Nice=10
+# El re-escaneo carga insightface (~1 GB). Es idempotente por vídeo (marker), así
+# que un fallo por memoria se reintenta en la siguiente pasada sin duplicar caras.

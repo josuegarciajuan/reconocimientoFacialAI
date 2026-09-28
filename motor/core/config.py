@@ -270,6 +270,13 @@ class Config:
     consolidate_min_cos: float = 0.50   # parecido mutuo mínimo (galerías ricas)
     consolidate_min_margin: float = 0.05
     consolidate_interval_s: float = 60.0
+    # Fase 3 (recall/reconciliación): dos personas vistas en la MISMA cámara
+    # dentro de esta ventana son personas DISTINTAS -> nunca se fusionan (guarda
+    # de co-ocurrencia temporal). Además, F7: permitir crear persona provisional
+    # a partir de un crop de cuerpo sin cara (en vez de solo revisión manual).
+    cooccur_window_s: float = 6.0
+    provisional_backs: bool = True
+    provisional_min_cos: float = 0.55   # parecido de torso para reconciliar un provisional
 
     # --- pesos-prior (SOLO desempate/reporte; la decisión usa autoridad/veto) ---
     w_cara: float = 0.70                # peso-prior capa cara (L1a)
@@ -436,6 +443,9 @@ class Config:
         cfg.consolidate_min_cos = get_float(ruta, "RF_CONSOLIDATE_MIN_COS", cfg.consolidate_min_cos)
         cfg.consolidate_min_margin = get_float(ruta, "RF_CONSOLIDATE_MIN_MARGIN", cfg.consolidate_min_margin)
         cfg.consolidate_interval_s = get_float(ruta, "RF_CONSOLIDATE_INTERVAL_S", cfg.consolidate_interval_s)
+        cfg.cooccur_window_s = get_float(ruta, "RF_COOCCUR_WINDOW_S", cfg.cooccur_window_s)
+        cfg.provisional_backs = get_bool(ruta, "RF_PROVISIONAL_BACKS", cfg.provisional_backs)
+        cfg.provisional_min_cos = get_float(ruta, "RF_PROVISIONAL_MIN_COS", cfg.provisional_min_cos)
         # Invariante anti-inconsistencia (G2): secure SIEMPRE por encima de match.
         # Producción llegó a correr secure=0.45 < match=0.48 (el gate s1<match se
         # ejecuta antes y el suelo seguro no rescataba la banda [0.45, 0.48)).

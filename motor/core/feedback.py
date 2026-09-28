@@ -203,3 +203,34 @@ def _features(d: dict) -> list[float] | None:
         lv = layers.get(layer) or {}
         feats.append(float(lv.get(kind, 0.0)))
     return feats
+
+
+def cooccurring_pairs(ruta: str, local_id, window_s: float = 6.0) -> set:
+    """Pares de personas vistas en la MISMA cámara dentro de `window_s`.
+
+    Fase 3 (recall/reconciliación): si dos identidades aparecen a la vez en la
+    misma cámara son personas DISTINTAS, así que nunca deben fusionarse. Se
+    derivan de las decisiones del clasificador (`decisions.jsonl`: person, cam,
+    ts) — no requiere consultar la BD. Devuelve {frozenset({cod_a, cod_b}), ...}.
+    """
+    fc = FeedbackCollector(ruta, local_id)
+    decisions = fc._read_jsonl(fc.decisions_path)
+    by_cam: dict[str, list[tuple[float, str]]] = {}
+    for d in decisions:
+        person, ts = d.get("person"), d.get("ts")
+        if not person or ts is None:
+            continue
+        by_cam.setdefault(str(d.get("cam")), []).append((float(ts), str(person)))
+    pairs: set = set()
+    for items in by_cam.values():
+        items.sort(key=lambda t: t[0])
+        n = len(items)
+        for i in range(n):
+            t1, p1 = items[i]
+            for j in range(i + 1, n):
+                t2, p2 = items[j]
+                if t2 - t1 > window_s:
+                    break
+                if p1 != p2:
+                    pairs.add(frozenset((p1, p2)))
+    return pairs

@@ -1200,10 +1200,15 @@ def process_body_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
             if avail and c > 0:
                 scores[cod] = LayerScore(score=s, confidence=c)
         if not scores:
-            # sin galería de torso todavía: revisión manual, nunca persona nueva
-            _body_to_revision(ruta, local_id, camara_id, [x["path"] for x in bat], cfg)
-            log_evento(ruta, local_id, "cuerpo", cam=camara_id,
-                       resultado="revision", n=len(bat))
+            # sin galería de torso todavía: provisional (recall) o revisión manual.
+            if cfg.provisional_backs:
+                _body_provisional(ruta, local_id, camara_id, it, query_desc, bat, cfg, store)
+                log_evento(ruta, local_id, "cuerpo", cam=camara_id,
+                           resultado="provisional", n=len(bat))
+            else:
+                _body_to_revision(ruta, local_id, camara_id, [x["path"] for x in bat], cfg)
+                log_evento(ruta, local_id, "cuerpo", cam=camara_id,
+                           resultado="revision", n=len(bat))
             n += 1
             continue
 
@@ -1243,6 +1248,14 @@ def process_body_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
             log(f"[body-match] {len(bat)} crop(s) -> {result.person} (torso+VLM)")
             log_evento(ruta, local_id, "cuerpo", cam=camara_id,
                        resultado="match", n=len(bat))
+        elif cfg.provisional_backs:
+            # Fase 3 (recall): persona vista solo de espaldas -> persona
+            # PROVISIONAL (solo apariencia). Se registra en vez de perderse; la
+            # consolidación la reconciliará por apariencia si aparece con cara.
+            prov = _body_provisional(ruta, local_id, camara_id, it, query_desc, bat, cfg, store)
+            log(f"[body-provisional] {len(bat)} crop(s) -> {prov} (sin cara, provisional)")
+            log_evento(ruta, local_id, "cuerpo", cam=camara_id,
+                       resultado="provisional", n=len(bat))
         else:
             _body_to_revision(ruta, local_id, camara_id, [x["path"] for x in bat], cfg)
             log(f"[body-revision] {len(bat)} crop(s) sin identidad concluyente -> revisión")
@@ -1259,6 +1272,30 @@ def _body_to_revision(ruta: str, local_id: str, camara_id: str,
     for p in paths:
         if os.path.exists(p):
             shutil.move(p, os.path.join(rev_dir, os.path.basename(p)))
+
+
+def _body_provisional(ruta: str, local_id: str, camara_id: str, it: dict,
+                      query_desc, bat: list[dict], cfg: Config, store: FaceStore) -> str:
+    """F7/Fase 3: registra una persona PROVISIONAL desde un crop de cuerpo.
+
+    Crea una identidad nueva con SOLO apariencia (sin cara), guarda su foto en el
+    álbum y la encola para consolidación: si luego aparece con cara, se
+    reconciliará. Devuelve el cod_interno provisional.
+    """
+    person = random_code()
+    out_dir = os.path.join(ruta, "motor/caras", local_id, camara_id, person)
+    os.makedirs(out_dir, exist_ok=True)
+    foto_id = random_code()
+    out_name = f"{it['file'].rsplit('.', 1)[0]}_{foto_id}.jpg"
+    cv2.imwrite(os.path.join(out_dir, out_name), it["img"], [cv2.IMWRITE_JPEG_QUALITY, 95])
+    if query_desc is not None and getattr(query_desc, "size", 0) > 0:
+        store.add_appearance(person, query_desc, ts=it["ts"] or time.time(), src=out_name)
+    from motor.consolidar_nacidos import enqueue  # noqa: E402
+    enqueue(ruta, local_id, person, pose=None)
+    for x in bat:
+        if os.path.exists(x["path"]):
+            os.remove(x["path"])
+    return person
 
 
 def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,

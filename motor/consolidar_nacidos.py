@@ -104,7 +104,8 @@ def enqueue(ruta: str, local_id: str, cod: str, pose: str | None = None) -> None
 
 def choose_merge_candidate(store: FaceStore, cfg: Config, cod: str,
                            exclude: set[str] | None = None,
-                           k: int = 5) -> str | None:
+                           k: int = 5,
+                           blocked: set | None = None) -> str | None:
     """Mejor persona con la que fusionar `cod` (o None).
 
     Criterio (galerías ricas, Fase 5):
@@ -114,14 +115,21 @@ def choose_merge_candidate(store: FaceStore, cfg: Config, cod: str,
         (evita depender de un único encoding puente).
     Excluye a otras personas también pendientes salvo cuando no quede otra
     opción: el nacido más antiguo es el destino natural de un nacido gemelo.
+    `blocked` (Fase 3): pares de personas co-ocurrentes (misma cámara a la vez)
+    que son DISTINTAS y NUNCA deben fusionarse.
     """
     enc = store.person_encodings(cod)
+    blocked = blocked or set()
     if enc is None or len(enc) == 0:
-        return None
+        # F7: persona PROVISIONAL (solo cuerpo/apariencia, sin cara todavía):
+        # se intenta reconciliar por apariencia con una identidad ya con cara.
+        return _choose_by_appearance(store, cfg, cod, exclude, blocked)
     exclude = exclude or set()
     ranked: list[tuple[float, str]] = []
     for other in store.persons():
         if other == cod or other in exclude:
+            continue
+        if frozenset((cod, other)) in blocked:
             continue
         g = store.person_encodings(other)
         if g is None or len(g) == 0:
@@ -140,6 +148,40 @@ def choose_merge_candidate(store: FaceStore, cfg: Config, cod: str,
     if best_rob < cfg.consolidate_min_cos - 0.05:
         return None
     return best_cod
+
+
+def _choose_by_appearance(store: FaceStore, cfg: Config, cod: str,
+                          exclude: set[str] | None, blocked: set) -> str | None:
+    """Reconcilia una persona provisional (sin cara) por galería de APARIENCIA.
+
+    Compara su descriptor de torso más reciente contra la galería de apariencia
+    de cada persona con cara; exige `provisional_min_cos` sobre score*confianza.
+    Conservador: la apariencia sola nunca debe fusionar a dos personas distintas.
+    """
+    from motor.core.appearance import Appearance, layer_score  # noqa: E402
+    gal = store.person_appearance(cod)
+    if not gal or not gal.get("desc"):
+        return None
+    q = np.asarray(gal["desc"][-1], dtype=np.float32)
+    exclude = exclude or set()
+    best, best_sc = None, 0.0
+    for other in store.persons():
+        if other == cod or other in exclude:
+            continue
+        if frozenset((cod, other)) in blocked:
+            continue
+        og = store.person_appearance(other)
+        if not og or not og.get("desc"):
+            continue
+        gallery = [Appearance(d, ts, s) for d, ts, s in
+                   zip(og["desc"], og["ts"], og.get("src", [""] * len(og["desc"])))]
+        s, c, avail = layer_score(q, gallery, ttl_days=cfg.torso_ttl_days)
+        if avail and c > 0 and s * c > best_sc:
+            best_sc = s * c
+            best = other
+    if best is not None and best_sc >= cfg.provisional_min_cos:
+        return best
+    return None
 
 
 def _distinct_poses(store: FaceStore, cod: str) -> int:
@@ -165,6 +207,10 @@ def run_once(ruta: str, local_id: str, cfg: Config, store: FaceStore,
         return 0
     now = time.time()
     pending_cods = {e["cod"] for e in entries}
+    # Fase 3: pares co-ocurrentes (misma cámara a la vez = personas distintas)
+    # que NUNCA deben fusionarse.
+    from motor.core.feedback import cooccurring_pairs  # noqa: E402
+    blocked = cooccurring_pairs(ruta, local_id, cfg.cooccur_window_s)
     done = 0
     for e in entries:
         cod = e["cod"]
@@ -180,7 +226,7 @@ def run_once(ruta: str, local_id: str, cfg: Config, store: FaceStore,
         # intento de fusión (solo contra personas NO pendientes; si no queda
         # otra, permite pendiente-pendiente, destino = la más antigua)
         other_pending = {c for c in pending_cods if c != cod}
-        cand = choose_merge_candidate(store, cfg, cod, exclude=other_pending)
+        cand = choose_merge_candidate(store, cfg, cod, exclude=other_pending, blocked=blocked)
         if cand is None:
             e["attempts"] = attempts + 1
             if attempts + 1 > cfg.pending_max_attempts or age >= cfg.pending_hard_deadline_s:

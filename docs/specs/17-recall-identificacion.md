@@ -1,4 +1,4 @@
-# Spec 16 — Recall de identificación (captura → extracción → clasificación)
+# Spec 17 — Recall de identificación (captura → extracción → clasificación)
 
 > Estado: en implementación. Cambios por fases, cada uno desplegable y reversible.
 

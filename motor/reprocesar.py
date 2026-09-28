@@ -105,8 +105,20 @@ def rescannear_video(ruta: str, local_id: str, camara_id: str, fichero: str,
     return caras
 
 
-def rescannear_videos(ruta: str, local_id: str, cfg: Config, face_every: int) -> int:
-    """(b) Re-escanea todos los MP4 archivados del local."""
+def _marcador(ruta: str, local_id: str, camara_id: str, fichero: str) -> str:
+    """Marker de vídeo ya re-escaneado (idempotencia del timer diario)."""
+    return os.path.join(ruta, "motor/reprocesado", str(local_id), str(camara_id),
+                        fichero + ".done")
+
+
+def rescannear_videos(ruta: str, local_id: str, cfg: Config, face_every: int,
+                      force: bool = False) -> int:
+    """(b) Re-escanea los MP4 archivados del local que aún no se re-escaneó.
+
+    Fase 3 (recall): idempotente — cada vídeo se procesa UNA vez (marker en
+    `motor/reprocesado/`), para que el timer diario no re-extraiga las mismas
+    caras y no genere duplicados. `force=True` ignora el marker.
+    """
     base = os.path.join(ruta, "motor/videos_archivo", local_id)
     if not os.path.isdir(base):
         return 0
@@ -118,7 +130,16 @@ def rescannear_videos(ruta: str, local_id: str, cfg: Config, face_every: int) ->
         for fichero in sorted(os.listdir(cdir)):
             if not fichero.lower().endswith(".mp4"):
                 continue
+            marker = _marcador(ruta, local_id, cam, fichero)
+            if os.path.exists(marker) and not force:
+                continue
             c = rescannear_video(ruta, local_id, cam, fichero, cfg, face_every)
+            try:
+                os.makedirs(os.path.dirname(marker), exist_ok=True)
+                with open(marker, "w", encoding="utf-8") as fh:
+                    fh.write(str(time.time()) + "\n")
+            except OSError:
+                pass
             total += c
             print(f"  {cam}/{fichero}: {c} caras", flush=True)
     return total
@@ -167,14 +188,26 @@ def reembeder_galeria(ruta: str, local_id: str, cfg: Config, max_fotos: int = 50
     return n
 
 
+def _locales_disponibles(ruta: str) -> list[str]:
+    """Locales con vídeos archivados (para --todos, sin tocar la BD)."""
+    base = os.path.join(ruta, "motor/videos_archivo")
+    if not os.path.isdir(base):
+        return []
+    return [d for d in sorted(os.listdir(base)) if os.path.isdir(os.path.join(base, d))]
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("local_id")
+    ap.add_argument("local_id", nargs="?", default=None)
     ap.add_argument("--ruta", default=os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
     ap.add_argument("--fotos", action="store_true", help="sube de resolución las fotos existentes")
     ap.add_argument("--videos", action="store_true", help="re-escanea los vídeos archivados a det_size alto")
     ap.add_argument("--galeria", action="store_true", help="recalcula los embeddings de la galería (face_enc_v2)")
-    ap.add_argument("--face-every", type=int, default=6, help="muestreo de frames (6 = cada 6 frames)")
+    ap.add_argument("--face-every", type=int, default=2, help="muestreo de frames (2 = cada 2 frames)")
+    ap.add_argument("--force", action="store_true",
+                    help="re-escanea también vídeos ya marcados como re-escaneados")
+    ap.add_argument("--todos", action="store_true",
+                    help="aplica a TODOS los locales con vídeos archivados (timer diario)")
     args = ap.parse_args()
 
     if not (args.fotos or args.videos or args.galeria):
@@ -186,12 +219,21 @@ def main() -> int:
         n = reprocesar_fotos(args.ruta, cfg)
         print(f"fotos reprocesadas: {n}", flush=True)
 
+    locales = _locales_disponibles(args.ruta) if args.todos else ([args.local_id] if args.local_id else [])
+    if not locales:
+        ap.error("indica local_id o usa --todos (con vídeos archivados)")
+
     if args.videos:
-        total = rescannear_videos(args.ruta, args.local_id, cfg, args.face_every)
+        total = 0
+        for loc in locales:
+            total += rescannear_videos(args.ruta, loc, cfg, args.face_every,
+                                       force=args.force)
         print(f"caras re-extraídas de vídeos: {total}", flush=True)
 
     if args.galeria:
-        n = reembeder_galeria(args.ruta, args.local_id, cfg)
+        n = 0
+        for loc in locales:
+            n += reembeder_galeria(args.ruta, loc, cfg)
         print(f"personas con galería re-embebida: {n}", flush=True)
 
     return 0
