@@ -10,6 +10,8 @@ ExecStart=/usr/bin/php /root/reconocimientoFacial/vinculador.php
 Restart=always
 RestartSec=5
 User=root
+# Diferible (backfill de vínculos, I/O BD): cores de la web (0-2).
+CPUAffinity=0-2
 
 [Install]
 WantedBy=multi-user.target

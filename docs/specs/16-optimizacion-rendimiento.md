@@ -68,10 +68,30 @@ trabajo útil; el panel (Apache/php-fpm/MySQL) se queda sin turno.
 - **Criterio de aceptación:** runqueue < 15, ctx-switch < 20k/s, loadavg < 15,
   panel responsivo, `motor/eval` idéntico, backlog de vídeos estable.
 
-### F2 — Topología y afinidad
-- `cpuset`: cores 0-1 para web (Apache/php-fpm/MySQL) + `rf-live`; 2-9 para RF.
-- `CPUWeight`/`IOWeight` para que el panel nunca muera bajo carga.
-- Afinar `RF_CLASIF_CAMS_POR_PROC` (más procesos × menos hilos cada uno).
+### F1 — Resultado medido (2026-09-28, prod)
+
+| Métrica | Antes | Después |
+|---|---:|---:|
+| Context switches/s | 79.040 | ~2.900 (~27× menos) |
+| Hilos/proceso `procesa_video` | 65 | 12-16 |
+| Hilos/proceso `clasificador` | 55 | 6 |
+| Hilos/proceso `guarda_movimientos` | 20 | 11 |
+| Hilos totales del sistema | 1.130 | 928 |
+| Detección (dev, misma imagen) | — | idéntica (1 cara) |
+
+### F2 — Topología y afinidad  *(hecho en este cambio)*
+Reparto de los 10 cores con `CPUAffinity` (vía `sched_setaffinity`; el cgroup es
+v1, por eso se usa `CPUAffinity` y no `CPUWeight`). Los hijos heredan la afinidad:
+
+| Cores | Servicios | Motivo |
+|---|---|---|
+| 0-2 | `rf-live`, `rf-panel-control`, `rf-clasificador`, `rf-conciliador`, `rf-vinculador`, `rf-alarmador` + Apache/php-fpm/MySQL/OS (sin pinchar) | reserva de latencia para el panel |
+| 3-5 | `rf-capturador` (11 `guarda_movimientos` + ffmpeg) | captura en tiempo real (Nice=-10) |
+| 6-9 | `rf-detector` (clasificador + procesa_video) | inferencia diferible (Nice=10) |
+| 3-9 | `rf-photo` | foto HQ diferible |
+
+Al estar RF pinneado fuera de 0-2, la web conserva esos cores aunque el motor
+esté saturado. Pendiente: afinar `RF_CLASIF_CAMS_POR_PROC` si la medición lo pide.
 
 ### F3 — SR/GFPGAN fuera del camino crítico (misma salida)
 - Mover `enhance_embedding` a un worker por cola con hilos fijos; `photo_worker`

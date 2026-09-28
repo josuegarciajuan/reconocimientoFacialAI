@@ -10,6 +10,8 @@ ExecStart=/usr/bin/php /root/reconocimientoFacial/clasificadorV2.php
 Restart=always
 RestartSec=5
 User=root
+# Ingesta ligera a BD (escaneo de fotos): cores de la web (0-2).
+CPUAffinity=0-2
 
 [Install]
 WantedBy=multi-user.target
