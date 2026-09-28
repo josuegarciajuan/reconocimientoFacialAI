@@ -333,7 +333,11 @@ class Config:
     # de co-ocurrencia temporal). Además, F7: permitir crear persona provisional
     # a partir de un crop de cuerpo sin cara (en vez de solo revisión manual).
     cooccur_window_s: float = 6.0
-    provisional_backs: bool = True
+    # F7: crear persona provisional desde un crop de cuerpo sin cara. OFF por
+    # defecto: mientras no exista la bandeja de revisión, cada crop de espaldas
+    # generaba una identidad vacía (incidente 2026-09-28). Activar con
+    # RF_PROVISIONAL_BACKS=1 cuando la revisión esté en marcha.
+    provisional_backs: bool = False
     provisional_min_cos: float = 0.55   # parecido de torso para reconciliar un provisional
 
     # --- anti-fragmentación: freno de creación de identidades ---
