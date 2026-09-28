@@ -3,7 +3,12 @@
 
 # Detección + embeddings
 insightface==0.7.3
-onnxruntime==1.16.3
+# onnxruntime-openvino aporta el módulo `onnxruntime` + OpenVINOExecutionProvider
+# (Intel). En el Xeon Gold (AVX-512 + VNNI) acelera RetinaFace/ArcFace ~2,3x con
+# salidas numéricamente equivalentes (medido: coseno de embeddings 1.000000 y
+# diff máx ~1e-5). Sustituye a `onnxruntime` (mismo módulo, mismo API).
+# IMPORTANTE: numpy DEBE ser <2 (el binario está compilado para NumPy 1.x).
+onnxruntime-openvino==1.16.0
 
 # Imagen / visión
 opencv-python-headless==4.9.0.80

@@ -149,6 +149,25 @@ backlog es un techo de cómputo real; para vaciarlo haría falta acelerar la
 inferencia (p. ej. OpenVINO sobre el Xeon, con validación de TAR/FAR) o reducir
 la generación de clips (sensibilidad de movimiento), no más hilos.
 
+### Aceleración de inferencia con OpenVINO (2026-09-28)  *(hecho en este cambio)*
+El backlog de vídeos es un techo de cómputo. Se sustituye `onnxruntime==1.16.3`
+por `onnxruntime-openvino==1.16.0` (mismo módulo/API + `OpenVINOExecutionProvider`
+para Intel) y `motor/core/model.py` elige provider según `RF_ORT_PROVIDER`
+(auto|openvino|cpu, con fallback a CPU).
+
+Benchmark en el Xeon Gold 6230R (AVX-512 + `avx512_vnni`), `num_of_threads=2`
+(det_10g a 1280, el tamaño real):
+
+| Modelo | CPU | OpenVINO | Speedup | Equivalencia |
+|---|---:|---:|---:|---|
+| det_10g @1280 | 1.321 ms | 563 ms | **2,35x** | diff máx 1e-5 |
+| w600k_r50 (ArcFace) | 304 ms | 259 ms* | ~1,2-2,7x | **coseno 1.000000** |
+
+(*) A 112px el tope de hilos penaliza; a 1280 es donde importa.
+Arranque en frío por proceso: +0,18 s/modelo (compilación OpenVINO), despreciable
+frente al timepo de procesado de un vídeo. No cambia la decisión de reconocimiento
+(salidas numéricamente equivalentes); para revertir: `RF_ORT_PROVIDER=cpu`.
+
 ### F6 — Verificación y rollout
 - Cada fase: worktree → commit → merge a `main` → `bash deploy/deploy_prod.sh`.
 - `perf_snapshot` antes/después + gate `motor/eval`.
