@@ -1472,7 +1472,8 @@ def process_body_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
 
 def _body_to_revision(ruta: str, local_id: str, camara_id: str,
                       paths: list[str], cfg: Config) -> None:
-    rev_dir = os.path.join(ruta, cfg.revision_dir, local_id, camara_id)
+    """Crops de cuerpo SIN cara -> `motor/revision_cuerpos/` (no la bandeja de caras)."""
+    rev_dir = os.path.join(ruta, cfg.revision_cuerpos_dir, local_id, camara_id)
     os.makedirs(rev_dir, exist_ok=True)
     for p in paths:
         if os.path.exists(p):

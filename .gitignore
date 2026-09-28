@@ -29,6 +29,7 @@ motor/eval/data/
 # Datos runtime de la cascada de fusión (F0-F7)
 motor/feedback/
 motor/revision/
+motor/revision_cuerpos/
 motor/backups/
 motor/calib/
 motor/llm_cache/

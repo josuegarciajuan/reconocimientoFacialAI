@@ -64,6 +64,15 @@ def es_imagen(nombre: str) -> bool:
     return os.path.splitext(nombre)[1].lower() in IMG_EXTS
 
 
+def es_cara(nombre: str) -> bool:
+    """True si es una imagen de CARA (no un crop de cuerpo `*_nocara`).
+
+    La bandeja de revisión es solo para caras: los crops de cuerpo sin cara
+    (`*_nocara`) van a `motor/revision_cuerpos/` y no deben listarse aquí.
+    """
+    return es_imagen(nombre) and "_nocara" not in os.path.splitext(nombre)[0]
+
+
 def ruta_revision_segura(ruta: str, local: str, cam: str, file: str) -> str | None:
     """Valida componentes y devuelve la ruta absoluta del fichero de revisión.
 
@@ -116,7 +125,7 @@ def cmd_listar(args) -> int:
             if not componente_valido(cam) or not os.path.isdir(cam_dir):
                 continue
             for f in os.listdir(cam_dir):
-                if not componente_valido(f) or not es_imagen(f):
+                if not componente_valido(f) or not es_cara(f):
                     continue
                 p = os.path.join(cam_dir, f)
                 if not os.path.isfile(p):

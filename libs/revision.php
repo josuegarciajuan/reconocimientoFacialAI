@@ -34,6 +34,13 @@ function rf_revision_es_imagen(string $nombre): bool
     return in_array($ext, RF_REVISION_IMG_EXTS, true);
 }
 
+/** ¿Es una cara (no un crop de cuerpo `*_nocara`)? La bandeja es solo de caras. */
+function rf_revision_es_cara(string $nombre): bool
+{
+    return rf_revision_es_imagen($nombre)
+        && !str_contains(pathinfo($nombre, PATHINFO_FILENAME), "_nocara");
+}
+
 /**
  * Ruta absoluta CANÓNICA del fichero de revisión, o null si no es segura.
  *

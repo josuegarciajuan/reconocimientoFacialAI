@@ -53,7 +53,7 @@ $personas = DB::select(
             <?php
             $cam = (string)($it["cam"] ?? "");
             $file = (string)($it["file"] ?? "");
-            if (!rf_revision_componente_valido($cam) || !rf_revision_componente_valido($file) || !rf_revision_es_imagen($file)) {
+            if (!rf_revision_componente_valido($cam) || !rf_revision_componente_valido($file) || !rf_revision_es_cara($file)) {
                 continue;
             }
             $rel = (string)($it["rel"] ?? ($local_id . "/" . $cam . "/" . $file));

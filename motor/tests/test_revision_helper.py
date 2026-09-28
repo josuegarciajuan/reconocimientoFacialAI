@@ -6,7 +6,7 @@ en tmp_path para los casos válidos.
 """
 import os
 
-from motor.revision import componente_valido, es_imagen, ruta_revision_segura
+from motor.revision import componente_valido, es_cara, es_imagen, ruta_revision_segura
 
 
 def _mk(root, local, cam, nombre):
@@ -33,6 +33,14 @@ def test_componente_valido():
 def test_es_imagen():
     assert es_imagen("a.jpg") and es_imagen("a.JPEG") and es_imagen("a.png")
     assert not es_imagen("a.gif") and not es_imagen("a.txt") and not es_imagen("a")
+
+
+def test_es_cara():
+    assert es_cara("19_2026-09-28_17:10:03.604617.mp4_1.5_0.jpg")
+    assert es_cara("14_2026-09-28_10:14:08.jpg")
+    assert not es_cara("14_2026-09-28_10:14:08_nocara.jpg")
+    assert not es_cara("algo_nocara.png")
+    assert not es_cara("a.gif")
 
 
 def test_valida_jpg(tmp_path):
