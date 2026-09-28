@@ -47,6 +47,7 @@ function rf_terminos() {
         "nav-alarmas"    => ["mordor" => "La Almenara", "pro" => "Alarmas"],
         "nav-accesos"    => ["mordor" => "Movimientos", "pro" => "Accesos"],
         "nav-visitantes" => ["mordor" => "Pueblos", "pro" => "Visitantes"],
+        "nav-revision"   => ["mordor" => "La Atalaya", "pro" => "Revisión"],
         "nav-rutas"      => ["mordor" => "Caminos", "pro" => "Rutas"],
         "nav-lineas"     => ["mordor" => "Líneas", "pro" => "Líneas"],
         "nav-ayuda"      => ["mordor" => "El Concilio", "pro" => "Ayuda"],
