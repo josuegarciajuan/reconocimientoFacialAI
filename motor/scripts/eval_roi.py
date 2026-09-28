@@ -56,9 +56,8 @@ def _faces_full(frame, det_size, min_score):
             for f in analyze(frame, det_size=(det_size, det_size), min_score=min_score)]
 
 
-def _faces_roi(frame, det, det_size, min_score, margin, max_rois=8):
+def _faces_roi(frame, boxes, det_size, min_score, margin, max_rois=8):
     h, w = frame.shape[:2]
-    boxes = det.process(frame)
     # recortes más grandes primero; tope para acotar coste
     boxes = sorted(boxes, key=lambda b: b[2] * b[3], reverse=True)[:max_rois]
     faces = []
@@ -95,42 +94,50 @@ def main() -> int:
     tmp = os.path.join("/tmp", "evalroi_" + os.path.basename(args.video))
     shutil.copy2(args.video, tmp)
     cap = cv2.VideoCapture(tmp)
-    frames = []
+    det = PersonDetector(CrossingConfig())
+    muestras = []  # [(frame, person_boxes)]
     i = 0
-    while len(frames) < args.frames:
+    while len(muestras) < args.frames:
         ret, fr = cap.read()
         if not ret:
             break
+        # CRÍTICO: alimentar el detector de personas en TODOS los frames para que
+        # el modelo de fondo (MOG2) se caliente; solo se muestrea su salida en los
+        # frames elegidos. Sin esto, el detector está "frío" y no ve personas.
+        boxes = det.process(fr)
         if i % args.step == 0:
-            frames.append(fr)
+            muestras.append((fr, boxes))
         i += 1
     cap.release()
     os.remove(tmp)
-    if not frames:
+    if not muestras:
         print("ERROR: sin frames")
         return 1
-
-    det = PersonDetector(CrossingConfig())
+    frames_img = [f for f, _ in muestras]
+    frames_box = [b for _, b in muestras]
     ms = cfg.min_det_score
+    print(f"personas/frame medio={sum(len(b) for b in frames_box)/len(frames_box):.2f} "
+          f"(total boxes={sum(len(b) for b in frames_box)})")
 
     # Baseline
     t0 = time.perf_counter()
-    base = [_faces_full(f, args.baseline, ms) for f in frames]
-    t_base = (time.perf_counter() - t0) / len(frames) * 1000
+    base = [_faces_full(f, args.baseline, ms) for f in frames_img]
+    t_base = (time.perf_counter() - t0) / len(frames_img) * 1000
 
     # ROI
     t0 = time.perf_counter()
-    roi = [_faces_roi(f, det, args.roi_size, ms, args.margin) for f in frames]
-    t_roi = (time.perf_counter() - t0) / len(frames) * 1000
+    roi = [_faces_roi(f, boxes, args.roi_size, ms, args.margin)
+           for f, boxes in zip(frames_img, frames_box)]
+    t_roi = (time.perf_counter() - t0) / len(frames_img) * 1000
 
     # ROI + backup (barrido del frame completo a baja resolución)
     t0 = time.perf_counter()
     roib = []
-    for f in frames:
-        merged = _faces_roi(f, det, args.roi_size, ms, args.margin)
+    for f, boxes in zip(frames_img, frames_box):
+        merged = _faces_roi(f, boxes, args.roi_size, ms, args.margin)
         merged = _dedup(merged + _faces_full(f, args.backup, ms))
         roib.append(merged)
-    t_roib = (time.perf_counter() - t0) / len(frames) * 1000
+    t_roib = (time.perf_counter() - t0) / len(frames_img) * 1000
 
     def report(nombre, res, tms):
         total = sum(len(r) for r in res)
@@ -150,7 +157,7 @@ def main() -> int:
     report(f"ROI @{args.roi_size}", roi, t_roi)
     report(f"ROI+backup@{args.backup}", roib, t_roib)
     print("=" * 72)
-    print(f"frames={len(frames)} baseline_caras={bt} margin={args.margin} "
+    print(f"frames={len(frames_img)} baseline_caras={bt} margin={args.margin} "
           f"speedup_roi={t_base/t_roi:.1f}x  speedup_roi+backup={t_base/t_roib:.1f}x")
     return 0
 
