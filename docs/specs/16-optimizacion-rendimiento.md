@@ -138,6 +138,17 @@ encola de inmediato y solo los `.avi` legacy usan la ventana de 6 s. No cambia
 el resultado del análisis; permite vaciar el backlog al ritmo que marque
 `RF_LIMITE_VIDEOS`.
 
+Nota: al correr el bucle ~1 s, el chequeo de marcadores (`pgrep` por vídeo
+pendiente) se disparaba con backlog grande (tormenta de forks). Se limita ese
+bloque a una pasada cada 3 s (`$scan_completo`), así que la latencia de
+lanzamiento es <=3 s y el churn queda acotado.
+
+Capacidad: con 11 cámaras 1080p, el detector genera vídeos más rápido de lo que
+los procesa (RetinaFace a 1280 + MOG2 por línea + detector de personas). El
+backlog es un techo de cómputo real; para vaciarlo haría falta acelerar la
+inferencia (p. ej. OpenVINO sobre el Xeon, con validación de TAR/FAR) o reducir
+la generación de clips (sensibilidad de movimiento), no más hilos.
+
 ### F6 — Verificación y rollout
 - Cada fase: worktree → commit → merge a `main` → `bash deploy/deploy_prod.sh`.
 - `perf_snapshot` antes/después + gate `motor/eval`.

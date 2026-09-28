@@ -108,7 +108,17 @@ function limpiar_marcadores_procesa_huerfanos(int $local_id, array $cams_local):
     closedir($d);
 }
 
+$ultimo_scan = 0;
 while (true) {
+    // Throttle del escaneo de marcadores. Al eliminar el `sleep(6)` por cámara
+    // (los .mp4 se encolan al instante), el bucle corre ~1 s; pero el chequeo de
+    // "¿sigue vivo el procesa_video de cada marcador?" lanza un `pgrep` por
+    // vídeo pendiente -> con backlog grande era una tormenta de forks (miles de
+    // cambios de contexto/s). Este bloque (marcadores + lanzamientos + archivado)
+    // se ejecuta como mucho cada 3 s; la latencia de lanzamiento sigue <=3 s.
+    $ahora_scan = time();
+    $scan_completo = ($ahora_scan - $ultimo_scan) >= 3;
+    if ($scan_completo) { $ultimo_scan = $ahora_scan; }
 
     $locales = DB::select("SELECT id FROM locales WHERE id > 0 ORDER BY id ASC");
     foreach ($locales as $loc) {
@@ -205,6 +215,8 @@ while (true) {
                     elseif (preg_match('/\.(avi|mp4)\.txt$/', $el)) { $numero_videos++; }
                 }
             }
+
+            if (!$scan_completo) { continue; }   // throttle: ver nota al inicio del bucle
 
             foreach ($subidos as $video) {
                 // ---- archivo comprimido: AVI -> MP4 H.264 (motor/archiva_video.py) ----
