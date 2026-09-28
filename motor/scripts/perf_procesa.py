@@ -78,6 +78,10 @@ def main() -> int:
         provider = app.models["detection"].session.get_providers()[0]
     except Exception:  # noqa: BLE001
         pass
+    # Progreso inmediato (clave: si el análisis es muy lento, queremos ver el
+    # provider y los tiempos acumulados sin esperar al final).
+    print(f"[perf] provider={provider} arranque_modelos={t_load:.2f}s "
+          f"det_size={cfg.det_size} face_every={face_every} cam={args.cam}", flush=True)
 
     cap = cv2.VideoCapture(tmp)
     if not cap.isOpened():
@@ -114,6 +118,12 @@ def main() -> int:
                             min_score=cfg.min_det_score)
             t["analyze"] += time.perf_counter() - a
             nface += len(faces)
+            if n_analyzed % 10 == 0:
+                print(f"[perf] frames={nframes} analizados={n_analyzed} "
+                      f"analyze_medio={t['analyze']/max(1, n_analyzed)*1000:.0f}ms "
+                      f"caras={nface} decode={t['decode']:.1f}s "
+                      f"cruces={t['cruces']:.1f}s persona={t['persona']:.1f}s",
+                      flush=True)
             a = time.perf_counter()
             for f in faces:
                 face_sharpness(frame, f)
