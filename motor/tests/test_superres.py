@@ -225,3 +225,153 @@ def test_photo_busto_face_region_blend_no_gfpgan():
     out = _face_region_blend(img, (20, 20, 80, 80), cfg)
     assert out is not None
     assert out.shape == img.shape
+
+
+def _no_model_cfg() -> Config:
+    """Config determinista: sin SR ni GFPGAN y sin top-up de display.
+
+    Deja el pipeline reducido al encuadre/crop/fusión puro (sin cargar modelos),
+    que es exactamente lo que se quiere aislar en los tests de MF-SR.
+    """
+    cfg = Config()
+    cfg.sr_enabled = False
+    cfg.sr_face_enabled = False
+    cfg.min_display_side = 1
+    return cfg
+
+
+# ------------------------------------------------------------------ _busto_crop
+
+def test_busto_crop_shape_and_dtype():
+    from motor.core.superres import _busto_crop
+    cfg = Config()
+    img = np.zeros((200, 200, 3), dtype=np.uint8)
+    bbox = (80, 90, 120, 140)          # cara 40x50
+    z, fb = _busto_crop(img, bbox, cfg)
+    fw, fh = 40, 50
+    exp_w = min(max(round(fw / cfg.busto_face_fill), fw + 2 * cfg.busto_min_pad), 200)
+    exp_h = min(max(round(fh / cfg.busto_face_fill), fh + 2 * cfg.busto_min_pad), 200)
+    assert z.dtype == np.uint8
+    assert z.shape == (exp_h, exp_w, 3)
+    assert isinstance(fb, tuple) and len(fb) == 4
+
+
+def test_busto_crop_fb_points_to_face():
+    """`fb` localiza exactamente la cara dentro de `z` (misma región de píxeles)."""
+    from motor.core.superres import _busto_crop
+    cfg = Config()
+    img = np.zeros((200, 200, 3), dtype=np.uint8)
+    bbox = (80, 90, 120, 140)
+    img[90:140, 80:120] = 255          # solo la cara es blanca
+    z, fb = _busto_crop(img, bbox, cfg)
+    fx1, fy1, fx2, fy2 = fb
+    face = z[fy1:fy2, fx1:fx2]
+    assert face.shape == (50, 40, 3)
+    assert int(face.min()) == 255      # la caja fb cubre justo la cara
+    assert int(z.sum()) == 255 * 50 * 40 * 3
+
+
+def test_busto_crop_clamps_border():
+    """Cara pegada a la esquina: el crop se clampea y `fb` sigue contenido."""
+    from motor.core.superres import _busto_crop
+    cfg = Config()
+    img = np.zeros((100, 120, 3), dtype=np.uint8)
+    bbox = (0, 0, 20, 20)
+    z, fb = _busto_crop(img, bbox, cfg)
+    assert z.shape[0] <= 100 and z.shape[1] <= 120
+    assert fb[0] >= 0 and fb[1] >= 0
+    assert fb[2] <= z.shape[1] and fb[3] <= z.shape[0]
+    # esquina opuesta
+    bbox2 = (100, 80, 120, 100)
+    z2, fb2 = _busto_crop(img, bbox2, cfg)
+    assert z2.shape[0] <= 100 and z2.shape[1] <= 120
+    assert fb2[0] >= 0 and fb2[1] >= 0
+    assert fb2[2] <= z2.shape[1] and fb2[3] <= z2.shape[0]
+
+
+# --------------------------------------------------------- photo_busto_fused
+
+def test_photo_busto_fused_requires_two_frames():
+    from motor.core.superres import photo_busto_fused
+    cfg = _no_model_cfg()
+    img = tiny_bgr(80, 80)
+    bbox = (20, 20, 60, 60)
+    assert photo_busto_fused([(img, bbox)], cfg) is None
+    assert photo_busto_fused([], cfg) is None
+
+
+def test_photo_busto_fused_two_identical_frames():
+    from motor.core.superres import photo_busto_fused
+    cfg = _no_model_cfg()
+    img = tiny_bgr(80, 80)
+    bbox = (20, 20, 60, 60)
+    out = photo_busto_fused([(img, bbox), (img, bbox)], cfg)
+    assert out is not None
+    assert out.dtype == np.uint8
+    assert out.ndim == 3 and out.shape[2] == 3
+
+
+def test_photo_busto_fused_normalizes_distinct_shapes():
+    from motor.core.superres import photo_busto_fused
+    cfg = _no_model_cfg()
+    big = tiny_bgr(100, 100)
+    small = tiny_bgr(60, 60)
+    out = photo_busto_fused([(big, (30, 30, 70, 70)), (small, (10, 10, 40, 45))], cfg)
+    assert out is not None
+    assert out.dtype == np.uint8
+    assert out.ndim == 3 and out.shape[2] == 3
+
+
+def test_photo_busto_fused_ignores_empty_frame():
+    """Un frame con crop vacío se ignora; si quedan >=2 válidos, fusiona."""
+    from motor.core.superres import photo_busto_fused
+    cfg = _no_model_cfg()
+    valid = tiny_bgr(80, 80)
+    bbox = (20, 20, 60, 60)
+    empty = np.zeros((0, 0, 3), dtype=np.uint8)
+    out = photo_busto_fused([(valid, bbox), (empty, (0, 0, 5, 5)), (valid, bbox)], cfg)
+    assert out is not None
+    assert out.dtype == np.uint8
+
+
+def test_photo_busto_fused_empty_frame_degrades_safely():
+    """Sin >=2 crops válidos devuelve None (nunca lanza)."""
+    from motor.core.superres import photo_busto_fused
+    cfg = _no_model_cfg()
+    valid = tiny_bgr(80, 80)
+    bbox = (20, 20, 60, 60)
+    empty = np.zeros((0, 0, 3), dtype=np.uint8)
+    assert photo_busto_fused([(valid, bbox), (empty, (0, 0, 5, 5))], cfg) is None
+    # bbox inválido en el frame de referencia tampoco revienta
+    assert photo_busto_fused([(valid, None), (valid, bbox)], cfg) is None
+
+
+def test_photo_busto_fused_reduces_noise():
+    """La mediana de N frames ruidosos reduce la varianza vs un frame suelto."""
+    from motor.core.superres import photo_busto_fused
+    cfg = _no_model_cfg()
+    rng = np.random.default_rng(3)
+    base = np.full((80, 80, 3), 100, dtype=np.uint8)
+    noisy = [np.clip(base + rng.integers(-30, 30, base.shape), 0, 255).astype(np.uint8)
+             for _ in range(5)]
+    bbox = (20, 20, 60, 60)
+    out = photo_busto_fused([(n, bbox) for n in noisy], cfg)
+    assert out is not None
+    single_std = float(np.std(noisy[0].astype(np.float32)))
+    out_std = float(np.std(out.astype(np.float32)))
+    assert out_std < single_std
+
+
+# -------------------------------------------------------------- regresión photo_busto
+
+def test_photo_busto_regression_matches_busto_crop():
+    """Sin SR/GFPGAN/top-up, photo_busto == _busto_crop (refactor neutro)."""
+    from motor.core.superres import photo_busto, _busto_crop
+    cfg = _no_model_cfg()
+    img = tiny_bgr(150, 150)
+    bbox = (50, 60, 90, 110)
+    z, _fb = _busto_crop(img, bbox, cfg)
+    out = photo_busto(img, bbox, cfg)
+    assert out.dtype == np.uint8
+    assert out.shape == z.shape
+    assert np.array_equal(out, z)

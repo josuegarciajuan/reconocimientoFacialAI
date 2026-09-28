@@ -477,6 +477,46 @@ def _face_region_blend(img: np.ndarray, face_box, cfg) -> np.ndarray:
     return out
 
 
+def _busto_crop(img: np.ndarray, bbox, cfg) -> tuple[np.ndarray, tuple]:
+    """Recorte de busto centrado en la cara (helper reutilizable de display).
+
+    Replica EXACTAMENTE el encuadre histórico de `photo_busto`: ventana
+    (fw/busto_face_fill, fh/busto_face_fill) con piso de `busto_min_pad`,
+    centrada en la cara y clampada a los bordes de la imagen. Devuelve
+    `(z, fb)` con `z` el recorte y `fb=(x1-x1c, y1-y1c, x2-x1c, y2-y1c)` la caja
+    de la cara dentro de `z` (necesaria para el blend de la región facial).
+    """
+    h, w = img.shape[:2]
+    x1, y1, x2, y2 = (int(round(v)) for v in bbox)
+    fw, fh = max(1, x2 - x1), max(1, y2 - y1)
+    crop_w = min(max(int(round(fw / cfg.busto_face_fill)), fw + 2 * cfg.busto_min_pad), w)
+    crop_h = min(max(int(round(fh / cfg.busto_face_fill)), fh + 2 * cfg.busto_min_pad), h)
+    cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
+    x1c = max(0, min(cx - crop_w // 2, w - crop_w))
+    y1c = max(0, min(cy - crop_h // 2, h - crop_h))
+    z = img[y1c:y1c + crop_h, x1c:x1c + crop_w]
+    # bbox de la cara dentro del encuadre z
+    fb = (x1 - x1c, y1 - y1c, x2 - x1c, y2 - y1c)
+    return z, fb
+
+
+def _topup_display(z: np.ndarray, cfg) -> np.ndarray:
+    """A5 top-up de DISPLAY: la UI no debe reescalar fotos finales diminutas.
+
+    Upscale LANCZOS4 SOLO hasta `cfg.min_display_side` (default 512). No toca
+    embeddings ni el SR interno.
+    """
+    _MIN_DISPLAY_SIDE = getattr(cfg, "min_display_side", 512)
+    _zh, _zw = z.shape[:2]
+    if _zh < 1 or _zw < 1:
+        return z
+    if max(_zh, _zw) < _MIN_DISPLAY_SIDE:
+        _s = _MIN_DISPLAY_SIDE / max(_zh, _zw)
+        z = cv2.resize(z, (max(1, int(round(_zw * _s))), max(1, int(round(_zh * _s)))),
+                       interpolation=cv2.INTER_LANCZOS4)
+    return z
+
+
 def photo_busto(img: np.ndarray, bbox, cfg, model: str | None = None,
                 restore: bool = True) -> np.ndarray:
     """Foto final de BUSTO para el panel: torso real + cara restaurada.
@@ -489,19 +529,11 @@ def photo_busto(img: np.ndarray, bbox, cfg, model: str | None = None,
     restauración facial queda para el worker único motor/photo_worker.py, que
     sí llama con restore=True y genera `<out>.hq`). Devuelve SIEMPRE BGR uint8.
     """
-    h, w = img.shape[:2]
     x1, y1, x2, y2 = (int(round(v)) for v in bbox)
     fw, fh = max(1, x2 - x1), max(1, y2 - y1)
-    crop_w = min(max(int(round(fw / cfg.busto_face_fill)), fw + 2 * cfg.busto_min_pad), w)
-    crop_h = min(max(int(round(fh / cfg.busto_face_fill)), fh + 2 * cfg.busto_min_pad), h)
-    cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
-    x1c = max(0, min(cx - crop_w // 2, w - crop_w))
-    y1c = max(0, min(cy - crop_h // 2, h - crop_h))
-    z = img[y1c:y1c + crop_h, x1c:x1c + crop_w]
+    z, fb = _busto_crop(img, bbox, cfg)
     if z.size == 0:
         return img
-    # bbox de la cara dentro del encuadre z
-    fb = (x1 - x1c, y1 - y1c, x2 - x1c, y2 - y1c)
     before = z.shape[:2]
     z = enhance(z, cfg, model=model)
     sy = z.shape[0] / max(1, before[0])
@@ -509,20 +541,67 @@ def photo_busto(img: np.ndarray, bbox, cfg, model: str | None = None,
     if sy != 1.0 or sx != 1.0:
         fb = (int(fb[0] * sx), int(fb[1] * sy), int(fb[2] * sx), int(fb[3] * sy))
     # A3 gate (2026-08-26): GFPGAN SOLO si la cara original (antes del SR) tiene
-    # lado mayor >= cfg.face_restore_min_side. Las caras diminutas (< umbral) se
-    # dejan con el SR genérico (píxel real) en vez de que GFPGAN alucine rasgos.
+    # lado mayor >= cfg.face_restore_min_side. Default 48 (A, 2026-09-28): la
+    # foto del panel recibe GFPGAN también en caras pequeñas recuperadas por SR;
+    # las caras diminutas (< umbral) se dejan con el SR genérico (píxel real).
     if cfg.sr_face_enabled and restore and max(fw, fh) >= cfg.face_restore_min_side:
         z = _face_region_blend(z, fb, cfg)
-    # A5 top-up de DISPLAY: la UI no debe reescalar fotos finales diminutas.
-    # Upscale LANCZOS4 SOLO hasta cfg.min_display_side (default 384; antes 512,
-    # que pixelaba caras lejanas ~11x). No toca embeddings ni el SR interno.
-    _MIN_DISPLAY_SIDE = getattr(cfg, "min_display_side", 384)
-    _zh, _zw = z.shape[:2]
-    if max(_zh, _zw) < _MIN_DISPLAY_SIDE:
-        _s = _MIN_DISPLAY_SIDE / max(_zh, _zw)
-        z = cv2.resize(z, (max(1, int(round(_zw * _s))), max(1, int(round(_zh * _s)))),
-                       interpolation=cv2.INTER_LANCZOS4)
-    return z
+    return _topup_display(z, cfg)
+
+
+def photo_busto_fused(frames, cfg, model: str | None = None,
+                      restore: bool = True) -> np.ndarray | None:
+    """MF-SR real: fusiona varios frames de la MISMA persona y genera el busto.
+
+    `frames`: lista de `(img_bgr, bbox)` de la misma persona (>=2). Se toma el
+    primer frame como referencia (`_busto_crop` -> `ref_z`, `ref_fb`), se
+    normalizan los demás al mismo `(w, h)` (INTER_LINEAR), se alinean con
+    `_align(crop, ref_z)` y se fusionan con `np.median` (reduce ruido/compresión
+    y gana resolución efectiva sub-píxel). Después se aplica el SR (`enhance`)
+    y, si procede, la restauración facial de la región (`_face_region_blend`,
+    sobre `ref_fb` reescalado por el factor del SR) y el top-up de display.
+
+    Devuelve BGR uint8 o `None` si no hay >=2 crops válidos (el llamador cae a
+    `photo_busto`). Degradación segura: nunca lanza excepción por entradas raras.
+    """
+    if not frames or len(frames) < 2:
+        return None
+    try:
+        img0, bbox0 = frames[0]
+        ref_z, ref_fb = _busto_crop(img0, bbox0, cfg)
+        if ref_z is None or ref_z.size == 0:
+            return None
+        th, tw = ref_z.shape[:2]
+        aligned = [ref_z.astype(np.float32)]
+        for img, bbox in frames[1:]:
+            try:
+                crop, _ = _busto_crop(img, bbox, cfg)
+            except Exception:  # noqa: BLE001 — un frame raro se ignora
+                continue
+            if crop is None or crop.size == 0:
+                continue
+            if crop.shape[:2] != (th, tw):
+                crop = cv2.resize(crop, (tw, th), interpolation=cv2.INTER_LINEAR)
+            aligned.append(_align(crop, ref_z).astype(np.float32))
+        if len(aligned) < 2:
+            return None
+        fused = np.median(np.stack(aligned, axis=0), axis=0)
+        fused = np.clip(fused, 0, 255).astype(np.uint8)
+        before = fused.shape[:2]
+        z = enhance(fused, cfg, model=model)
+        sy = z.shape[0] / max(1, before[0])
+        sx = z.shape[1] / max(1, before[1])
+        fb = ref_fb
+        if sy != 1.0 or sx != 1.0:
+            fb = (int(fb[0] * sx), int(fb[1] * sy), int(fb[2] * sx), int(fb[3] * sy))
+        x1, y1, x2, y2 = (int(round(v)) for v in bbox0)
+        fw, fh = max(1, x2 - x1), max(1, y2 - y1)
+        if cfg.sr_face_enabled and restore and max(fw, fh) >= cfg.face_restore_min_side:
+            z = _face_region_blend(z, fb, cfg)
+        return _topup_display(z, cfg)
+    except Exception as e:  # noqa: BLE001 — MF-SR degrada a la ruta normal
+        print(f"[superres] MF-SR falló, se usa un solo frame: {e}", flush=True)
+        return None
 
 
 def enhance_embedding(img: np.ndarray, face, cfg) -> np.ndarray:

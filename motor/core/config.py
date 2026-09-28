@@ -91,9 +91,9 @@ class Config:
     sr_target_side: int = 512      # TOPE máximo de salida (ya no se reescala hasta aquí:
                                    # el top-up LANCZOS4 a 512 pixelaba las caras pequeñas ~11x)
     sr_min_side: int = 320         # solo SR si el lado mayor del crop es < esto (caras pequeñas)
-    min_display_side: int = 384    # A5 top-up de DISPLAY: solo se reescala (LANCZOS4) la foto
-                                   # final hasta este lado si quedó menor (antes 512: pixelaba
-                                   # caras diminutas ~11x; 384 es un upscale más suave).
+    min_display_side: int = 512    # A5 top-up de DISPLAY: solo se reescala (LANCZOS4) la foto
+                                   # final hasta este lado si quedó menor. Default 512 (A,
+                                   # 2026-09-28): el panel muestra fotos de >=512 px; antes 384.
     # SR-before-embedding: caras con lado mayor < esto se super-resuelven ANTES de
     # recalcular el embedding ArcFace (mejora real del matching, no solo visual).
     sr_embed_min_face: int = 96
@@ -115,7 +115,10 @@ class Config:
     # el crop de entrada, antes del SR) es >= este umbral. Las caras diminutas
     # (< umbral) se dejan con el SR genérico (píxel real) en vez de dejar que
     # GFPGAN alucine rasgos: menos "fantasma", identidad más honesta.
-    face_restore_min_side: int = 96
+    # Default 96 -> 48 (A, 2026-09-28): la foto del panel (HQ) debe recibir
+    # GFPGAN también en caras pequeñas recuperadas por SR; el gate de 96 las
+    # dejaba sin restaurar y el panel mostraba caras pixeladas.
+    face_restore_min_side: int = 48
 
     # --- foto final de busto (display) ---
     # La foto que se muestra en el panel se genera desde un crop de busto (torso
@@ -145,6 +148,16 @@ class Config:
                                    # termina siempre y es el MISMO modelo del embedding.
     hq_enabled: bool = True          # generar la versión HQ progresiva
     hq_max_workers: int = 1          # nº máx de trabajos HQ concurrentes (CPU)
+
+    # --- throttling del worker HQ (motor/photo_worker.py) ---
+    # C (2026-09-28): el worker único compite por CPU/disco con autotube. Dos
+    # gates de admisión evitan que la cola HQ ahogue la máquina:
+    #  - hq_load_max: si la carga media de 1 min (loadavg) lo supera, el worker
+    #    duerme en vez de inferir (0.0 = sin gate de carga).
+    #  - hq_max_queue: tope de cola en disco; si se supera se descartan los jobs
+    #    MÁS ANTIGUOS (fotos que el panel ya mostró en versión rápida).
+    hq_load_max: float = 0.0         # RF_HQ_MAX_LOAD (0 = sin gate de loadavg)
+    hq_max_queue: int = 300          # RF_HQ_MAX_QUEUE
 
     # --- SR-before-embedding (superres.enhance_embedding) ---
     # Flag para poder desactivar el re-embedding sobre crop SR (que el propio
@@ -387,6 +400,8 @@ class Config:
         cfg.sr_model_photo = get(ruta, "RF_SR_MODEL_PHOTO", cfg.sr_model_photo)
         cfg.hq_enabled = get_bool(ruta, "RF_HQ_ENABLED", cfg.hq_enabled)
         cfg.hq_max_workers = get_int(ruta, "RF_HQ_MAX_WORKERS", cfg.hq_max_workers)
+        cfg.hq_load_max = get_float(ruta, "RF_HQ_MAX_LOAD", cfg.hq_load_max)
+        cfg.hq_max_queue = get_int(ruta, "RF_HQ_MAX_QUEUE", cfg.hq_max_queue)
         cfg.busto_enabled = get_bool(ruta, "RF_BUSTO_ENABLED", cfg.busto_enabled)
         cfg.busto_face_fill = get_float(ruta, "RF_BUSTO_FACE_FILL", cfg.busto_face_fill)
         cfg.display_face_min_cosine = get_float(ruta, "RF_DISPLAY_FACE_MIN_COS", cfg.display_face_min_cosine)

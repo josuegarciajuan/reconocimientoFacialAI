@@ -21,9 +21,23 @@ Reporta:
 Uso:
   motor/venv/bin/python -m motor.eval.eval --data-dir motor/eval/data
   motor/venv/bin/python -m motor.eval.eval --data-dir motor/eval/data --pose-aware
+  motor/venv/bin/python -m motor.eval.eval --data-dir motor/eval/data --sr-embed
 
 Requiere venv (insightface/onnxruntime). Caché de embeddings en motor/eval/.cache
-para no re-encodear en cada ejecución.
+para no re-encodear en cada ejecución. La clave de caché incluye `det_size` y
+`sr_embed`, así que configuraciones distintas no se mezclan (una caché antigua sin
+esa clave se ignora y se regenera).
+
+Barrido de resolución / SR-before-embedding (mide el efecto de `--det-size` y de
+`--sr-embed` sobre TAR/FAR; ejecutar cada combinación por separado):
+
+    for det in 1280 1536 1600; do
+        motor/venv/bin/python -m motor.eval.eval --data-dir motor/eval/data --det-size "$det"
+        motor/venv/bin/python -m motor.eval.eval --data-dir motor/eval/data --det-size "$det" --sr-embed
+    done
+
+Cada ejecución imprime al final su línea `opciones efectivas: det_size=... sr_embed=...
+pose_aware=...` para registrar el barrido sin ambigüedad.
 
 --pose-aware (F2/L1c): la similitud de cada par se calcula SOLO contra las
 muestras de la galería con clase de pose COMPARABLE a la del query (mismo
@@ -54,8 +68,36 @@ def parse_pose(name: str) -> str | None:
     return None
 
 
-def embed_all(data_dir: Path, cache_file: Path, det_size: int = 640):
-    """Embebe todas las imágenes del set etiquetado (con caché)."""
+class _EvalFace:
+    """Adapta una cara de insightface a la interfaz que espera `enhance_embedding`.
+
+    `enhance_embedding(img, face, cfg)` solo necesita `face.bbox` (enteros),
+    `face.kps` (5x2) y `face.embedding` (L2-normalizado, usado como fallback).
+    Aislar el contrato evita depender de la representación interna de insightface.
+    """
+
+    __slots__ = ("bbox", "kps", "embedding")
+
+    def __init__(self, raw, embedding: np.ndarray):
+        self.bbox = tuple(int(round(float(v))) for v in raw.bbox)
+        kps = getattr(raw, "kps", None)
+        self.kps = np.asarray(kps, dtype=np.float32) if kps is not None else None
+        self.embedding = np.asarray(embedding, dtype=np.float32)
+
+
+def _cache_tag(det_size: int, sr_embed: bool) -> str:
+    """Prefijo de clave de caché que distingue la configuración de embeddings."""
+    return f"det{int(det_size)}_sr{int(bool(sr_embed))}"
+
+
+def embed_all(data_dir: Path, cache_file: Path, det_size: int = 640,
+              sr_embed: bool = False):
+    """Embebe todas las imágenes del set etiquetado (con caché).
+
+    La clave de caché incluye `det_size` y `sr_embed` (ver `_cache_tag`), de modo
+    que barridos de resolución / SR-before-embedding no se mezclan. Las entradas
+    de una caché antigua sin esa clave no casan y se regeneran (retrocompatible).
+    """
     from insightface.app import FaceAnalysis  # import tardío: requiere venv
 
     if cache_file.exists():
@@ -64,11 +106,19 @@ def embed_all(data_dir: Path, cache_file: Path, det_size: int = 640):
     else:
         cache = {}
 
+    cfg = None
+    if sr_embed:
+        # Config estándar (defaults), importado tarde: solo se necesita con SR.
+        from motor.core.config import Config
+        from motor.core.superres import enhance_embedding
+        cfg = Config()
+
     app = FaceAnalysis(name="buffalo_l", providers=["CPUExecutionProvider"])
     app.prepare(ctx_id=0, det_size=(det_size, det_size))
 
     import cv2
 
+    tag = _cache_tag(det_size, sr_embed)
     entries = {}  # (persona, fichero) -> dict(embedding, pose)
     dirty = False
     for person_dir in sorted(data_dir.iterdir()):
@@ -78,8 +128,9 @@ def embed_all(data_dir: Path, cache_file: Path, det_size: int = 640):
             if img_file.suffix.lower() not in (".jpg", ".jpeg", ".png"):
                 continue
             key = f"{person_dir.name}/{img_file.name}"
-            if key in cache and cache[key] is not None:
-                entries[key] = cache[key]
+            ckey = f"{tag}|{key}"
+            if cache.get(ckey) is not None:
+                entries[key] = cache[ckey]
                 continue
             img = cv2.imread(str(img_file))
             if img is None:
@@ -91,13 +142,20 @@ def embed_all(data_dir: Path, cache_file: Path, det_size: int = 640):
                 continue
             # nos quedamos con la detección de mayor confianza
             best = max(faces, key=lambda f: f.det_score)
+            emb = np.asarray(best.normed_embedding, dtype=np.float32)
+            if cfg is not None:
+                # SR-before-embedding: si no hay modelos SR, enhance_embedding
+                # degrada al embedding original (nunca rompe).
+                emb_sr = enhance_embedding(img, _EvalFace(best, emb), cfg)
+                if emb_sr is not None:
+                    emb = np.asarray(emb_sr, dtype=np.float32)
             entry = {
                 "persona": person_dir.name,
                 "file": img_file.name,
-                "embedding": np.asarray(best.normed_embedding, dtype=np.float32),
+                "embedding": emb,
                 "pose": parse_pose(img_file.name),
             }
-            cache[key] = entry
+            cache[ckey] = entry
             entries[key] = entry
             dirty = True
 
@@ -127,6 +185,9 @@ def main() -> int:
     parser.add_argument("--det-size", type=int, default=640)
     parser.add_argument("--pose-aware", action="store_true",
                         help="similitud solo entre poses comparables (L1c)")
+    parser.add_argument("--sr-embed", action="store_true",
+                        help="SR-before-embedding: recalcula el embedding sobre la cara "
+                             "super-resuelta (enhance_embedding) antes de medir")
     parser.add_argument("--json-out", default="",
                         help="escribe el resultado (TAR/FAR + sugerencia de umbrales) en este JSON")
     args = parser.parse_args()
@@ -140,7 +201,7 @@ def main() -> int:
         return 1
 
     cache_file = Path(args.data_dir).parent / ".cache_eval.pkl"
-    entries = embed_all(data_dir, cache_file, args.det_size)
+    entries = embed_all(data_dir, cache_file, args.det_size, args.sr_embed)
     if len(entries) < 2:
         msg = f"ERROR: se necesitan >=2 imágenes etiquetadas (hay {len(entries)})."
         if args.json_out:
@@ -188,6 +249,7 @@ def main() -> int:
 
     print("=" * 60)
     print("MÉTRICAS DE PRECISIÓN (embedding ArcFace buffalo_l)"
+          + (" + SR-before-embedding" if args.sr_embed else "")
           + (" + pose-consciente L1c" if args.pose_aware else ""))
     print("=" * 60)
     print(f"personas: {n_personas}  imágenes: {len(entries)}")
@@ -215,11 +277,18 @@ def main() -> int:
     else:
         print("Interpretación: faltan pares (ver avisos). Puebla motor/eval/data con 3+ personas x 2+ poses.")
 
+    # Línea de opciones efectivas (facilita registrar los barridos).
+    print()
+    print(f"opciones efectivas: det_size={args.det_size} sr_embed={args.sr_embed} "
+          f"pose_aware={args.pose_aware}")
+
     if args.json_out:
         tar1, umbral1 = tar_at_far(genuine, impostor, 0.01) if len(genuine) and len(impostor) else (float("nan"), float("nan"))
         rec = _sugerencia_umbrales(genuine, impostor, umbral1)
         _escribir_json(args.json_out, {
             "estado": "ok",
+            "det_size": args.det_size,
+            "sr_embed": args.sr_embed,
             "pose_aware": args.pose_aware,
             "n_personas": n_personas,
             "n_imagenes": len(entries),

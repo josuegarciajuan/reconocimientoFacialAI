@@ -68,30 +68,95 @@ _PROCESSED_FACES: set[str] = set()
 # en UN solo proceso rf-photo, no en N clasificadores de cámara).
 
 
-def _queue_hq(out_path: str, img, bbox, cfg: Config, ruta: str,
+def _queue_hq(out_path: str, frames: list, cfg: Config, ruta: str,
               local_id: str, camara_id: str, foto_id: str) -> None:
-    """Encola la generación HQ (x4plus + GFPGAN) al worker único de foto.
+    """Encola la generación HQ (SR + GFPGAN) al worker único de foto.
 
-    El worker lee el crop fuente (PNG lossless) + bbox desde
-    `motor/photo_queue/<local>/<cam>/` y escribe `<out_path>.hq`; el panel lo
-    "autonitida" sin recargar (mismo contrato que el hilo HQ anterior:
-    clasificadorV2.php ingesta `*.hq` como upgrade de la foto rápida).
+    `frames` es una lista de `(img_bgr, bbox)` de la MISMA persona (frame 0 =
+    representativo/busto ya elegido; extra = otros frames para el MF-SR). Cada
+    frame se escribe como PNG lossless (`<foto_id>_f<i>.png`) y un único JSON
+    con la lista `frames` ({src, bbox}) + `out`. El worker escribe
+    `<out_path>.hq`; el panel lo "autonitida" sin recargar (mismo contrato que
+    el hilo HQ anterior: clasificadorV2.php ingesta `*.hq` como upgrade).
     """
     try:
+        if not frames:
+            return
         qdir = os.path.join(ruta, "motor/photo_queue", local_id, camara_id)
         os.makedirs(qdir, exist_ok=True)
-        src_path = os.path.join(qdir, foto_id + ".png")
-        cv2.imwrite(src_path, img, [cv2.IMWRITE_PNG_COMPRESSION, 3])
+        items = []
+        for i, (img, bbox) in enumerate(frames):
+            src_path = os.path.join(qdir, f"{foto_id}_f{i}.png")
+            cv2.imwrite(src_path, img, [cv2.IMWRITE_PNG_COMPRESSION, 3])
+            items.append({
+                "src": src_path,
+                "bbox": [int(round(v)) for v in bbox],
+            })
         job = {
-            "src": src_path,
+            "frames": items,
             "out": out_path,          # el worker escribe out_path + ".hq"
-            "bbox": [int(round(v)) for v in bbox],
             "ts": time.time(),
         }
         with open(os.path.join(qdir, foto_id + ".json"), "w", encoding="utf-8") as fh:
             json.dump(job, fh)
     except Exception as e:  # noqa: BLE001
         log(f"[hq] fallo encolando HQ: {e}")
+
+
+def _collect_hq_frames(photo_img, photo_bbox, members, battery, busto_map,
+                       rep_face, rep_stem: str, cfg: Config) -> list:
+    """Frames (img, bbox) para el worker HQ: rápido (frame 0) + MF-SR (extra).
+
+    Frame 0 = la imagen/bbox ya elegidos para la foto rápida (busto del
+    representativo si existe, si no el frame completo). Si `sr_mf_enabled` y
+    `sr_mf_k > 1`, se añaden bustos de OTROS miembros del sub-clúster (misma
+    persona), ordenados por nitidez x área desc y deduplicados por stem. Cada
+    candidato se re-detecta y se elige su cara con `select_display_face`
+    (coseno contra el representativo) para no fusionar al acompañante.
+
+    El MF-SR solo se activa en caras pequeñas (`max(fw,fh) < sr_mf_min_face`):
+    en caras ya grandes la fusión no aporta resolución y sí CPU. La foto rápida
+    (frame 0) y la restauración GFPGAN aplican siempre.
+    """
+    frames = [(photo_img, tuple(photo_bbox))]
+    if not (cfg.sr_mf_enabled and cfg.sr_mf_k > 1) or not busto_map:
+        return frames
+    rep_fw = rep_face.bbox[2] - rep_face.bbox[0]
+    rep_fh = rep_face.bbox[3] - rep_face.bbox[1]
+    if max(rep_fw, rep_fh) >= cfg.sr_mf_min_face:
+        return frames
+    ranked = []
+    for emb, idx, fidx in members:
+        it = battery[idx]
+        if not (0 <= fidx < len(it["faces"])):
+            continue
+        f = it["faces"][fidx]
+        fw = f.bbox[2] - f.bbox[0]
+        fh = f.bbox[3] - f.bbox[1]
+        sh = face_sharpness(it["img"], f)
+        ranked.append((sh * (float(fw * fh) ** 0.5), it, f))
+    ranked.sort(key=lambda x: -x[0])
+    seen = {rep_stem}
+    for _score, it, _f in ranked:
+        if len(frames) >= cfg.sr_mf_k:
+            break
+        stem = it["file"].rsplit(".", 1)[0]
+        if stem in seen:
+            continue
+        seen.add(stem)
+        bpath = busto_map.get(stem)
+        if not bpath:
+            continue
+        bimg = cv2.imread(bpath)
+        if bimg is None:
+            continue
+        b_faces = analyze(bimg, det_size=(cfg.crop_det_size, cfg.crop_det_size),
+                          min_score=cfg.min_det_score)
+        bf = select_display_face(b_faces, rep_face.embedding, cfg.display_face_min_cosine)
+        if bf is None:
+            continue
+        frames.append((bimg, tuple(bf.bbox)))
+    return frames
 
 
 def random_code(n: int = 25) -> str:
@@ -905,10 +970,15 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     log(f"[foto] {out_name} guardada ({final_img.shape[1]}x{final_img.shape[0]}) "
         f"en {time.time() - t_foto:.1f}s")
 
-    # Versión HQ progresiva (sr_model_photo, p.ej. x4plus): el worker único la
-    # genera y sobreescribe la foto ~35-40 s después; el panel la "autonitida".
-    if cfg.hq_enabled and cfg.sr_model_photo != "compact":
-        _queue_hq(out_path, photo_img, photo_bbox, cfg, ruta, local_id, camara_id, foto_id)
+    # Versión HQ progresiva: el worker único aplica SR + GFPGAN y sobreescribe
+    # la foto ~35-40 s después; el panel la "autonitida". Se encola también con
+    # sr_model_photo="compact": el worker aplica GFPGAN (objetivo A: la foto del
+    # panel siempre queda restaurada). Con sr_mf_enabled se añaden frames de
+    # otros miembros del sub-clúster para el MF-SR (caras pequeñas).
+    if cfg.hq_enabled:
+        hq_frames = _collect_hq_frames(photo_img, photo_bbox, members, battery,
+                                       busto_map, rep_face, rep_stem, cfg)
+        _queue_hq(out_path, hq_frames, cfg, ruta, local_id, camara_id, foto_id)
 
     # Fase 2: registrar el retrato (cara + busto) de la decisión ANTES de borrar
     # el crop fuente. `find_person_photos` leerá de aquí para las próximas
