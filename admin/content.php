@@ -15,6 +15,9 @@ switch($_GET["page"] ?? ""){
     case "visitantes":
         require_once "./pages/visitantes/index.php";
         break;
+    case "revision":
+        require_once "./pages/revision/index.php";
+        break;
     case "accesos":
         require_once "./pages/accesos/index.php";
         break;

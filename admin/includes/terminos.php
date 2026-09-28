@@ -48,6 +48,7 @@ function rf_terminos() {
         "nav-accesos"    => ["mordor" => "Movimientos", "pro" => "Accesos"],
         "nav-sin-clasificar" => ["mordor" => "Ecos sin nombre", "pro" => "Sin clasificar"],
         "nav-visitantes" => ["mordor" => "Pueblos", "pro" => "Visitantes"],
+        "nav-revision"   => ["mordor" => "La Atalaya", "pro" => "Revisión"],
         "nav-rutas"      => ["mordor" => "Caminos", "pro" => "Rutas"],
         "nav-lineas"     => ["mordor" => "Líneas", "pro" => "Líneas"],
         "nav-ayuda"      => ["mordor" => "El Concilio", "pro" => "Ayuda"],

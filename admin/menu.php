@@ -106,6 +106,13 @@
         </li>
 
         <li>
+            <a href="?page=revision" class="top-menu top-menu<?php if(isset($_GET["page"]) and $_GET["page"]=="revision"){ echo "--active"; } ?>">
+                <div class="menu__icon menu__emoji">🔍</div>
+                <div class="top-menu__title"> <?= rf_term_html("nav-revision"); ?> </div>
+            </a>
+        </li>
+
+        <li>
             <a href="?page=rutas" class="top-menu top-menu<?php if(isset($_GET["page"]) and $_GET["page"]=="rutas"){ echo "--active"; } ?>">
                 <div class="menu__icon menu__emoji">🗺️</div>
                 <div class="top-menu__title"> <?= rf_term_html("nav-rutas"); ?> </div>
