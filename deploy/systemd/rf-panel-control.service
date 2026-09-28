@@ -18,6 +18,7 @@ Environment=OPENBLAS_NUM_THREADS=1
 Environment=MKL_NUM_THREADS=1
 Environment=RF_CV_THREADS=1
 Environment=RF_ORT_THREADS=2
+Environment=RF_ORT_PROVIDER=openvino
 
 [Install]
 WantedBy=multi-user.target

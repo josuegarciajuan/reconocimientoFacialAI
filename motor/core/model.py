@@ -5,6 +5,7 @@ y expone `analyze(img)` -> list[Face].
 """
 from __future__ import annotations
 
+import os
 import threading
 from dataclasses import dataclass
 from typing import Optional
@@ -56,7 +57,38 @@ def _ort_session_options():
     so.inter_op_num_threads = 1
     so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
     so.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+    # 3 = solo errores: silencia los avisos de forma dinámica del detector a 1280.
+    so.log_severity_level = 3
     return so
+
+
+def ort_providers():
+    """Providers de ORT según RF_ORT_PROVIDER (auto|cpu|openvino).
+
+    OpenVINO EP sobre Xeon (AVX-512/VNNI) acelera RetinaFace/ArcFace ~2,3x con
+    salidas numéricamente equivalentes (medido: coseno de embeddings 1.000000 y
+    diff máx ~1e-5). `num_of_threads` acota sus hilos al mismo presupuesto que el
+    resto (RF_ORT_THREADS); a 1280 el tope apenas cambia el rendimiento.
+    "auto" (default): OpenVINO si el runtime lo ofrece, si no CPU. Para revertir
+    sin tocar código: RF_ORT_PROVIDER=cpu.
+    """
+    from .threads import ort_threads
+
+    try:
+        import onnxruntime as ort
+        available = ort.get_available_providers()
+    except Exception:  # noqa: BLE001
+        available = []
+    cpu = ["CPUExecutionProvider"]
+    mode = os.environ.get("RF_ORT_PROVIDER", "auto").strip().lower()
+    if mode == "cpu":
+        return cpu
+    if "OpenVINOExecutionProvider" not in available:
+        return cpu
+    ov = [("OpenVINOExecutionProvider",
+           {"device_type": "CPU_FP32", "num_of_threads": str(ort_threads())}),
+          "CPUExecutionProvider"]
+    return ov if mode in ("auto", "openvino", "ov", "") else cpu
 
 
 def _patch_ort_sessions() -> None:
@@ -90,7 +122,7 @@ def _build_app(det_size: tuple[int, int]):
     from insightface.app import FaceAnalysis
 
     _patch_ort_sessions()
-    app = FaceAnalysis(name="buffalo_l", providers=["CPUExecutionProvider"])
+    app = FaceAnalysis(name="buffalo_l", providers=ort_providers())
     app.prepare(ctx_id=0, det_size=det_size)
     return app
 
