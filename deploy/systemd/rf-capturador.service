@@ -13,9 +13,9 @@ User=root
 # Prioridad de CPU MÁXIMA (Tier 1, captura en tiempo real): los
 # guarda_movimientosV3 hijos heredan Nice=-10 frente a clasificación/procesado.
 Nice=-10
-# Cores 3-5 para captura en tiempo real; 0-2 quedan libres para web/DB/OS y 6-9
+# Cores 2-4 para captura en tiempo real; 0-1 quedan libres para web/DB/OS y 5-9
 # para la inferencia. Los guarda_movimientosV3 y sus ffmpeg lo heredan.
-CPUAffinity=3-5
+CPUAffinity=2-4
 # Hilos fijos: los guarda_movimientosV3 + ffmpeg no deben sobresuscribir los 10
 # cores. OMP/OpenBLAS/MKL a 1 y el pool interno de OpenCV a 1 (RF_CV_THREADS,
 # motor/core/threads.py); el resultado de la detección de movimiento es idéntico.

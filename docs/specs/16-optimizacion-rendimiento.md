@@ -85,10 +85,14 @@ v1, por eso se usa `CPUAffinity` y no `CPUWeight`). Los hijos heredan la afinida
 
 | Cores | Servicios | Motivo |
 |---|---|---|
-| 0-2 | `rf-live`, `rf-panel-control`, `rf-clasificador`, `rf-conciliador`, `rf-vinculador`, `rf-alarmador` + Apache/php-fpm/MySQL/OS (sin pinchar) | reserva de latencia para el panel |
-| 3-5 | `rf-capturador` (11 `guarda_movimientos` + ffmpeg) | captura en tiempo real (Nice=-10) |
-| 6-9 | `rf-detector` (clasificador + procesa_video) | inferencia diferible (Nice=10) |
-| 3-9 | `rf-photo` | foto HQ diferible |
+| 0-1 | `rf-live`, `rf-panel-control`, `rf-clasificador`, `rf-conciliador`, `rf-vinculador`, `rf-alarmador` + Apache/php-fpm/MySQL/OS (sin pinchar) | reserva del panel |
+| 2-4 | `rf-capturador` (11 `guarda_movimientos` + ffmpeg) | captura en tiempo real (Nice=-10) |
+| 5-9 | `rf-detector` (clasificador + procesa_video) | inferencia diferible (Nice=10) |
+| 2-9 | `rf-photo` | foto HQ diferible |
+
+Reparto inicial 0-2/3-5/6-9; **ajustado a 0-1/2-4/5-9** (2026-09-28) al comprobar
+que, tras el fix del hash perezoso, php-fpm consume ~0 % y la web no necesita 3
+cores: se le dan 2 al panel y 5 a la inferencia para drenar el backlog.
 
 Al estar RF pinneado fuera de 0-2, la web conserva esos cores aunque el motor
 esté saturado. Pendiente: afinar `RF_CLASIF_CAMS_POR_PROC` si la medición lo pide.

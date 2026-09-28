@@ -11,7 +11,7 @@ Restart=always
 RestartSec=5
 User=root
 # Diferible y ligero (I/O BD): cores de la web (0-2).
-CPUAffinity=0-2
+CPUAffinity=0-1
 
 [Install]
 WantedBy=multi-user.target

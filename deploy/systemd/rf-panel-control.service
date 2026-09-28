@@ -10,7 +10,7 @@ Restart=always
 RestartSec=5
 User=root
 # Interactivo (registro por webcam): se queda en los cores de la web (0-2).
-CPUAffinity=0-2
+CPUAffinity=0-1
 # Hilos fijos: pose.py usa insightface (ORT) + OpenCV; no debe sobresuscribir
 # con el resto del motor (mismos topes que rf-detector).
 Environment=OMP_NUM_THREADS=1
