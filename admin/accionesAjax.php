@@ -16,7 +16,7 @@ require_once './pages/dashboard/widgets.php';
 
 $local_id = (int)($_SESSION["local_id"] ?? 0);
 
-switch ($_GET["a"]) {
+switch ($_GET["a"] ?? "") {
     case "9": // alarmas no vistas (La Almenara): banner/badge del panel
         header("Content-Type: application/json; charset=utf-8");
         $rows = DB::select(

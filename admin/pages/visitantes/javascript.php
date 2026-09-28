@@ -13,7 +13,7 @@
 
 <script>
     function mover_img(este,aeste){
-        var f=document.createElement('form'); f.method='POST'; f.action='?page=visitantes&mode=editar&id=<?= (int)$_GET["id"]; ?>';
+        var f=document.createElement('form'); f.method='POST'; f.action='?page=visitantes&mode=editar&id=<?= (int)($_GET["id"] ?? 0); ?>';
         [['mover',este],['aeste',aeste],['move_key',crypto.randomUUID().replace(/-/g,'')],['csrf','<?= htmlspecialchars(rf_csrf_token(), ENT_QUOTES); ?>']].forEach(function(x){var i=document.createElement('input');i.type='hidden';i.name=x[0];i.value=x[1];f.appendChild(i);});
         document.body.appendChild(f); f.submit();
     }
@@ -44,7 +44,7 @@
             "Se quitará de la biblioteca de esta persona exactamente lo que aportaron (sin residuos).");
         if (!ok) { return; }
         rfMostrarCargando();
-        var f=document.createElement('form'); f.method='POST'; f.action='?page=visitantes&mode=editar&id=<?= (int)$_GET["id"]; ?>';
+        var f=document.createElement('form'); f.method='POST'; f.action='?page=visitantes&mode=editar&id=<?= (int)($_GET["id"] ?? 0); ?>';
         [['separar',ids.join(',')],['aeste',destino],['move_key',crypto.randomUUID().replace(/-/g,'')],['csrf','<?= htmlspecialchars(rf_csrf_token(), ENT_QUOTES); ?>']].forEach(function(x){var i=document.createElement('input');i.type='hidden';i.name=x[0];i.value=x[1];f.appendChild(i);});
         document.body.appendChild(f); f.submit();
     }

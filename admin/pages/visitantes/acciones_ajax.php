@@ -11,7 +11,7 @@ require_once __DIR__ . "/../../../libs/avatars.php";
 require_once __DIR__ . "/../../../libs/security.php";
 $local_id = rf_require_local_session();
 
-switch ($_GET["a"]) {
+switch ($_GET["a"] ?? "") {
     case "1": // guarda el nombre de la persona
         rf_require_csrf();
         DB::execute("UPDATE personas SET nombre = ? WHERE id = ? AND local_id = ?", [(string)($_POST["valor"] ?? ""), (int)($_POST["persona_id"] ?? 0), $local_id]);

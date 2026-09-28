@@ -11,7 +11,7 @@
 <div class="content">
 <?php
 
-switch($_GET["page"]){
+switch($_GET["page"] ?? ""){
     case "visitantes":
         require_once "./pages/visitantes/index.php";
         break;
