@@ -11,9 +11,9 @@ Restart=always
 RestartSec=5
 User=root
 # Solo loopback; Apache (vhost :8090) expone /reconocimientoFacial/live vía proxy
-# Los ffmpeg RTSP→MJPEG (uno por espectador) comparten los cores de la web (0-2)
-# para no robar CPU a captura (3-5) ni a inferencia (6-9).
-CPUAffinity=0-2
+# Los ffmpeg RTSP→MJPEG (uno por espectador) comparten los cores de la web (0-1)
+# para no robar CPU a captura (2-4) ni a inferencia (5-9).
+CPUAffinity=0-1
 Environment=LIVE_PORT=8084
 Environment=RF_WS_URL=http://127.0.0.1:8090/reconocimientoFacial/ws.php
 # RF_LIVE_TOKEN se inyecta desde /root/reconocimientoFacial/.env en la instalación

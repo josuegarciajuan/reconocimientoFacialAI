@@ -13,11 +13,11 @@ User=root
 # Prioridad de CPU BAJA (Tier 2/3, diferible): clasificador.py y procesa_video
 # heredan Nice=10, por debajo de los capturadores en tiempo real (Nice=-10).
 Nice=10
-# Reparto de cores del host (10 vCPU): 0-2 reservados a web/DB/OS/live, 3-5 al
-# capturador en tiempo real y 6-9 a la inferencia diferible (este servicio).
+# Reparto de cores del host (10 vCPU): 0-1 reservados a web/DB/OS/live, 2-4 al
+# capturador en tiempo real y 5-9 a la inferencia (este servicio).
 # CPUAffinity usa sched_setaffinity y la heredan los hijos
 # (clasificador.py/procesa_video.py). Aísla la latencia del panel del motor.
-CPUAffinity=6-9
+CPUAffinity=5-9
 # Hilos fijos por proceso (anti-sobresuscripción): OMP/OpenBLAS/MKL a 1 (numpy
 # del matching) y OpenCV a 1 (resize/blur/morph). Los hijos
 # (clasificador.py/procesa_video.py) lo heredan.

@@ -12,8 +12,8 @@ RestartSec=5
 User=root
 # Prioridad de CPU BAJA (diferible): la foto HQ llega ~40 s después, no es tiempo real.
 Nice=10
-# Comparte cores con el capturador (3-9), fuera de los 0-2 reservados a web/DB/OS.
-CPUAffinity=3-9
+# Comparte cores con el capturador (2-9), fuera de los 0-1 reservados a web/DB/OS.
+CPUAffinity=2-9
 # I/O IDLE (C): la escritura de los PNG de cola y del `.hq` cede el disco a
 # autotube/mysql; el worker HQ es diferible y no debe competir por I/O.
 IOSchedulingClass=idle
