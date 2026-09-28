@@ -69,6 +69,11 @@ def main() -> int:
     ruta = sys.argv[1] if len(sys.argv) > 1 else "."
     debug = "--debug" in sys.argv
 
+    # F1: topes de hilos (pose usa insightface/OpenCV; no debe competir con el
+    # resto del motor). No afecta a la puntuación de pose.
+    from motor.core.threads import limit_threads
+    limit_threads()
+
     dir_imgs = os.path.join(ruta, "admin/files/videos_registro")
     dir_pos = os.path.join(ruta, "admin/files/videos_registro_posiciones")
     dir_res = os.path.join(ruta, "admin/files/videos_registro_resultados")

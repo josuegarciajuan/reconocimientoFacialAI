@@ -123,6 +123,11 @@ def main() -> int:
     ap.add_argument("--ruta", default=os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
     args = ap.parse_args()
 
+    # F1: topes de hilos (OpenCV 1; torch queda en RF_TORCH_THREADS, default 1,
+    # que el unit rf-photo sube). No cambia la salida de SR/GFPGAN.
+    from motor.core.threads import limit_threads
+    limit_threads()
+
     cfg = Config.from_env(args.ruta)
     queue_root = os.path.join(args.ruta, "motor/photo_queue")
     print(f"[photo-worker] cola: {queue_root} | modelo HQ: {cfg.sr_model_photo} | "

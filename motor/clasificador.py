@@ -1364,6 +1364,12 @@ def main() -> int:
     ap.add_argument("--min-sharpness", type=float, default=None)
     args, _desconocidos = ap.parse_known_args()  # tolera el token final de Jos_Thread
 
+    # F1 (anti-sobresuscripción): topes de hilos OpenCV/torch de este proceso.
+    # No cambia resultados; evita que el pool interno de OpenCV compita con las
+    # sesiones ONNX (cuyo intra-op se limita en motor/core/model.py).
+    from motor.core.threads import limit_threads
+    limit_threads()
+
     # camara_id admite una lista separada por comas (pool): un único proceso
     # atiende varias cámaras en round-robin para reducir el nº de procesos y la
     # RAM total de modelos. detector.php agrupa las cámaras en chunks y pasa

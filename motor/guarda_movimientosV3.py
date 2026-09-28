@@ -15,6 +15,11 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from motor.core.video import H264VideoWriter, VideoConfig, write_frame_safe  # noqa: E402
 from motor.core.env import get_int  # noqa: E402
 from motor.core.motion import MotionConfig, MotionDetector  # noqa: E402
+# F1: con 11 guarda_movimientos a la vez, el pool interno de OpenCV (resize,
+# blur, absdiff) multiplica hilos. Se fija a RF_CV_THREADS (default 1); el
+# resultado de la detección de movimiento es idéntico.
+from motor.core.threads import limit_threads  # noqa: E402
+limit_threads(limit_torch=False)
 
 #os.system('Xvfb :1 -screen 0 1600x1200x16  &')    # create virtual display with size 1600x1200 and 16 bit color. Color can be changed to 24 or 8
 #os.environ['DISPLAY']=':1.0'    # tell X clients to use our virtual DISPLAY :1.0
