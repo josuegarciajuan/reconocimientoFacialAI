@@ -92,6 +92,13 @@
         </li>
 
         <li>
+            <a href="?page=sin_clasificar" class="top-menu top-menu<?php if(isset($_GET["page"]) and $_GET["page"]=="sin_clasificar"){ echo "--active"; } ?>">
+                <div class="menu__icon menu__emoji">🌀</div>
+                <div class="top-menu__title"> <?= rf_term_html("nav-sin-clasificar"); ?> </div>
+            </a>
+        </li>
+
+        <li>
             <a href="?page=visitantes" class="top-menu top-menu<?php if(isset($_GET["page"]) and $_GET["page"]=="visitantes"){ echo "--active"; } ?>">
                 <div class="menu__icon menu__emoji">👹</div>
                 <div class="top-menu__title"> <?= rf_term_html("nav-visitantes"); ?> </div>

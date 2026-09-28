@@ -46,6 +46,7 @@ function rf_terminos() {
         "nav-config"     => ["mordor" => "La Forja", "pro" => "Configuración"],
         "nav-alarmas"    => ["mordor" => "La Almenara", "pro" => "Alarmas"],
         "nav-accesos"    => ["mordor" => "Movimientos", "pro" => "Accesos"],
+        "nav-sin-clasificar" => ["mordor" => "Ecos sin nombre", "pro" => "Sin clasificar"],
         "nav-visitantes" => ["mordor" => "Pueblos", "pro" => "Visitantes"],
         "nav-rutas"      => ["mordor" => "Caminos", "pro" => "Rutas"],
         "nav-lineas"     => ["mordor" => "Líneas", "pro" => "Líneas"],

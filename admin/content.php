@@ -18,6 +18,9 @@ switch($_GET["page"] ?? ""){
     case "accesos":
         require_once "./pages/accesos/index.php";
         break;
+    case "sin_clasificar":
+        require_once "./pages/sin_clasificar/index.php";
+        break;
     case "rutas":
         require_once "./pages/rutas/index.php";
         break;
