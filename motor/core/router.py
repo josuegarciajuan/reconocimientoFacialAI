@@ -49,7 +49,9 @@ def route(sit: Situation, cfg: Config) -> RoutingPlan:
 
     p = sit.pose
     nitida = bool(sit.sharpness) and sit.sharpness >= cfg.min_sharpness
-    sil = cfg.silueta_enabled
+    # Fase 2: la silueta solo entra como co-autoridad/apoyo si su confirmación
+    # está habilitada; desactivada se registra pero no veta ni confirma.
+    sil = cfg.silueta_enabled and cfg.silueta_confirm_enabled
 
     # Perfil y ángulos raros: la cara (pose-consciente) es autoridad y la
     # silueta geométrica CONFIRMA por acuerdo (la cara frontal "no cuadra").

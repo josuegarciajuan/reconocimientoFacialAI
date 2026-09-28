@@ -21,6 +21,7 @@ from motor.core.router import Situation
 def _cfg(**kw):
     base = dict(cascade_enabled=True, torso_enabled=True, vlm_enabled=True,
                 openai_enabled=True, silueta_enabled=True,
+                silueta_confirm_enabled=True,
                 secure_threshold=0.40, match_threshold=0.30, margin=0.03,
                 gray_low=0.28, gray_high=0.42, veto_conf=0.90,
                 llm_min_conf=0.85, silueta_min_score=0.50,

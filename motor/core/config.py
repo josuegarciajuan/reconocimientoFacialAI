@@ -39,6 +39,13 @@ class Config:
     # galería. Por debajo, la cara tiene tan poca información que el embedding
     # ArcFace es poco fiable -> se descarta (nopasafiltros) en vez de decidir.
     face_min_side: int = 52
+    # Fase 2 (guardia de información): lado mayor mínimo de la cara para poder
+    # MATCH/ADMITIR en una identidad EXISTENTE. Por debajo, el embedding ArcFace
+    # es NO discriminativo (medido en prod: caras de 52-85 px daban cos 0.83-0.85
+    # entre personas distintas) -> la cara es "baja información" y se trata como
+    # low_quality (provisional/revisión), NUNCA como match. Es independiente de
+    # `face_min_side` (suelo histórico de captura/admisión).
+    match_min_face_side: int = 96
     frontal_yaw_tol: float = 35.0
     frontal_pitch_tol: float = 25.0
 
@@ -67,6 +74,12 @@ class Config:
     # match posteriores (agregación max).
     admission_cosine: float = 0.48
     admission_pose_aware: bool = True
+    # Fase 2 (guardia de margen): para admitir una cara en la galería de una
+    # identidad EXISTENTE no basta con superar admission_cosine contra ESA
+    # persona: además, la ventaja sobre la MEJOR persona externa (max de los
+    # cosenos excluyendo a la asignada) debe ser >= admission_margin. Evita que
+    # una cara ambigua que "se parece a todas" contamine la identidad asignada.
+    admission_margin: float = 0.05
 
     # --- agrupación temporal ---
     batch_seconds: float = 6.0       # ventana para agrupar fotos de un mismo evento
@@ -194,6 +207,12 @@ class Config:
     yaw_45: float = 22.5
     yaw_90: float = 67.5
     pitch_frontal: float = 20.0
+    # Validación de pose: por encima de estos valores (o si la pose no es
+    # finita) la estimación NO es fiable. Una pose no fiable se trata como
+    # "desconocida" (no enruta ni filtra pose-conscientemente).
+    pose_valid_yaw: float = 100.0
+    pose_valid_pitch: float = 45.0
+    pose_valid_roll: float = 60.0
 
     # ------------------------------------------------------------------
     # MOTOR DE DECISIÓN SITUACIONAL (reenfoque A+B) — fusion.py + router.py
@@ -208,6 +227,10 @@ class Config:
     attributes_enabled: bool = False    # apariencia visible estructurada (solo apoyo)
     attributes_weight: float = 0.02     # deliberadamente bajo; nunca autoridad
     silueta_enabled: bool = True        # capa geométrica L1c (acuerdo en perfil/ángulos)
+    # Fase 2 (silueta degradada): si False, la silueta se REGISTRA pero no
+    # confirma ni veta (nunca decide). La evidencia medida (0.9+ entre personas
+    # distintas) la inhabilita como co-autoridad/veto hasta recalibrarla.
+    silueta_confirm_enabled: bool = False
     perfil_layer_enabled: bool = True   # matching pose-consciente (perfil) — ya en L1a
     zones_enabled: bool = True          # matching pose-consciente en L1a (activado por defecto)
     vlm_enabled: bool = False
@@ -432,6 +455,7 @@ class Config:
         cfg.capture_min_sharpness = min(cfg.capture_min_sharpness, cfg.min_sharpness)
         cfg.capture_min_det_score = min(cfg.capture_min_det_score, cfg.min_det_score)
         cfg.face_min_side = get_int(ruta, "RF_FACE_MIN_SIDE", cfg.face_min_side)
+        cfg.match_min_face_side = get_int(ruta, "RF_MATCH_MIN_FACE_SIDE", cfg.match_min_face_side)
         cfg.face_restore_min_side = get_int(ruta, "RF_FACE_RESTORE_MIN_SIDE", cfg.face_restore_min_side)
         cfg.sr_embed_enabled = get_bool(ruta, "RF_SR_EMBED_ENABLED", cfg.sr_embed_enabled)
         cfg.min_display_side = get_int(ruta, "RF_MIN_DISPLAY_SIDE", cfg.min_display_side)
@@ -449,6 +473,7 @@ class Config:
         cfg.group_threshold = get_float(ruta, "RF_GROUP_THRESHOLD", cfg.group_threshold)
         cfg.cluster_confirm = get_float(ruta, "RF_CLUSTER_CONFIRM", cfg.cluster_confirm)
         cfg.admission_cosine = get_float(ruta, "RF_ADMISSION_COSINE", cfg.admission_cosine)
+        cfg.admission_margin = get_float(ruta, "RF_ADMISSION_MARGIN", cfg.admission_margin)
         cfg.exact_match_cos = get_float(ruta, "RF_EXACT_MATCH_COS", cfg.exact_match_cos)
         cfg.dedup_window_hours = get_float(ruta, "RF_DEDUP_WINDOW_HOURS", cfg.dedup_window_hours)
         cfg.pending_min_poses = get_int(ruta, "RF_PENDING_MIN_POSES", cfg.pending_min_poses)
@@ -473,6 +498,7 @@ class Config:
         cfg.attributes_enabled = get_bool(ruta, "RF_ATTRIBUTES_ENABLED", cfg.attributes_enabled)
         cfg.attributes_weight = get_float(ruta, "RF_ATTRIBUTES_WEIGHT", cfg.attributes_weight)
         cfg.silueta_enabled = get_bool(ruta, "RF_SILUETA_ENABLED", cfg.silueta_enabled)
+        cfg.silueta_confirm_enabled = get_bool(ruta, "RF_SILUETA_CONFIRM", cfg.silueta_confirm_enabled)
         cfg.perfil_layer_enabled = get_bool(ruta, "RF_PERFIL_LAYER_ENABLED", cfg.perfil_layer_enabled)
         cfg.vlm_enabled = get_bool(ruta, "RF_VLM_ENABLED", cfg.vlm_enabled)
         cfg.openai_enabled = get_bool(ruta, "RF_OPENAI_ENABLED", cfg.openai_enabled)
@@ -484,6 +510,10 @@ class Config:
         cfg.gray_high = get_float(ruta, "RF_GRAY_HIGH", cfg.gray_high)
         cfg.escalate_band = get_float(ruta, "RF_ESCALATE_BAND", cfg.escalate_band)
         cfg.silueta_min_score = get_float(ruta, "RF_SILUETA_MIN_SCORE", cfg.silueta_min_score)
+        # Validez de pose (una pose fuera de rango o no finita es "desconocida").
+        cfg.pose_valid_yaw = get_float(ruta, "RF_POSE_VALID_YAW", cfg.pose_valid_yaw)
+        cfg.pose_valid_pitch = get_float(ruta, "RF_POSE_VALID_PITCH", cfg.pose_valid_pitch)
+        cfg.pose_valid_roll = get_float(ruta, "RF_POSE_VALID_ROLL", cfg.pose_valid_roll)
         cfg.new_low_floor = get_float(ruta, "RF_NEW_LOW_FLOOR", cfg.new_low_floor)
         cfg.low_band_min_agreements = get_int(ruta, "RF_LOW_BAND_AGREEMENTS", cfg.low_band_min_agreements)
         cfg.early_exit_min_margin = get_float(ruta, "RF_EARLY_EXIT_MIN_MARGIN", cfg.early_exit_min_margin)
