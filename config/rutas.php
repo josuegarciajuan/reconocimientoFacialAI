@@ -105,7 +105,29 @@ switch($server){
 
 // Credenciales del superadmin (M10: desde .env). Por defecto: cambiar-ahora.
 define("ADMIN_USER", env_or("RF_ADMIN_USER", "admin"));
-define("ADMIN_PASS_HASH", password_hash(env_or("RF_ADMIN_PASS", "cambiar-ahora"), PASSWORD_DEFAULT));
+
+/**
+ * Hash de la contraseña del superadmin, calculado PEREZOSAMENTE.
+ *
+ * Antes `password_hash()` se ejecutaba al incluir este fichero, es decir en CADA
+ * petición del panel (incluidos todos los polls AJAX). bcrypt es caro y no hace
+ * falta salvo en el login; bajo saturación de CPU domina el coste de php-fpm y
+ * dispara la latencia del panel. Ahora solo se calcula la 1ª vez que se verifica
+ * un login. Si se define RF_ADMIN_PASS_HASH en el .env (hash precomputado con
+ * `php -r 'echo password_hash("...", PASSWORD_DEFAULT);'`), ni siquiera se
+ * calcula en el login.
+ */
+if (!function_exists("admin_pass_hash")) {
+    function admin_pass_hash(): string {
+        static $hash = null;
+        if ($hash !== null) { return $hash; }
+        $pre = env_or("RF_ADMIN_PASS_HASH", "");
+        $hash = ($pre !== "")
+            ? $pre
+            : password_hash(env_or("RF_ADMIN_PASS", "cambiar-ahora"), PASSWORD_DEFAULT);
+        return $hash;
+    }
+}
 
 // Auto-login por dispositivo (matrícula única): habilitado, IP de matrícula y cookie.
 // Ver libs/autologin.php y la migración sql/2026-08-18-dispositivos-autologin.sql.

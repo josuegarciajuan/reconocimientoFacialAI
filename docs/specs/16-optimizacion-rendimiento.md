@@ -113,6 +113,12 @@ y aprovecha la RAM (58 GB).
   y `a=7` (cada 15 s, en todas las páginas) -> php-fpm al ~45 % de CPU. Ahora
   `dash_daemons_estados()` hace UN solo `systemctl is-active svc1 svc2 ...` y
   cachea el resultado 5 s en `/tmp` (compartido entre peticiones).
+- **PHP (hecho)**: `config/rutas.php` ejecutaba `password_hash()` (bcrypt) al
+  incluirse, es decir en CADA petición del panel (y en `ws.php`, `video.php`,
+  `index.php`...). Bajo saturación de CPU bcrypt domina el coste de php-fpm y
+  dispara la latencia. Ahora el hash se calcula de forma perezosa
+  (`admin_pass_hash()`, solo al verificar un login); opcionalmente se puede fijar
+  `RF_ADMIN_PASS_HASH` precomputado en el `.env`.
 - **Diferido**: fan-out de `rf-live` (1 `ffmpeg` por cámara para N
   espectadores); quitar `ps aux`/`pgrep` de los bucles de `Jos_thread`/
   `detector.php`; cola/`inotify` en `clasificadorV2.php`; índices y *buffer
