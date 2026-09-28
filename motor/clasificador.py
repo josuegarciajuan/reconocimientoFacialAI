@@ -278,6 +278,8 @@ def _cfg_snapshot(cfg: Config) -> dict:
             "new_low_floor", "low_band_min_agreements", "early_exit_min_margin",
             "silueta_min_score", "min_layer_conf", "llm_min_conf", "veto_conf",
             "gray_low", "gray_high", "exact_match_cos", "batch_seconds",
+            # freno anti-fragmentación (rama de decisión del clasificador)
+            "autoenroll_new",
             # scoring por centroide (auditoría/replay de la escala activa)
             "face_score_mode", "face_centroid_w", "centroid_match_threshold",
             "centroid_secure_threshold", "centroid_margin",
@@ -302,6 +304,25 @@ def _preserve_evidence(ruta: str, local_id: str, camara_id: str,
         shutil.copy2(src_path, dst)
     except OSError as e:  # noqa: BLE001
         log(f"[preserve] fallo copiando evidencia {stem}: {e}")
+
+
+def debe_crear_identidad(verdict: str, person: str | None, cfg: Config) -> bool:
+    """Decide si un sub-clúster debe crear/actualizar una identidad persistente.
+
+    Función PURA (sin E/S) que implementa la guarda anti-fragmentación:
+
+    - Un `match` con persona asignada SIEMPRE escribe en esa identidad (True).
+    - Cualquier otro caso (`new`, `uncertain`, `review`, o `match` sin persona)
+      NO crea identidad salvo que `cfg.autoenroll_new` esté activo. Con
+      `autoenroll_new=False` (default) el veredicto va a revisión sin tocar
+      galería ni BD; con `True` se recupera el comportamiento histórico.
+
+    La rama de revisión-only pura (evidencia + auditoría, sin identidad) es la
+    inversa: `not debe_crear_identidad(...)`.
+    """
+    if verdict == "match" and person is not None:
+        return True
+    return bool(cfg.autoenroll_new)
 
 
 def cluster_faces(faces_emb, group_threshold: float) -> list[list[int]]:
@@ -918,6 +939,70 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     # C2 (2026-09-02): "review" se trata como "uncertain": NUNCA asigna al top-1
     # existente (contaminaba su galería vía new_person=True). Crea persona nueva
     # del sub-clúster (coherente) + copia a revisión.
+    #
+    # FRENO ANTI-FRAGMENTACIÓN (2026-09-28): con `cfg.autoenroll_new=False`
+    # (default) un veredicto que NO es un `match` confirmado NO crea identidad
+    # persistente: se conserva la evidencia y el sidecar de auditoría, se emite
+    # el feedback y se consume el sub-clúster. NI `_store_add`, ni `enqueue`, ni
+    # galería/BD, ni foto nueva. Reversible con RF_AUTOENROLL_NEW=1.
+    if not debe_crear_identidad(result.verdict, result.person, cfg):
+        foto_id = random_code()
+        _preserve_evidence(ruta, local_id, camara_id, rep_item["path"], rep_stem,
+                           "revision-" + result.verdict)
+        from motor.core.matching import top_scores  # noqa: E402
+        revision_meta = {
+            "exact_match": bool(exact_match),
+            "exact_conflict": False,
+            "branch": "revision_only",
+            "revision_only": True,
+            "autoenroll_new": bool(cfg.autoenroll_new),
+            "low_quality": bool(low_q),
+            "top_scores": top_scores(face_scores, n=5),
+            "cfg": _cfg_snapshot(cfg),
+            "stem": rep_stem,
+            "pose": query_pose,
+        }
+        write_audit_queue(ruta, local_id, camara_id, foto_id, build_audit_record(
+            foto_id, local_id, camara_id, result.verdict, None,
+            layer_scores_json(result.layer_scores), attributes=query_attributes,
+            meta=revision_meta))
+        if feedback is not None and cfg.feedback_enabled:
+            from motor.core.feedback import embedding_hash  # noqa: E402
+            feedback.log_decision({
+                "local": local_id, "cam": camara_id,
+                "verdict": result.verdict, "person": None,
+                "top1": result.candidates[0] if result.candidates else None,
+                "top2": result.candidates[1] if len(result.candidates) > 1 else None,
+                "best": result.best_score, "second": result.second_score,
+                "layers": result.layer_scores,
+                "query_hash": embedding_hash(embs[0]) if embs else None,
+                "stem": rep_stem,
+                "pose": query_pose,
+                "yaw": float(rep_face.yaw),
+                "pitch": float(rep_face.pitch),
+                "sharpness": best_sharp,
+                "has_face": True,
+                "foto_id": foto_id,
+                "exact_match": bool(exact_match),
+                "exact_conflict": False,
+                "branch": "revision_only",
+                "top_scores": [{"person": c, "score": round(float(s), 4)}
+                               for c, s in sorted(face_scores.items(),
+                                                  key=lambda kv: kv[1], reverse=True)[:5]],
+                "cfg": _cfg_snapshot(cfg),
+            })
+        for _idx in item_idxs:
+            _p = battery[_idx]["path"]
+            if os.path.exists(_p):
+                os.remove(_p)
+        if torso_path and os.path.exists(torso_path):
+            os.remove(torso_path)
+        if busto_path and os.path.exists(busto_path):
+            os.remove(busto_path)
+        log(f"[revision-only] {len(item_idxs)} foto(s) verdict={result.verdict} "
+            f"-> revision (sin identidad, autoenroll_new={cfg.autoenroll_new})")
+        return
+
     if result.verdict in ("new", "uncertain", "review") or result.person is None:
         person = random_code()
     else:
