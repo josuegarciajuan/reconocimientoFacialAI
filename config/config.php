@@ -97,7 +97,12 @@ define("CONFIG_LIMITE_RAM",95); //limite de ram ocupada para seguir procesando v
 define("CONFIG_LIMITE_VIDEOS", env_or("RF_LIMITE_VIDEOS", "2")); //nº máx. de procesa_video simultáneos (cada uno ~1.5GB; en prod .env lo sube a 4)
 define("CONFIG_CLASIF_CAMS_POR_PROC", env_or("RF_CLASIF_CAMS_POR_PROC", "2")); //nº de cámaras por proceso clasificador (pool: en prod .env=4 -> 2 procesos)
 define("CONFIG_REINTENTOS_VIDEO",3); //reintentos de un vídeo antes de descartarlo (F6: marcadores huérfanos)
-define("CONFIG_MARCADOR_HUERFANO_SEGS",300); //antigüedad mínima del marcador para considerar procesa_video muerto
+// Antigüedad mínima (s) del marcador para considerar muerto su proceso. 300 s
+// era demasiado: tras un reinicio de rf-detector (que mata los hijos) los
+// marcadores de los `procesa_video`/`archiva` en curso quedaban contando como
+// "en curso" hasta 5 min, bloqueando CONFIG_LIMITE_VIDEOS y retrasando el
+// drenaje del backlog. 90 s reaprovecha antes sin arriesgar un arranque lento.
+define("CONFIG_MARCADOR_HUERFANO_SEGS", env_or("RF_MARCADOR_HUERFANO_SEGS", "90"));
 define("CONFIG_TIEMPOPROCESODECLISIFICARCARAS",60*10);  //en segs tiempo max q puede estar el proceso de procesar caras, luego se reinicia
 
 //define("CONFIG_SENSIBILIDAD_ES_CARA","0.68");
