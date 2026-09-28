@@ -1,11 +1,12 @@
--- Fase 1 (recall): sensibilidad del disparador POR CÁMARA — idempotente.
--- MySQL (prod) NO soporta `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` (solo
--- MariaDB); se usa un procedimiento que comprueba INFORMATION_SCHEMA y se
--- elimina al terminar. Reejecutable sin error.
+-- Re-aplicación de Fase 1 (recall) para producción.
+-- El deploy automático SOLO aplica ficheros SQL NUEVOS (--diff-filter=A), y el
+-- primer intento falló en MySQL por `ADD COLUMN IF NOT EXISTS`. Este fichero
+-- nuevo vuelve a aplicar las columnas con DDL idempotente (procedimiento +
+-- INFORMATION_SCHEMA), sin error si ya existen.
 
-DROP PROCEDURE IF EXISTS rf_camaras_add_sensibilidad;
+DROP PROCEDURE IF EXISTS rf_camaras_add_sensibilidad2;
 DELIMITER //
-CREATE PROCEDURE rf_camaras_add_sensibilidad()
+CREATE PROCEDURE rf_camaras_add_sensibilidad2()
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
                    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'camaras'
@@ -34,10 +35,8 @@ BEGIN
     END IF;
 END //
 DELIMITER ;
-CALL rf_camaras_add_sensibilidad();
-DROP PROCEDURE rf_camaras_add_sensibilidad;
+CALL rf_camaras_add_sensibilidad2();
+DROP PROCEDURE rf_camaras_add_sensibilidad2;
 
--- Cámaras que siguen con los valores de fábrica antiguos (60/220) pasan a los
--- nuevos defaults más sensibles. Las que el operador ya ajustó NO se tocan.
 UPDATE camaras SET porcentaje_mov = 35 WHERE porcentaje_mov = 60;
 UPDATE camaras SET dontCare = 120 WHERE dontCare = 220;
