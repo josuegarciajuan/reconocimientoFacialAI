@@ -13,6 +13,12 @@ Sustituye a `procesa_videosV6.py` (4c):
 Uso:
     motor/venv/bin/python motor/procesa_video.py <local> <cam> <fichero> \
         [--ruta .] [--face-every 3] [--min-sharpness 60] [--dedup-cosine 0.97]
+
+Modo pool (M3 de SuperServer): `process_video(..., efectos=False, lineas=[...],
+eventos=[], resumen={})` calcula lo mismo pero NO borra el vídeo, NO quita el marker,
+NO registra cruces en `ws.php` ni escribe el embudo. Los cruces detectados y las
+métricas se devuelven en `eventos`/`resumen` para que la casa aplique los mismos
+efectos. El wrapper `motor/procesa_video_pool.py` expone ese modo por línea de comandos.
 """
 from __future__ import annotations
 
@@ -79,7 +85,8 @@ def fecha_base_video(fichero: str) -> datetime | None:
         return None
 
 
-def guardar_cruce(ruta: str, ev, linea: Line, fecha_base: datetime | None) -> None:
+def guardar_cruce(ruta: str, ev, linea: Line, fecha_base: datetime | None,
+                  efectos: bool = True, eventos: list | None = None) -> None:
     out_dir = os.path.join(ruta, "motor/fotos_lineas", linea.line_id)
     os.makedirs(out_dir, exist_ok=True)
     uid = random_code()
@@ -89,7 +96,14 @@ def guardar_cruce(ruta: str, ev, linea: Line, fecha_base: datetime | None) -> No
         fecha_str = (fecha_base + timedelta(seconds=ev.timestamp)).strftime("%Y-%m-%d %H:%M:%S")
     else:
         fecha_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    php_ws("guarda_cruce", linea.line_id, fecha_str, str(ev.direction), str(int(ev.x)), str(int(ev.y)), uid)
+    if efectos:
+        php_ws("guarda_cruce", linea.line_id, fecha_str, str(ev.direction), str(int(ev.x)), str(int(ev.y)), uid)
+    elif eventos is not None:
+        # Modo pool: la casa registrará el cruce con estos mismos datos.
+        eventos.append({
+            "linea_id": str(linea.line_id), "fecha": fecha_str,
+            "direccion": int(ev.direction), "x": int(ev.x), "y": int(ev.y), "uid": uid,
+        })
 
 
 def torso_bbox(face, frame_w: int, frame_h: int, cfg: Config):
@@ -246,12 +260,17 @@ def guardar_cuerpo_sin_cara(ruta: str, local_id: str, camara_id: str, fichero: s
 
 
 def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,
-                  cfg: Config, face_every: int) -> int:
+                  cfg: Config, face_every: int, lineas: list | None = None,
+                  efectos: bool = True, eventos: list | None = None,
+                  resumen: dict | None = None) -> int:
     video_path = os.path.join(ruta, "motor/videos", local_id, camara_id, fichero)
     if not os.path.exists(video_path):
         return 0
 
-    lineas = cargar_lineas(camara_id)
+    # En modo pool las líneas llegan del exterior (la casa las consulta en la BD):
+    # el worker no habla con `ws.php`.
+    if lineas is None:
+        lineas = cargar_lineas(camara_id)
     detectores = [CrossingDetector(l, CrossingConfig()) for l in lineas]
     persona_det = PersonDetector(CrossingConfig())
     fecha_base = fecha_base_video(fichero)
@@ -281,7 +300,7 @@ def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,
         # cruces de línea
         for det, linea in zip(detectores, lineas):
             for ev in det.process(frame, ts):
-                guardar_cruce(ruta, ev, linea, fecha_base)
+                guardar_cruce(ruta, ev, linea, fecha_base, efectos=efectos, eventos=eventos)
                 cruces += 1
 
         # caras (muestreo para no saturar CPU)
@@ -309,17 +328,29 @@ def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,
         frame_idx += 1
 
     cap.release()
-    os.remove(video_path)
-    # marker file de detector.php
-    marker = os.path.join(ruta, "aux", fichero + ".txt")
-    if os.path.exists(marker):
-        os.remove(marker)
 
-    # Fase 0: registrar el resultado del vídeo para el embudo de recall.
-    log_evento(ruta, local_id, "video", cam=camara_id, fichero=fichero,
-               frames=frame_idx, caras_detect=caras_detect, caras_guard=caras_guard,
-               caras_borroso=caras_borroso, caras_dedup=caras_dedup,
-               cuerpos=cuerpos, cruces=cruces)
+    if efectos:
+        # Comportamiento clásico (local): borra origen + marker y registra el embudo.
+        os.remove(video_path)
+        # marker file de detector.php
+        marker = os.path.join(ruta, "aux", fichero + ".txt")
+        if os.path.exists(marker):
+            os.remove(marker)
+
+        # Fase 0: registrar el resultado del vídeo para el embudo de recall.
+        log_evento(ruta, local_id, "video", cam=camara_id, fichero=fichero,
+                   frames=frame_idx, caras_detect=caras_detect, caras_guard=caras_guard,
+                   caras_borroso=caras_borroso, caras_dedup=caras_dedup,
+                   cuerpos=cuerpos, cruces=cruces)
+    elif resumen is not None:
+        # Modo pool: la casa aplicará borrado, marker, cruces y embudo con estos datos.
+        resumen.update({
+            "local": local_id, "cam": camara_id, "fichero": fichero,
+            "frames": frame_idx, "cruces": len(eventos or []),
+            "caras_detect": caras_detect, "caras_guard": caras_guard,
+            "caras_borroso": caras_borroso, "caras_dedup": caras_dedup,
+            "cuerpos": cuerpos,
+        })
 
     print(f"procesa_video {local_id}/{camara_id} {fichero}: {frame_idx} frames, {cruces} cruces, "
           f"{caras_detect} caras detectadas, {caras_guard} guardadas "

@@ -13,6 +13,7 @@
 require_once("config/rutas.php");
 require_once("libs/Jos_thread.class.php");
 require_once("libs/db.php");
+require_once("libs/superserver.php");
 
 $threads = [];
 $ram = new Jos_Thread(0, "", true);
@@ -325,7 +326,20 @@ while (true) {
 
                 // F6: log de procesa_video.py (antes /dev/null -> errores invisibles)
                 $log = RUTA_PROYECTO . "motor/logs/procesa_video_" . $cam_id . ".log";
-                $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/procesa_video.py " . $local_id . " " . $cam_id . " " . $video . " --ruta " . RUTA_PROYECTO . " >> " . $log . " 2>&1 &";
+                if (ss_mode() === 'superserver') {
+                    // Modo pool (M3): el cálculo va a la flota y este proceso (bridge)
+                    // aplica los mismos efectos al volver. El `--tag` mantiene el
+                    // patrón de `pgrep` del detector para su control de marcadores.
+                    $tag = "procesa_video.py " . $local_id . " " . $cam_id . " " . $video;
+                    $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/pool_bridge.py "
+                         . $local_id . " " . $cam_id . " " . escapeshellarg($video)
+                         . " --ruta " . RUTA_PROYECTO
+                         . " --tag " . escapeshellarg($tag)
+                         . " >> " . $log . " 2>&1 &";
+                } else {
+                    // Modo local (por defecto): comportamiento clásico, sin cambios.
+                    $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/procesa_video.py " . $local_id . " " . $cam_id . " " . $video . " --ruta " . RUTA_PROYECTO . " >> " . $log . " 2>&1 &";
+                }
                 echo $cmd . "\n";
                 exec($cmd);
                 $numero_videos++;
