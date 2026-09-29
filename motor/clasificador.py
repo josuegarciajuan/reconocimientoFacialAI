@@ -306,11 +306,18 @@ def _preserve_evidence(ruta: str, local_id: str, camara_id: str,
         log(f"[preserve] fallo copiando evidencia {stem}: {e}")
 
 
-def debe_crear_identidad(verdict: str, person: str | None, cfg: Config) -> bool:
+def debe_crear_identidad(verdict: str, person: str | None, cfg: Config,
+                         hay_galeria: bool = True) -> bool:
     """Decide si un sub-clúster debe crear/actualizar una identidad persistente.
 
     Función PURA (sin E/S) que implementa la guarda anti-fragmentación:
 
+    - BOOTSTRAPPING (2026-09-29): si la galería está VACÍA (`hay_galeria=False`)
+      SIEMPRE se crea identidad. Un sistema recién reseteado no tiene ningún
+      embedding contra el que hacer `match`, así que sin esta excepción el freno
+      anti-fragmentación dejaba el clasificador "muerto": todo iba a revisión y
+      nunca nacía ninguna persona (el panel de Visitantes quedaba vacío). En
+      cuanto hay galería vuelve a aplicarse el freno.
     - Un `match` con persona asignada SIEMPRE escribe en esa identidad (True).
     - Cualquier otro caso (`new`, `uncertain`, `review`, o `match` sin persona)
       NO crea identidad salvo que `cfg.autoenroll_new` esté activo. Con
@@ -320,6 +327,8 @@ def debe_crear_identidad(verdict: str, person: str | None, cfg: Config) -> bool:
     La rama de revisión-only pura (evidencia + auditoría, sin identidad) es la
     inversa: `not debe_crear_identidad(...)`.
     """
+    if not hay_galeria:
+        return True
     if verdict == "match" and person is not None:
         return True
     return bool(cfg.autoenroll_new)
@@ -945,7 +954,15 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     # persistente: se conserva la evidencia y el sidecar de auditoría, se emite
     # el feedback y se consume el sub-clúster. NI `_store_add`, ni `enqueue`, ni
     # galería/BD, ni foto nueva. Reversible con RF_AUTOENROLL_NEW=1.
-    if not debe_crear_identidad(result.verdict, result.person, cfg):
+    # BOOTSTRAPPING (2026-09-29): una galería vacía (p. ej. tras un reset) no
+    # puede producir ningún `match`; sin esta excepción el freno anti-fragmentación
+    # dejaba el clasificador sin crear identidades para siempre.
+    hay_galeria = bool(store.persons())
+    if not hay_galeria:
+        log(f"[bootstrap] galería vacía -> alta forzada "
+            f"(verdict={result.verdict}, autoenroll_new={cfg.autoenroll_new})")
+    if not debe_crear_identidad(result.verdict, result.person, cfg,
+                                hay_galeria=hay_galeria):
         foto_id = random_code()
         _preserve_evidence(ruta, local_id, camara_id, rep_item["path"], rep_stem,
                            "revision-" + result.verdict)

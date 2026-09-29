@@ -8,6 +8,9 @@ desactivado (default).
 
 Cubre:
   - `debe_crear_identidad`: tabla de verdad del guard (función pura).
+  - Bootstrap (2026-09-29): con galería VACÍA (`hay_galeria=False`) SIEMPRE se
+    crea identidad, para que un reset no deje el clasificador "muerto" (todo a
+    revisión y 0 personas en el panel de Visitantes).
   - `Config.autoenroll_new`: default del dataclass (False).
   - `Config.from_env`: default y override por `RF_AUTOENROLL_NEW`.
 """
@@ -52,7 +55,35 @@ def test_debe_crear_identidad_no_muta_estado():
     cfg = Config(autoenroll_new=False)
     antes = dict(cfg.__dict__)
     debe_crear_identidad("uncertain", None, cfg)
+    debe_crear_identidad("uncertain", None, cfg, hay_galeria=False)
     assert cfg.__dict__ == antes
+
+
+# ---------------------------------------------------------------------------
+# Bootstrap: galería vacía fuerza el alta aunque el freno esté activo
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("verdict,person,autoenroll", [
+    ("new", None, False),
+    ("uncertain", None, False),
+    ("review", None, False),
+    ("match", None, False),
+    ("new", "P123", False),
+    ("uncertain", None, True),
+])
+def test_debe_crear_identidad_bootstrap_galeria_vacia(verdict, person, autoenroll):
+    """Tras un reset (galería vacía) SIEMPRE se crea identidad, o el sistema
+    nunca vuelve a poblar el panel de Visitantes."""
+    cfg = Config(autoenroll_new=autoenroll)
+    assert debe_crear_identidad(verdict, person, cfg, hay_galeria=False) is True
+
+
+def test_debe_crear_identidad_galeria_llena_respeta_freno():
+    """Con galería presente, el freno vuelve a mandar (comportamiento previo)."""
+    cfg = Config(autoenroll_new=False)
+    assert debe_crear_identidad("uncertain", None, cfg, hay_galeria=True) is False
+    assert debe_crear_identidad("new", None, cfg, hay_galeria=True) is False
+    assert debe_crear_identidad("match", "P1", cfg, hay_galeria=True) is True
 
 
 # ---------------------------------------------------------------------------
