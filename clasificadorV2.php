@@ -12,6 +12,8 @@ require_once("libs/db.php");
 require_once("libs/fechas.php");
 require_once("libs/vinculos.php");
 require_once("libs/photo_audit.php");
+require_once("libs/photo_ingest.php");
+require_once("libs/photo_images.php");
 
 /**
  * Asegura el directorio runtime donde el panel sirve las fotos publicadas
@@ -102,6 +104,12 @@ function procesa_foto_hq($ruta, $elemento) {
 }
 
 function procesa_foto($ruta, $elemento) {
+    // El worker escribe primero `<out>.hq.tmp.jpg` y luego hace os.replace a
+    // `<out>.hq`. Nunca ingerir una extensión intermedia aunque el escaneo vea
+    // el fichero entre ambas operaciones.
+    if (!foto_ingestable_nombre($elemento)) {
+        return;
+    }
     // Fase HQ: "<nombre>.jpg.hq" es la versión mejorada (x4plus) de una foto
     // rápida ya publicada. Se aplica SOBREESCRIBIENDO la rápida (sin duplicar)
     // y marca generada_hq=1 para que el panel la "autonitida" sin recargar.
@@ -213,6 +221,7 @@ function procesa_foto($ruta, $elemento) {
         return;
     }
     @chmod($dest, 0644);
+    ingest_photo_original((int)$foto_id, $identificador_unico, (string)$local_id, (string)$camara_id);
     // identificador_unico is the classifier-generated correlation id. The audit
     // sidecar was produced before the INSERT; consume it once fotos.id + fichero existen.
     ingest_photo_audit((int)$foto_id, $identificador_unico, (string)$local_id, (string)$camara_id);
