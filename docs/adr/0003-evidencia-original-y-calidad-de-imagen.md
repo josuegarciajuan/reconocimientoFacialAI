@@ -1,6 +1,6 @@
 # ADR-0003: Evidencia original separada del retrato procesado
 
-**Estado:** Aceptado  
+**Estado:** Aceptado
 **Fecha:** 2026-09-29
 
 ## Contexto
