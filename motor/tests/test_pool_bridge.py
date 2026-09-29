@@ -3,7 +3,10 @@
 Prueba pura (sin vídeo ni modelos): forma de la petición de spool y rutas del
 contrato con el panel.
 """
-from motor.pool_bridge import (MODE_FILE, RETURNS_DIR, SPOOL_DIR, build_request)
+import json
+
+from motor.pool_bridge import (MODE_FILE, RETURNS_DIR, SPOOL_DIR, _leer_resultado,
+                                build_request)
 
 
 def test_build_request_contract():
@@ -23,3 +26,11 @@ def test_rutas_del_contrato():
     assert SPOOL_DIR == "/var/lib/taildeck/spool"
     assert RETURNS_DIR == "/var/lib/taildeck/returns/reconocimientoFacial"
     assert MODE_FILE == "/var/lib/taildeck/projects/reconocimientoFacial.mode"
+
+
+def test_lee_resultado_dentro_del_directorio_result_del_executor(tmp_path):
+    # El executor de SuperServer entrega outputs como <job>/result/efectos.json.
+    result = tmp_path / "result"
+    result.mkdir()
+    (result / "efectos.json").write_text(json.dumps({"local": "1", "cam": "15"}), encoding="utf-8")
+    assert _leer_resultado(str(tmp_path)) == {"local": "1", "cam": "15"}

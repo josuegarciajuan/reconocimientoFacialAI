@@ -82,7 +82,11 @@ def escribir_peticion(req: dict) -> str:
 def _leer_resultado(d: str) -> dict | None:
     if os.path.exists(os.path.join(d, ".aplicado")):
         return None
+    # El executor entrega el output declarado como `<job>/result/...`.
+    # Se admite también la forma directa por compatibilidad con pruebas/manuales.
     f = os.path.join(d, "efectos.json")
+    if not os.path.exists(f):
+        f = os.path.join(d, "result", "efectos.json")
     if not os.path.exists(f):
         return None
     try:
@@ -90,6 +94,11 @@ def _leer_resultado(d: str) -> dict | None:
             return json.load(fh)
     except (OSError, ValueError):
         return None
+
+
+def _artifact_root(d: str) -> str:
+    """Raíz de artefactos del output (el executor usa `<job>/result/`)."""
+    return os.path.join(d, "result") if os.path.isdir(os.path.join(d, "result")) else d
 
 
 def esperar_resultado(local_id: str, camara_id: str, fichero: str,
@@ -129,9 +138,10 @@ def _mover_archivos(src_dir: str, dst_dir: str) -> int:
 def aplicar(result_dir: str, data: dict, local_id: str, camara_id: str, fichero: str,
             ruta: str) -> None:
     """Aplica los efectos del proceso clásico sobre la casa (idéntico resultado final)."""
+    artifacts = _artifact_root(result_dir)
     caras = 0
     for sufijo in ("", "_busto", "_cuerpo"):
-        src = os.path.join(result_dir, "motor/caras/sinclasificar", local_id, f"{camara_id}{sufijo}")
+        src = os.path.join(artifacts, "motor/caras/sinclasificar", local_id, f"{camara_id}{sufijo}")
         dst = os.path.join(ruta, "motor/caras/sinclasificar", local_id, f"{camara_id}{sufijo}")
         caras += _mover_archivos(src, dst)
 
@@ -140,7 +150,7 @@ def aplicar(result_dir: str, data: dict, local_id: str, camara_id: str, fichero:
         linea_id = str(ev.get("linea_id", ""))
         uid = str(ev.get("uid", ""))
         if linea_id and uid:
-            src = os.path.join(result_dir, "motor/fotos_lineas", linea_id, uid + ".jpg")
+            src = os.path.join(artifacts, "motor/fotos_lineas", linea_id, uid + ".jpg")
             dst_dir = os.path.join(ruta, "motor/fotos_lineas", linea_id)
             os.makedirs(dst_dir, exist_ok=True)
             if os.path.exists(src):
