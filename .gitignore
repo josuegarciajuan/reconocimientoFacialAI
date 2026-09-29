@@ -39,6 +39,7 @@ motor/calibrador/
 motor/reagrupar_out/
 # Cola del worker único de foto HQ (motor/photo_worker.py)
 motor/photo_queue/
+motor/photo_evidence/
 # Backups SQL generados por los scripts de backfill/reagrupar
 motor/backup_*.sql
 aux/
@@ -47,6 +48,7 @@ admin/pages/config/planos/historial/
 # Croquis dibujado en runtime desde el panel (se regenera)
 admin/pages/config/planos/plano_dibujo_*.png
 admin/caras_procesadas/
+admin/fotos_originales/
 admin/fotos_camara/
 admin/files/videos_registro/
 admin/files/videos_registro_posiciones/

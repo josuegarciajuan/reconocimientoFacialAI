@@ -78,6 +78,23 @@ def test_process_job_single_frame_new_format(tmp_path, monkeypatch):
     assert calls["fused"] == 0
 
 
+def test_process_job_replaces_hq_atomically_without_leaving_temp(tmp_path, monkeypatch):
+    """La salida publicada es `.hq`; el temporal nunca queda disponible al consumidor."""
+    cfg = Config()
+    calls = {"busto": 0, "fused": 0}
+    _install_fakes(monkeypatch, calls)
+    src = _write_png(tmp_path / "f0.png")
+    out = str(tmp_path / "photo.jpg")
+    jp = _write_job(tmp_path / "job.json", {
+        "frames": [{"src": src, "bbox": [2, 2, 18, 18]}], "out": out,
+    })
+
+    pw._process_job(jp, cfg)
+
+    assert os.path.isfile(out + ".hq")
+    assert not os.path.exists(out + ".hq.tmp.jpg")
+
+
 def test_process_job_legacy_single_frame(tmp_path, monkeypatch):
     """Formato legacy `{src, out, bbox}`: misma ruta de un frame."""
     cfg = Config()

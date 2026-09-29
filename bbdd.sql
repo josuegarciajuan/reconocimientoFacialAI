@@ -108,6 +108,16 @@ CREATE TABLE IF NOT EXISTS fotos(
   nombre_real_antesconversion varchar(255),
   identificador_unico varchar(255),
   generada_hq tinyint(1) NOT NULL DEFAULT 0,
+  original_width int unsigned DEFAULT NULL,
+  original_height int unsigned DEFAULT NULL,
+  processed_width int unsigned DEFAULT NULL,
+  processed_height int unsigned DEFAULT NULL,
+  original_face_width int unsigned DEFAULT NULL,
+  original_face_height int unsigned DEFAULT NULL,
+  original_sharpness decimal(12,3) DEFAULT NULL,
+  quality_label varchar(16) DEFAULT NULL,
+  sr_applied tinyint(1) NOT NULL DEFAULT 0,
+  display_upscaled tinyint(1) NOT NULL DEFAULT 0,
   created timestamp DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id)
 );
@@ -126,6 +136,5 @@ CREATE TABLE IF NOT EXISTS cruces_lineas(
   created timestamp DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id)
 );
-
 
 

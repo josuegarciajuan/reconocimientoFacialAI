@@ -10,6 +10,7 @@
  */
 
 require_once __DIR__ . "/db.php";
+require_once __DIR__ . "/photo_images.php";
 
 /** Ruta absoluta del fichero de una foto publicada. */
 function foto_path(int $foto_id): string

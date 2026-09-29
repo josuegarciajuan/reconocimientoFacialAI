@@ -148,7 +148,8 @@ def _process_job(job_path: str, cfg: Config) -> None:
     # Se escribe a un .jpg temporal y se renombra de forma atómica: el contrato
     # con clasificadorV2.php es solo el NOMBRE del fichero (*.jpg.hq).
     tmp_jpg = out + ".hq.tmp.jpg"
-    cv2.imwrite(tmp_jpg, img_hq, [cv2.IMWRITE_JPEG_QUALITY, 95])
+    if not cv2.imwrite(tmp_jpg, img_hq, [cv2.IMWRITE_JPEG_QUALITY, 95]):
+        raise RuntimeError(f"no se pudo escribir el temporal HQ: {tmp_jpg}")
     os.replace(tmp_jpg, hq_path)
     print(f"[photo-worker] {os.path.basename(out)}.hq generado "
           f"({img_hq.shape[1]}x{img_hq.shape[0]}) en {time.time() - t0:.1f}s "

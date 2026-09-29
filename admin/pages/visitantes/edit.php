@@ -63,7 +63,13 @@ foreach ($event_rows as $event) {
 }
 $estancias = DB::select("SELECT * FROM estancias WHERE persona_id = ? ORDER BY id ASC", [$persona_id]);
 foreach ($estancias as $e) {
-    $fotos = array_column(DB::select("SELECT id FROM fotos WHERE estancia_id = ? ORDER BY id ASC", [(int)$e["id"]]), "id");
+    $fotos = DB::select(
+        "SELECT id, original_width, original_height, processed_width, processed_height,
+                original_face_width, original_face_height, quality_label, sr_applied,
+                display_upscaled
+         FROM fotos WHERE estancia_id = ? ORDER BY id ASC",
+        [(int)$e["id"]]
+    );
     if ($fotos) {
         $galeria[] = ["fecha_ini" => $e["fecha_ini"], "fecha_fin" => $e["fecha_fin"], "fotos" => $fotos];
     }
@@ -168,10 +174,12 @@ $num_cruces = $cruces_cnt ? (int)$cruces_cnt["n"] : 0;
                     <?php
                     foreach ($galeria as $g) {
                         $primera = true;
-                        foreach ($g["fotos"] as $fid) {
+                        foreach ($g["fotos"] as $foto) {
+                            $fid = (int)$foto["id"];
                             $fecha = $primera ? $g["fecha_ini"] : $g["fecha_fin"];
                             $primera = false;
                             $img = foto_url((int)$fid);
+                            $original_img = foto_original_url((int)$fid);
                             if ($img === "") { continue; } // fila sin fichero (foto no publicada)
                     ?>
                         <div class="box p-3">
@@ -179,9 +187,30 @@ $num_cruces = $cruces_cnt ? (int)$cruces_cnt["n"] : 0;
                                 <input type="checkbox" class="rf-foto-check" data-fid="<?= (int)$fid; ?>" onchange="rfActualizarConteo()"> seleccionar
                             </label>
                              <div class="text-xs text-center text-gray-600 dark:text-gray-300 truncate mb-2"><?= htmlspecialchars($fecha); ?></div>
-                            <img src="<?= htmlspecialchars($img); ?>" alt="Foto <?= $fid; ?> del <?= htmlspecialchars($fecha); ?>"
-                                 onclick="verFoto('<?= $js_quote($img); ?>','<?= $js_quote($fecha); ?>')"
-                                 class="w-full object-cover rounded cursor-pointer" style="aspect-ratio:1/1">
+                             <div class="grid grid-cols-2 gap-2">
+                                 <div>
+                                     <div class="text-xs text-center text-gray-500 mb-1">Procesado</div>
+                                     <img src="<?= htmlspecialchars($img); ?>" alt="Retrato procesado <?= $fid; ?> del <?= htmlspecialchars($fecha); ?>"
+                                          onclick="verFoto('<?= $js_quote($img); ?>','<?= $js_quote($fecha . ' · procesado'); ?>')"
+                                          class="w-full object-cover rounded cursor-pointer" style="aspect-ratio:1/1">
+                                 </div>
+                                 <?php if ($original_img !== ""): ?>
+                                 <div>
+                                     <div class="text-xs text-center text-gray-500 mb-1">Frame original</div>
+                                     <img src="<?= htmlspecialchars($original_img); ?>" alt="Frame original <?= $fid; ?> del <?= htmlspecialchars($fecha); ?>"
+                                          onclick="verFoto('<?= $js_quote($original_img); ?>','<?= $js_quote($fecha . ' · frame original'); ?>')"
+                                          class="w-full object-cover rounded cursor-pointer" style="aspect-ratio:1/1">
+                                 </div>
+                                 <?php endif; ?>
+                             </div>
+                             <?php if ($foto["quality_label"] !== null): ?>
+                                 <div class="text-xs mt-2 text-gray-600 dark:text-gray-300">
+                                     Calidad: <b><?= htmlspecialchars((string)$foto["quality_label"]); ?></b>
+                                     · <?= (int)$foto["original_width"] ?>×<?= (int)$foto["original_height"] ?> original
+                                     · <?= (int)$foto["processed_width"] ?>×<?= (int)$foto["processed_height"] ?> procesado
+                                     <?php if ((int)$foto["display_upscaled"] === 1): ?> · ampliado para display<?php endif; ?>
+                                 </div>
+                             <?php endif; ?>
                             <?php if (isset($audit_by_foto[(int)$fid]) || isset($audit_events_by_foto[(int)$fid])): ?>
                                 <div class="text-xs mt-2 text-gray-600 dark:text-gray-300">
                                     <?php foreach (($audit_by_foto[(int)$fid] ?? []) as $audit): ?>
