@@ -501,19 +501,12 @@ def _busto_crop(img: np.ndarray, bbox, cfg) -> tuple[np.ndarray, tuple]:
 
 
 def _topup_display(z: np.ndarray, cfg) -> np.ndarray:
-    """A5 top-up de DISPLAY: la UI no debe reescalar fotos finales diminutas.
+    """Keep native output dimensions; CSS may enlarge it for layout only.
 
-    Upscale LANCZOS4 SOLO hasta `cfg.min_display_side` (default 512). No toca
-    embeddings ni el SR interno.
+    Artificially enlarging a low-information portrait to a nominal 512 px made
+    the panel look as if it contained more evidence than the camera captured.
+    Real SR remains responsible for increasing resolution.
     """
-    _MIN_DISPLAY_SIDE = getattr(cfg, "min_display_side", 512)
-    _zh, _zw = z.shape[:2]
-    if _zh < 1 or _zw < 1:
-        return z
-    if max(_zh, _zw) < _MIN_DISPLAY_SIDE:
-        _s = _MIN_DISPLAY_SIDE / max(_zh, _zw)
-        z = cv2.resize(z, (max(1, int(round(_zw * _s))), max(1, int(round(_zh * _s)))),
-                       interpolation=cv2.INTER_LANCZOS4)
     return z
 
 

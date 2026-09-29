@@ -4,6 +4,7 @@
 function ingest_photo_audit(int $foto_id, string $correlation_id, string $local_id, string $camera_id): void
 {
     require_once __DIR__ . "/security.php";
+    require_once __DIR__ . "/photo_images.php";
     try { $path = rf_audit_sidecar_path(RUTA_PROYECTO, $local_id, $camera_id, $correlation_id); }
     catch (InvalidArgumentException $e) { return; }
     if (!is_file($path)) {
@@ -45,6 +46,14 @@ function ingest_photo_audit(int $foto_id, string $correlation_id, string $local_
         || !is_numeric($record["classified_at"] ?? null)) {
         return; // fail closed; leave it for diagnosis/retry
     }
+    $image = $record["image"] ?? null;
+    $valid_image = is_array($image)
+        && filter_var($image["original_width"] ?? null, FILTER_VALIDATE_INT, ["options" => ["min_range" => 1]]) !== false
+        && filter_var($image["original_height"] ?? null, FILTER_VALIDATE_INT, ["options" => ["min_range" => 1]]) !== false
+        && filter_var($image["processed_width"] ?? null, FILTER_VALIDATE_INT, ["options" => ["min_range" => 1]]) !== false
+        && filter_var($image["processed_height"] ?? null, FILTER_VALIDATE_INT, ["options" => ["min_range" => 1]]) !== false
+        && in_array((string)($image["quality_label"] ?? ""), ["insufficient", "limited", "usable"], true)
+        && is_bool($image["display_upscaled"] ?? null);
     $existing = DB::selectOne("SELECT id FROM foto_audits WHERE correlation_id = ? LIMIT 1", [$correlation_id]);
     $phase = "initial";
     if (($record["person"] ?? null) !== null) {
@@ -65,6 +74,21 @@ function ingest_photo_audit(int $foto_id, string $correlation_id, string $local_
     } elseif (DB::selectOne("SELECT foto_id FROM foto_audits WHERE correlation_id = ?", [$correlation_id])["foto_id"] === null) {
         // The only mutable field is the post-insert FK correlation.
         DB::execute("UPDATE foto_audits SET foto_id = ? WHERE correlation_id = ? AND foto_id IS NULL", [$foto_id, $correlation_id]);
+    }
+    if ($valid_image) {
+        DB::execute(
+            "UPDATE fotos SET original_width = ?, original_height = ?, processed_width = ?,
+             processed_height = ?, original_face_width = ?, original_face_height = ?,
+             original_sharpness = ?, quality_label = ?, sr_applied = ?, display_upscaled = ?
+             WHERE id = ?",
+            [(int)$image["original_width"], (int)$image["original_height"],
+             (int)$image["processed_width"], (int)$image["processed_height"],
+             max(0, (int)($image["original_face_width"] ?? 0)),
+             max(0, (int)($image["original_face_height"] ?? 0)),
+             max(0.0, min(1000000.0, (float)($image["original_sharpness"] ?? 0))),
+             (string)$image["quality_label"], !empty($image["sr_applied"]) ? 1 : 0,
+             $image["display_upscaled"] ? 1 : 0, $foto_id]
+        );
     }
     @unlink($path);
 }

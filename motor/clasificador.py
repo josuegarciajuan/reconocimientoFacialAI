@@ -50,7 +50,9 @@ from motor.core.quality import face_sharpness, pose_label, pose_valida  # noqa: 
 from motor.core.store import FaceStore          # noqa: E402
 from motor.core.superres import enhance_embedding, photo_busto  # noqa: E402
 from motor.core.photo_audit import (build_audit_record, layer_scores_json,
-                                    write_audit_queue)  # noqa: E402
+                                     write_audit_queue)  # noqa: E402
+from motor.core.image_provenance import (build_image_metadata,
+                                         select_max_resolution_frame)  # noqa: E402
 
 ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 IMG_EXTS = (".jpg", ".jpeg", ".png")
@@ -102,6 +104,22 @@ def _queue_hq(out_path: str, frames: list, cfg: Config, ruta: str,
             json.dump(job, fh)
     except Exception as e:  # noqa: BLE001
         log(f"[hq] fallo encolando HQ: {e}")
+
+
+def _preserve_original_frame(ruta: str, local_id: str, camara_id: str,
+                             foto_id: str, image) -> None:
+    """Persist the native frame before the classifier removes its source."""
+    try:
+        qdir = os.path.join(ruta, "motor/photo_evidence", local_id, camara_id)
+        os.makedirs(qdir, exist_ok=True)
+        target = os.path.join(qdir, foto_id + ".jpg")
+        temporary = target + ".tmp.jpg"
+        if cv2.imwrite(temporary, image, [cv2.IMWRITE_JPEG_QUALITY, 98]):
+            os.replace(temporary, target)
+        elif os.path.exists(temporary):
+            os.remove(temporary)
+    except Exception as e:  # noqa: BLE001
+        log(f"[evidencia] fallo guardando frame original: {e}")
 
 
 def _collect_hq_frames(photo_img, photo_bbox, members, battery, busto_map,
@@ -1066,6 +1084,7 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
         store.add_attributes(person, query_attributes, ts=rep_item["ts"] or time.time(), src=foto_id)
 
     from motor.core.matching import top_scores  # noqa: E402
+    original_frame = select_max_resolution_frame(rep_item["img"], members, battery)
     audit_meta = {
         "exact_match": bool(exact_match),
         "exact_conflict": False,
@@ -1077,10 +1096,6 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
         "stem": rep_stem,
         "pose": query_pose,
     }
-    write_audit_queue(ruta, local_id, camara_id, foto_id, build_audit_record(
-        foto_id, local_id, camara_id, result.verdict, person,
-        layer_scores_json(result.layer_scores), attributes=query_attributes,
-        meta=audit_meta))
 
     # Foto final: BUSTO (torso real + cara restaurada) para display. Internamente
     # el matching usa los crops tight; aquí se genera la imagen que se muestra.
@@ -1108,6 +1123,18 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     # se cargan en N clasificadores (ahorro de RAM del refactor).
     t_foto = time.time()
     final_img = photo_busto(photo_img, photo_bbox, cfg, model="compact", restore=False)
+    image_meta = build_image_metadata(
+        original_frame, rep_face.bbox, final_img,
+        sr_applied=bool(cfg.sr_enabled),
+        display_upscaled=False,
+    )
+    audit_meta["image"] = image_meta
+    _preserve_original_frame(ruta, local_id, camara_id, foto_id, original_frame)
+    # Sidecar first: clasificadorV2.php may see the JPEG immediately after this.
+    write_audit_queue(ruta, local_id, camara_id, foto_id, build_audit_record(
+        foto_id, local_id, camara_id, result.verdict, person,
+        layer_scores_json(result.layer_scores), attributes=query_attributes,
+        meta=audit_meta))
     cv2.imwrite(out_path, final_img, [cv2.IMWRITE_JPEG_QUALITY, 95])
     log(f"[foto] {out_name} guardada ({final_img.shape[1]}x{final_img.shape[0]}) "
         f"en {time.time() - t_foto:.1f}s")
