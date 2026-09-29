@@ -38,6 +38,13 @@
 #   --hold N : tras parar, espera N segundos y re-verifica que todo sigue caído
 #              antes de rearrancar (evidencia visible de parada total).
 #   --dry-run: lista lo que se va a borrar sin tocar nada.
+#
+# GUARDA ANTI-TRAMPA (2026-09-29): tras vaciar la galería, un clasificador con
+#   RF_AUTOENROLL_NEW inactivo no puede producir ningún `match` y no crearía
+#   identidades nunca (todo a revisión; panel de Visitantes vacío). La FASE D
+#   asegura RF_AUTOENROLL_NEW=1 en `.env` (con copia .bak) antes de rearrancar.
+#   Además el motor fuerza el alta cuando la galería está vacía (bootstrap en
+#   `debe_crear_identidad`), por si el flag se desactivara de nuevo.
 # =============================================================================
 set -euo pipefail
 
@@ -305,6 +312,55 @@ verificar_parada() {
   return 0
 }
 
+# Guarda anti-trampa (2026-09-29): el reset vacía la galería (face_enc_v2) y las
+# tablas. Si RF_AUTOENROLL_NEW queda inactivo, ningún verdict puede ser un
+# `match` confirmado y el clasificador no crearía NUNCA identidades: el panel de
+# Visitantes quedaría vacío para siempre. Se asegura el flag activo en `.env`
+# ANTES de rearrancar los servicios (copia de seguridad del `.env` incluida).
+asegurar_autoenroll() {
+  local envf="${PROYECTO}/.env" actual tmp bak
+  if [[ ! -f "${envf}" ]]; then
+    log "  AVISO: ${envf} no existe; no se puede asegurar RF_AUTOENROLL_NEW"
+    return 0
+  fi
+  actual="$(grep -E '^RF_AUTOENROLL_NEW=' "${envf}" 2>/dev/null | tail -1 \
+            | cut -d= -f2- | tr -d " \t\"'")"
+  case "${actual,,}" in
+    1|true|yes|on|si|sí) log "  RF_AUTOENROLL_NEW ya activo (=${actual})"; return 0 ;;
+  esac
+  if [[ ${DRY_RUN} -eq 1 ]]; then
+    log "  (dry-run) activaría RF_AUTOENROLL_NEW=1 en ${envf}"
+    return 0
+  fi
+  bak="${envf}.bak-$(date +%Y%m%d%H%M%S)"
+  cp -p "${envf}" "${bak}"
+  tmp="$(mktemp)"
+  if grep -qE '^RF_AUTOENROLL_NEW=' "${envf}"; then
+    sed -E 's/^RF_AUTOENROLL_NEW=.*/RF_AUTOENROLL_NEW=1/' "${envf}" > "${tmp}"
+  else
+    cp "${envf}" "${tmp}"
+    printf '\nRF_AUTOENROLL_NEW=1\n' >> "${tmp}"
+  fi
+  chown --reference="${envf}" "${tmp}" 2>/dev/null || true
+  chmod --reference="${envf}" "${tmp}" 2>/dev/null || true
+  mv "${tmp}" "${envf}"
+  log "  RF_AUTOENROLL_NEW activado (=1); copia previa en ${bak}"
+}
+
+# Verificación de que el flag efectivo queda activo tras la guarda (lee el .env
+# con el MISMO parser que el motor, vía motor.core.env).
+verificar_autoenroll() {
+  local val
+  val="$(cd "${PROYECTO}" && motor/venv/bin/python -c \
+      'from motor.core.env import get_bool; print(1 if get_bool(".", "RF_AUTOENROLL_NEW", False) else 0)' \
+      2>/dev/null || true)"
+  if [[ "${val}" == "1" ]]; then
+    log "  verificación: RF_AUTOENROLL_NEW efectivo = 1 (el clasificador sí enrolará)"
+  else
+    log "  AVISO: RF_AUTOENROLL_NEW efectivo = '${val:-?}' (revisar ${PROYECTO}/.env)"
+  fi
+}
+
 # =============================================================================
 # FASE A2 — matar TODOS los procesos RF (hijos/huérfanos/ffmpeg que systemd no cubre)
 # =============================================================================
@@ -410,6 +466,10 @@ cmd "Recrear ${PROYECTO}/motor/logs" mkdir -p "${PROYECTO}/motor/logs"
 # =============================================================================
 # FASE D — rearrancar servicios y timers (encendido total desde cero)
 # =============================================================================
+log "FASE D: asegurando RF_AUTOENROLL_NEW (guarda anti-trampa)..."
+asegurar_autoenroll
+verificar_autoenroll
+
 log "FASE D: rearrancando servicios y timers..."
 for svc in "${SERVICIOS[@]}"; do
   cmd "Arrancar ${svc}" systemctl restart "${svc}" 2>/dev/null || true

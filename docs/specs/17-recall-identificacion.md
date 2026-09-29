@@ -90,6 +90,22 @@ Flags: `RF_REPROCESA_ENABLED`, `RF_PROVISIONAL_BACKS`.
 - Cada fase es un commit atómico; merge a `main` + `bash deploy/deploy_prod.sh`.
 - Migraciones SQL nuevas e idempotentes en `sql/` (aplicadas por `deploy_prod.sh`).
 
+### Nota (2026-09-29) — bootstrap tras reset
+
+El freno anti-fragmentación (`RF_AUTOENROLL_NEW=0`) combinado con un reset
+(galería `face_enc_v2` vacía) dejaba el clasificador "muerto": sin ningún
+embedding contra el que calcular coseno, ningún verdict puede ser `match`, y con
+el freno activo todo iba a `motor/revision/` sin crear `personas`/`estancias`
+(panel de Visitantes vacío para siempre).
+
+Corrección (combinada):
+- `debe_crear_identidad(..., hay_galeria=False)` fuerza el alta cuando la
+  galería está vacía (bootstrapping) y vuelve a aplicar el freno en cuanto hay
+  identidades.
+- `.env.example` y el reset usan `RF_AUTOENROLL_NEW=1`.
+- `deploy/reset_datos.sh` asegura `RF_AUTOENROLL_NEW=1` en `.env` (con copia
+  `.bak`) antes de rearrancar servicios, como guarda anti-trampa.
+
 ## 5. Validación
 
 - Tests unitarios del motor (`motor/tests`, `motor/venv/bin/python -m pytest`).
