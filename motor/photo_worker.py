@@ -91,28 +91,19 @@ def _loadavg() -> float:
         return 99.0
 
 
-def _process_job(job_path: str, cfg: Config) -> None:
-    """Ejecuta un trabajo HQ: genera `<out>.hq` y limpia el job + todas las fuentes.
+def load_pairs(job_path: str):
+    """Lee un job HQ y devuelve `(out, pairs, srcs)`.
 
-    Formato de job (clasificador.py::_queue_hq): `{"frames": [{"src", "bbox"}...],
-    "out", "ts"}`. Retrocompatible con el formato antiguo `{src, out, bbox}`.
-    Si hay >=2 frames y `sr_mf_enabled`, usa el MF-SR real (`photo_busto_fused`);
-    si no, o si la fusión no da material, cae a `photo_busto` con el frame 0.
+    `pairs` = [(img_bgr, bbox)] de los frames legibles; `srcs` = TODAS las rutas
+    declaradas (aunque falten), para poder limpiarlas. Formato de job
+    (clasificador.py::_queue_hq): `{"frames":[{"src","bbox"}...],"out","ts"}`;
+    retrocompatible con el antiguo `{src, out, bbox}`.
     """
-    # descartar jobs obsoletos (cola vieja de un motor apagado mucho tiempo)
-    try:
-        if time.time() - os.path.getmtime(job_path) > JOB_TTL_S:
-            _discard_job(job_path)
-            return
-    except OSError:
-        os.remove(job_path)
-        return
     with open(job_path, encoding="utf-8") as fh:
         job = json.load(fh)
     out = job.get("out")
     raw_frames = job.get("frames")
     if not raw_frames:
-        # retrocompat: job antiguo de un solo frame
         raw_frames = [{"src": job.get("src"), "bbox": job.get("bbox")}]
     pairs = []
     srcs = []
@@ -130,27 +121,53 @@ def _process_job(job_path: str, cfg: Config) -> None:
         if img is None:
             continue
         pairs.append((img, tuple(int(v) for v in bbox)))
-    if not out or not pairs:
-        _discard_job(job_path)
-        return
-    t0 = time.time()
+    return out, pairs, srcs
+
+
+def compute_hq(pairs, cfg: Config):
+    """Calcula la imagen HQ: MF-SR si hay >=2 frames y está activo, si no SR simple."""
     img_hq = None
     if len(pairs) >= 2 and cfg.sr_mf_enabled:
         img_hq = photo_busto_fused(pairs, cfg, model=cfg.sr_model_photo)
         if img_hq is None:
-            print(f"[photo-worker] MF-SR sin material ({os.path.basename(out)}), "
-                  f"un solo frame", flush=True)
+            print("[photo-worker] MF-SR sin material, un solo frame", flush=True)
     if img_hq is None:
         img_hq = photo_busto(pairs[0][0], pairs[0][1], cfg, model=cfg.sr_model_photo)
-    hq_path = out + ".hq"
-    # cv2.imwrite NO conoce la extensión ".hq" (error histórico del hilo HQ
-    # anterior: cargaba x4plus y fallaba en silencio -> generada_hq siempre 0).
-    # Se escribe a un .jpg temporal y se renombra de forma atómica: el contrato
-    # con clasificadorV2.php es solo el NOMBRE del fichero (*.jpg.hq).
-    tmp_jpg = out + ".hq.tmp.jpg"
+    return img_hq
+
+
+def write_hq(hq_path: str, img_hq) -> None:
+    """Escribe `.hq` de forma atómica (cv2 no conoce la extensión `.hq`)."""
+    tmp_jpg = hq_path + ".tmp.jpg"
     if not cv2.imwrite(tmp_jpg, img_hq, [cv2.IMWRITE_JPEG_QUALITY, 95]):
         raise RuntimeError(f"no se pudo escribir el temporal HQ: {tmp_jpg}")
     os.replace(tmp_jpg, hq_path)
+
+
+def _process_job(job_path: str, cfg: Config) -> None:
+    """Ejecuta un trabajo HQ: genera `<out>.hq` y limpia el job + todas las fuentes.
+
+    Si hay >=2 frames y `sr_mf_enabled`, usa el MF-SR real (`photo_busto_fused`);
+    si no, o si la fusión no da material, cae a `photo_busto` con el frame 0.
+    """
+    # descartar jobs obsoletos (cola vieja de un motor apagado mucho tiempo)
+    try:
+        if time.time() - os.path.getmtime(job_path) > JOB_TTL_S:
+            _discard_job(job_path)
+            return
+    except OSError:
+        os.remove(job_path)
+        return
+    out, pairs, srcs = load_pairs(job_path)
+    if not out or not pairs:
+        _discard_job(job_path)
+        return
+    t0 = time.time()
+    img_hq = compute_hq(pairs, cfg)
+    hq_path = out + ".hq"
+    # Se escribe a un .jpg temporal y se renombra de forma atómica: el contrato
+    # con clasificadorV2.php es solo el NOMBRE del fichero (*.jpg.hq).
+    write_hq(hq_path, img_hq)
     print(f"[photo-worker] {os.path.basename(out)}.hq generado "
           f"({img_hq.shape[1]}x{img_hq.shape[0]}) en {time.time() - t0:.1f}s "
           f"[{len(pairs)} frame(s)]", flush=True)
@@ -161,6 +178,51 @@ def _process_job(job_path: str, cfg: Config) -> None:
             os.remove(src)
         except OSError:
             pass
+
+
+def _modo() -> str:
+    """Modo del proyecto (`local`|`superserver`) leído por el puente."""
+    from motor.photo_pool import modo
+    return modo()
+
+
+def _frames_of(job_path: str) -> list[dict]:
+    """Frames declarados válidos del job: [{src, bbox}] (para la petición al pool)."""
+    try:
+        with open(job_path, encoding="utf-8") as fh:
+            job = json.load(fh)
+    except (OSError, ValueError):
+        return []
+    raw = job.get("frames") or [{"src": job.get("src"), "bbox": job.get("bbox")}]
+    out = []
+    for fr in raw:
+        if not isinstance(fr, dict):
+            continue
+        src, bbox = fr.get("src"), fr.get("bbox")
+        if src and bbox and len(bbox) == 4:
+            out.append({"src": src, "bbox": [int(v) for v in bbox]})
+    return out
+
+
+def _process_job_via_pool(job_path: str, cfg: Config) -> bool:
+    """Modo superserver: pide la HQ al pool y aplica los efectos en la casa."""
+    try:
+        if time.time() - os.path.getmtime(job_path) > JOB_TTL_S:
+            _discard_job(job_path)
+            return True
+    except OSError:
+        try:
+            os.remove(job_path)
+        except OSError:
+            pass
+        return True
+    out, pairs, srcs = load_pairs(job_path)
+    if not out or not pairs:
+        _discard_job(job_path)
+        return True
+    frames = _frames_of(job_path)
+    from motor.photo_pool import submit_and_apply
+    return submit_and_apply(out, frames, srcs, job_path)
 
 
 def main() -> int:
@@ -213,6 +275,11 @@ def main() -> int:
                 if not jobs:
                     time.sleep(1)
                     continue
+            if _modo() == "superserver":
+                ok = _process_job_via_pool(jobs[0], cfg)
+                if not ok:
+                    time.sleep(5)  # se reintentará en la siguiente vuelta
+                continue
             _process_job(jobs[0], cfg)
             time.sleep(0.2)  # pequeño respiro entre trabajos (CPU compartida)
         except KeyboardInterrupt:
