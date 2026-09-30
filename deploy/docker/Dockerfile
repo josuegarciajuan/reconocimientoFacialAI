@@ -20,8 +20,9 @@ ENV PYTHONUNBUFFERED=1 \
 # build-essential: insightface (0.7.3) compila extensión Cython en el install.
 # libgomp1: OpenMP que necesitan onnxruntime/OpenVINO y scipy.
 # patchelf: limpia el flag de stack ejecutable del .so de onnxruntime (ver abajo).
+# ffmpeg: archivado de vídeo (remux/transcode + poster) para el proceso `archive`.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends build-essential libgomp1 patchelf \
+ && apt-get install -y --no-install-recommends build-essential libgomp1 patchelf ffmpeg \
  && rm -rf /var/lib/apt/lists/*
 
 COPY requirements-runtime.txt /tmp/requirements-runtime.txt
