@@ -4,7 +4,7 @@
    de Midone (app.js). Patrones:
    - rfToast(msg, tipo)            feedback visual no invasivo
    - rfLightbox(url, titulo)       visor de imagen (lightbox)
-   - rfCamModal(id, url, titulo)   modal de stream MJPEG
+   - rfCamModal(id, urlStream, urlSnapshot, titulo)  modal de stream MJPEG
    - rfRefrescarSnapshots()        refresco periódico de snapshots
    ============================================================ */
 
@@ -112,6 +112,26 @@
   /* ------------------------------------------------------------------ */
   /* Modal de cámara: stream MJPEG con fallback a snapshot               */
   /* ------------------------------------------------------------------ */
+
+  /* 1x1 transparente: al cerrar el modal se apunta aquí para abortar la
+     conexión multipart/x-mixed-replace del stream. */
+  var RF_IMG_VACIO =
+    "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+
+  /* Corta el stream del modal (sin tocar los handlers del siguiente open). */
+  function rfPararStreamCamara(modal) {
+    if (!modal) {
+      return;
+    }
+    var im = modal.querySelector(".live-modal__img");
+    if (!im) {
+      return;
+    }
+    im.onload = null;
+    im.onerror = null;
+    im.src = RF_IMG_VACIO;
+  }
+
   function rfCamModal(id, streamUrl, snapshotUrl, titulo) {
     titulo = titulo || "Cámara";
     var modal = doc.getElementById("rf-cam-modal");
@@ -128,31 +148,58 @@
         '<h3 class="media-modal__title mr-auto truncate"></h3>' +
         '<a href="javascript:;" data-dismiss="modal" class="button button--sm text-white bg-theme-6 ml-3">Cerrar</a>' +
         "</div>" +
-        '<img class="live-modal__img" alt="" src="">' +
+        '<img class="live-modal__img" alt="">' +
         '<div class="stream-detail__meta">' +
         '<span class="text-xs text-gray-500 dark:text-gray-600">Stream en directo (MJPEG)</span>' +
         '<span class="ml-auto text-xs" id="rf-cam-hint"></span>' +
         "</div>" +
         "</div>";
       doc.body.appendChild(modal);
-    }
-    modal.querySelector(".media-modal__title").textContent = titulo;
-    var img = modal.querySelector(".live-modal__img");
-    img.setAttribute("alt", titulo);
-    img.src = streamUrl;
-    img.onerror = function () {
-      // El stream no está disponible: caer al último snapshot
-      img.onerror = null;
-      img.src = snapshotUrl;
-      var hint = doc.getElementById("rf-cam-hint");
-      if (hint) {
-        hint.textContent = "Sin stream: mostrando último snapshot";
+
+      /* Al cerrar (botón, clic fuera o Escape) se corta el MJPEG: si no, el
+         <img> oculto seguía suscrito al ffmpeg de rf-live y podía pintar
+         frames de la cámara anterior al abrir otra. Además libera el ffmpeg. */
+      if (win.MutationObserver) {
+        var obs = new win.MutationObserver(function () {
+          if (!modal.classList.contains("show")) {
+            rfPararStreamCamara(modal);
+          }
+        });
+        obs.observe(modal, { attributes: true, attributeFilter: ["class"] });
       }
-    };
+    }
+
+    modal.querySelector(".media-modal__title").textContent = titulo;
     var hint = doc.getElementById("rf-cam-hint");
     if (hint) {
       hint.textContent = "";
     }
+
+    /* <img> NUEVO por apertura: reasignar src sobre el mismo nodo dejaba viva
+       la conexión multipart anterior en varios navegadores (se veía otra
+       cámara, distinta en cada clic). Reemplazarlo garantiza el aborto. */
+    var viejo = modal.querySelector(".live-modal__img");
+    var img = doc.createElement("img");
+    img.className = "live-modal__img";
+    img.setAttribute("alt", titulo);
+    if (viejo && viejo.parentNode) {
+      rfPararStreamCamara(modal);
+      viejo.parentNode.replaceChild(img, viejo);
+    } else {
+      (modal.querySelector(".modal__content") || modal).appendChild(img);
+    }
+
+    img.onerror = function () {
+      // El stream no está disponible: caer al último snapshot
+      img.onerror = null;
+      img.src = snapshotUrl;
+      if (hint) {
+        hint.textContent = "Sin stream: mostrando último snapshot";
+      }
+    };
+    // Cache-buster: evita reutilizar una respuesta multipart anterior.
+    img.src = streamUrl + (streamUrl.indexOf("?") === -1 ? "?" : "&") + "_=" + Date.now();
+
     rfAbrirModal(modal.id);
   }
 
