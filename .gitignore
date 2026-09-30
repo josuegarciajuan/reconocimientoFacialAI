@@ -49,7 +49,10 @@ admin/pages/config/planos/historial/
 admin/pages/config/planos/plano_dibujo_*.png
 admin/caras_procesadas/
 admin/fotos_originales/
-admin/fotos_camara/
+# Snapshots de la rejilla (runtime): se genera en prod, no se versiona.
+# La excepción .htaccess sí se versiona (cabeceras de caché del endpoint).
+admin/fotos_camara/*
+!admin/fotos_camara/.htaccess
 admin/files/videos_registro/
 admin/files/videos_registro_posiciones/
 admin/files/videos_registro_pruebas/

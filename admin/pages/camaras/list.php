@@ -2,9 +2,12 @@
 
 /* 
  * Cámaras en directo (REFACTOR Fase 4c + live MJPEG).
- * - Rejilla: snapshots `fotos_camara/<id>.png` refrescados en segundo plano
- *   (dofoto.py async, con caché de 15s). Antes cada carga bloqueaba ~60s
- *   (exec + sleep(2) síncrono por cámara) -> la sección "no cargaba".
+ * - Rejilla: snapshots `fotos_camara/<id>.jpg` (LIGEROS: 640px JPEG, dofoto.py)
+ *   refrescados en segundo plano con caché de 15s. Antes eran PNG a resolución
+ *   completa (varios MB) y se re-descargaban enteros cada 15s -> la rejilla
+ *   tardaba muchísimo. Ahora el cliente solo pide la imagen cuando cambia su
+ *   mtime (estado_ajax.php), así que entre refrescos no viaja ni un byte.
+ * - Escritura atómica en dofoto.py + flock por cámara (evita duplicar procesos).
  * - Vista (clic en tarjeta): modal Midone con streaming local RTSP->MJPEG
  *   vía live/mjpeg-stream.js y proxy Apache /reconocimientoFacial/live,
  *   en lugar del iframe de ipcamlive.com (alias sin configurar -> no cargaba).
@@ -18,19 +21,35 @@ $local_id = (int)($_SESSION["local_id"] ?? 0);
 $camaras = DB::select("SELECT * FROM camaras WHERE local_id = ? AND sistema = 0 AND encendida = 1 ORDER BY orden ASC, descripcion ASC", [$local_id]);
 
 /**
+ * Ancho en píxeles del snapshot de la rejilla (JPEG). 640 basta para las
+ * tarjetas y reduce el peso ~20-50x frente al PNG a resolución completa.
+ */
+function snapshot_ancho(): int
+{
+    $ancho = (int)(getenv("RF_SNAP_WIDTH") ?: 640);
+    return $ancho >= 160 ? $ancho : 640;
+}
+
+/**
  * Lanza dofoto.py en segundo plano si el snapshot es antiguo o no existe.
- * Máximo 1 refresco por cámara cada 15s (evita golpear el RTSP en cada F5).
+ * Máximo 1 refresco por cámara cada 15s (evita golpear el RTSP en cada F5) y
+ * `flock -n` por cámara para que varias pestañas/peticiones no lancen procesos
+ * duplicados sobre el mismo RTSP.
  */
 function refrescar_snapshot(int $camara_id, string $url_conexion): void
 {
-    $foto = RUTA_PROYECTO . "admin/fotos_camara/" . $camara_id . ".png";
+    $foto = RUTA_PROYECTO . "admin/fotos_camara/" . $camara_id . ".jpg";
     if (is_file($foto) && (time() - filemtime($foto)) < 15) {
         return;
     }
-    $url_limpia = str_replace("'", "", $url_conexion);
-    $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/dofoto.py " . $camara_id
-         . " '" . $url_limpia . "' '" . RUTA_PROYECTO . "'";
-    exec($cmd . " > /dev/null 2>&1 &");
+    $lock = RUTA_PROYECTO . "admin/fotos_camara/" . $camara_id . ".lock";
+    $cmd = escapeshellarg(RUTA_PYTHON)
+         . " " . escapeshellarg(RUTA_PROYECTO . "motor/dofoto.py")
+         . " " . $camara_id
+         . " " . escapeshellarg($url_conexion)
+         . " " . escapeshellarg(RUTA_PROYECTO)
+         . " " . snapshot_ancho();
+    exec("flock -n " . escapeshellarg($lock) . " " . $cmd . " > /dev/null 2>&1 &");
 }
 
 /**
@@ -99,12 +118,12 @@ $ph_uri = "data:image/svg+xml;base64," . base64_encode(
 
         refrescar_snapshot($camara_id, $url_conexion);
 
-        $foto = RUTA_PROYECTO . "admin/fotos_camara/" . $camara_id . ".png";
+        $foto = RUTA_PROYECTO . "admin/fotos_camara/" . $camara_id . ".jpg";
         $existe = is_file($foto);
         $ts = $existe ? (int)filemtime($foto) : 0;
 
-        $snapshot_base = "fotos_camara/" . $camara_id . ".png";
-        $snapshot_uri = $snapshot_base . "?t=" . $ts;
+        $snapshot_base = "fotos_camara/" . $camara_id . ".jpg";
+        $snapshot_uri = $snapshot_base . "?v=" . $ts;
 
         $stream_url = "../live?id=" . $camara_id;
         $token = token_live_camara($camara_id);
@@ -129,9 +148,10 @@ $ph_uri = "data:image/svg+xml;base64," . base64_encode(
             <span class="cam-card__placeholder absolute inset-0 flex items-center justify-center empty-state__hint">Cargando…</span>
             <?php endif; ?>
             <img class="cam-card__img" data-snapshot="<?= $snapshot_base; ?>"
+                 data-v="<?= $ts; ?>"
                  src="<?= $existe ? $snapshot_uri : $ph_uri; ?>"
                  data-ph-uri="<?= $ph_uri; ?>"
-                 draggable="false"
+                 draggable="false" decoding="async"
                  alt="<?= htmlspecialchars($alt, ENT_QUOTES); ?>">
             <span class="cam-card__status"><span class="live-dot" aria-hidden="true"></span> EN VIVO</span>
         </span>
@@ -315,7 +335,11 @@ if ($detalle):
     if ($live_token !== "") {
         $det_stream .= "&token=" . urlencode($live_token);
     }
-    $det_snap = "fotos_camara/" . $det_id . ".png";
+    $det_snap = "fotos_camara/" . $det_id . ".jpg";
+    $det_foto = RUTA_PROYECTO . "admin/fotos_camara/" . $det_id . ".jpg";
+    if (is_file($det_foto)) {
+        $det_snap .= "?v=" . (int)filemtime($det_foto);
+    }
     $det_titulo = camara_label(rf_utf8_normalizar((string)($detalle["descripcion"] ?? "Cámara")));
     $det_args = json_encode(
         [$det_id, $det_stream, $det_snap, $det_titulo],
