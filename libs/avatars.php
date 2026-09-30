@@ -97,6 +97,9 @@ function avatar_generar(int $persona_id, array $fotos = []): array
 
     if (ss_mode() === 'superserver') {
         // Modo pool (M3): el PNG lo calcula la flota; este bridge aplica PNG + sidecar.
+        // El dir de avatares puede no existir aún (en local lo crea avatar.py); aquí
+        // escribimos fotos.json y el marker ANTES de lanzar, así que lo aseguramos.
+        @mkdir(avatars_dir(), 0777, true);
         $fotos_json = avatars_dir() . $persona_id . ".fotos.json";
         $lista = [];
         foreach ($fotos_ok as $par) {
