@@ -11,6 +11,7 @@
  */
 
 require_once __DIR__ . "/db.php";
+require_once __DIR__ . "/superserver.php";
 
 /** Directorio absoluto de los avatares. */
 function avatars_dir(): string
@@ -94,8 +95,23 @@ function avatar_generar(int $persona_id, array $fotos = []): array
         return ["ok" => false, "estado" => "pendiente", "foto_id" => 0];
     }
 
-    $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/avatar.py --fotos \""
-         . implode(";", $fotos_ok) . "\" --out " . $png . " > /dev/null 2>&1 &";
+    if (ss_mode() === 'superserver') {
+        // Modo pool (M3): el PNG lo calcula la flota; este bridge aplica PNG + sidecar.
+        $fotos_json = avatars_dir() . $persona_id . ".fotos.json";
+        $lista = [];
+        foreach ($fotos_ok as $par) {
+            [$fid, $jpg] = explode(":", $par, 2);
+            $lista[] = ["id" => (int)$fid, "src" => $jpg];
+        }
+        @file_put_contents($fotos_json, json_encode($lista));
+        $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/avatar_bridge.py --fotos-json "
+             . escapeshellarg($fotos_json) . " --out " . escapeshellarg($png)
+             . " --size 96 > /dev/null 2>&1 &";
+    } else {
+        // Modo local (por defecto): igual que siempre.
+        $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/avatar.py --fotos \""
+             . implode(";", $fotos_ok) . "\" --out " . $png . " > /dev/null 2>&1 &";
+    }
     $pid = (int)shell_exec($cmd . " echo $!");
     if ($pid > 0) {
         @file_put_contents($marker, (string)$pid);
