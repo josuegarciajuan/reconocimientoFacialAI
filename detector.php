@@ -260,11 +260,25 @@ while (true) {
                     } elseif ($numero_archiva < (int)CONFIG_LIMITE_ARCHIVA) {
                         exec("echo '" . date("Y-m-d H:i:s") . "' > " . $marker_arch);
                         $log_arch = RUTA_PROYECTO . "motor/logs/archiva_video_" . $cam_id . ".log";
-                        $cmd_arch = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/archiva_video.py " . $local_id . " " . $cam_id
-                            . " " . $video . " --ruta " . RUTA_PROYECTO
-                            . " --crf " . CONFIG_VIDEO_CRF . " --fps " . CONFIG_VIDEO_FPS_ARCHIVO
-                            . " --preset " . CONFIG_VIDEO_PRESET
-                            . " >> " . $log_arch . " 2>&1 &";
+                        if (ss_mode() === 'superserver') {
+                            // Modo pool (M3): el cálculo va a la flota y este proceso (bridge)
+                            // aplica los mismos efectos al volver. El `--tag` mantiene el patrón
+                            // de `pgrep` del detector (archiva_video.py …) para su control de markers.
+                            $tag = "archiva_video.py " . $local_id . " " . $cam_id . " " . $video;
+                            $cmd_arch = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/archiva_video_bridge.py " . $local_id . " " . $cam_id
+                                . " " . escapeshellarg($video) . " --ruta " . RUTA_PROYECTO
+                                . " --crf " . CONFIG_VIDEO_CRF . " --fps " . CONFIG_VIDEO_FPS_ARCHIVO
+                                . " --preset " . CONFIG_VIDEO_PRESET
+                                . " --tag " . escapeshellarg($tag)
+                                . " >> " . $log_arch . " 2>&1 &";
+                        } else {
+                            // Modo local (por defecto): comportamiento clásico, sin cambios.
+                            $cmd_arch = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/archiva_video.py " . $local_id . " " . $cam_id
+                                . " " . $video . " --ruta " . RUTA_PROYECTO
+                                . " --crf " . CONFIG_VIDEO_CRF . " --fps " . CONFIG_VIDEO_FPS_ARCHIVO
+                                . " --preset " . CONFIG_VIDEO_PRESET
+                                . " >> " . $log_arch . " 2>&1 &";
+                        }
                         echo $cmd_arch . "\n";
                         exec($cmd_arch);
                         $numero_archiva++;
