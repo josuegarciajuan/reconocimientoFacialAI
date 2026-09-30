@@ -208,27 +208,49 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* Refresco periódico de snapshots (cache-buster ligero)               */
-  /* Marca las imágenes .cam-card__img[data-snapshot] y re-apunta el src  */
-  /* cada intervalo respetando la caché de dofoto (15s).                  */
+  /* Refresco de snapshots por mtime (sin re-descargar lo que no cambia)  */
+  /* Sondea estado_ajax.php y solo re-apunta el src de la tarjeta cuyo    */
+  /* snapshot cambió, con ?v=<mtime> (URL cacheable). Si nada cambió, no  */
+  /* se transfiere ninguna imagen.                                        */
   /* ------------------------------------------------------------------ */
   function rfRefrescarSnapshots(intervaloMs) {
-    intervaloMs = intervaloMs || 15000;
-    function refrescar() {
+    intervaloMs = intervaloMs || 5000;
+    var endpoint = "pages/camaras/estado_ajax.php";
+
+    function ids() {
+      var out = [];
+      doc.querySelectorAll(".cam-card[data-camara-id]").forEach(function (card) {
+        var id = card.getAttribute("data-camara-id");
+        if (id) { out.push(id); }
+      });
+      return out;
+    }
+
+    function aplicar(mapa) {
       doc.querySelectorAll(".cam-card__img[data-snapshot]").forEach(function (img) {
-        var base = img.getAttribute("data-snapshot");
-        var card = img.closest(".cam-card__media");
-        if (card) {
-          card.classList.add("cam-card__media--loading");
-        }
-        img.src = base + "?t=" + Math.floor(Date.now() / 1000);
+        var card = img.closest(".cam-card");
+        var id = card ? card.getAttribute("data-camara-id") : null;
+        if (!id || !mapa || mapa[id] === undefined) { return; }
+        var mtime = String(mapa[id]);
+        if (mtime === (img.getAttribute("data-v") || "")) { return; }
+        var media = img.closest(".cam-card__media");
+        if (media) { media.classList.add("cam-card__media--loading"); }
         img.onload = function () {
-          if (card) {
-            card.classList.remove("cam-card__media--loading");
-          }
+          if (media) { media.classList.remove("cam-card__media--loading"); }
         };
+        img.src = img.getAttribute("data-snapshot") + "?v=" + mtime;
+        img.setAttribute("data-v", mtime);
       });
     }
+
+    function refrescar() {
+      var lista = ids();
+      if (lista.length === 0) { return; }
+      $.getJSON(endpoint, { ids: lista.join(",") }).done(function (r) {
+        if (r && r.ok && r.mtime) { aplicar(r.mtime); }
+      });
+    }
+
     if (doc.querySelectorAll(".cam-card__img[data-snapshot]").length > 0) {
       refrescar();
       setInterval(refrescar, intervaloMs);
@@ -465,7 +487,7 @@
     rfPanelDrawer();
     rfTipInit();
     if (doc.querySelectorAll(".cam-card__img[data-snapshot]").length > 0) {
-      rfRefrescarSnapshots(15000);
+      rfRefrescarSnapshots(5000);
     }
     // Fotos de caras: cuando su versión HQ (x4plus) esté lista, se "autonitidan"
     // en el panel sin recargar la página (consulta cada ~4 s).
