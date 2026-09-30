@@ -45,6 +45,33 @@ detector.php ──(modo superserver)──▶ pool_bridge.py
 - Apagar el proyecto en el panel (modo `local`) devuelve el flujo clásico al instante.
 - Si el puente muere, el detector conserva su lógica de marcador huérfano y reintentos.
 
+## Runtime en contenedor (M4)
+
+Los nodos de la flota tienen glibc antiguas (2.19/2.24/2.27) y no pueden ejecutar
+el venv nativo de Python 3.10 copiado de la casa. Por eso el proceso se ejecuta en
+una **imagen Docker portable** (`rfacerec:1`), que arranca en cualquier nodo con
+Docker (probado en el más antiguo: kernel 3.16 / Docker 18.06).
+
+- `deploy/docker/Dockerfile` + `requirements-runtime.txt`: Python 3.10 + deps.
+  Incluye `patchelf --clear-execstack` sobre el `.so` de onnxruntime-openvino
+  (glibc ≥ 2.34 rechaza su flag de stack ejecutable).
+- `deploy/docker/build.sh`: construye `rfacerec:1` (~1.3 GB).
+- `deploy/docker/distribute_runtime.sh`: `docker save|load` a cada nodo + copia de
+  `buffalo_l` + `.env.worker` + marcador `.runtime-image` + smoke test.
+
+Ejecución (la prepara el adaptador `rfacerec` de SuperServer):
+
+```sh
+docker run --rm --network=none --cpus N --memory Mm \
+  -e HOME=/app -e RF_OV_CACHE_DIR=/tmp/ov_cache \
+  -v "$PWD":/work -v /opt/taildeck/reconocimientoFacial:/app:ro \
+  -v /opt/taildeck/reconocimientoFacial/.env.worker:/work/.env:ro \
+  -w /work rfacerec:1 python /app/motor/procesa_video_pool.py ...
+```
+
+El código y los modelos **no** van dentro de la imagen: se montan en solo lectura.
+La imagen solo aporta el runtime; sin red (`--network=none`) y sin secretos.
+
 ## Pruebas
 
 - `motor/tests/test_pool_bridge.py` — forma de la petición y rutas del contrato.

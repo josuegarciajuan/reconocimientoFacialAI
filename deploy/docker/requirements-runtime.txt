@@ -1,0 +1,17 @@
+# Dependencias del runtime de reconocimientoFacial para el pool (M4).
+# Subconjunto de `motor/requirements.txt` con lo que usan los procesos que se
+# externalizan (video→caras, foto HQ, avatar). Sin herramientas de desarrollo
+# (pytest/matplotlib/paramiko/prettytable no se usan en motor/*.py).
+#
+# IMPORTANTE: numpy DEBE ser <2 (el binario de onnxruntime-openvino está
+# compilado para NumPy 1.x).
+insightface==0.7.3
+onnxruntime-openvino==1.16.0
+opencv-python-headless==4.9.0.80
+numpy==1.26.4
+scipy==1.11.4
+scikit-image==0.21.0
+filelock==3.13.1
+requests==2.31.0
+tqdm==4.66.1
+easydict==1.10
