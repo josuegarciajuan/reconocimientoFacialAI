@@ -158,12 +158,18 @@
 
       /* Al cerrar (botón, clic fuera o Escape) se corta el MJPEG: si no, el
          <img> oculto seguía suscrito al ffmpeg de rf-live y podía pintar
-         frames de la cámara anterior al abrir otra. Además libera el ffmpeg. */
+         frames de la cámara anterior al abrir otra. Además libera el ffmpeg.
+         OJO: show() añade 'overflow-y-auto' ANTES de 'show' (que llega con
+         200 ms), así que solo cortamos en la transición visible->oculto; si no,
+         matábamos el stream recién asignado y el modal quedaba en negro. */
       if (win.MutationObserver) {
+        var estabaVisible = false;
         var obs = new win.MutationObserver(function () {
-          if (!modal.classList.contains("show")) {
+          var visible = modal.classList.contains("show");
+          if (estabaVisible && !visible) {
             rfPararStreamCamara(modal);
           }
+          estabaVisible = visible;
         });
         obs.observe(modal, { attributes: true, attributeFilter: ["class"] });
       }
