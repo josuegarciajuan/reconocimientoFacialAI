@@ -27,6 +27,10 @@ RUN apt-get update \
 COPY requirements-runtime.txt /tmp/requirements-runtime.txt
 RUN pip install -r /tmp/requirements-runtime.txt
 
+# torch CPU: lo necesita la foto HQ (Real-ESRGAN SRVGGNetCompact + GFPGAN).
+# Va aparte del requirements para usar el índice CPU (sin CUDA, imagen menor).
+RUN pip install torch --index-url https://download.pytorch.org/whl/cpu
+
 # onnxruntime-openvino trae el flag PT_GNU_STACK ejecutable; glibc >= 2.34 lo
 # rechaza al cargar ("cannot enable executable stack as shared object requires").
 # El flag es innecesario: se limpia en el binario.
