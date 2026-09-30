@@ -195,11 +195,12 @@ def main() -> int:
                 if not got:
                     print(f"[rescan-bridge] timeout en {req['externalId']}", flush=True)
                     continue
-                result_dir, _meta = got
-                caras = aplicar(result_dir, loc, cam, fichero, args.ruta)
+                result_dir, meta = got
+                ficheros = aplicar(result_dir, loc, cam, fichero, args.ruta)
                 escribir_marcador(args.ruta, loc, cam, fichero)
+                caras = int(meta.get("caras") or 0)
                 total += caras
-                print(f"[rescan-bridge] {cam}/{fichero}: {caras} caras", flush=True)
+                print(f"[rescan-bridge] {cam}/{fichero}: {caras} caras ({ficheros} ficheros)", flush=True)
     print(f"[rescan-bridge] caras re-extraídas: {total}", flush=True)
     return 0
 
