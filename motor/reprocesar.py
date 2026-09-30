@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import subprocess
 import sys
 import time
 
@@ -46,6 +47,28 @@ from motor.core.quality import face_sharpness, pose_label       # noqa: E402
 from motor.core.store import FaceStore                          # noqa: E402
 from motor.core.superres import enhance_embedding, restore_face   # noqa: E402
 from motor.procesa_video import guardar_cara                    # noqa: E402
+
+
+def _ss_mode() -> str:
+    """Modo del proyecto para SuperServer (local por defecto)."""
+    try:
+        with open("/var/lib/taildeck/projects/reconocimientoFacial.mode", encoding="utf-8") as fh:
+            return "superserver" if fh.read().strip() == "superserver" else "local"
+    except OSError:
+        return "local"
+
+
+def _delegar_videos(args) -> int:
+    """Modo pool: delega `--videos` al bridge (mismos efectos, marker idempotente)."""
+    cmd = [sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "reprocesar_bridge.py")]
+    if args.local_id:
+        cmd.append(args.local_id)
+    cmd += ["--ruta", args.ruta, "--face-every", str(args.face_every)]
+    if args.force:
+        cmd.append("--force")
+    if args.todos:
+        cmd.append("--todos")
+    return subprocess.call(cmd)
 
 
 def reprocesar_fotos(ruta: str, cfg: Config) -> int:
@@ -220,15 +243,23 @@ def main() -> int:
         print(f"fotos reprocesadas: {n}", flush=True)
 
     locales = _locales_disponibles(args.ruta) if args.todos else ([args.local_id] if args.local_id else [])
-    if not locales:
+    delegar_videos = bool(args.videos) and _ss_mode() == "superserver"
+    if not locales and not delegar_videos:
         ap.error("indica local_id o usa --todos (con vídeos archivados)")
 
     if args.videos:
-        total = 0
-        for loc in locales:
-            total += rescannear_videos(args.ruta, loc, cfg, args.face_every,
-                                       force=args.force)
-        print(f"caras re-extraídas de vídeos: {total}", flush=True)
+        if delegar_videos:
+            # Modo pool (M3): el re-escaneo de vídeos va a la flota; el bridge aplica
+            # los mismos efectos (crops + marker idempotente). --fotos/--galeria siguen aquí.
+            rc = _delegar_videos(args)
+            if rc != 0:
+                print(f"rescan por el pool devolvió {rc}", flush=True)
+        else:
+            total = 0
+            for loc in locales:
+                total += rescannear_videos(args.ruta, loc, cfg, args.face_every,
+                                           force=args.force)
+            print(f"caras re-extraídas de vídeos: {total}", flush=True)
 
     if args.galeria:
         n = 0
