@@ -54,3 +54,29 @@ def test_aplicar_mueve_el_frame_nativo(tmp_path):
 
     for sufijo in ("", "_busto", "_cuerpo", "_frame"):
         assert (ruta / "motor" / "caras" / "sinclasificar" / "1" / f"21{sufijo}" / "21_x_0.jpg").exists()
+
+
+def test_aplicar_mueve_el_frame_antes_que_los_crops(tmp_path, monkeypatch):
+    """El frame nativo debe moverse ANTES que los crops (evita la carrera con el clasificador)."""
+    import motor.pool_bridge as pb
+
+    orden = []
+    real = pb._mover_archivos
+
+    def espia(src, dst):
+        orden.append(dst)
+        return real(src, dst)
+
+    monkeypatch.setattr(pb, "_mover_archivos", espia)
+
+    result = tmp_path / "result"
+    base = result / "motor" / "caras" / "sinclasificar" / "1"
+    for sufijo in ("", "_busto", "_cuerpo", "_frame"):
+        (base / f"21{sufijo}").mkdir(parents=True)
+    ruta = tmp_path / "house"
+    ruta.mkdir()
+    pb.aplicar(str(result), {"local": "1", "cam": "21", "fichero": "v.mp4"},
+               "1", "21", "v.mp4", str(ruta))
+
+    assert orden, "no se movió ningún directorio"
+    assert orden[0].endswith("21_frame"), f"el frame debe ir primero, orden={orden}"
