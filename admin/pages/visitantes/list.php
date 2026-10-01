@@ -11,11 +11,17 @@ require_once __DIR__ . "/../../../libs/etiquetas.php";
 
 $local_id = (int)$_SESSION["local_id"];
 
-// filtros: las fechas son opcionales; sin ellas se muestran todas las estancias.
+// Rango por defecto: el día de hoy completo (00:00 → 23:59). Así el listado arranca
+// mostrando solo los visitantes de hoy, incluidos los que ya vinieron otros días.
+$ahora = time();
+$inicio_hoy = strtotime(date("Y-m-d 00:00:00", $ahora));
+$fin_hoy = strtotime(date("Y-m-d 23:59:59", $ahora));
 $desde = trim((string)($_GET["desde"] ?? ""));
+if ($desde === "") { $desde = date("n/d h:i A", $inicio_hoy); }
 $hasta = trim((string)($_GET["hasta"] ?? ""));
-$desde_sql = $desde !== "" ? rango_a_sql($desde, date("Y-m-d 00:00:00")) : null;
-$hasta_sql = $hasta !== "" ? rango_a_sql($hasta, date("Y-m-d 23:59:59")) : null;
+if ($hasta === "") { $hasta = date("n/d h:i A", $fin_hoy); }
+$desde_sql = rango_a_sql($desde, date("Y-m-d H:i:s", $inicio_hoy));
+$hasta_sql = rango_a_sql($hasta, date("Y-m-d H:i:s", $fin_hoy));
 
 $camara_filtro = (isset($_GET["camara"]) && $_GET["camara"] !== "" && $_GET["camara"] !== "-") ? (int)$_GET["camara"] : 0;
 $trabajador_filtro = (isset($_GET["trabajador"]) && $_GET["trabajador"] == 1);
@@ -74,7 +80,7 @@ $js_quote = function ($s) {
 
 <div class="intro-y datatable-wrapper box p-5 mt-5">
     <div class="table-wrap">
-    <table class="table table-report table-report--bordered display datatable w-full" data-datatable-source="visitantes" data-filters="camara,desde,hasta,buscador" data-empty-filters="desde,hasta">
+    <table class="table table-report table-report--bordered display datatable w-full" data-datatable-source="visitantes" data-filters="camara,desde,hasta,buscador">
         <thead>
             <tr>
                 <th class="border-b-2 text-center">IMAGEN</th>
