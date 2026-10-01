@@ -130,6 +130,19 @@ def _queue_hq(out_path: str, frames: list, cfg: Config, ruta: str,
         log(f"[hq] fallo encolando HQ: {e}")
 
 
+def _evidence_frame(frame_path, rep_item, members, battery):
+    """Frame de evidencia: el NATIVO (1080p) si esta en disco, si no el crop mayor.
+
+    Nunca lanza: si el fichero no existe o no se puede leer, cae al comportamiento
+    anterior (select_max_resolution_frame) para no romper la publicacion de evidencia.
+    """
+    if frame_path and os.path.exists(frame_path):
+        img = cv2.imread(frame_path)
+        if img is not None:
+            return img
+    return select_max_resolution_frame(rep_item["img"], members, battery)
+
+
 def _preserve_original_frame(ruta: str, local_id: str, camara_id: str,
                              foto_id: str, image) -> None:
     """Persist the native frame before the classifier removes its source."""
@@ -138,7 +151,7 @@ def _preserve_original_frame(ruta: str, local_id: str, camara_id: str,
         os.makedirs(qdir, exist_ok=True)
         target = os.path.join(qdir, foto_id + ".jpg")
         temporary = target + ".tmp.jpg"
-        if cv2.imwrite(temporary, image, [cv2.IMWRITE_JPEG_QUALITY, 98]):
+        if cv2.imwrite(temporary, image, [cv2.IMWRITE_JPEG_QUALITY, 90]):
             os.replace(temporary, target)
         elif os.path.exists(temporary):
             os.remove(temporary)
@@ -762,7 +775,8 @@ class _CascadeCtx:
 
 def process_battery(battery, ruta: str, local_id: str, camara_id: str, cfg: Config,
                     store: FaceStore, feedback=None, torso_map: dict[str, str] | None = None,
-                    busto_map: dict[str, str] | None = None):
+                    busto_map: dict[str, str] | None = None,
+                    frame_map: dict[str, str] | None = None):
     # batería: lista de dicts {file, path, img, faces, ts}
     # C1: aplanar caras conservando (emb, item_idx, face_idx): la cara EXACTA
     # de cada detección. Perder este índice (como antes) hacía que cada
@@ -779,13 +793,14 @@ def process_battery(battery, ruta: str, local_id: str, camara_id: str, cfg: Conf
         # distintas dentro de la misma batería.
         for sub in split_coherent_clusters(cluster, face_list, battery, cfg):
             _process_subcluster(sub, face_list, battery, ruta, local_id, camara_id,
-                                cfg, store, feedback, torso_map, busto_map)
+                                cfg, store, feedback, torso_map, busto_map, frame_map)
 
 
 def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
                         camara_id: str, cfg: Config, store: FaceStore,
                         feedback=None, torso_map: dict[str, str] | None = None,
-                        busto_map: dict[str, str] | None = None) -> None:
+                        busto_map: dict[str, str] | None = None,
+                        frame_map: dict[str, str] | None = None) -> None:
     """Clasifica un sub-clúster coherente de caras y actualiza galería/álbum.
 
     C1 (2026-09-02): `sub` son índices GLOBALES de `face_list` y TODAS las
@@ -839,6 +854,11 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     if busto_map:
         busto_path = busto_map.get(rep_stem)
 
+    # FRAME nativo compañero (mismo stem en <cam>_frame/): evidencia "Frame original"
+    frame_path = None
+    if frame_map:
+        frame_path = frame_map.get(rep_stem)
+
     # C + P (idempotencia persistente): si este MISMO rostro (mismo embedding
     # representativo) ya se procesó en esta sesión O en una pasada anterior del
     # daemon (registro persistente), el crop es un duplicado re-leído/re-escrito
@@ -854,6 +874,8 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
             os.remove(torso_path)
         if busto_path and os.path.exists(busto_path):
             os.remove(busto_path)
+        if frame_path and os.path.exists(frame_path):
+            os.remove(frame_path)
         log(f"[skip] rostro ya procesado (persistente): {rep_stem}")
         return
     if rep_hash is not None:
@@ -912,6 +934,8 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
             os.remove(torso_path)
         if busto_path and os.path.exists(busto_path):
             os.remove(busto_path)
+        if frame_path and os.path.exists(frame_path):
+            os.remove(frame_path)
         log(f"[exact-conflict] rostro idéntico en 2+ personas: {rep_stem} "
             f"-> {exact_persons}")
         if feedback is not None and cfg.feedback_enabled:
@@ -1058,6 +1082,8 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
             os.remove(torso_path)
         if busto_path and os.path.exists(busto_path):
             os.remove(busto_path)
+        if frame_path and os.path.exists(frame_path):
+            os.remove(frame_path)
         log(f"[revision-only] {len(item_idxs)} foto(s) verdict={result.verdict} "
             f"-> revision (sin identidad, autoenroll_new={cfg.autoenroll_new})")
         return
@@ -1108,7 +1134,7 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
         store.add_attributes(person, query_attributes, ts=rep_item["ts"] or time.time(), src=foto_id)
 
     from motor.core.matching import top_scores  # noqa: E402
-    original_frame = select_max_resolution_frame(rep_item["img"], members, battery)
+    original_frame = _evidence_frame(frame_path, rep_item, members, battery)
     audit_meta = {
         "exact_match": bool(exact_match),
         "exact_conflict": False,
@@ -1182,6 +1208,8 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
 
     if os.path.exists(rep_item["path"]):
         os.remove(rep_item["path"])
+    if frame_path and os.path.exists(frame_path):
+        os.remove(frame_path)
 
     # refinar el diccionario (F1.2: admisión por cara + C1: SOLO las caras del
     # sub-clúster; nunca "todas las caras de los items"). P2: se etiquetan con
@@ -1684,6 +1712,15 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
                 stem = f.rsplit(".", 1)[0]
                 busto_map[stem] = os.path.join(busto_dir, f)
 
+    # mapa stem -> FRAME nativo completo (evidencia "Frame original" 1080p)
+    frame_map: dict[str, str] = {}
+    frame_dir = os.path.join(ruta, "motor/caras/sinclasificar", local_id, f"{camara_id}_frame")
+    if os.path.isdir(frame_dir):
+        for f in sorted(os.listdir(frame_dir)):
+            if f.lower().endswith((".jpg", ".jpeg", ".png")):
+                stem = f.rsplit(".", 1)[0]
+                frame_map[stem] = os.path.join(frame_dir, f)
+
     items.sort(key=lambda x: (x["ts"] is None, x["ts"] or 0))
 
     # agrupar en baterías
@@ -1703,7 +1740,7 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
 
     n = 0
     for bat in baterias:
-        process_battery(bat, ruta, local_id, camara_id, cfg, store, feedback, torso_map, busto_map)
+        process_battery(bat, ruta, local_id, camara_id, cfg, store, feedback, torso_map, busto_map, frame_map)
         n += 1
     return n
 

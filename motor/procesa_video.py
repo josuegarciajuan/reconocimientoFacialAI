@@ -214,6 +214,18 @@ def guardar_cara(ruta: str, local_id: str, camara_id: str, fichero: str, frame,
                 os.makedirs(busto_dir, exist_ok=True)
                 cv2.imwrite(os.path.join(busto_dir, nombre + ".png"), busto)
 
+    # C (evidencia nativa): el FRAME COMPLETO, no el recorte. El clasificador lo
+    # publica como "Frame original" (1920x1080 real). Mismo stem que el crop en
+    # <cam>_frame/ para emparejarlo igual que busto/torso. JPEG q90 para acotar disco.
+    if cfg.save_original_frame:
+        try:
+            frame_dir = os.path.join(ruta, "motor/caras/sinclasificar", local_id, f"{camara_id}_frame")
+            os.makedirs(frame_dir, exist_ok=True)
+            cv2.imwrite(os.path.join(frame_dir, nombre + ".jpg"), frame,
+                        [cv2.IMWRITE_JPEG_QUALITY, 90])
+        except Exception as e:  # noqa: BLE001
+            print(f"[frame] fallo guardando frame nativo {nombre}: {e}", flush=True)
+
     # F1: crop de torso separado (mismo stem) para la capa L1b.
     # Si no hay torso visible (persona muy cerca / caja fuera), NO se guarda:
     # la capa quedará sin señal (c_torso=0) y el peso se redistribuye.
