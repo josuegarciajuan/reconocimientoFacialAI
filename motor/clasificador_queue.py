@@ -29,6 +29,7 @@ def _paths(ruta: str, local_id) -> dict:
         "in": os.path.join(base, "in"),
         "done": os.path.join(base, "done"),
         "alive": os.path.join(base, ".alive"),
+        "pid": os.path.join(base, ".pid"),
     }
 
 
@@ -120,8 +121,33 @@ def heart_beat(ruta: str, local_id) -> None:
         pass
 
 
-def daemon_alive(ruta: str, local_id, ttl_s: float = ALIVE_TTL_S) -> bool:
+def write_pid(ruta: str, local_id) -> None:
+    """Escribe el PID del aplicador (autoridad de 'vivo'). El bridge lo consulta
+    para NO caer a `--once` mientras haya un aplicador corriendo (evita dobles
+    escritores de la galería), aunque un lote largo supere el TTL del latido."""
     p = _paths(ruta, local_id)
+    try:
+        os.makedirs(p["base"], exist_ok=True)
+        with open(p["pid"], "w", encoding="utf-8") as fh:
+            fh.write(str(os.getpid()))
+    except OSError:
+        pass
+
+
+def _pid_alive(path: str) -> bool:
+    try:
+        with open(path, encoding="utf-8") as fh:
+            pid = int(fh.read().strip())
+        return pid > 0 and os.path.isdir(f"/proc/{pid}")
+    except (OSError, ValueError):
+        return False
+
+
+def daemon_alive(ruta: str, local_id, ttl_s: float = ALIVE_TTL_S) -> bool:
+    """Vivo si el PID del aplicador existe; si no hay pidfile, por latido fresco."""
+    p = _paths(ruta, local_id)
+    if _pid_alive(p["pid"]):
+        return True
     try:
         return (time.time() - os.path.getmtime(p["alive"])) < ttl_s
     except OSError:

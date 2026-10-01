@@ -1625,21 +1625,22 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
         if not f.lower().endswith(IMG_EXTS):
             continue
         p = os.path.join(dir_in, f)
-        img = cv2.imread(p)
-        if img is None:
-            shutil.move(p, os.path.join(nopasafiltros, f))
-            desc_ilegible += 1
-            continue
         faces = None
         precomputado = False
         if _FACES_PROVIDER is not None:
-            # Lote consistente (F4): si el crop no vino del pool, NO se recalcula en
-            # la casa (sin fallback pesado); se pospone para el siguiente lote.
+            # Lote consistente (F4/F14): los crops que NO vienen del pool se saltan
+            # ANTES de leerlos; antes se hacía `cv2.imread` de TODA la carpeta por
+            # lote (miles de ficheros) → lotes de minutos.
             if f not in _FACES_PROVIDER:
                 desc_fuera_lote += 1
                 continue
             faces = _FACES_PROVIDER[f]
             precomputado = True
+        img = cv2.imread(p)
+        if img is None:
+            shutil.move(p, os.path.join(nopasafiltros, f))
+            desc_ilegible += 1
+            continue
         if not precomputado:
             faces = analyze(img, det_size=(cfg.crop_det_size, cfg.crop_det_size),
                             min_score=cfg.min_det_score)
@@ -1807,6 +1808,7 @@ def _serve(args, cfg: Config, store, feedback) -> int:
     global _FACES_PROVIDER
     log(f"[serve] aplicador persistente local={args.local_id} "
         f"(cola motor/clasificador_daemon/{args.local_id})")
+    q.write_pid(args.ruta, args.local_id)  # autoridad de "vivo" para el bridge (F14)
     ultima_calib = 0.0
     while True:
         try:

@@ -43,3 +43,19 @@ def test_alive_heartbeat(tmp_path):
     old = time.time() - 100
     os.utime(alive, (old, old))
     assert q.daemon_alive(ruta, 1, ttl_s=5.0) is False
+
+
+def test_daemon_alive_por_pid(tmp_path):
+    ruta = str(tmp_path)
+    # PID del propio proceso -> vivo aunque el latido esté viejo (F14)
+    q.write_pid(ruta, 1)
+    q.heart_beat(ruta, 1)
+    alive = os.path.join(q._paths(ruta, 1)["alive"])
+    old = time.time() - 100
+    os.utime(alive, (old, old))
+    assert q.daemon_alive(ruta, 1, ttl_s=0.001) is True
+    # PID muerto + latido viejo -> no vivo
+    pid = os.path.join(q._paths(ruta, 1)["pid"])
+    with open(pid, "w", encoding="utf-8") as fh:
+        fh.write("999999")
+    assert q.daemon_alive(ruta, 1, ttl_s=0.001) is False
