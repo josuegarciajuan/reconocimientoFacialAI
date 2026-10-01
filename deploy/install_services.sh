@@ -4,7 +4,7 @@
 set -euo pipefail
 
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
-SERVICES=(rf-capturador rf-detector rf-clasificador rf-panel-control rf-live rf-conciliador rf-vinculador rf-alarmador rf-vigilar-deriva rf-calibra rf-photo)
+SERVICES=(rf-capturador rf-detector rf-clasificador rf-clasificador-serve rf-panel-control rf-live rf-conciliador rf-vinculador rf-alarmador rf-vigilar-deriva rf-calibra rf-photo)
 TIMERS=(rf-calibra rf-vigilar-deriva rf-reprocesa)
 # Unidades oneshot disparadas por timer (se copian pero NO se arrancan con --now).
 ONESHOT_UNITS=(rf-reprocesa)

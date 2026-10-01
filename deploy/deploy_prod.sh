@@ -112,6 +112,7 @@ if printf '%s\n' "$CHANGED" | grep -qE '^(deploy/systemd/|deploy/install_service
     # Timers one-shot: enable --now es idempotente y asegura que un timer nuevo
     # (p. ej. rf-reprocesa, spec 17) quede armado aunque el instalador no lo arranque.
     systemctl enable --now rf-calibra.timer rf-vigilar-deriva.timer rf-reprocesa.timer 2>/dev/null || true
+    systemctl enable --now rf-clasificador-serve 2>/dev/null || true
 fi
 
 # Vhost Apache del panel.
@@ -179,6 +180,7 @@ SVC=""
 want() { if printf '%s\n' "$CHANGED" | grep -qE "$1"; then SVC="$SVC $2"; fi; }
 want '^(capturador\.php|motor/guarda_movimientosV3\.py)$' 'rf-capturador'
 want '^(detector\.php|motor/procesa_video\.py|motor/archiva_video\.py|motor/cruces\.py|motor/clasificador\.py)$' 'rf-detector'
+want '^(motor/clasificador\.py|motor/clasificador_bridge\.py|motor/clasificador_pool\.py|motor/clasificador_queue\.py)$' 'rf-clasificador-serve'
 want '^clasificadorV2\.php$' 'rf-clasificador'
 want '^(conciliador\.php|libs/conciliador\.php)$' 'rf-conciliador'
 want '^(vinculador\.php|libs/vinculos\.php)$' 'rf-vinculador'
