@@ -82,7 +82,7 @@ REMOTE_SCRIPT="$(cat <<'REMOTE'
 set -euo pipefail
 cd "__PROD_PATH__"
 ALL=__ALL__; NO_RESTART=__NO_RESTART__
-ALL_SERVICES="rf-capturador rf-detector rf-clasificador rf-panel-control rf-live rf-conciliador rf-vinculador rf-alarmador rf-photo"
+ALL_SERVICES="rf-capturador rf-detector rf-clasificador rf-clasificador-serve rf-panel-control rf-live rf-conciliador rf-vinculador rf-alarmador rf-photo"
 
 OLD=$(git rev-parse HEAD)
 echo "[deploy] HEAD antes:  ${OLD:0:7}"
@@ -190,7 +190,7 @@ want '^live/' 'rf-live'
 want '^motor/photo_worker\.py$' 'rf-photo'
 # Cambios transversales -> todos los daemons (core compartido, db, config, units, apache, deps).
 if printf '%s\n' "$CHANGED" | grep -qE '^(motor/core/|libs/db\.php|config/config\.php|deploy/systemd/|deploy/apache/|deploy/install_services\.sh$|motor/requirements\.txt)'; then
-    SVC=" $ALL_SERVICES"
+    SVC="$SVC $ALL_SERVICES"
 fi
 if [ "$ALL" = 1 ]; then
     SVC=" $ALL_SERVICES"
