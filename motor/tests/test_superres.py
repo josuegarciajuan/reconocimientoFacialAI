@@ -227,6 +227,95 @@ def test_photo_busto_face_region_blend_no_gfpgan():
     assert out.shape == img.shape
 
 
+def test_supersample_face_scales_face_to_target(monkeypatch):
+    """La CARA (no el busto) se super-muestrea x4 y se reduce al objetivo.
+
+    Cara de 200 px -> scale = 512/200 = 2.56 -> el encuadre de busto pasa de
+    ~500 px a ~1280 px, de modo que la cara implícita queda en ~512 px.
+    """
+    import cv2
+    from motor.core.superres import _busto_crop, photo_busto
+
+    def fake_infer(model, img):
+        return cv2.resize(img, (img.shape[1] * 4, img.shape[0] * 4),
+                          interpolation=cv2.INTER_NEAREST)
+
+    monkeypatch.setattr("motor.core.superres.get_model", lambda name="compact": object())
+    monkeypatch.setattr("motor.core.superres._sr_infer", fake_infer)
+
+    cfg = Config()
+    cfg.sr_enabled = True
+    cfg.sr_face_enabled = False          # sin GFPGAN en CI
+    cfg.sr_target_side = 512
+    img = np.zeros((1200, 1200, 3), dtype=np.uint8)
+    bbox = (500, 500, 700, 700)          # cara 200x200
+    z_before, _ = _busto_crop(img, bbox, cfg)
+    out = photo_busto(img, bbox, cfg)
+    assert out.shape[1] > z_before.shape[1]      # el busto creció (SR aplicado)
+    # scale ≈ 2.56 sobre un busto de ~500 px -> ~1280 px (cara ~512 px)
+    assert out.shape[1] >= 1000
+
+
+def test_photo_busto_no_sr_when_face_large(monkeypatch):
+    """Cara >= objetivo: no se invoca el SR y las dimensiones no cambian."""
+    from motor.core.superres import photo_busto
+
+    def boom(*args, **kwargs):
+        raise AssertionError("_sr_infer no debe llamarse si la cara ya es grande")
+
+    monkeypatch.setattr("motor.core.superres._sr_infer", boom)
+    img = np.zeros((2000, 2000, 3), dtype=np.uint8)
+    bbox = (700, 700, 1300, 1300)        # cara 600x600 >= target 512
+    cfg_on = Config()
+    cfg_on.sr_enabled = True
+    cfg_on.sr_face_enabled = False
+    cfg_on.sr_target_side = 512
+    cfg_off = Config()
+    cfg_off.sr_enabled = False
+    cfg_off.sr_face_enabled = False
+    out_on = photo_busto(img, bbox, cfg_on)
+    out_off = photo_busto(img, bbox, cfg_off)
+    assert out_on.shape == out_off.shape
+
+
+def test_photo_busto_sr_disabled_unchanged(monkeypatch):
+    """Con SR deshabilitado la salida queda igual al recorte de busto nativo."""
+    from motor.core.superres import _busto_crop, photo_busto
+
+    def boom(*args, **kwargs):
+        raise AssertionError("_sr_infer no debe llamarse con SR deshabilitado")
+
+    monkeypatch.setattr("motor.core.superres._sr_infer", boom)
+    cfg = Config()
+    cfg.sr_enabled = False
+    cfg.sr_face_enabled = False
+    img = np.zeros((1200, 1200, 3), dtype=np.uint8)
+    bbox = (500, 500, 700, 700)          # cara 200x200 < target 512
+    z, _ = _busto_crop(img, bbox, cfg)
+    out = photo_busto(img, bbox, cfg)
+    assert out.shape == z.shape
+
+
+def test_photo_busto_skips_sr_with_marginal_gain(monkeypatch):
+    """Cara de 480 px (ganancia 512/480 ≈ 1.07x < 1.25): no se paga el SR x4."""
+    from motor.core.superres import _busto_crop, photo_busto
+
+    def boom(*args, **kwargs):
+        raise AssertionError("_sr_infer no debe llamarse con ganancia marginal")
+
+    monkeypatch.setattr("motor.core.superres.get_model", lambda name="compact": object())
+    monkeypatch.setattr("motor.core.superres._sr_infer", boom)
+    cfg = Config()
+    cfg.sr_enabled = True
+    cfg.sr_face_enabled = False
+    cfg.sr_target_side = 512
+    img = np.zeros((2000, 2000, 3), dtype=np.uint8)
+    bbox = (700, 700, 1180, 1180)        # cara 480x480 < target pero ganancia marginal
+    z, _ = _busto_crop(img, bbox, cfg)
+    out = photo_busto(img, bbox, cfg)
+    assert out.shape == z.shape
+
+
 def _no_model_cfg() -> Config:
     """Config determinista: sin SR ni GFPGAN y sin top-up de display.
 

@@ -120,12 +120,13 @@ class Config:
     sr_enabled: bool = True
     sr_model: str = "compact"      # "compact" (realesr-general-x4v3, ~2-5 s/cara, recomendado prod)
                                    # "x4plus" (RealESRGAN_x4plus, mejor calidad, ~30 s/cara en CPU)
-    sr_target_side: int = 512      # TOPE máximo de salida (ya no se reescala hasta aquí:
-                                   # el top-up LANCZOS4 a 512 pixelaba las caras pequeñas ~11x)
+    sr_target_side: int = 512      # lado mayor objetivo de la CARA en la foto final (se
+                                   # super-muestrea x4 y se reduce a este objetivo; acotado a 4x)
     sr_min_side: int = 320         # solo SR si el lado mayor del crop es < esto (caras pequeñas)
-    min_display_side: int = 512    # A5 top-up de DISPLAY: solo se reescala (LANCZOS4) la foto
-                                   # final hasta este lado si quedó menor. Default 512 (A,
-                                   # 2026-09-28): el panel muestra fotos de >=512 px; antes 384.
+    min_display_side: int = 512    # DEPRECATED / NO-OP: el antiguo top-up LANCZOS4 de display
+                                   # hasta este lado ya no se aplica (`_topup_display` es no-op).
+                                   # Se conserva el campo por compatibilidad (tests/overrides);
+                                   # la nitidez la aporta `sr_target_side` (SR x4 sobre la cara).
     # SR-before-embedding: caras con lado mayor < esto se super-resuelven ANTES de
     # recalcular el embedding ArcFace (mejora real del matching, no solo visual).
     sr_embed_min_face: int = 96
