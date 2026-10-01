@@ -8,11 +8,11 @@ from motor.clasificador_bridge import build_request
 
 
 def test_build_request_contract():
-    crops = ["/root/reconocimientoFacial/motor/caras/sinclasificar/1/15/a.png"]
-    req = build_request("1", "15", crops, rid="req-c")
+    carpeta = "/root/reconocimientoFacial/motor/caras/sinclasificar/1/15"
+    req = build_request("1", "15", carpeta, rid="req-c")
     assert req["process"] == "classify"
     assert req["externalId"] == "classify:1/15"
-    assert req["params"] == {"local": "1", "cam": "15", "crops": crops}
+    assert req["params"] == {"local": "1", "cam": "15", "dir": carpeta}
 
 
 def test_provider_reconstruye_faces(tmp_path):
