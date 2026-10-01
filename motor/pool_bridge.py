@@ -140,9 +140,12 @@ def aplicar(result_dir: str, data: dict, local_id: str, camara_id: str, fichero:
     """Aplica los efectos del proceso clásico sobre la casa (idéntico resultado final)."""
     artifacts = _artifact_root(result_dir)
     caras = 0
-    # "_frame" = evidencia "Frame original" (frame nativo 1080p) que extrae el
-    # worker; sin él la casa se quedaría sin la evidencia y usaría el crop.
-    for sufijo in ("", "_busto", "_cuerpo", "_frame"):
+    # ORDEN CRÍTICO: "_frame" (evidencia "Frame original" 1080p) va PRIMERO. El
+    # clasificador vigila el dir de caras "" y puede consumir los crops en cuanto
+    # aparecen; si los frames se movieran después, esa pasada los perdería y las
+    # fotos quedarían con el crop. Con los frames en su sitio antes que los crops,
+    # el clasificador siempre los empareja.
+    for sufijo in ("_frame", "", "_busto", "_cuerpo"):
         src = os.path.join(artifacts, "motor/caras/sinclasificar", local_id, f"{camara_id}{sufijo}")
         dst = os.path.join(ruta, "motor/caras/sinclasificar", local_id, f"{camara_id}{sufijo}")
         caras += _mover_archivos(src, dst)
