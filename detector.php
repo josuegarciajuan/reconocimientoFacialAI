@@ -152,7 +152,14 @@ while (true) {
                     $threads[$nombre_clasif]->stop();
                 }
                 $cam_list = implode(",", $grupo);
-                $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/clasificador.py " . $local_id . " " . $cam_list . " --ruta " . RUTA_PROYECTO;
+                if (ss_mode() === 'superserver') {
+                    // Modo pool (M3): el worker calcula detección + SR + embedding y la
+                    // casa decide con su galería (clasificador.py --faces-json). El token
+                    // final de Jos_Thread lo ignora el bridge.
+                    $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/clasificador_bridge.py " . $local_id . " " . $cam_list . " --ruta " . RUTA_PROYECTO;
+                } else {
+                    $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/clasificador.py " . $local_id . " " . $cam_list . " --ruta " . RUTA_PROYECTO;
+                }
                 echo "Lanzando clasificador (cámaras " . $cam_list . "): " . $cmd . "\n";
                 $threads[$nombre_clasif] = new Jos_Thread($nombre_clasif, $cmd, true);
                 $threads[$nombre_clasif]->start();
