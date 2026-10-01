@@ -1616,6 +1616,7 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
     desc_notienecaras = 0
     desc_nopasafiltros = 0
     desc_ilegible = 0
+    desc_fuera_lote = 0
     for f in sorted(os.listdir(dir_in)):
         if not f.lower().endswith(IMG_EXTS):
             continue
@@ -1626,10 +1627,16 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
             desc_ilegible += 1
             continue
         faces = None
+        precomputado = False
         if _FACES_PROVIDER is not None:
-            faces = _FACES_PROVIDER.get(f)
-        precomputado = faces is not None
-        if faces is None:
+            # Lote consistente (F4): si el crop no vino del pool, NO se recalcula en
+            # la casa (sin fallback pesado); se pospone para el siguiente lote.
+            if f not in _FACES_PROVIDER:
+                desc_fuera_lote += 1
+                continue
+            faces = _FACES_PROVIDER[f]
+            precomputado = True
+        if not precomputado:
             faces = analyze(img, det_size=(cfg.crop_det_size, cfg.crop_det_size),
                             min_score=cfg.min_det_score)
         if not faces:
@@ -1689,6 +1696,8 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
     if desc_ilegible:
         log_evento(ruta, local_id, "descarte", cam=camara_id,
                    motivo="ilegible", n=desc_ilegible)
+    if desc_fuera_lote:
+        log(f"[pool] {desc_fuera_lote} crop(s) fuera del lote (se posponen al siguiente)")
 
     if not items:
         return 0
