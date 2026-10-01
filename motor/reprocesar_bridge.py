@@ -86,22 +86,20 @@ def _leer_meta(d: str) -> dict | None:
         return None
 
 
-def esperar_resultado(local_id: str, camara_id: str, fichero: str,
-                      timeout_s: float, poll_s: float = 5.0) -> tuple[str, dict] | None:
-    t0 = time.time()
-    while time.time() - t0 < timeout_s:
-        if os.path.isdir(RETURNS_DIR):
-            for d in sorted(os.listdir(RETURNS_DIR)):
-                full = os.path.join(RETURNS_DIR, d)
-                if not os.path.isdir(full):
-                    continue
-                meta = _leer_meta(full)
-                if not meta:
-                    continue
-                if (str(meta.get("local")) == str(local_id) and str(meta.get("cam")) == str(camara_id)
-                        and meta.get("fichero") == fichero):
-                    return full, meta
-        time.sleep(poll_s)
+def buscar_resultado(local_id: str, camara_id: str, fichero: str) -> tuple[str, dict] | None:
+    """Escanea UNA vez los retornos y devuelve (dir, meta) si el resultado ya está."""
+    if not os.path.isdir(RETURNS_DIR):
+        return None
+    for d in sorted(os.listdir(RETURNS_DIR)):
+        full = os.path.join(RETURNS_DIR, d)
+        if not os.path.isdir(full):
+            continue
+        meta = _leer_meta(full)
+        if not meta:
+            continue
+        if (str(meta.get("local")) == str(local_id) and str(meta.get("cam")) == str(camara_id)
+                and meta.get("fichero") == fichero):
+            return full, meta
     return None
 
 
@@ -148,6 +146,26 @@ def escribir_marcador(ruta: str, local_id: str, camara_id: str, fichero: str) ->
         pass
 
 
+def recolectar_pendientes(ruta: str, locales: list[str], force: bool) -> list[tuple[str, str, str]]:
+    """Lista (local, cam, fichero) de vídeos archivados sin marca (o todos si force)."""
+    pend: list[tuple[str, str, str]] = []
+    for loc in locales:
+        base = os.path.join(ruta, "motor/videos_archivo", str(loc))
+        if not os.path.isdir(base):
+            continue
+        for cam in sorted(os.listdir(base)):
+            cdir = os.path.join(base, cam)
+            if not os.path.isdir(cdir):
+                continue
+            for fichero in sorted(os.listdir(cdir)):
+                if not fichero.lower().endswith(".mp4"):
+                    continue
+                if not force and os.path.exists(marcador(ruta, loc, cam, fichero)):
+                    continue
+                pend.append((str(loc), cam, fichero))
+    return pend
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("local_id", nargs="?", default=None)
@@ -155,6 +173,7 @@ def main() -> int:
     ap.add_argument("--face-every", type=int, default=2)
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--todos", action="store_true")
+    ap.add_argument("--parallel", type=int, default=6, help="jobs rescan en vuelo (4-8)")
     ap.add_argument("--timeout", type=float, default=7200.0)
     ap.add_argument("--poll", type=float, default=5.0)
     args = ap.parse_args()
@@ -175,33 +194,46 @@ def main() -> int:
         print("[rescan-bridge] sin locales con vídeos archivados", flush=True)
         return 0
 
-    total = 0
-    for loc in locales:
-        base = os.path.join(args.ruta, "motor/videos_archivo", str(loc))
-        if not os.path.isdir(base):
-            continue
-        for cam in sorted(os.listdir(base)):
-            cdir = os.path.join(base, cam)
-            if not os.path.isdir(cdir):
-                continue
-            for fichero in sorted(os.listdir(cdir)):
-                if not fichero.lower().endswith(".mp4"):
-                    continue
-                if os.path.exists(marcador(args.ruta, loc, cam, fichero)) and not args.force:
-                    continue
-                req = build_request(loc, cam, fichero, args.face_every)
-                escribir_peticion(req)
-                got = esperar_resultado(loc, cam, fichero, args.timeout, args.poll)
-                if not got:
-                    print(f"[rescan-bridge] timeout en {req['externalId']}", flush=True)
-                    continue
+    n_par = max(1, min(int(args.parallel), 16))
+    pendientes = recolectar_pendientes(args.ruta, locales, args.force)
+    print(f"[rescan-bridge] pendientes={len(pendientes)} parallel={n_par}", flush=True)
+
+    # Bounded concurrency: en vuelo = {req_id: (loc, cam, fichero, t0)}.
+    en_vuelo: dict[str, tuple[str, str, str, float]] = {}
+    total_caras = 0
+    total_videos = 0
+    idx = 0
+
+    while idx < len(pendientes) or en_vuelo:
+        while idx < len(pendientes) and len(en_vuelo) < n_par:
+            loc, cam, fichero = pendientes[idx]
+            idx += 1
+            req = build_request(loc, cam, fichero, args.face_every)
+            escribir_peticion(req)
+            en_vuelo[req["id"]] = (loc, cam, fichero, time.time())
+
+        progreso = False
+        for rid, (loc, cam, fichero, t0) in list(en_vuelo.items()):
+            got = buscar_resultado(loc, cam, fichero)
+            if got:
                 result_dir, meta = got
                 ficheros = aplicar(result_dir, loc, cam, fichero, args.ruta)
                 escribir_marcador(args.ruta, loc, cam, fichero)
                 caras = int(meta.get("caras") or 0)
-                total += caras
+                total_caras += caras
+                total_videos += 1
+                del en_vuelo[rid]
+                progreso = True
                 print(f"[rescan-bridge] {cam}/{fichero}: {caras} caras ({ficheros} ficheros)", flush=True)
-    print(f"[rescan-bridge] caras re-extraídas: {total}", flush=True)
+            elif time.time() - t0 > args.timeout:
+                print(f"[rescan-bridge] timeout en {loc}/{cam}/{fichero}", flush=True)
+                del en_vuelo[rid]
+                progreso = True
+
+        if not progreso and (en_vuelo or idx < len(pendientes)):
+            time.sleep(args.poll)
+
+    print(f"[rescan-bridge] vídeos re-escaneados: {total_videos} | caras re-extraídas: {total_caras}", flush=True)
     return 0
 
 
