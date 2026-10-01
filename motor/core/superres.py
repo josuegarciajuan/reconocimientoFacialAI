@@ -428,6 +428,53 @@ def enhance(img: np.ndarray, cfg, model: str | None = None) -> np.ndarray:
     return img
 
 
+# Ganancia mínima de escala para pagar un forward SR x4. Por debajo de este
+# factor (p. ej. cara 480 px -> 1.07x) el coste (~30M px de tensor intermedio)
+# no compensa la nitidez ganada: se deja el recorte nativo.
+_MIN_SR_GAIN = 1.25
+
+
+def _supersample_face(z: np.ndarray, fb, face_side: int, cfg, model: str | None = None):
+    """Super-resuelve `z` x4 y lo escala para que la CARA alcance `cfg.sr_target_side`.
+
+    - La decisión se toma por el tamaño de la CARA (`face_side`), no del busto.
+    - `scale = min(4.0, sr_target_side / face_side)`; si `scale < _MIN_SR_GAIN`,
+      `<= 1`, SR deshabilitado o modelo ausente, devuelve `(z, fb, 1.0)` sin tocar.
+    - `_sr_infer` da x4 nativo; si el factor pedido es menor, se reduce con
+      INTER_AREA (supersampling: conserva el detalle reconstruido).
+
+    Devuelve `(z2, fb2, escala_aplicada)`. Nunca lanza: ante fallo devuelve la
+    entrada. `fb2` es una tupla de 4 enteros con la caja de la cara reescalada.
+    """
+    if not getattr(cfg, "sr_enabled", False) or face_side <= 0:
+        return z, fb, 1.0
+    try:
+        target = max(1, int(cfg.sr_target_side))
+    except (TypeError, ValueError):
+        return z, fb, 1.0
+    if face_side >= target:
+        return z, fb, 1.0
+    scale = min(4.0, target / float(face_side))
+    if scale < _MIN_SR_GAIN:
+        return z, fb, 1.0
+    m = get_model(model or cfg.sr_model)
+    if m is None:
+        return z, fb, 1.0
+    try:
+        up = _sr_infer(m, z)
+        nw = max(1, int(round(z.shape[1] * scale)))
+        nh = max(1, int(round(z.shape[0] * scale)))
+        # supersampling: el x4 nativo se reduce con INTER_AREA al factor pedido
+        z2 = cv2.resize(up, (nw, nh), interpolation=cv2.INTER_AREA)
+        sx = nw / float(z.shape[1])
+        sy = nh / float(z.shape[0])
+        fb2 = (int(fb[0] * sx), int(fb[1] * sy), int(fb[2] * sx), int(fb[3] * sy))
+        return z2, fb2, scale
+    except Exception as e:  # noqa: BLE001 — ante fallo devuelve la entrada
+        print(f"[superres] supersample de cara falló, fallback activo: {e}", flush=True)
+        return z, fb, 1.0
+
+
 def restore_face(img: np.ndarray, cfg, model: str | None = None) -> np.ndarray:
     """Restauración facial completa para la foto final de la persona.
 
@@ -515,7 +562,8 @@ def photo_busto(img: np.ndarray, bbox, cfg, model: str | None = None,
     """Foto final de BUSTO para el panel: torso real + cara restaurada.
 
     1. Reencuadre natural (`busto_face_fill`) desde el crop de busto/frame.
-    2. SR ligero con `model` solo si el encuadre es pequeño.
+    2. SR x4 con `model` si la CARA es menor que `cfg.sr_target_side`, reducido
+       al factor que lleva la cara al objetivo (`_supersample_face`).
     3. GFPGAN únicamente en la región de la cara (`_face_region_blend`).
 
     `restore=False` genera la foto "rápida" SIN GFPGAN (refactor RAM: la
@@ -527,12 +575,10 @@ def photo_busto(img: np.ndarray, bbox, cfg, model: str | None = None,
     z, fb = _busto_crop(img, bbox, cfg)
     if z.size == 0:
         return img
-    before = z.shape[:2]
-    z = enhance(z, cfg, model=model)
-    sy = z.shape[0] / max(1, before[0])
-    sx = z.shape[1] / max(1, before[1])
-    if sy != 1.0 or sx != 1.0:
-        fb = (int(fb[0] * sx), int(fb[1] * sy), int(fb[2] * sx), int(fb[3] * sy))
+    # La decisión de SR se toma por el tamaño de la CARA original (max(fw, fh)),
+    # no por el del busto: si la cara es < sr_target_side se super-muestrea x4 y
+    # se reduce al factor que la lleva al objetivo. `fb` queda reescalado.
+    z, fb, _ = _supersample_face(z, fb, max(fw, fh), cfg, model=model)
     # A3 gate (2026-08-26): GFPGAN SOLO si la cara original (antes del SR) tiene
     # lado mayor >= cfg.face_restore_min_side. Default 48 (A, 2026-09-28): la
     # foto del panel recibe GFPGAN también en caras pequeñas recuperadas por SR;
@@ -550,9 +596,10 @@ def photo_busto_fused(frames, cfg, model: str | None = None,
     primer frame como referencia (`_busto_crop` -> `ref_z`, `ref_fb`), se
     normalizan los demás al mismo `(w, h)` (INTER_LINEAR), se alinean con
     `_align(crop, ref_z)` y se fusionan con `np.median` (reduce ruido/compresión
-    y gana resolución efectiva sub-píxel). Después se aplica el SR (`enhance`)
-    y, si procede, la restauración facial de la región (`_face_region_blend`,
-    sobre `ref_fb` reescalado por el factor del SR) y el top-up de display.
+    y gana resolución efectiva sub-píxel). Después se aplica el SR por tamaño de
+    CARA (`_supersample_face`, que reescala `ref_fb` al factor aplicado) y, si
+    procede, la restauración facial de la región (`_face_region_blend`) y el
+    top-up de display.
 
     Devuelve BGR uint8 o `None` si no hay >=2 crops válidos (el llamador cae a
     `photo_busto`). Degradación segura: nunca lanza excepción por entradas raras.
@@ -580,15 +627,10 @@ def photo_busto_fused(frames, cfg, model: str | None = None,
             return None
         fused = np.median(np.stack(aligned, axis=0), axis=0)
         fused = np.clip(fused, 0, 255).astype(np.uint8)
-        before = fused.shape[:2]
-        z = enhance(fused, cfg, model=model)
-        sy = z.shape[0] / max(1, before[0])
-        sx = z.shape[1] / max(1, before[1])
-        fb = ref_fb
-        if sy != 1.0 or sx != 1.0:
-            fb = (int(fb[0] * sx), int(fb[1] * sy), int(fb[2] * sx), int(fb[3] * sy))
         x1, y1, x2, y2 = (int(round(v)) for v in bbox0)
         fw, fh = max(1, x2 - x1), max(1, y2 - y1)
+        # SR por tamaño de CARA (original), no del busto fusionado.
+        z, fb, _ = _supersample_face(fused, ref_fb, max(fw, fh), cfg, model=model)
         if cfg.sr_face_enabled and restore and max(fw, fh) >= cfg.face_restore_min_side:
             z = _face_region_blend(z, fb, cfg)
         return _topup_display(z, cfg)
