@@ -140,7 +140,9 @@ def aplicar(result_dir: str, data: dict, local_id: str, camara_id: str, fichero:
     """Aplica los efectos del proceso clásico sobre la casa (idéntico resultado final)."""
     artifacts = _artifact_root(result_dir)
     caras = 0
-    for sufijo in ("", "_busto", "_cuerpo"):
+    # "_frame" = evidencia "Frame original" (frame nativo 1080p) que extrae el
+    # worker; sin él la casa se quedaría sin la evidencia y usaría el crop.
+    for sufijo in ("", "_busto", "_cuerpo", "_frame"):
         src = os.path.join(artifacts, "motor/caras/sinclasificar", local_id, f"{camara_id}{sufijo}")
         dst = os.path.join(ruta, "motor/caras/sinclasificar", local_id, f"{camara_id}{sufijo}")
         caras += _mover_archivos(src, dst)
