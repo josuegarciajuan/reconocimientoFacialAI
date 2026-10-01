@@ -146,6 +146,13 @@
             </a>
         </li>
 
+        <li>
+            <a href="?page=diagnostico" class="top-menu top-menu<?php if(isset($_GET["page"]) and $_GET["page"]=="diagnostico"){ echo "--active"; } ?>">
+                <div class="menu__icon menu__emoji">🔬</div>
+                <div class="top-menu__title"> Diagnóstico </div>
+            </a>
+        </li>
+
     </ul>
 </nav>
 <!-- END: Top Menu -->
