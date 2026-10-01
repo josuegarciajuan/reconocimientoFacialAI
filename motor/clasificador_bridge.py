@@ -122,6 +122,33 @@ def _rmtree(path: str) -> None:
         pass
 
 
+def _aplicar_local(ruta: str, local_id, camara_id, batch_id: str, faces: dict, timeout: float) -> int:
+    """Aplica el lote con el aplicador persistente si está vivo; si no, `--once`."""
+    try:
+        from motor import clasificador_queue as q
+        if q.daemon_alive(ruta, local_id):
+            if q.write_request(ruta, local_id, batch_id, camara_id, faces):
+                got = q.esperar_done(ruta, local_id, batch_id, timeout)
+                if got is not None:
+                    return int(got.get("rc") or 0)
+                print("[classify-bridge] timeout del aplicador; fallback a --once", flush=True)
+    except Exception as e:  # noqa: BLE001
+        print(f"[classify-bridge] aplicador persistente no disponible: {e}", flush=True)
+
+    tmp = os.path.join(ruta, "motor/caras", f".faces_{local_id}_{camara_id}_{batch_id}.json")
+    try:
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(faces, fh)
+        cmd = [sys.executable, os.path.join(PROYECTO, "motor/clasificador.py"),
+               str(local_id), str(camara_id), "--ruta", ruta, "--once", "--faces-json", tmp]
+        return subprocess.call(cmd)
+    finally:
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
+
+
 def _procesar_lote(local_id: str, camara_id: str, ruta: str, dir_in: str,
                    chunk: list[str], timeout: float, poll: float) -> bool:
     """Prepara el lote (enlaces), lo delega y aplica la decisión local. True si ok."""
@@ -147,18 +174,7 @@ def _procesar_lote(local_id: str, camara_id: str, ruta: str, dir_in: str,
         return False
     faces, job_dir = got
 
-    tmp = os.path.join(ruta, "motor/caras", f".faces_{local_id}_{camara_id}_{batch_id}.json")
-    try:
-        with open(tmp, "w", encoding="utf-8") as fh:
-            json.dump(faces, fh)
-        cmd = [sys.executable, os.path.join(PROYECTO, "motor/clasificador.py"),
-               str(local_id), str(camara_id), "--ruta", ruta, "--once", "--faces-json", tmp]
-        rc = subprocess.call(cmd)
-    finally:
-        try:
-            os.remove(tmp)
-        except OSError:
-            pass
+    rc = _aplicar_local(ruta, local_id, camara_id, batch_id, faces, timeout)
     if rc == 0:
         escribir_ack(job_dir_of(job_dir), source="clasificador_bridge")
     print(f"[classify-bridge] {camara_id} lote {batch_id}: decisión local aplicada (rc={rc})", flush=True)
@@ -209,6 +225,16 @@ def main() -> int:
         if args.once:
             cmd.append("--once")
         return subprocess.call(cmd)
+
+    # F5: si el aplicador persistente (systemd) está vivo se usa; si no, `--once`.
+    try:
+        from motor import clasificador_queue as q
+        if q.daemon_alive(args.ruta, args.local_id):
+            print("[classify-bridge] aplicador persistente disponible (F5)", flush=True)
+        else:
+            print("[classify-bridge] aplicador persistente no disponible; se usará --once", flush=True)
+    except Exception:  # noqa: BLE001
+        pass
 
     for cam in cameras:
         try:

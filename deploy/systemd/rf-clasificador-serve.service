@@ -1,0 +1,16 @@
+[Unit]
+Description=RF Aplicador persistente de clasificación (F5) — mantiene galería/modelos calientes
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+WorkingDirectory=/root/reconocimientoFacial
+ExecStart=/root/reconocimientoFacial/motor/venv/bin/python /root/reconocimientoFacial/motor/clasificador.py 1 --serve --ruta /root/reconocimientoFacial
+Restart=always
+RestartSec=5
+User=root
+Nice=5
+
+[Install]
+WantedBy=multi-user.target

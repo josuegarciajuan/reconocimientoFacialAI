@@ -72,11 +72,9 @@ _PROCESSED_FACES: set[str] = set()
 _FACES_PROVIDER: dict | None = None
 
 
-def _cargar_faces_provider(path: str) -> dict:
-    """Carga el faces.json del pool -> {filename: [Face(embedding=SR)]}."""
+def _faces_from_dict(raw: dict) -> dict:
+    """{filename: [{bbox, det_score, pose, embedding}]} -> {filename: [Face]}."""
     from motor.core.model import Face  # import local: no acoplar más de lo necesario
-    with open(path, encoding="utf-8") as fh:
-        raw = json.load(fh)
     out: dict[str, list] = {}
     for nombre, faces in (raw or {}).items():
         arr = []
@@ -89,6 +87,12 @@ def _cargar_faces_provider(path: str) -> dict:
             ))
         out[nombre] = arr
     return out
+
+
+def _cargar_faces_provider(path: str) -> dict:
+    """Carga el faces.json del pool -> {filename: [Face(embedding=SR)]}."""
+    with open(path, encoding="utf-8") as fh:
+        return _faces_from_dict(json.load(fh))
 
 # Cola de foto HQ para el worker único (motor/photo_worker.py): el clasificador
 # YA NO carga GFPGAN/RealESRGAN-x4plus (refactor RAM: los modelos pesados viven
@@ -1792,13 +1796,49 @@ def _apply_calib_weights(cfg, ruta: str) -> bool:
         return False
 
 
+def _serve(args, cfg: Config, store, feedback) -> int:
+    """Aplicador persistente por local (F5).
+
+    Mantiene la galería y los modelos calientes y aplica el MISMO `process_once`
+    que el modo `--once`, pero sin recrear el proceso por lote/cámara. Las
+    peticiones llegan por la cola local (`motor/clasificador_daemon/<local>/in`).
+    """
+    from motor import clasificador_queue as q  # noqa: E402
+    global _FACES_PROVIDER
+    log(f"[serve] aplicador persistente local={args.local_id} "
+        f"(cola motor/clasificador_daemon/{args.local_id})")
+    ultima_calib = 0.0
+    while True:
+        try:
+            q.heart_beat(args.ruta, args.local_id)
+            ahora = time.time()
+            if ahora - ultima_calib > 60:
+                ultima_calib = ahora
+                _apply_calib_weights(cfg, args.ruta)
+            for req in q.list_requests(args.ruta, args.local_id):
+                data = req["data"]
+                _FACES_PROVIDER = _faces_from_dict(data.get("faces") or {})
+                cam = str(data.get("cam"))
+                n = process_once(args.ruta, args.local_id, cam, cfg, store, feedback)
+                q.write_done(args.ruta, args.local_id, data.get("batch"),
+                             {"batch": data.get("batch"), "cam": cam, "rc": 0,
+                              "n": n, "ts": time.time()})
+                q.remove_request(req["path"])
+                log(f"[serve] lote {data.get('batch')} cam {cam}: {n} batería(s)")
+        except Exception as e:  # noqa: BLE001 — el aplicador nunca debe morir
+            log(f"[serve] error: {e}")
+        time.sleep(1)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("local_id")
-    ap.add_argument("camara_id")
+    ap.add_argument("camara_id", nargs="?", default="")
     ap.add_argument("token", nargs="?", default=None, help="token identificador de Jos_Thread (se ignora)")
     ap.add_argument("--ruta", default=os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
     ap.add_argument("--once", action="store_true", help="una sola pasada (sin bucle)")
+    ap.add_argument("--serve", action="store_true",
+                    help="aplicador persistente por local (F5): procesa la cola de lotes")
     ap.add_argument("--secure", type=float, default=None)
     ap.add_argument("--match", type=float, default=None)
     ap.add_argument("--margin", type=float, default=None)
@@ -1855,6 +1895,9 @@ def main() -> int:
     feedback = FeedbackCollector(args.ruta, args.local_id, enabled=cfg.feedback_enabled)
 
     _apply_calib_weights(cfg, args.ruta)
+
+    if args.serve:
+        return _serve(args, cfg, store, feedback)
 
     log(f"clasificador {args.local_id}/[{','.join(cameras)}] — face_enc_v2 con {len(store.persons())} personas"
         f" | cascada={cfg.cascade_enabled} torso={cfg.torso_enabled} zonas={cfg.zones_enabled}"
