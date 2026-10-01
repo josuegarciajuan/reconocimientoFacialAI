@@ -146,7 +146,7 @@ def main() -> int:
     ap.add_argument("--once", action="store_true")
     ap.add_argument("--timeout", type=float, default=3600.0)
     ap.add_argument("--poll", type=float, default=5.0)
-    args = ap.parse_args()
+    args, _desconocidos = ap.parse_known_args()  # tolera el token final de Jos_Thread
 
     cameras = [c.strip() for c in str(args.camara_id).split(",") if c.strip()]
 
