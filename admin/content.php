@@ -33,6 +33,9 @@ switch($_GET["page"] ?? ""){
     case "ayuda":
         require_once "./pages/ayuda/index.php";
         break;
+    case "diagnostico":
+        require_once "./pages/diagnostico/index.php";
+        break;
     case "fichajes":
         require_once "./pages/fichajes/index.php";
         break;
