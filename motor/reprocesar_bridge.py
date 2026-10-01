@@ -34,7 +34,7 @@ MODE_FILE = "/var/lib/taildeck/projects/reconocimientoFacial.mode"
 SPOOL_DIR = "/var/lib/taildeck/spool"
 RETURNS_DIR = "/var/lib/taildeck/returns/reconocimientoFacial"
 PROYECTO = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-SUFIJOS = ("", "_busto", "_cuerpo")
+SUFIJOS = ("", "_busto", "_cuerpo", "_frame")
 
 
 def modo() -> str:

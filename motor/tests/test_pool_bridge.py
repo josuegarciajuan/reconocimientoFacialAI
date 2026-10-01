@@ -34,3 +34,23 @@ def test_lee_resultado_dentro_del_directorio_result_del_executor(tmp_path):
     result.mkdir()
     (result / "efectos.json").write_text(json.dumps({"local": "1", "cam": "15"}), encoding="utf-8")
     assert _leer_resultado(str(tmp_path)) == {"local": "1", "cam": "15"}
+
+
+def test_aplicar_mueve_el_frame_nativo(tmp_path):
+    """aplicar() debe traer también <cam>_frame/ (evidencia "Frame original" 1080p)."""
+    from motor.pool_bridge import aplicar
+
+    result = tmp_path / "result"
+    base = result / "motor" / "caras" / "sinclasificar" / "1"
+    for sufijo in ("", "_busto", "_cuerpo", "_frame"):
+        d = base / f"21{sufijo}"
+        d.mkdir(parents=True)
+        (d / "21_x_0.jpg").write_bytes(b"px")
+
+    ruta = tmp_path / "house"
+    ruta.mkdir()
+    aplicar(str(result), {"local": "1", "cam": "21", "fichero": "v.mp4"},
+            "1", "21", "v.mp4", str(ruta))
+
+    for sufijo in ("", "_busto", "_cuerpo", "_frame"):
+        assert (ruta / "motor" / "caras" / "sinclasificar" / "1" / f"21{sufijo}" / "21_x_0.jpg").exists()

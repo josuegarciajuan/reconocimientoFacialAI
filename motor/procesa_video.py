@@ -217,7 +217,9 @@ def guardar_cara(ruta: str, local_id: str, camara_id: str, fichero: str, frame,
     # C (evidencia nativa): el FRAME COMPLETO, no el recorte. El clasificador lo
     # publica como "Frame original" (1920x1080 real). Mismo stem que el crop en
     # <cam>_frame/ para emparejarlo igual que busto/torso. JPEG q90 para acotar disco.
-    if cfg.save_original_frame:
+    # getattr: en modo pool el worker puede tener un config más antiguo; sin el
+    # atributo se asume True (evidencia activada) en vez de romper la captura.
+    if getattr(cfg, "save_original_frame", True):
         try:
             frame_dir = os.path.join(ruta, "motor/caras/sinclasificar", local_id, f"{camara_id}_frame")
             os.makedirs(frame_dir, exist_ok=True)
