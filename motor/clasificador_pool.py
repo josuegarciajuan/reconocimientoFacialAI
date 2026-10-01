@@ -47,6 +47,7 @@ def main() -> int:
     ap.add_argument("--in", dest="in_dir", required=True, help="directorio con los crops")
     ap.add_argument("--local", required=True)
     ap.add_argument("--cam", required=True)
+    ap.add_argument("--batch", default=None, help="id del lote (F4)")
     ap.add_argument("--out", required=True, help="ruta del faces.json de salida")
     args = ap.parse_args()
 
@@ -66,7 +67,8 @@ def main() -> int:
 
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as fh:
-        json.dump({"local": str(args.local), "cam": str(args.cam), "faces": faces_map}, fh)
+        json.dump({"local": str(args.local), "cam": str(args.cam), "batch": args.batch,
+                   "faces": faces_map}, fh)
     total = sum(len(v) for v in faces_map.values())
     print(f"[classify-pool] {len(faces_map)} crops, {total} caras", flush=True)
     return 0

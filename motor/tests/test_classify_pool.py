@@ -4,15 +4,20 @@ import json
 import numpy as np
 
 from motor.clasificador import _cargar_faces_provider
-from motor.clasificador_bridge import build_request
+from motor.clasificador_bridge import build_request, _batch_id
 
 
 def test_build_request_contract():
     carpeta = "/root/reconocimientoFacial/motor/caras/sinclasificar/1/15"
-    req = build_request("1", "15", carpeta, rid="req-c")
+    req = build_request("1", "15", carpeta, batch_id="abc123", fingerprint_val="f1", rid="req-c")
     assert req["process"] == "classify"
-    assert req["externalId"] == "classify:1/15"
-    assert req["params"] == {"local": "1", "cam": "15", "dir": carpeta}
+    assert req["externalId"] == "classify:1/15/abc123"
+    assert req["params"] == {"local": "1", "cam": "15", "dir": carpeta, "batch": "abc123"}
+    assert req["fingerprint"] == "f1"
+    # sin lote no hay sufijo en externalId
+    req2 = build_request("1", "15", carpeta, rid="r2")
+    assert req2["externalId"] == "classify:1/15"
+    assert req2["params"]["batch"] is None
 
 
 def test_provider_reconstruye_faces(tmp_path):
@@ -29,3 +34,9 @@ def test_provider_reconstruye_faces(tmp_path):
     assert abs(f.det_score - 0.9) < 1e-9
     assert tuple(f.pose) == (1.0, 2.0, 3.0)
     assert isinstance(f.embedding, np.ndarray) and f.embedding.shape == (512,)
+
+
+def test_batch_id_estable():
+    assert _batch_id(["a.png", "b.png"]) == _batch_id(["a.png", "b.png"])
+    assert _batch_id(["a.png", "b.png"]) != _batch_id(["a.png", "c.png"])
+    assert len(_batch_id(["x.png"])) == 12
