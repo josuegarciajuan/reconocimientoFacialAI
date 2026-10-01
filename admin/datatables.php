@@ -41,8 +41,9 @@ if ($table === 'visitantes') {
     $from = 'estancias e JOIN personas p ON p.id=e.persona_id';
     if (!empty($_GET['camara']) && $_GET['camara'] !== '-') { $where[]='e.camara_id=?'; $params[]=(int)$_GET['camara']; }
     if ((string)($_GET['trabajador'] ?? '') === '1') $where[]='p.trabajador=1';
-    if (($v=trim((string)($_GET['desde'] ?? ''))) !== '') { $where[]='e.fecha_ini>=?'; $params[]=rango_a_sql($v, date('Y-m-d 00:00:00')); }
-    if (($v=trim((string)($_GET['hasta'] ?? ''))) !== '') { $where[]='e.fecha_ini<=?'; $params[]=rango_a_sql($v, date('Y-m-d 23:59:59')); }
+    // Rango por defecto: hoy completo (00:00 → 23:59) si el filtro no llega.
+    $where[]='e.fecha_ini>=?'; $params[]=rango_a_sql(trim((string)($_GET['desde'] ?? '')), date('Y-m-d 00:00:00'));
+    $where[]='e.fecha_ini<=?'; $params[]=rango_a_sql(trim((string)($_GET['hasta'] ?? '')), date('Y-m-d 23:59:59'));
     if ($like !== '') { $where[]='(p.nombre LIKE ? OR p.cod_interno LIKE ?)'; $params[]="%$like%"; $params[]="%$like%"; }
     $w=implode(' AND ',$where);
     $total=(int)(DB::selectOne('SELECT COUNT(DISTINCT e.persona_id) n FROM '.$from.' WHERE e.camara_id IN (SELECT id FROM camaras WHERE local_id=?)',[$local])['n']??0);
