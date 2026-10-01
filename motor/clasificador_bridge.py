@@ -42,13 +42,13 @@ def modo() -> str:
         return "local"
 
 
-def build_request(local_id: str, camara_id: str, crops: list[str], rid: str | None = None) -> dict:
+def build_request(local_id: str, camara_id: str, carpeta: str, rid: str | None = None) -> dict:
     rid = rid or f"req-{int(time.time())}-{os.getpid()}"
     return {
         "id": rid,
         "project": "reconocimientoFacial",
         "process": "classify",
-        "params": {"local": local_id, "cam": camara_id, "crops": crops},
+        "params": {"local": local_id, "cam": camara_id, "dir": carpeta},
         "externalId": f"classify:{local_id}/{camara_id}",
     }
 
@@ -101,18 +101,16 @@ def procesar_cam(local_id: str, camara_id: str, ruta: str, timeout: float, poll:
     dir_in = os.path.join(ruta, "motor/caras/sinclasificar", str(local_id), str(camara_id))
     if not os.path.isdir(dir_in):
         return 0
-    crops = [os.path.join(dir_in, f) for f in sorted(os.listdir(dir_in))
-             if f.lower().endswith(IMG_EXTS)]
+    crops = [f for f in sorted(os.listdir(dir_in)) if f.lower().endswith(IMG_EXTS)]
     if not crops:
         return 0
 
-    # Seguridad: solo ficheros dentro del árbol del proyecto.
+    dir_in = os.path.abspath(dir_in)
     root_abs = os.path.abspath(ruta)
-    crops = [os.path.abspath(c) for c in crops if os.path.abspath(c).startswith(root_abs + os.sep)]
-    if not crops:
+    if not dir_in.startswith(root_abs + os.sep):
         return 0
 
-    req = build_request(local_id, camara_id, crops)
+    req = build_request(local_id, camara_id, dir_in)
     escribir_peticion(req)
     print(f"[classify-bridge] petición {req['id']} para {req['externalId']} ({len(crops)} crops)", flush=True)
 
