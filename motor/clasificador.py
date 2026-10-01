@@ -66,6 +66,30 @@ IMG_EXTS = (".jpg", ".jpeg", ".png")
 # legacy pudiera compartir stem.
 _PROCESSED_FACES: set[str] = set()
 
+# Split de embeddings (M3 pool): cuando la casa recibe `--faces-json`, aquí vive
+# {filename: [Face con embedding SR]} calculado en el pool; process_once lo usa
+# para evitar `analyze` + `enhance_embedding` (lo pesado). None = modo normal.
+_FACES_PROVIDER: dict | None = None
+
+
+def _cargar_faces_provider(path: str) -> dict:
+    """Carga el faces.json del pool -> {filename: [Face(embedding=SR)]}."""
+    from motor.core.model import Face  # import local: no acoplar más de lo necesario
+    with open(path, encoding="utf-8") as fh:
+        raw = json.load(fh)
+    out: dict[str, list] = {}
+    for nombre, faces in (raw or {}).items():
+        arr = []
+        for d in faces or []:
+            arr.append(Face(
+                bbox=tuple(int(v) for v in d["bbox"]),
+                det_score=float(d.get("det_score", 0.0)),
+                embedding=np.asarray(d["embedding"], dtype=np.float32),
+                pose=tuple(float(v) for v in d.get("pose", (0.0, 0.0, 0.0))),
+            ))
+        out[nombre] = arr
+    return out
+
 # Cola de foto HQ para el worker único (motor/photo_worker.py): el clasificador
 # YA NO carga GFPGAN/RealESRGAN-x4plus (refactor RAM: los modelos pesados viven
 # en UN solo proceso rf-photo, no en N clasificadores de cámara).
@@ -1573,7 +1597,13 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
             shutil.move(p, os.path.join(nopasafiltros, f))
             desc_ilegible += 1
             continue
-        faces = analyze(img, det_size=(cfg.crop_det_size, cfg.crop_det_size), min_score=cfg.min_det_score)
+        faces = None
+        if _FACES_PROVIDER is not None:
+            faces = _FACES_PROVIDER.get(f)
+        precomputado = faces is not None
+        if faces is None:
+            faces = analyze(img, det_size=(cfg.crop_det_size, cfg.crop_det_size),
+                            min_score=cfg.min_det_score)
         if not faces:
             shutil.move(p, os.path.join(notienecaras, f))
             desc_notienecaras += 1
@@ -1614,8 +1644,10 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
             low_quality = True
         # SR-before-embedding: las caras pequeñas (< sr_embed_min_face) recalculan
         # su embedding sobre el recorte super-resuelto -> matching más fiable.
-        for fc in focused:
-            fc.embedding = enhance_embedding(img, fc, cfg)
+        # En modo pool el embedding SR ya viene del worker (precomputado).
+        if not precomputado:
+            for fc in focused:
+                fc.embedding = enhance_embedding(img, fc, cfg)
         items.append({"file": f, "path": p, "img": img, "faces": focused,
                       "ts": parse_timestamp(f), "low_quality": low_quality})
 
@@ -1725,6 +1757,8 @@ def main() -> int:
     ap.add_argument("--match", type=float, default=None)
     ap.add_argument("--margin", type=float, default=None)
     ap.add_argument("--min-sharpness", type=float, default=None)
+    ap.add_argument("--faces-json", default=None,
+                    help="faces precomputadas por el pool (modo superserver, M3)")
     args, _desconocidos = ap.parse_known_args()  # tolera el token final de Jos_Thread
 
     # F1 (anti-sobresuscripción): topes de hilos OpenCV/torch de este proceso.
@@ -1756,6 +1790,15 @@ def main() -> int:
         _LOG_FILE = os.path.join(logs_dir, f"clasificador_{args.local_id}.log")
     except OSError:
         _LOG_FILE = None
+    # Modo pool (M3): inyectar los embeddings/detecciones precomputados por la flota.
+    global _FACES_PROVIDER
+    if args.faces_json:
+        try:
+            _FACES_PROVIDER = _cargar_faces_provider(args.faces_json)
+            log(f"[pool] faces precomputadas: {len(_FACES_PROVIDER)} crops")
+        except (OSError, ValueError) as e:
+            log(f"[pool] no se pudo cargar --faces-json: {e}")
+            _FACES_PROVIDER = None
     # P1: cargar el registro persistente de rostros ya procesados (ventana)
     _dedup_load(args.ruta, args.local_id, cfg)
 
