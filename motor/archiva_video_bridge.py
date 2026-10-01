@@ -34,6 +34,7 @@ from datetime import datetime, timedelta
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from motor.archiva_video import PROYECTO, fecha_base_video, php_ws  # noqa: E402
+from motor.pool_ack import escribir_ack, job_dir_of               # noqa: E402
 from motor.core.video import ruta_archivo, ruta_video  # noqa: E402
 
 MODE_FILE = "/var/lib/taildeck/projects/reconocimientoFacial.mode"
@@ -210,6 +211,7 @@ def main() -> int:
         return 1
     result_dir, meta = got
     aplicar(result_dir, meta, args.local_id, args.camara_id, args.fichero, args.ruta)
+    escribir_ack(job_dir_of(result_dir), source="archiva_video_bridge")
     return 0
 
 

@@ -18,6 +18,8 @@ import os
 import shutil
 import time
 
+from motor.pool_ack import escribir_ack, job_dir_of
+
 MODE_FILE = "/var/lib/taildeck/projects/reconocimientoFacial.mode"
 SPOOL_DIR = "/var/lib/taildeck/spool"
 RETURNS_DIR = "/var/lib/taildeck/returns/reconocimientoFacial"
@@ -95,4 +97,5 @@ def submit_and_apply(out: str, frames: list[dict], srcs: list[str], job_path: st
         except OSError:
             pass
     print(f"[photo-pool] aplicado {hq_name(out)} (job+fuentes borrados)", flush=True)
+    escribir_ack(job_dir_of(hq), source="photo_pool")
     return True

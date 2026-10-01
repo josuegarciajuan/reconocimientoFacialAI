@@ -34,6 +34,7 @@ import time
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from motor.core.embudo import log_evento                      # noqa: E402
+from motor.pool_ack import escribir_ack, job_dir_of            # noqa: E402
 from motor.procesa_video import PROYECTO, cargar_lineas, php_ws  # noqa: E402
 
 MODE_FILE = "/var/lib/taildeck/projects/reconocimientoFacial.mode"
@@ -216,6 +217,7 @@ def main() -> int:
         return 1
     result_dir, data = got
     aplicar(result_dir, data, args.local_id, args.camara_id, args.fichero, args.ruta)
+    escribir_ack(job_dir_of(result_dir), source="pool_bridge")
     return 0
 
 

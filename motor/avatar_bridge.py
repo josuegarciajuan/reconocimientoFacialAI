@@ -25,6 +25,7 @@ import time
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from motor.photo_pool import RETURNS_DIR, escribir_peticion, modo  # noqa: E402
+from motor.pool_ack import escribir_ack, job_dir_of               # noqa: E402
 
 PROYECTO = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -101,6 +102,7 @@ def main() -> int:
     except OSError:
         pass
     print(f"[avatar-bridge] aplicado {png_name} (+ sidecar .foto)", flush=True)
+    escribir_ack(job_dir_of(root), source="avatar_bridge")
     return 0
 
 

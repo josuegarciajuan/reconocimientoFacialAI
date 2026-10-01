@@ -29,6 +29,7 @@ import time
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from motor.reprocesar import _locales_disponibles          # noqa: E402
+from motor.pool_ack import escribir_ack, job_dir_of, fingerprint  # noqa: E402
 
 MODE_FILE = "/var/lib/taildeck/projects/reconocimientoFacial.mode"
 SPOOL_DIR = "/var/lib/taildeck/spool"
@@ -46,7 +47,7 @@ def modo() -> str:
 
 
 def build_request(local_id: str, camara_id: str, fichero: str, face_every: int,
-                  rid: str | None = None) -> dict:
+                  fingerprint_val: str | None = None, rid: str | None = None) -> dict:
     rid = rid or f"req-{int(time.time())}-{os.getpid()}"
     return {
         "id": rid,
@@ -55,6 +56,7 @@ def build_request(local_id: str, camara_id: str, fichero: str, face_every: int,
         "params": {"local": local_id, "cam": camara_id, "fichero": fichero,
                    "face_every": face_every},
         "externalId": f"rescan:{local_id}/{camara_id}/{fichero}",
+        "fingerprint": fingerprint_val,
     }
 
 
@@ -208,7 +210,9 @@ def main() -> int:
         while idx < len(pendientes) and len(en_vuelo) < n_par:
             loc, cam, fichero = pendientes[idx]
             idx += 1
-            req = build_request(loc, cam, fichero, args.face_every)
+            src = os.path.join(args.ruta, "motor/videos_archivo", str(loc), cam, fichero)
+            req = build_request(loc, cam, fichero, args.face_every,
+                                fingerprint_val=fingerprint([src]))
             escribir_peticion(req)
             en_vuelo[req["id"]] = (loc, cam, fichero, time.time())
 
@@ -219,6 +223,7 @@ def main() -> int:
                 result_dir, meta = got
                 ficheros = aplicar(result_dir, loc, cam, fichero, args.ruta)
                 escribir_marcador(args.ruta, loc, cam, fichero)
+                escribir_ack(job_dir_of(result_dir), source="reprocesar_bridge")
                 caras = int(meta.get("caras") or 0)
                 total_caras += caras
                 total_videos += 1

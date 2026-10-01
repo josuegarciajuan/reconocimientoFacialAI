@@ -27,6 +27,8 @@ import time
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+from motor.pool_ack import escribir_ack, job_dir_of, fingerprint  # noqa: E402
+
 MODE_FILE = "/var/lib/taildeck/projects/reconocimientoFacial.mode"
 SPOOL_DIR = "/var/lib/taildeck/spool"
 RETURNS_DIR = "/var/lib/taildeck/returns/reconocimientoFacial"
@@ -42,7 +44,8 @@ def modo() -> str:
         return "local"
 
 
-def build_request(local_id: str, camara_id: str, carpeta: str, rid: str | None = None) -> dict:
+def build_request(local_id: str, camara_id: str, carpeta: str,
+                  fingerprint_val: str | None = None, rid: str | None = None) -> dict:
     rid = rid or f"req-{int(time.time())}-{os.getpid()}"
     return {
         "id": rid,
@@ -50,6 +53,7 @@ def build_request(local_id: str, camara_id: str, carpeta: str, rid: str | None =
         "process": "classify",
         "params": {"local": local_id, "cam": camara_id, "dir": carpeta},
         "externalId": f"classify:{local_id}/{camara_id}",
+        "fingerprint": fingerprint_val,
     }
 
 
@@ -82,7 +86,8 @@ def _leer_faces(d: str, local_id: str, camara_id: str) -> dict | None:
     return data.get("faces") or {}
 
 
-def esperar_faces(local_id: str, camara_id: str, timeout_s: float, poll_s: float = 5.0) -> dict | None:
+def esperar_faces(local_id: str, camara_id: str, timeout_s: float, poll_s: float = 5.0):
+    """Espera el faces.json del lote y devuelve (faces, job_dir) o None."""
     t0 = time.time()
     while time.time() - t0 < timeout_s:
         if os.path.isdir(RETURNS_DIR):
@@ -92,7 +97,7 @@ def esperar_faces(local_id: str, camara_id: str, timeout_s: float, poll_s: float
                     continue
                 faces = _leer_faces(full, local_id, camara_id)
                 if faces is not None:
-                    return faces
+                    return faces, full
         time.sleep(poll_s)
     return None
 
@@ -110,14 +115,16 @@ def procesar_cam(local_id: str, camara_id: str, ruta: str, timeout: float, poll:
     if not dir_in.startswith(root_abs + os.sep):
         return 0
 
-    req = build_request(local_id, camara_id, dir_in)
+    req = build_request(local_id, camara_id, dir_in,
+                        fingerprint_val=fingerprint([os.path.join(dir_in, f) for f in crops]))
     escribir_peticion(req)
     print(f"[classify-bridge] petición {req['id']} para {req['externalId']} ({len(crops)} crops)", flush=True)
 
-    faces = esperar_faces(local_id, camara_id, timeout, poll)
-    if faces is None:
+    got = esperar_faces(local_id, camara_id, timeout, poll)
+    if not got:
         print(f"[classify-bridge] timeout esperando faces de {req['externalId']}", flush=True)
         return 0
+    faces, job_dir = got
 
     tmp = os.path.join(ruta, "motor/caras", f".faces_{local_id}_{camara_id}.json")
     try:
@@ -131,6 +138,8 @@ def procesar_cam(local_id: str, camara_id: str, ruta: str, timeout: float, poll:
             os.remove(tmp)
         except OSError:
             pass
+    if rc == 0:
+        escribir_ack(job_dir_of(job_dir), source="clasificador_bridge")
     print(f"[classify-bridge] {camara_id}: decisión local aplicada (rc={rc})", flush=True)
     return rc
 
