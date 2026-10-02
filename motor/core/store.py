@@ -96,6 +96,8 @@ class FaceStore:
         self._cache: dict | None = None
         self._cache_key: tuple | None = None
         self._cache_lock = threading.Lock()
+        # F17b: si no es None, lista de mutaciones diferidas (una transacción).
+        self._defer: list | None = None
 
     # --- I/O de bajo nivel ---
 
@@ -180,6 +182,59 @@ class FaceStore:
 
     # --- mutaciones ---
 
+    # F17b: mutadores puros sobre el diccionario, reutilizables por la vía
+    # directa (una transacción) y por la diferida (una transacción por lote).
+    def _mut_add(self, data: dict, cod, encodings, qualities, poses, srcs, sils) -> None:
+        p = data["persons"].setdefault(cod, _new_person())
+        now = time.time()
+        for e, q, po, s, si in zip(encodings, qualities, poses, srcs, sils):
+            p["encodings"].append(np.asarray(e, dtype=np.float32))
+            p["quality"].append(float(q))
+            p["poses"].append(po)
+            p["added_at"].append(now)
+            p["sources"].append(s)
+            p["sil"].append(None if si is None else np.asarray(si, dtype=np.float32))
+        self._prune(p, self.max_per_person)
+
+    def _mut_appearance(self, data: dict, cod, desc, ts, src) -> None:
+        p = data["persons"].setdefault(cod, _new_person())
+        if p.get("appearance") is None:
+            p["appearance"] = {"desc": [], "ts": [], "src": []}
+        p["appearance"]["desc"].append(np.asarray(desc, dtype=np.float32))
+        p["appearance"]["ts"].append(float(ts if ts is not None else time.time()))
+        p["appearance"]["src"].append(src)
+
+    def _mut_attributes(self, data: dict, cod, attrs, ts, src) -> None:
+        p = data["persons"].setdefault(cod, _new_person())
+        if p.get("attributes") is None:
+            p["attributes"] = {"values": [], "ts": [], "src": []}
+        p["attributes"]["values"].append(dict(attrs))
+        p["attributes"]["ts"].append(float(ts if ts is not None else time.time()))
+        p["attributes"]["src"].append(src)
+
+    def _schedule(self, fn: Callable[[dict], None]) -> bool:
+        """Encola la mutación si hay un lote diferido; True si quedó encolada."""
+        if self._defer is not None:
+            self._defer.append(fn)
+            return True
+        return False
+
+    def begin_defer(self) -> None:
+        """Abre un lote: las mutaciones se aplican en UNA transacción al cerrar."""
+        self._defer = []
+
+    def flush_defer(self) -> int:
+        """Aplica todas las mutaciones diferidas en una sola transacción."""
+        buf = self._defer or []
+        self._defer = None
+        if not buf:
+            return 0
+        def _apply(data: dict) -> None:
+            for f in buf:
+                f(data)
+        self._transaction(_apply)
+        return len(buf)
+
     @staticmethod
     def _prune(p: dict, max_per_person: int) -> None:
         # F1.4 (refinamiento autoaprendizaje): con volumen suficiente, descartar
@@ -237,29 +292,17 @@ class FaceStore:
             sils = (sils + [None] * len(encodings))[:len(encodings)]
 
         def _fn(data: dict) -> None:
-            p = data["persons"].setdefault(cod, _new_person())
-            now = time.time()
-            for e, q, po, s, si in zip(encodings, qualities, poses, srcs, sils):
-                p["encodings"].append(np.asarray(e, dtype=np.float32))
-                p["quality"].append(float(q))
-                p["poses"].append(po)
-                p["added_at"].append(now)
-                p["sources"].append(s)
-                p["sil"].append(None if si is None else np.asarray(si, dtype=np.float32))
-            self._prune(p, self.max_per_person)
-        self._transaction(_fn)
+            self._mut_add(data, cod, encodings, qualities, poses, srcs, sils)
+        if not self._schedule(_fn):
+            self._transaction(_fn)
 
     def add_appearance(self, cod: str, desc: np.ndarray, ts: float | None = None,
                        src: str = "") -> None:
         """Añade un descriptor de torso/ropa a la persona (capa L1b)."""
         def _fn(data: dict) -> None:
-            p = data["persons"].setdefault(cod, _new_person())
-            if p.get("appearance") is None:
-                p["appearance"] = {"desc": [], "ts": [], "src": []}
-            p["appearance"]["desc"].append(np.asarray(desc, dtype=np.float32))
-            p["appearance"]["ts"].append(float(ts if ts is not None else time.time()))
-            p["appearance"]["src"].append(src)
-        self._transaction(_fn)
+            self._mut_appearance(data, cod, desc, ts, src)
+        if not self._schedule(_fn):
+            self._transaction(_fn)
 
     def person_appearance(self, cod: str) -> dict | None:
         """Devuelve la galería de apariencia de la persona ({desc, ts, src}) o None."""
@@ -272,13 +315,9 @@ class FaceStore:
                        src: str = "") -> None:
         """Store structured visible attributes separately from embeddings."""
         def _fn(data: dict) -> None:
-            p = data["persons"].setdefault(cod, _new_person())
-            if p.get("attributes") is None:
-                p["attributes"] = {"values": [], "ts": [], "src": []}
-            p["attributes"]["values"].append(dict(attrs))
-            p["attributes"]["ts"].append(float(ts if ts is not None else time.time()))
-            p["attributes"]["src"].append(src)
-        self._transaction(_fn)
+            self._mut_attributes(data, cod, attrs, ts, src)
+        if not self._schedule(_fn):
+            self._transaction(_fn)
 
     def person_attributes(self, cod: str) -> dict | None:
         p = self.person(cod)
