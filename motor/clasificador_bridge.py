@@ -36,6 +36,18 @@ SPOOL_DIR = "/var/lib/taildeck/spool"
 RETURNS_DIR = "/var/lib/taildeck/returns/reconocimientoFacial"
 PROYECTO = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 IMG_EXTS = (".jpg", ".jpeg", ".png")
+# F18: el stdout del bridge va a /dev/null (Jos_Thread), así que se registra en
+# fichero para poder diagnosticar el dispatcher en producción.
+BRIDGE_LOG = os.path.join(PROYECTO, "motor/logs/clasificador_bridge.log")
+
+
+def _blog(*args, **kwargs) -> None:
+    try:
+        os.makedirs(os.path.dirname(BRIDGE_LOG), exist_ok=True)
+        with open(BRIDGE_LOG, "a", encoding="utf-8") as fh:
+            fh.write(time.strftime("%Y-%m-%d %H:%M:%S ") + " ".join(str(a) for a in args) + "\n")
+    except OSError:
+        pass
 
 
 def modo() -> str:
@@ -157,9 +169,9 @@ def _aplicar_local(ruta: str, local_id, camara_id, batch_id: str, data: dict, ti
                 got = q.esperar_done(ruta, local_id, batch_id, timeout)
                 if got is not None:
                     return int(got.get("rc") or 0)
-                print("[classify-bridge] timeout del aplicador; fallback a --once", flush=True)
+                _blog("[classify-bridge] timeout del aplicador; fallback a --once", flush=True)
     except Exception as e:  # noqa: BLE001
-        print(f"[classify-bridge] aplicador persistente no disponible: {e}", flush=True)
+        _blog(f"[classify-bridge] aplicador persistente no disponible: {e}", flush=True)
 
     tmp = os.path.join(ruta, "motor/caras", f".faces_{local_id}_{camara_id}_{batch_id}.json")
     try:
@@ -213,7 +225,7 @@ def _build_batch(local_id: str, camara_id: str, ruta: str, dir_in: str, chunk: l
             _rmtree(bdir_busto)
 
     req = build_request(local_id, camara_id, bdir, batch_id=batch_id, busto_dir=busto_dir,
-                        fingerprint_val=fingerprint([os.path.join(bdir, f) for f in chunk]))
+                        fingerprint_val=finger_blog([os.path.join(bdir, f) for f in chunk]))
     return {"batch_id": batch_id, "bdir": bdir, "bdir_busto": bdir_busto, "req": req}
 
 
@@ -230,12 +242,12 @@ def _procesar_lote(local_id: str, camara_id: str, ruta: str, dir_in: str,
     batch_id, bdir, bdir_busto, req = b["batch_id"], b["bdir"], b["bdir_busto"], b["req"]
     escribir_peticion(req)
     n_busto = len(os.listdir(bdir_busto)) if os.path.isdir(bdir_busto) else 0
-    print(f"[classify-bridge] petición {req['id']} para {req['externalId']} "
+    _blog(f"[classify-bridge] petición {req['id']} para {req['externalId']} "
           f"({len(chunk)} crops, {n_busto} bustos)", flush=True)
 
     got = esperar_faces(local_id, camara_id, batch_id, timeout, poll)
     if not got:
-        print(f"[classify-bridge] timeout esperando faces de {req['externalId']}", flush=True)
+        _blog(f"[classify-bridge] timeout esperando faces de {req['externalId']}", flush=True)
         _limpiar_batch(ruta, local_id, camara_id, batch_id)
         return False
     data, job_dir = got
@@ -243,7 +255,7 @@ def _procesar_lote(local_id: str, camara_id: str, ruta: str, dir_in: str,
     rc = _aplicar_local(ruta, local_id, camara_id, batch_id, data, timeout)
     if rc == 0:
         escribir_ack(job_dir_of(job_dir), source="clasificador_bridge")
-    print(f"[classify-bridge] {camara_id} lote {batch_id}: decisión local aplicada (rc={rc})", flush=True)
+    _blog(f"[classify-bridge] {camara_id} lote {batch_id}: decisión local aplicada (rc={rc})", flush=True)
     _limpiar_batch(ruta, local_id, camara_id, batch_id)
     return rc == 0
 
@@ -274,6 +286,7 @@ def _procesar_cam_paralelo(local_id: str, camara_id: str, ruta: str, dir_in: str
     orden: list[str] = []
     aplicados = 0
     progreso = False
+    last_hb = 0.0
 
     while pend or en_vuelo or ready:
         # 1) Enviar hasta el límite (respetando la cola del aplicador).
@@ -282,7 +295,7 @@ def _procesar_cam_paralelo(local_id: str, camara_id: str, ruta: str, dir_in: str
             b = _build_batch(local_id, camara_id, ruta, dir_in, ch)
             escribir_peticion(b["req"])
             n_busto = len(os.listdir(b["bdir_busto"])) if os.path.isdir(b["bdir_busto"]) else 0
-            print(f"[classify-bridge] petición {b['req']['id']} para {b['req']['externalId']} "
+            _blog(f"[classify-bridge] petición {b['req']['id']} para {b['req']['externalId']} "
                   f"({len(ch)} crops, {n_busto} bustos) [inflight={len(en_vuelo) + 1}/{inflight}]", flush=True)
             en_vuelo[b["batch_id"]] = {"t0": time.time()}
             orden.append(b["batch_id"])
@@ -295,7 +308,7 @@ def _procesar_cam_paralelo(local_id: str, camara_id: str, ruta: str, dir_in: str
                 del en_vuelo[bid]
                 progreso = True
             elif time.time() - en_vuelo[bid]["t0"] > timeout:
-                print(f"[classify-bridge] timeout del lote {bid}", flush=True)
+                _blog(f"[classify-bridge] timeout del lote {bid}", flush=True)
                 _limpiar_batch(ruta, local_id, camara_id, bid)
                 del en_vuelo[bid]
                 if bid in orden:
@@ -310,13 +323,19 @@ def _procesar_cam_paralelo(local_id: str, camara_id: str, ruta: str, dir_in: str
             if rc == 0:
                 escribir_ack(job_dir_of(job_dir), source="clasificador_bridge")
                 aplicados += 1
-            print(f"[classify-bridge] {camara_id} lote {bid}: aplicado (rc={rc})", flush=True)
+            _blog(f"[classify-bridge] {camara_id} lote {bid}: aplicado (rc={rc})", flush=True)
             _limpiar_batch(ruta, local_id, camara_id, bid)
             progreso = True
 
         if not progreso:
             time.sleep(poll)
         progreso = False
+        ahora = time.time()
+        if ahora - last_hb > 30:
+            last_hb = ahora
+            _blog(f"[classify-bridge] cam {camara_id} estado: pend={len(pend)} "
+                  f"vuelo={len(en_vuelo)} ready={len(ready)} "
+                  f"cola={_cola_aplicador(ruta, local_id)} aplicados={aplicados}")
 
     return aplicados
 
@@ -337,6 +356,8 @@ def procesar_cam(local_id: str, camara_id: str, ruta: str, timeout: float, poll:
 
     n = max(1, int(batch_size))
     chunks = [crops[i:i + n] for i in range(0, len(crops), n)]
+    _blog(f"[classify-bridge] cam {camara_id}: {len(crops)} crops, {len(chunks)} lotes, "
+          f"inflight={inflight} queue_max={k_queue}")
 
     if int(inflight) > 1:
         aplicados = _procesar_cam_paralelo(local_id, camara_id, ruta, dir_in, chunks,
@@ -346,7 +367,7 @@ def procesar_cam(local_id: str, camara_id: str, ruta: str, timeout: float, poll:
         for ch in chunks:
             if _procesar_lote(local_id, camara_id, ruta, dir_in, ch, timeout, poll):
                 aplicados += 1
-    print(f"[classify-bridge] {camara_id}: {aplicados} lote(s) aplicados", flush=True)
+    _blog(f"[classify-bridge] {camara_id}: {aplicados} lote(s) aplicados", flush=True)
     return aplicados
 
 
@@ -357,7 +378,8 @@ def main() -> int:
     ap.add_argument("token", nargs="?", default=None, help="token de Jos_Thread (se ignora)")
     ap.add_argument("--ruta", default=PROYECTO)
     ap.add_argument("--once", action="store_true")
-    ap.add_argument("--timeout", type=float, default=3600.0)
+    ap.add_argument("--timeout", type=float, default=900.0,
+                    help="espera máx. por lote/resultado (s); default 900")
     ap.add_argument("--poll", type=float, default=5.0)
     ap.add_argument("--batch", type=int,
                     default=int(os.environ.get("RF_CLASSIFY_BATCH", "50") or 50),
@@ -383,9 +405,9 @@ def main() -> int:
     try:
         from motor import clasificador_queue as q
         if q.daemon_alive(args.ruta, args.local_id):
-            print("[classify-bridge] aplicador persistente disponible (F5)", flush=True)
+            _blog("[classify-bridge] aplicador persistente disponible (F5)", flush=True)
         else:
-            print("[classify-bridge] aplicador persistente no disponible; se usará --once", flush=True)
+            _blog("[classify-bridge] aplicador persistente no disponible; se usará --once", flush=True)
     except Exception:  # noqa: BLE001
         pass
 
@@ -394,7 +416,7 @@ def main() -> int:
             procesar_cam(args.local_id, cam, args.ruta, args.timeout, args.poll,
                          args.batch, args.inflight, args.queue_max)
         except Exception as e:  # noqa: BLE001 — nunca rompe el bucle de cámaras
-            print(f"[classify-bridge] error en cam {cam}: {e}", flush=True)
+            _blog(f"[classify-bridge] error en cam {cam}: {e}", flush=True)
     return 0
 
 
