@@ -44,6 +44,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from motor.core.config import Config            # noqa: E402
 from motor.core.embudo import log_evento        # noqa: E402
+from motor.core.profiling import PROF           # noqa: E402
 from motor.core.matching import LayerScore, face_scores_per_person, match_group  # noqa: E402
 from motor.core.model import analyze            # noqa: E402
 from motor.core.quality import face_sharpness, pose_label, pose_valida  # noqa: E402
@@ -352,6 +353,7 @@ def _dedup_record(ruta: str, local_id: str, cfg: Config, h: str,
 # perdían; aquí se escriben a motor/logs/clasificador_<local>.log.
 # ---------------------------------------------------------------------------
 _LOG_FILE = None  # ruta absoluta; se fija en main()
+_METRICS_FILE = None  # ruta absoluta del JSONL de perfil (F16)
 
 def log(*args):
     msg = " ".join(str(a) for a in args)
@@ -1857,7 +1859,29 @@ def _serve(args, cfg: Config, store, feedback) -> int:
                 data = req["data"]
                 _FACES_PROVIDER = _faces_from_dict(data.get("faces") or {})
                 cam = str(data.get("cam"))
-                n = process_once(args.ruta, args.local_id, cam, cfg, store, feedback)
+                # F16: perfil por lote (cProfile) para saber QUÉ mover al pool.
+                perfil = os.environ.get("RF_CLASSIFY_PROFILE", "1") != "0"
+                pr = None
+                t0 = time.time()
+                if perfil:
+                    import cProfile  # noqa: E402
+                    pr = cProfile.Profile()
+                    pr.enable()
+                try:
+                    n = process_once(args.ruta, args.local_id, cam, cfg, store, feedback)
+                finally:
+                    if pr is not None:
+                        pr.disable()
+                if pr is not None:
+                    import pstats  # noqa: E402
+                    stats = pstats.Stats(pr).stats
+                    tops = sorted(stats.items(), key=lambda kv: kv[1][2], reverse=True)[:12]
+                    PROF.emit(_METRICS_FILE, local=args.local_id, cam=cam,
+                              batch=data.get("batch"), n=n,
+                              total_ms=round((time.time() - t0) * 1000.0, 1),
+                              top=[{"fn": f"{f[2]}:{f[0]}:{f[1]}",
+                                    "self_ms": round(v[2] * 1000.0, 1),
+                                    "cum_ms": round(v[3] * 1000.0, 1)} for f, v in tops])
                 q.write_done(args.ruta, args.local_id, data.get("batch"),
                              {"batch": data.get("batch"), "cam": cam, "rc": 0,
                               "n": n, "ts": time.time()})
@@ -1914,6 +1938,10 @@ def main() -> int:
         _LOG_FILE = os.path.join(logs_dir, f"clasificador_{args.local_id}.log")
     except OSError:
         _LOG_FILE = None
+    # F16: métricas de perfil por lote (JSONL)
+    global _METRICS_FILE
+    _METRICS_FILE = (os.path.join(os.path.dirname(_LOG_FILE), "clasificador_metrics.jsonl")
+                     if _LOG_FILE else None)
     # Modo pool (M3): inyectar los embeddings/detecciones precomputados por la flota.
     global _FACES_PROVIDER
     if args.faces_json:
