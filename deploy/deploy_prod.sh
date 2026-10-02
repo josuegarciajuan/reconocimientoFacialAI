@@ -111,7 +111,7 @@ if printf '%s\n' "$CHANGED" | grep -qE '^(deploy/systemd/|deploy/install_service
     systemctl daemon-reload
     # Timers one-shot: enable --now es idempotente y asegura que un timer nuevo
     # (p. ej. rf-reprocesa, spec 17) quede armado aunque el instalador no lo arranque.
-    systemctl enable --now rf-calibra.timer rf-vigilar-deriva.timer rf-reprocesa.timer 2>/dev/null || true
+    systemctl enable --now rf-calibra.timer rf-vigilar-deriva.timer rf-reprocesa.timer rf-reten-backups.timer 2>/dev/null || true
     systemctl enable --now rf-clasificador-serve 2>/dev/null || true
 fi
 

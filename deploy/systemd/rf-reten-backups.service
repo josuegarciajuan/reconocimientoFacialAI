@@ -1,0 +1,12 @@
+[Unit]
+Description=RF Retención de snapshots de backup (F20) — purga segura por política
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/reconocimientoFacial
+ExecStart=/root/reconocimientoFacial/motor/venv/bin/python /root/reconocimientoFacial/motor/retener_backups.py --ruta /root/reconocimientoFacial --apply --confirm
+User=root
+Nice=10
+# `retener_backups.py` valida cada ruta contra `motor/backups` y el patrón de
+# nombre antes de borrar; `--apply` exige `--confirm`. Idempotente.

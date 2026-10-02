@@ -24,6 +24,7 @@ import time
 from filelock import FileLock
 
 from .env import load_env
+from .diskguard import check as disk_check
 
 
 # ---------------------------------------------------------------------------
@@ -113,6 +114,17 @@ class Journal:
 # ---------------------------------------------------------------------------
 
 def new_backup_dir(ruta: str, op: str) -> str:
+    # F20: fail-safe de disco. Si está por encima del umbral duro (95 %) NO se
+    # crea el snapshot: una operación que no puede respaldarse no debe ejecutarse.
+    g = disk_check(os.path.join(ruta, "motor/backups"))
+    if g["level"] == "block":
+        raise RuntimeError(
+            f"disco lleno: {g['pct']:.1f}% usado ≥ {g['hard']:.0f}% "
+            f"(libre {g['free'] / 1e9:.1f} GB); se cancela el snapshot '{op}'"
+        )
+    if g["level"] == "warn":
+        print(f"[backup] aviso: disco al {g['pct']:.1f}% (umbral blando "
+              f"{g['soft']:.0f}%)", flush=True)
     ts = time.strftime("%Y%m%d_%H%M%S")
     out_dir = os.path.join(ruta, "motor/backups", f"{ts}_{op}")
     os.makedirs(out_dir, exist_ok=True)
