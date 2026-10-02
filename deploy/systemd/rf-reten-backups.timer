@@ -1,0 +1,11 @@
+[Unit]
+Description=RF Retención diaria de snapshots de backup (F20)
+
+[Timer]
+# Después del reprocesado diario (04:30): primero se generan snapshots, luego se
+# purgan los viejos según la política (últimos 50 + horario 24h + diario 7d).
+OnCalendar=*-*-* 05:30:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
