@@ -40,3 +40,17 @@ def test_batch_id_estable():
     assert _batch_id(["a.png", "b.png"]) == _batch_id(["a.png", "b.png"])
     assert _batch_id(["a.png", "b.png"]) != _batch_id(["a.png", "c.png"])
     assert len(_batch_id(["x.png"])) == 12
+
+
+def test_split_providers_nuevo_y_antiguo():
+    from motor.clasificador import _split_providers
+    emb = [0.1] * 512
+    nuevo = {"faces": {"a.png": [{"bbox": [1, 2, 3, 4], "det_score": 1.0,
+                                  "pose": [0, 0, 0], "embedding": emb}]},
+             "busto": {"b.png": []}}
+    faces, busto = _split_providers(nuevo)
+    assert "a.png" in faces and len(faces["a.png"]) == 1
+    assert "b.png" in busto and busto["b.png"] == []
+    # formato antiguo: dict plano filename->faces
+    faces2, busto2 = _split_providers({"a.png": []})
+    assert "a.png" in faces2 and busto2 == {}

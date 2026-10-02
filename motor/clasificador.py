@@ -82,6 +82,8 @@ _PROCESSED_FACES: set[str] = set()
 # {filename: [Face con embedding SR]} calculado en el pool; process_once lo usa
 # para evitar `analyze` + `enhance_embedding` (lo pesado). None = modo normal.
 _FACES_PROVIDER: dict | None = None
+# F17a: detecciones de busto precomputadas por el pool {filename: [Face]}.
+_BUSTO_PROVIDER: dict | None = None
 
 
 def _faces_from_dict(raw: dict) -> dict:
@@ -105,6 +107,18 @@ def _cargar_faces_provider(path: str) -> dict:
     """Carga el faces.json del pool -> {filename: [Face(embedding=SR)]}."""
     with open(path, encoding="utf-8") as fh:
         return _faces_from_dict(json.load(fh))
+
+
+def _split_providers(raw) -> tuple[dict, dict]:
+    """Admite el formato nuevo {faces, busto} o el antiguo {filename: faces}."""
+    if isinstance(raw, dict) and ("faces" in raw or "busto" in raw):
+        return _faces_from_dict(raw.get("faces") or {}), _faces_from_dict(raw.get("busto") or {})
+    return _faces_from_dict(raw), {}
+
+
+def _cargar_providers(path: str) -> tuple[dict, dict]:
+    with open(path, encoding="utf-8") as fh:
+        return _split_providers(json.load(fh))
 
 # Cola de foto HQ para el worker único (motor/photo_worker.py): el clasificador
 # YA NO carga GFPGAN/RealESRGAN-x4plus (refactor RAM: los modelos pesados viven
@@ -1233,8 +1247,14 @@ def _process_subcluster_inner(sub, face_list, battery, ruta: str, local_id: str,
     if cfg.busto_enabled and busto_path and os.path.exists(busto_path):
         b_img = cv2.imread(busto_path)
         if b_img is not None:
-            b_faces = analyze(b_img, det_size=(cfg.crop_det_size, cfg.crop_det_size),
-                              min_score=cfg.min_det_score)
+            # F17a: las caras del busto vienen del pool (detección ONNX delegada).
+            # Fallback local si no hay proveedor o el busto no se envió.
+            b_faces = None
+            if _BUSTO_PROVIDER is not None:
+                b_faces = _BUSTO_PROVIDER.get(os.path.basename(busto_path))
+            if b_faces is None:
+                b_faces = analyze(b_img, det_size=(cfg.crop_det_size, cfg.crop_det_size),
+                                  min_score=cfg.min_det_score)
             bf = select_display_face(b_faces, rep_face.embedding, cfg.display_face_min_cosine)
             if bf is not None:
                 photo_img = b_img
@@ -1881,6 +1901,7 @@ def _serve(args, cfg: Config, store, feedback) -> int:
     """
     from motor import clasificador_queue as q  # noqa: E402
     global _FACES_PROVIDER
+    global _BUSTO_PROVIDER
     log(f"[serve] aplicador persistente local={args.local_id} "
         f"(cola motor/clasificador_daemon/{args.local_id})")
     q.write_pid(args.ruta, args.local_id)  # autoridad de "vivo" para el bridge (F14)
@@ -1895,6 +1916,7 @@ def _serve(args, cfg: Config, store, feedback) -> int:
             for req in q.list_requests(args.ruta, args.local_id):
                 data = req["data"]
                 _FACES_PROVIDER = _faces_from_dict(data.get("faces") or {})
+                _BUSTO_PROVIDER = _faces_from_dict(data.get("busto") or {})
                 cam = str(data.get("cam"))
                 # F16: perfil por lote (cProfile) para saber QUÉ mover al pool.
                 # OFF por defecto: cProfile por lote añade overhead en producción;
@@ -1983,13 +2005,16 @@ def main() -> int:
                      if _LOG_FILE else None)
     # Modo pool (M3): inyectar los embeddings/detecciones precomputados por la flota.
     global _FACES_PROVIDER
+    global _BUSTO_PROVIDER
     if args.faces_json:
         try:
-            _FACES_PROVIDER = _cargar_faces_provider(args.faces_json)
-            log(f"[pool] faces precomputadas: {len(_FACES_PROVIDER)} crops")
+            _FACES_PROVIDER, _BUSTO_PROVIDER = _cargar_providers(args.faces_json)
+            log(f"[pool] faces precomputadas: {len(_FACES_PROVIDER)} crops, "
+                f"{len(_BUSTO_PROVIDER)} bustos")
         except (OSError, ValueError) as e:
             log(f"[pool] no se pudo cargar --faces-json: {e}")
             _FACES_PROVIDER = None
+            _BUSTO_PROVIDER = None
     # P1: cargar el registro persistente de rostros ya procesados (ventana)
     _dedup_load(args.ruta, args.local_id, cfg)
 

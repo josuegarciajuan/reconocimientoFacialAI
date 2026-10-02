@@ -53,15 +53,18 @@ def _batch_id(nombres: list[str]) -> str:
 
 
 def build_request(local_id: str, camara_id: str, carpeta: str,
-                  batch_id: str | None = None,
+                  batch_id: str | None = None, busto_dir: str | None = None,
                   fingerprint_val: str | None = None, rid: str | None = None) -> dict:
     rid = rid or f"req-{int(time.time())}-{os.getpid()}"
     ext = f"classify:{local_id}/{camara_id}" + (f"/{batch_id}" if batch_id else "")
+    params = {"local": local_id, "cam": camara_id, "dir": carpeta, "batch": batch_id}
+    if busto_dir:
+        params["bustoDir"] = busto_dir
     return {
         "id": rid,
         "project": "reconocimientoFacial",
         "process": "classify",
-        "params": {"local": local_id, "cam": camara_id, "dir": carpeta, "batch": batch_id},
+        "params": params,
         "externalId": ext,
         "fingerprint": fingerprint_val,
     }
@@ -95,7 +98,9 @@ def _leer_faces(d: str, local_id: str, camara_id: str, batch_id: str | None) -> 
         return None
     if batch_id is not None and data.get("batch") != batch_id:
         return None
-    return data.get("faces") or {}
+    # F17a: se devuelve el resultado completo {faces, busto} (compatible con el
+    # formato antiguo {filename: faces}).
+    return data
 
 
 def esperar_faces(local_id: str, camara_id: str, batch_id: str | None,
@@ -162,23 +167,52 @@ def _procesar_lote(local_id: str, camara_id: str, ruta: str, dir_in: str,
             os.link(src, os.path.join(bdir, f))       # sin copiar contenido
         except OSError:
             shutil.copy2(src, os.path.join(bdir, f))
-    req = build_request(local_id, camara_id, bdir, batch_id=batch_id,
+
+    # F17a: bustos compañeros del lote (para delegar la detección de display).
+    busto_src = os.path.join(os.path.dirname(dir_in), f"{camara_id}_busto")
+    bdir_busto = os.path.join(ruta, "motor/caras", f".batch_{local_id}_{camara_id}_{batch_id}_busto")
+    _rmtree(bdir_busto)
+    busto_dir = None
+    if os.path.isdir(busto_src):
+        os.makedirs(bdir_busto, exist_ok=True)
+        stems = {f.rsplit(".", 1)[0] for f in chunk}
+        n_busto = 0
+        try:
+            for name in sorted(os.listdir(busto_src)):
+                if name.rsplit(".", 1)[0] not in stems:
+                    continue
+                try:
+                    os.link(os.path.join(busto_src, name), os.path.join(bdir_busto, name))
+                except OSError:
+                    shutil.copy2(os.path.join(busto_src, name), os.path.join(bdir_busto, name))
+                n_busto += 1
+        except OSError:
+            n_busto = 0
+        if n_busto:
+            busto_dir = bdir_busto
+        else:
+            _rmtree(bdir_busto)
+
+    req = build_request(local_id, camara_id, bdir, batch_id=batch_id, busto_dir=busto_dir,
                         fingerprint_val=fingerprint([os.path.join(bdir, f) for f in chunk]))
     escribir_peticion(req)
-    print(f"[classify-bridge] petición {req['id']} para {req['externalId']} ({len(chunk)} crops)", flush=True)
+    print(f"[classify-bridge] petición {req['id']} para {req['externalId']} "
+          f"({len(chunk)} crops, {len(list(os.listdir(busto_dir))) if busto_dir else 0} bustos)", flush=True)
 
     got = esperar_faces(local_id, camara_id, batch_id, timeout, poll)
     if not got:
         print(f"[classify-bridge] timeout esperando faces de {req['externalId']}", flush=True)
         _rmtree(bdir)
+        _rmtree(bdir_busto)
         return False
-    faces, job_dir = got
+    data, job_dir = got
 
-    rc = _aplicar_local(ruta, local_id, camara_id, batch_id, faces, timeout)
+    rc = _aplicar_local(ruta, local_id, camara_id, batch_id, data, timeout)
     if rc == 0:
         escribir_ack(job_dir_of(job_dir), source="clasificador_bridge")
     print(f"[classify-bridge] {camara_id} lote {batch_id}: decisión local aplicada (rc={rc})", flush=True)
     _rmtree(bdir)
+    _rmtree(bdir_busto)
     return rc == 0
 
 
