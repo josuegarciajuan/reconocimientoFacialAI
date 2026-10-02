@@ -67,7 +67,10 @@ def _batch_id(nombres: list[str]) -> str:
 def build_request(local_id: str, camara_id: str, carpeta: str,
                   batch_id: str | None = None, busto_dir: str | None = None,
                   fingerprint_val: str | None = None, rid: str | None = None) -> dict:
-    rid = rid or f"req-{int(time.time())}-{os.getpid()}"
+    # F18: el id DEBE ser único por lote; un id por (segundo,pid) colisiona cuando
+    # se envían varios lotes en el mismo segundo y `escribir_peticion` se pisa a sí
+    # misma (se perdía un lote y el FIFO quedaba bloqueado esperando su resultado).
+    rid = rid or f"req-{int(time.time())}-{os.getpid()}-{batch_id or 'x'}"
     ext = f"classify:{local_id}/{camara_id}" + (f"/{batch_id}" if batch_id else "")
     params = {"local": local_id, "cam": camara_id, "dir": carpeta, "batch": batch_id}
     if busto_dir:
@@ -272,7 +275,8 @@ def _cola_aplicador(ruta: str, local_id) -> int:
 
 def _procesar_cam_paralelo(local_id: str, camara_id: str, ruta: str, dir_in: str,
                            chunks: list[list[str]], timeout: float, poll: float,
-                           inflight: int, k_queue: int) -> int:
+                           inflight: int, k_queue: int,
+                           stall_grace: float | None = None) -> int:
     """F18: hasta `inflight` lotes en vuelo (pool en paralelo) y aplicación FIFO.
 
     La galería sigue serializándose en el aplicador (escritor único): los
@@ -287,6 +291,7 @@ def _procesar_cam_paralelo(local_id: str, camara_id: str, ruta: str, dir_in: str
     aplicados = 0
     progreso = False
     last_hb = 0.0
+    grace = min(timeout, stall_grace if stall_grace is not None else max(45.0, poll * 9))
 
     while pend or en_vuelo or ready:
         # 1) Enviar hasta el límite (respetando la cola del aplicador).
@@ -306,6 +311,16 @@ def _procesar_cam_paralelo(local_id: str, camara_id: str, ruta: str, dir_in: str
             if got:
                 ready[bid] = got
                 del en_vuelo[bid]
+                progreso = True
+            elif (bid in orden and orden[0] == bid and ready
+                  and time.time() - en_vuelo[bid]["t0"] > grace):
+                # F18: un resultado perdido en la cabeza del FIFO no debe bloquear
+                # los lotes ya listos; se descarta (los crops siguen en sinclasificar).
+                _blog(f"[classify-bridge] lote cabeza {bid} sin resultado; se descarta "
+                      f"para no bloquear ready={len(ready)}", flush=True)
+                _limpiar_batch(ruta, local_id, camara_id, bid)
+                del en_vuelo[bid]
+                orden.remove(bid)
                 progreso = True
             elif time.time() - en_vuelo[bid]["t0"] > timeout:
                 _blog(f"[classify-bridge] timeout del lote {bid}", flush=True)
