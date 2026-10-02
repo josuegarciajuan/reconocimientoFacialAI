@@ -86,19 +86,34 @@ _FACES_PROVIDER: dict | None = None
 _BUSTO_PROVIDER: dict | None = None
 
 
-def _faces_from_dict(raw: dict) -> dict:
-    """{filename: [{bbox, det_score, pose, embedding}]} -> {filename: [Face]}."""
+def _faces_from_dict(raw) -> dict:
+    """{filename: [{bbox, det_score, pose, embedding}]} -> {filename: [Face]}.
+
+    Tolerante a datos corruptos del pool: si un valor `faces` no es lista, o una
+    entrada no es dict con `bbox`+`embedding`, se salta. Antes un valor string
+    hacía `d["bbox"]` -> "string indices must be integers", la petición fallaba y
+    (al no borrarse) bloqueaba el aplicador en un bucle infinito.
+    """
     from motor.core.model import Face  # import local: no acoplar más de lo necesario
     out: dict[str, list] = {}
-    for nombre, faces in (raw or {}).items():
+    if not isinstance(raw, dict):
+        return out
+    for nombre, faces in raw.items():
+        if not isinstance(faces, list):
+            continue
         arr = []
-        for d in faces or []:
-            arr.append(Face(
-                bbox=tuple(int(v) for v in d["bbox"]),
-                det_score=float(d.get("det_score", 0.0)),
-                embedding=np.asarray(d["embedding"], dtype=np.float32),
-                pose=tuple(float(v) for v in d.get("pose", (0.0, 0.0, 0.0))),
-            ))
+        for d in faces:
+            if not isinstance(d, dict) or "bbox" not in d or "embedding" not in d:
+                continue
+            try:
+                arr.append(Face(
+                    bbox=tuple(int(v) for v in d["bbox"]),
+                    det_score=float(d.get("det_score", 0.0)),
+                    embedding=np.asarray(d["embedding"], dtype=np.float32),
+                    pose=tuple(float(v) for v in d.get("pose", (0.0, 0.0, 0.0))),
+                ))
+            except (TypeError, ValueError, KeyError):
+                continue
         out[nombre] = arr
     return out
 
@@ -1898,6 +1913,9 @@ def _apply_calib_weights(cfg, ruta: str) -> bool:
         return False
 
 
+_SERVE_MAX_INTENTOS = 3  # reintentos de una petición antes de moverla a failed/
+
+
 def _serve(args, cfg: Config, store, feedback) -> int:
     """Aplicador persistente por local (F5).
 
@@ -1912,6 +1930,7 @@ def _serve(args, cfg: Config, store, feedback) -> int:
         f"(cola motor/clasificador_daemon/{args.local_id})")
     q.write_pid(args.ruta, args.local_id)  # autoridad de "vivo" para el bridge (F14)
     ultima_calib = 0.0
+    intentos_por_peticion: dict[str, int] = {}
     while True:
         try:
             q.heart_beat(args.ruta, args.local_id)
@@ -1920,40 +1939,54 @@ def _serve(args, cfg: Config, store, feedback) -> int:
                 ultima_calib = ahora
                 _apply_calib_weights(cfg, args.ruta)
             for req in q.list_requests(args.ruta, args.local_id):
-                data = req["data"]
-                _FACES_PROVIDER = _faces_from_dict(data.get("faces") or {})
-                _BUSTO_PROVIDER = _faces_from_dict(data.get("busto") or {})
-                cam = str(data.get("cam"))
-                # F16: perfil por lote (cProfile) para saber QUÉ mover al pool.
-                # OFF por defecto: cProfile por lote añade overhead en producción;
-                # se activa con RF_CLASSIFY_PROFILE=1 cuando se va a medir.
-                perfil = os.environ.get("RF_CLASSIFY_PROFILE", "0") != "0"
-                pr = None
-                t0 = time.time()
-                if perfil:
-                    import cProfile  # noqa: E402
-                    pr = cProfile.Profile()
-                    pr.enable()
+                path = req["path"]
                 try:
-                    n = process_once(args.ruta, args.local_id, cam, cfg, store, feedback)
-                finally:
+                    data = req["data"]
+                    if not isinstance(data, dict):
+                        raise ValueError("petición con formato inválido")
+                    _FACES_PROVIDER = _faces_from_dict(data.get("faces") or {})
+                    _BUSTO_PROVIDER = _faces_from_dict(data.get("busto") or {})
+                    cam = str(data.get("cam"))
+                    # F16: perfil por lote (cProfile) para saber QUÉ mover al pool.
+                    # OFF por defecto: cProfile por lote añade overhead en producción;
+                    # se activa con RF_CLASSIFY_PROFILE=1 cuando se va a medir.
+                    perfil = os.environ.get("RF_CLASSIFY_PROFILE", "0") != "0"
+                    pr = None
+                    t0 = time.time()
+                    if perfil:
+                        import cProfile  # noqa: E402
+                        pr = cProfile.Profile()
+                        pr.enable()
+                    try:
+                        n = process_once(args.ruta, args.local_id, cam, cfg, store, feedback)
+                    finally:
+                        if pr is not None:
+                            pr.disable()
                     if pr is not None:
-                        pr.disable()
-                if pr is not None:
-                    import pstats  # noqa: E402
-                    stats = pstats.Stats(pr).stats
-                    tops = sorted(stats.items(), key=lambda kv: kv[1][2], reverse=True)[:12]
-                    PROF.emit(_METRICS_FILE, local=args.local_id, cam=cam,
-                              batch=data.get("batch"), n=n,
-                              total_ms=round((time.time() - t0) * 1000.0, 1),
-                              top=[{"fn": f"{f[2]}:{f[0]}:{f[1]}",
-                                    "self_ms": round(v[2] * 1000.0, 1),
-                                    "cum_ms": round(v[3] * 1000.0, 1)} for f, v in tops])
-                q.write_done(args.ruta, args.local_id, data.get("batch"),
-                             {"batch": data.get("batch"), "cam": cam, "rc": 0,
-                              "n": n, "ts": time.time()})
-                q.remove_request(req["path"])
-                log(f"[serve] lote {data.get('batch')} cam {cam}: {n} batería(s)")
+                        import pstats  # noqa: E402
+                        stats = pstats.Stats(pr).stats
+                        tops = sorted(stats.items(), key=lambda kv: kv[1][2], reverse=True)[:12]
+                        PROF.emit(_METRICS_FILE, local=args.local_id, cam=cam,
+                                  batch=data.get("batch"), n=n,
+                                  total_ms=round((time.time() - t0) * 1000.0, 1),
+                                  top=[{"fn": f"{f[2]}:{f[0]}:{f[1]}",
+                                        "self_ms": round(v[2] * 1000.0, 1),
+                                        "cum_ms": round(v[3] * 1000.0, 1)} for f, v in tops])
+                    q.write_done(args.ruta, args.local_id, data.get("batch"),
+                                 {"batch": data.get("batch"), "cam": cam, "rc": 0,
+                                  "n": n, "ts": time.time()})
+                    q.remove_request(path)
+                    intentos_por_peticion.pop(path, None)
+                    log(f"[serve] lote {data.get('batch')} cam {cam}: {n} batería(s)")
+                except Exception as e:  # noqa: BLE001 — una petición no debe bloquear la cola
+                    intentos = intentos_por_peticion.get(path, 0) + 1
+                    intentos_por_peticion[path] = intentos
+                    log(f"[serve] error lote {os.path.basename(path)} (intento {intentos}): {e}")
+                    if intentos >= _SERVE_MAX_INTENTOS:
+                        q.fail_request(args.ruta, args.local_id, path)
+                        intentos_por_peticion.pop(path, None)
+                        log(f"[serve] petición irrecuperable movida a failed/: "
+                            f"{os.path.basename(path)}")
         except Exception as e:  # noqa: BLE001 — el aplicador nunca debe morir
             log(f"[serve] error: {e}")
         time.sleep(1)

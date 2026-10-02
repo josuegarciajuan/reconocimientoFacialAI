@@ -75,6 +75,24 @@ def remove_request(path: str) -> None:
         pass
 
 
+def fail_request(ruta: str, local_id, path: str) -> str | None:
+    """Mueve una petición irrecuperable a `<base>/failed/` (no bloquea la cola).
+
+    Sin esto, una petición con datos corruptos que hace fallar al aplicador se
+    reintentaba cada segundo para siempre, dejando el `classify` bloqueado.
+    Devuelve el destino, o None si no se pudo mover.
+    """
+    base = _paths(ruta, local_id)["base"]
+    try:
+        fdir = os.path.join(base, "failed")
+        os.makedirs(fdir, exist_ok=True)
+        dst = os.path.join(fdir, os.path.basename(path))
+        os.replace(path, dst)
+        return dst
+    except OSError:
+        return None
+
+
 def done_path(ruta: str, local_id, batch_id: str) -> str:
     return os.path.join(_paths(ruta, local_id)["done"], f"{batch_id}.done.json")
 
