@@ -238,6 +238,34 @@ def _limpiar_batch(ruta: str, local_id, camara_id, batch_id: str) -> None:
     _rmtree(os.path.join(base, f".batch_{local_id}_{camara_id}_{batch_id}_busto"))
 
 
+def limpiar_batches_viejos(ruta: str, edad_min: float = 60.0) -> int:
+    """F18: elimina `.batch_*` huérfanos (de bridges muertos) al arrancar.
+
+    Sólo toca directorios más antiguos que `edad_min` (los activos son de minutos),
+    y son enlaces duros: borrar el `.batch_*` no toca la foto original.
+    """
+    base = os.path.join(ruta, "motor/caras")
+    if not os.path.isdir(base):
+        return 0
+    limite = time.time() - max(1.0, edad_min) * 60.0
+    borrados = 0
+    try:
+        entradas = os.listdir(base)
+    except OSError:
+        return 0
+    for name in entradas:
+        if not name.startswith(".batch_"):
+            continue
+        full = os.path.join(base, name)
+        try:
+            if os.path.isdir(full) and os.path.getmtime(full) < limite:
+                _rmtree(full)
+                borrados += 1
+        except OSError:
+            continue
+    return borrados
+
+
 def _procesar_lote(local_id: str, camara_id: str, ruta: str, dir_in: str,
                    chunk: list[str], timeout: float, poll: float) -> bool:
     """Prepara el lote (enlaces), lo delega y aplica la decisión local. True si ok."""
@@ -425,6 +453,10 @@ def main() -> int:
             _blog("[classify-bridge] aplicador persistente no disponible; se usará --once", flush=True)
     except Exception:  # noqa: BLE001
         pass
+
+    n_huérfanos = limpiar_batches_viejos(args.ruta, 60.0)
+    if n_huérfanos:
+        _blog(f"[classify-bridge] limpiados {n_huérfanos} .batch_* huérfanos (>60min)", flush=True)
 
     for cam in cameras:
         try:

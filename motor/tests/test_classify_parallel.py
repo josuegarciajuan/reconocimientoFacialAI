@@ -116,3 +116,21 @@ def test_cabeza_perdida_no_bloquea_lotes_listos(monkeypatch):
                                  stall_grace=0.05)
     assert n == 1
     assert aplicados == ["b.png"]
+
+
+def test_limpiar_batches_viejos(tmp_path):
+    import os
+    import time
+    caras = tmp_path / "motor" / "caras"
+    caras.mkdir(parents=True)
+    viejo = caras / ".batch_1_15_aaaa"
+    nuevo = caras / ".batch_1_15_bbbb"
+    normal = caras / "sinclasificar"
+    for d in (viejo, nuevo, normal):
+        d.mkdir()
+    pasado = time.time() - 3 * 3600
+    os.utime(viejo, (pasado, pasado))
+    assert B.limpiar_batches_viejos(str(tmp_path), 60.0) == 1
+    assert not viejo.exists()      # huérfano antiguo eliminado
+    assert nuevo.exists()          # reciente intacto
+    assert normal.exists()         # no-.batch intacto
