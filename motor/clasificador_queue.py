@@ -51,20 +51,27 @@ def write_request(ruta: str, local_id, batch_id: str, cam, faces: dict,
 
 
 def list_requests(ruta: str, local_id) -> list[dict]:
+    """Peticiones pendientes en ORDEN de submisión (`ts`), no por nombre.
+
+    F18: con varios lotes en vuelo, aplicar en orden de submisión preserva la
+    semántica que tenía el bridge secuencial (qué persona nueva se crea antes).
+    """
     p = _paths(ruta, local_id)
     out = []
     try:
-        for name in sorted(os.listdir(p["in"])):
+        for name in os.listdir(p["in"]):
             if not name.endswith(".json"):
                 continue
             path = os.path.join(p["in"], name)
             try:
                 with open(path, encoding="utf-8") as fh:
-                    out.append({"path": path, "data": json.load(fh)})
+                    data = json.load(fh)
             except (OSError, ValueError):
                 continue
+            out.append({"path": path, "data": data, "ts": float(data.get("ts") or 0.0)})
     except OSError:
         pass
+    out.sort(key=lambda x: x["ts"])
     return out
 
 
