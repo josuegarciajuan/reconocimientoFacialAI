@@ -225,7 +225,7 @@ def _build_batch(local_id: str, camara_id: str, ruta: str, dir_in: str, chunk: l
             _rmtree(bdir_busto)
 
     req = build_request(local_id, camara_id, bdir, batch_id=batch_id, busto_dir=busto_dir,
-                        fingerprint_val=finger_blog([os.path.join(bdir, f) for f in chunk]))
+                        fingerprint_val=fingerprint([os.path.join(bdir, f) for f in chunk]))
     return {"batch_id": batch_id, "bdir": bdir, "bdir_busto": bdir_busto, "req": req}
 
 
