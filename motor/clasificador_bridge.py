@@ -127,12 +127,19 @@ def _rmtree(path: str) -> None:
         pass
 
 
-def _aplicar_local(ruta: str, local_id, camara_id, batch_id: str, faces: dict, timeout: float) -> int:
-    """Aplica el lote con el aplicador persistente si está vivo; si no, `--once`."""
+def _aplicar_local(ruta: str, local_id, camara_id, batch_id: str, data: dict, timeout: float) -> int:
+    """Aplica el lote con el aplicador persistente si está vivo; si no, `--once`.
+
+    `data` es el resultado del worker: {faces, busto, ...} (o el formato antiguo).
+    """
+    faces = data.get("faces") if isinstance(data, dict) else None
+    busto = data.get("busto") if isinstance(data, dict) else None
+    if faces is None:
+        faces, busto = data, {}  # formato antiguo: el propio dict son las caras
     try:
         from motor import clasificador_queue as q
         if q.daemon_alive(ruta, local_id):
-            if q.write_request(ruta, local_id, batch_id, camara_id, faces):
+            if q.write_request(ruta, local_id, batch_id, camara_id, faces, busto):
                 got = q.esperar_done(ruta, local_id, batch_id, timeout)
                 if got is not None:
                     return int(got.get("rc") or 0)
@@ -143,7 +150,7 @@ def _aplicar_local(ruta: str, local_id, camara_id, batch_id: str, faces: dict, t
     tmp = os.path.join(ruta, "motor/caras", f".faces_{local_id}_{camara_id}_{batch_id}.json")
     try:
         with open(tmp, "w", encoding="utf-8") as fh:
-            json.dump(faces, fh)
+            json.dump(data, fh)
         cmd = [sys.executable, os.path.join(PROYECTO, "motor/clasificador.py"),
                str(local_id), str(camara_id), "--ruta", ruta, "--once", "--faces-json", tmp]
         return subprocess.call(cmd)
