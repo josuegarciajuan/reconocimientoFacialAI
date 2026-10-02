@@ -42,9 +42,28 @@ def caras_de_crop(img, cfg) -> list[dict]:
     return out
 
 
+def caras_base_de_crop(img, cfg) -> list[dict]:
+    """Detección + embedding BASE (sin SR). Para elegir la cara de display en el
+    busto (F17a): la casa solo compara cosenos, no necesita SR aquí y así el
+    worker no paga `enhance_embedding` en cada busto."""
+    faces = analyze(img, det_size=(cfg.crop_det_size, cfg.crop_det_size),
+                    min_score=cfg.min_det_score)
+    out = []
+    for fc in faces:
+        out.append({
+            "bbox": [int(v) for v in fc.bbox],
+            "det_score": float(fc.det_score),
+            "pose": [float(v) for v in fc.pose],
+            "embedding": [float(v) for v in fc.embedding],
+        })
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--in", dest="in_dir", required=True, help="directorio con los crops")
+    ap.add_argument("--busto-dir", dest="busto_dir", default=None,
+                    help="directorio con los bustos del lote (F17a, opcional)")
     ap.add_argument("--local", required=True)
     ap.add_argument("--cam", required=True)
     ap.add_argument("--batch", default=None, help="id del lote (F4)")
@@ -65,12 +84,23 @@ def main() -> int:
                 continue
             faces_map[f] = caras_de_crop(img, cfg)
 
+    busto_map: dict[str, list] = {}
+    if args.busto_dir and os.path.isdir(args.busto_dir):
+        for f in sorted(os.listdir(args.busto_dir)):
+            if not f.lower().endswith(IMG_EXTS):
+                continue
+            img = cv2.imread(os.path.join(args.busto_dir, f))
+            if img is None:
+                continue
+            busto_map[f] = caras_base_de_crop(img, cfg)
+
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as fh:
         json.dump({"local": str(args.local), "cam": str(args.cam), "batch": args.batch,
-                   "faces": faces_map}, fh)
+                   "faces": faces_map, "busto": busto_map}, fh)
     total = sum(len(v) for v in faces_map.values())
-    print(f"[classify-pool] {len(faces_map)} crops, {total} caras", flush=True)
+    print(f"[classify-pool] {len(faces_map)} crops, {total} caras, "
+          f"{len(busto_map)} bustos", flush=True)
     return 0
 
 
