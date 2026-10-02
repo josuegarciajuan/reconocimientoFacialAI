@@ -73,7 +73,14 @@ function recorre_dir($path, $nivel) {
                     break;
             }
         } else {
-            procesa_foto($ruta, $elemento);
+            try {
+                procesa_foto($ruta, $elemento);
+            } catch (Throwable $e) {
+                // Un deadlock/error transitorio NO debe tumbar el daemon: el
+                // fichero origen permanece (el rename no ocurrió) y se reintenta
+                // en la siguiente pasada; sin esto, un 40001 mataba el servicio.
+                error_log("[clasificadorV2] error procesando {$ruta}: " . $e->getMessage());
+            }
         }
     }
     closedir($dir);
