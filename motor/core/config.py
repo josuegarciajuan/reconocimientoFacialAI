@@ -170,10 +170,14 @@ class Config:
     display_face_min_cosine: float = 0.6
 
     # C (2026-10-01): evidencia "Frame original" real. guardar_cara conserva el
-    # FRAME COMPLETO (1080p nativo) por cara en <cam>_frame/, que el clasificador
-    # publica en photo_evidence/ en lugar del crop mayor (~112 px). El crop nativo
-    # no se usa para matching (identidad intacta): solo como evidencia visual.
-    save_original_frame: bool = True   # C: conservar el FRAME nativo (1080p) como evidencia "Frame original"
+    # frame nativo UNA VEZ POR FOTOGRAMA (no por cara) en <cam>_frame/, que el
+    # clasificador publica en photo_evidence/ en lugar del crop mayor (~112 px).
+    # El crop nativo no se usa para matching (identidad intacta): solo evidencia.
+    # Rediseño 2026-10-02: acotado en tamaño y calidad para no llenar el disco
+    # mientras el clasificador va con retraso (antes: 1080p q90 por cara = 17 GB).
+    save_original_frame: bool = True   # RF_SAVE_ORIGINAL_FRAME
+    evidence_max_side: int = 1280      # RF_EVIDENCE_MAX_SIDE: lado mayor del frame de evidencia
+    evidence_jpeg_quality: int = 80    # RF_EVIDENCE_JPEG_QUALITY: calidad JPEG de la evidencia
 
     # --- foto final HQ (progresiva): fast (compact) -> HQ (sr_model_photo) ---
     # La foto rápida (compact) aparece al instante; si hq_enabled, un hilo de
@@ -489,6 +493,8 @@ class Config:
         cfg.hq_max_queue = get_int(ruta, "RF_HQ_MAX_QUEUE", cfg.hq_max_queue)
         cfg.busto_enabled = get_bool(ruta, "RF_BUSTO_ENABLED", cfg.busto_enabled)
         cfg.save_original_frame = get_bool(ruta, "RF_SAVE_ORIGINAL_FRAME", cfg.save_original_frame)
+        cfg.evidence_max_side = get_int(ruta, "RF_EVIDENCE_MAX_SIDE", cfg.evidence_max_side)
+        cfg.evidence_jpeg_quality = get_int(ruta, "RF_EVIDENCE_JPEG_QUALITY", cfg.evidence_jpeg_quality)
         cfg.busto_face_fill = get_float(ruta, "RF_BUSTO_FACE_FILL", cfg.busto_face_fill)
         cfg.display_face_min_cosine = get_float(ruta, "RF_DISPLAY_FACE_MIN_COS", cfg.display_face_min_cosine)
         cfg.face_every = get_int(ruta, "RF_FACE_EVERY", cfg.face_every)

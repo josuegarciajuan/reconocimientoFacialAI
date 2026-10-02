@@ -214,17 +214,29 @@ def guardar_cara(ruta: str, local_id: str, camara_id: str, fichero: str, frame,
                 os.makedirs(busto_dir, exist_ok=True)
                 cv2.imwrite(os.path.join(busto_dir, nombre + ".png"), busto)
 
-    # C (evidencia nativa): el FRAME COMPLETO, no el recorte. El clasificador lo
-    # publica como "Frame original" (1920x1080 real). Mismo stem que el crop en
-    # <cam>_frame/ para emparejarlo igual que busto/torso. JPEG q90 para acotar disco.
-    # getattr: en modo pool el worker puede tener un config más antiguo; sin el
-    # atributo se asume True (evidencia activada) en vez de romper la captura.
+    # C (evidencia nativa): el frame completo, no el recorte, para el "Frame
+    # original" del panel. Rediseño 2026-10-02: UNA VEZ POR FOTOGRAMA (base sin
+    # índice de cara) y acotado (lado mayor RF_EVIDENCE_MAX_SIDE, JPEG
+    # RF_EVIDENCE_JPEG_QUALITY). Antes se guardaba por cara a 1080p q90: con el
+    # clasificador retrasado, 35k frames llenaron 17 GB de disco.
+    # getattr: un worker con config antiguo asume True en vez de romper la captura.
     if getattr(cfg, "save_original_frame", True):
         try:
+            base = f"{fichero}_{segs:.6f}"
             frame_dir = os.path.join(ruta, "motor/caras/sinclasificar", local_id, f"{camara_id}_frame")
             os.makedirs(frame_dir, exist_ok=True)
-            cv2.imwrite(os.path.join(frame_dir, nombre + ".jpg"), frame,
-                        [cv2.IMWRITE_JPEG_QUALITY, 90])
+            frame_path = os.path.join(frame_dir, base + ".jpg")
+            if not os.path.exists(frame_path):
+                ev = frame
+                max_side = int(getattr(cfg, "evidence_max_side", 1280) or 0)
+                eh, ew = ev.shape[:2]
+                if max_side > 0 and max(eh, ew) > max_side:
+                    s = max_side / float(max(eh, ew))
+                    ev = cv2.resize(ev, (max(1, int(round(ew * s))), max(1, int(round(eh * s)))),
+                                    interpolation=cv2.INTER_AREA)
+                cv2.imwrite(frame_path, ev,
+                            [cv2.IMWRITE_JPEG_QUALITY,
+                             int(getattr(cfg, "evidence_jpeg_quality", 80) or 80)])
         except Exception as e:  # noqa: BLE001
             print(f"[frame] fallo guardando frame nativo {nombre}: {e}", flush=True)
 
