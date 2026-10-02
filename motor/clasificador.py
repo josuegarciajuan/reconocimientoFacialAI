@@ -853,6 +853,32 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
                         feedback=None, torso_map: dict[str, str] | None = None,
                         busto_map: dict[str, str] | None = None,
                         frame_map: dict[str, str] | None = None) -> None:
+    """F17b: agrupa TODAS las mutaciones de galería de este sub-clúster en UNA
+    transacción (antes: add + apariencia + atributos = 3 escrituras del pickle
+    completo de ~53 MB). El resultado es idéntico; solo cambia cuándo se escribe.
+    """
+    if store is not None and getattr(store, "_defer", None) is not None:
+        return _process_subcluster_inner(sub, face_list, battery, ruta, local_id,
+                                         camara_id, cfg, store, feedback,
+                                         torso_map, busto_map, frame_map)
+    if store is None:
+        return _process_subcluster_inner(sub, face_list, battery, ruta, local_id,
+                                         camara_id, cfg, store, feedback,
+                                         torso_map, busto_map, frame_map)
+    store.begin_defer()
+    try:
+        return _process_subcluster_inner(sub, face_list, battery, ruta, local_id,
+                                         camara_id, cfg, store, feedback,
+                                         torso_map, busto_map, frame_map)
+    finally:
+        store.flush_defer()
+
+
+def _process_subcluster_inner(sub, face_list, battery, ruta: str, local_id: str,
+                        camara_id: str, cfg: Config, store: FaceStore,
+                        feedback=None, torso_map: dict[str, str] | None = None,
+                        busto_map: dict[str, str] | None = None,
+                        frame_map: dict[str, str] | None = None) -> None:
     """Clasifica un sub-clúster coherente de caras y actualiza galería/álbum.
 
     C1 (2026-09-02): `sub` son índices GLOBALES de `face_list` y TODAS las

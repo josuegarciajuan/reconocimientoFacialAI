@@ -49,3 +49,27 @@ def test_recarga_si_otro_proceso_escribe(tmp_path, monkeypatch):
     monkeypatch.setattr(storemod.pickle, "load", counting)
     s.add("b", [_emb(3.0)], [1.0], ["frontal"])
     assert calls["n"] >= 1  # detectó el cambio por (mtime/tamaño) y recargó
+
+
+def test_defer_agrupa_mutaciones_en_una_escritura(tmp_path, monkeypatch):
+    s = FaceStore(str(tmp_path / "g.pkl"), max_per_person=50)
+    s.add("a", [_emb(1.0)], [1.0], ["frontal"])
+
+    writes = {"n": 0}
+    orig = storemod.pickle.dump
+
+    def counting(obj, fh, *a, **k):
+        writes["n"] += 1
+        return orig(obj, fh, *a, **k)
+
+    monkeypatch.setattr(storemod.pickle, "dump", counting)
+    s.begin_defer()
+    s.add("a", [_emb(2.0)], [1.0], ["frontal"])
+    s.add_appearance("a", np.ones(4, dtype=np.float32), ts=1.0, src="x")
+    s.add_attributes("a", {"k": 1}, ts=1.0, src="x")
+    assert writes["n"] == 0          # nada escrito mientras está diferido
+    n = s.flush_defer()
+    assert n == 3 and writes["n"] == 1   # UNA sola escritura para 3 mutaciones
+    assert s.count("a") == 2
+    assert s.person_appearance("a")["desc"]
+    assert s.person_attributes("a")["values"]
