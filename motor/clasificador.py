@@ -135,7 +135,7 @@ def _queue_hq(out_path: str, frames: list, cfg: Config, ruta: str,
 
 
 def _evidence_frame(frame_path, rep_item, members, battery):
-    """Frame de evidencia: el NATIVO (1080p) si esta en disco, si no el crop mayor.
+    """Frame de evidencia: el NATIVO si esta en disco, si no el crop mayor.
 
     Nunca lanza: si el fichero no existe o no se puede leer, cae al comportamiento
     anterior (select_max_resolution_frame) para no romper la publicacion de evidencia.
@@ -145,6 +145,41 @@ def _evidence_frame(frame_path, rep_item, members, battery):
         if img is not None:
             return img
     return select_max_resolution_frame(rep_item["img"], members, battery)
+
+
+def _frame_stem(stem: str) -> str:
+    """`<base>_<idx>` -> `<base>`: quita el indice de cara del nombre del crop.
+
+    El frame de evidencia se guarda UNA VEZ por fotograma (`<base>.jpg`), pero el
+    crop lleva el indice de cara al final (`<base>_<idx>.png`)."""
+    partes = stem.rsplit("_", 1)
+    if len(partes) == 2 and partes[1].isdigit():
+        return partes[0]
+    return stem
+
+
+def _podar_frames_huerfanos(frame_dir: str, bases_pendientes: set) -> int:
+    """Elimina frames de evidencia cuyo fotograma ya no tiene crops pendientes.
+
+    Varios crops (caras del mismo frame) comparten un unico frame de evidencia, asi
+    que no se puede borrar al consumir uno: esta poda (una vez por pasada de camara)
+    limpia los que ya no tienen ningun crop asociado. Nunca lanza.
+    """
+    n = 0
+    if not os.path.isdir(frame_dir):
+        return 0
+    try:
+        for f in os.listdir(frame_dir):
+            stem = f.rsplit(".", 1)[0]
+            if stem not in bases_pendientes:
+                try:
+                    os.remove(os.path.join(frame_dir, f))
+                    n += 1
+                except OSError:
+                    pass
+    except OSError:
+        pass
+    return n
 
 
 def _preserve_original_frame(ruta: str, local_id: str, camara_id: str,
@@ -861,7 +896,8 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
     # FRAME nativo compañero (mismo stem en <cam>_frame/): evidencia "Frame original"
     frame_path = None
     if frame_map:
-        frame_path = frame_map.get(rep_stem)
+        # El frame se guarda por fotograma (base); el crop lleva el índice de cara.
+        frame_path = frame_map.get(rep_stem) or frame_map.get(_frame_stem(rep_stem))
 
     # C + P (idempotencia persistente): si este MISMO rostro (mismo embedding
     # representativo) ya se procesó en esta sesión O en una pasada anterior del
@@ -878,8 +914,6 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
             os.remove(torso_path)
         if busto_path and os.path.exists(busto_path):
             os.remove(busto_path)
-        if frame_path and os.path.exists(frame_path):
-            os.remove(frame_path)
         log(f"[skip] rostro ya procesado (persistente): {rep_stem}")
         return
     if rep_hash is not None:
@@ -938,8 +972,6 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
             os.remove(torso_path)
         if busto_path and os.path.exists(busto_path):
             os.remove(busto_path)
-        if frame_path and os.path.exists(frame_path):
-            os.remove(frame_path)
         log(f"[exact-conflict] rostro idéntico en 2+ personas: {rep_stem} "
             f"-> {exact_persons}")
         if feedback is not None and cfg.feedback_enabled:
@@ -1086,8 +1118,6 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
             os.remove(torso_path)
         if busto_path and os.path.exists(busto_path):
             os.remove(busto_path)
-        if frame_path and os.path.exists(frame_path):
-            os.remove(frame_path)
         log(f"[revision-only] {len(item_idxs)} foto(s) verdict={result.verdict} "
             f"-> revision (sin identidad, autoenroll_new={cfg.autoenroll_new})")
         return
@@ -1212,8 +1242,6 @@ def _process_subcluster(sub, face_list, battery, ruta: str, local_id: str,
 
     if os.path.exists(rep_item["path"]):
         os.remove(rep_item["path"])
-    if frame_path and os.path.exists(frame_path):
-        os.remove(frame_path)
 
     # refinar el diccionario (F1.2: admisión por cara + C1: SOLO las caras del
     # sub-clúster; nunca "todas las caras de los items"). P2: se etiquetan con
@@ -1726,7 +1754,7 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
                 stem = f.rsplit(".", 1)[0]
                 busto_map[stem] = os.path.join(busto_dir, f)
 
-    # mapa stem -> FRAME nativo completo (evidencia "Frame original" 1080p)
+    # mapa base-de-fotograma -> FRAME de evidencia (uno por fotograma, no por cara)
     frame_map: dict[str, str] = {}
     frame_dir = os.path.join(ruta, "motor/caras/sinclasificar", local_id, f"{camara_id}_frame")
     if os.path.isdir(frame_dir):
@@ -1734,6 +1762,14 @@ def process_once(ruta: str, local_id: str, camara_id: str, cfg: Config,
             if f.lower().endswith((".jpg", ".jpeg", ".png")):
                 stem = f.rsplit(".", 1)[0]
                 frame_map[stem] = os.path.join(frame_dir, f)
+        # Poda de huérfanos: los frames sin crop pendiente se eliminan. No se
+        # borran al consumir un crop porque varios (caras del mismo frame) lo
+        # comparten; esta pasada los limpia cuando ya no queda ninguno.
+        bases_pendientes = {
+            _frame_stem(f.rsplit(".", 1)[0])
+            for f in os.listdir(dir_in) if f.lower().endswith(IMG_EXTS)
+        }
+        _podar_frames_huerfanos(frame_dir, bases_pendientes)
 
     items.sort(key=lambda x: (x["ts"] is None, x["ts"] or 0))
 
