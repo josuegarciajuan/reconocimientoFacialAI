@@ -33,7 +33,8 @@ def _paths(ruta: str, local_id) -> dict:
     }
 
 
-def write_request(ruta: str, local_id, batch_id: str, cam, faces: dict) -> str | None:
+def write_request(ruta: str, local_id, batch_id: str, cam, faces: dict,
+                  busto: dict | None = None) -> str | None:
     """Escribe la petición de aplicación de un lote (atómico)."""
     p = _paths(ruta, local_id)
     try:
@@ -41,7 +42,8 @@ def write_request(ruta: str, local_id, batch_id: str, cam, faces: dict) -> str |
         dst = os.path.join(p["in"], f"{batch_id}.json")
         tmp = dst + ".tmp"
         with open(tmp, "w", encoding="utf-8") as fh:
-            json.dump({"batch": batch_id, "cam": str(cam), "faces": faces, "ts": time.time()}, fh)
+            json.dump({"batch": batch_id, "cam": str(cam), "faces": faces,
+                       "busto": busto or {}, "ts": time.time()}, fh)
         os.replace(tmp, dst)
         return dst
     except OSError:

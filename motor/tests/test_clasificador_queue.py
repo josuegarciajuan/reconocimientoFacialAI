@@ -59,3 +59,11 @@ def test_daemon_alive_por_pid(tmp_path):
     with open(pid, "w", encoding="utf-8") as fh:
         fh.write("999999")
     assert q.daemon_alive(ruta, 1, ttl_s=0.001) is False
+
+
+def test_write_request_guarda_busto_top_level(tmp_path):
+    ruta = str(tmp_path)
+    q.write_request(ruta, 1, "b2", "15", {"c.png": []}, {"c.png": []})
+    req = q.list_requests(ruta, 1)[0]["data"]
+    assert req["faces"] == {"c.png": []}
+    assert req["busto"] == {"c.png": []}
