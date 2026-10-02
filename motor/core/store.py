@@ -142,11 +142,12 @@ class FaceStore:
 
     def _transaction(self, fn: Callable[[dict], None]) -> None:
         with FileLock(self.path + ".lock"):
-            # El read-modify-write parte SIEMPRE de disco (no de la caché): una
-            # mutación nunca debe arrancar de un estado potencialmente desfasado.
-            with self._cache_lock:
-                self._cache = None
-                self._cache_key = None
+            # F17b: NO se limpia la caché a ciegas. `_read_raw` valida por
+            # (mtime_ns, tamaño): si este proceso es el último escritor, reutiliza
+            # el diccionario en RAM (sin `pickle.load` de ~53 MB por operación);
+            # si otro proceso escribió, la clave cambia y recarga. Bajo FileLock
+            # nadie más muta durante la transacción, así que arrancar de la caché
+            # válida es equivalente y mucho más barato.
             data = self._read_raw()
             fn(data)
             self._write(data)
