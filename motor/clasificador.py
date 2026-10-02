@@ -271,8 +271,14 @@ def _collect_hq_frames(photo_img, photo_bbox, members, battery, busto_map,
         bimg = cv2.imread(bpath)
         if bimg is None:
             continue
-        b_faces = analyze(bimg, det_size=(cfg.crop_det_size, cfg.crop_det_size),
-                          min_score=cfg.min_det_score)
+        # F17c: la detección del busto ya vino del pool (mismo proveedor que el
+        # display, F17a). Fallback local solo si falta.
+        b_faces = None
+        if _BUSTO_PROVIDER is not None:
+            b_faces = _BUSTO_PROVIDER.get(os.path.basename(bpath))
+        if b_faces is None:
+            b_faces = analyze(bimg, det_size=(cfg.crop_det_size, cfg.crop_det_size),
+                              min_score=cfg.min_det_score)
         bf = select_display_face(b_faces, rep_face.embedding, cfg.display_face_min_cosine)
         if bf is None:
             continue
