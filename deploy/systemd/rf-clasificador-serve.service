@@ -11,6 +11,17 @@ Restart=always
 RestartSec=5
 User=root
 Nice=5
+# Anti-thrashing BLAS/OpenMP: el aplicador recorre la galería persona a persona
+# (miles de matmuls PEQUEÑOS). Sin límite de hilos, cada matmul lanza su pool de
+# BLAS y el overhead domina: medido 11.28 s/query vs 0.161 s con 1 hilo (~70x),
+# que es la causa del backlog de clasificación. Debe fijarse antes de importar
+# numpy (el proceso lo refuerza también con os.environ.setdefault).
+Environment=OMP_NUM_THREADS=1
+Environment=OPENBLAS_NUM_THREADS=1
+Environment=MKL_NUM_THREADS=1
+Environment=NUMEXPR_NUM_THREADS=1
+Environment=RF_CV_THREADS=1
+Environment=RF_ORT_THREADS=1
 
 [Install]
 WantedBy=multi-user.target

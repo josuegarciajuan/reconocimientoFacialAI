@@ -37,6 +37,17 @@ import sys
 import time
 from datetime import datetime
 
+# Anti-thrashing BLAS/OpenMP: este proceso hace MILES de matmuls PEQUEÑOS (el
+# matching recorre la galería persona a persona). Sin límite de hilos, cada
+# matmul lanza su pool de BLAS y el overhead domina: medido 11.28 s/query vs
+# 0.161 s con 1 hilo (~70x). Debe fijarse ANTES de importar numpy; setdefault
+# respeta un valor explícito del entorno (rf-photo usa 4 para SR/GFPGAN, pero
+# corre otro script).
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+
 import cv2
 import numpy as np
 
@@ -1860,7 +1871,9 @@ def _serve(args, cfg: Config, store, feedback) -> int:
                 _FACES_PROVIDER = _faces_from_dict(data.get("faces") or {})
                 cam = str(data.get("cam"))
                 # F16: perfil por lote (cProfile) para saber QUÉ mover al pool.
-                perfil = os.environ.get("RF_CLASSIFY_PROFILE", "1") != "0"
+                # OFF por defecto: cProfile por lote añade overhead en producción;
+                # se activa con RF_CLASSIFY_PROFILE=1 cuando se va a medir.
+                perfil = os.environ.get("RF_CLASSIFY_PROFILE", "0") != "0"
                 pr = None
                 t0 = time.time()
                 if perfil:
