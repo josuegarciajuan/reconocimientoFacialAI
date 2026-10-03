@@ -121,6 +121,12 @@ if printf '%s\n' "$CHANGED" | grep -qE '^deploy/apache/'; then
     bash deploy/install_apache.sh
 fi
 
+# Control de encendido/apagado del motor (script + regla sudoers para www-data).
+if printf '%s\n' "$CHANGED" | grep -qE '^deploy/(sudoers/|rf_power\.sh$|install_power_ctl\.sh$)'; then
+    echo "[deploy] control de encendido cambiado -> reinstalando rf-power (sudoers)"
+    bash deploy/install_power_ctl.sh
+fi
+
 # Dependencias Python.
 if printf '%s\n' "$CHANGED" | grep -qE '^motor/requirements\.txt$'; then
     echo "[deploy] requirements.txt cambiado -> pip install"
