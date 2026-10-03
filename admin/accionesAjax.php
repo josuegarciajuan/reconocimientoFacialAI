@@ -229,11 +229,27 @@ switch ($_GET["a"] ?? "") {
             echo json_encode(["ok" => false, "error" => "script de control no encontrado"], JSON_UNESCAPED_UNICODE);
             break;
         }
-        $out = @shell_exec("sudo -n " . escapeshellarg($script) . " " . $accion . " 2>&1");
+        $out = [];
+        $retval = 0;
+        exec("sudo -n " . escapeshellarg($script) . " " . escapeshellarg($accion) . " 2>&1", $out, $retval);
+        $salida = trim(implode("\n", $out));
+        if ($retval !== 0) {
+            echo json_encode([
+                "ok"     => false,
+                "error"  => "el control falló (código " . $retval . ")",
+                "salida" => $salida,
+            ], JSON_UNESCAPED_UNICODE);
+            break;
+        }
+        // Confirmar el estado real para no reportar un cambio que no ocurrió.
+        $estadoOut = [];
+        $estadoRc = 0;
+        exec("sudo -n " . escapeshellarg($script) . " status 2>&1", $estadoOut, $estadoRc);
+        $estado = trim(implode("\n", $estadoOut));
         echo json_encode([
-            "ok"      => true,
-            "estado"  => $accion === "on" ? "on" : "off",
-            "salida"  => trim((string)$out),
+            "ok"     => true,
+            "estado" => ($estado === "on" ? "on" : "off"),
+            "salida" => $salida,
         ], JSON_UNESCAPED_UNICODE);
         break;
 }
