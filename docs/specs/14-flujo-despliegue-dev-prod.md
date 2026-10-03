@@ -83,6 +83,7 @@ El sistema de reconocimiento facial se despliega en **dos servidores**:
 | `live/**` | `rf-live` |
 | `motor/photo_worker.py` | `rf-photo` |
 | `motor/calibrar.py`, `motor/vigilar_deriva.py` | rearma `rf-calibra.timer` / `rf-vigilar-deriva.timer` |
+| `deploy/rf_power.sh`, `deploy/sudoers/**`, `deploy/install_power_ctl.sh` | reinstala el control encendido/apagado (`install_power_ctl.sh`), sin reiniciar daemons |
 | `motor/core/**`, `libs/db.php`, `config/config.php`, `deploy/systemd/**`, `deploy/apache/**`, `motor/requirements.txt` | **todos** los daemons |
 | `admin/**`, `includes/**`, `docs/**`, `tests/**` | ninguno (solo `git pull`) |
 
@@ -93,6 +94,21 @@ instala el vhost del panel (`:8090`, detecta el socket php-fpm) y el symlink de
 `/var/www/html/reconocimientoFacial`. El `install_services.sh` crea además los directorios
 de runtime (`libs/threads_files_aux/`) y ajusta los permisos de `.env`
 (`root:www-data`, `640`) para que php-fpm pueda leerlo.
+
+### Encendido/apagado del motor desde el panel
+
+El botón **Apagar/Encender el Ojo** (dashboard y anillo/hub, solo superadmin) llama por
+AJAX a `admin/accionesAjax.php?a=11`, que ejecuta `sudo -n deploy/rf_power.sh [off|on]`.
+En OFF detiene todos los daemons del motor (incluido `rf-clasificador-serve`) y Ollama,
+detiene los timers y purga los hijos Python/Node para liberar CPU y RAM; el panel
+(Apache + php-fpm) permanece arriba para poder reencender.
+
+`deploy/install_power_ctl.sh` deja el script en `root:root 0750` e instala la regla
+`/etc/sudoers.d/rf-power` que autoriza a `www-data` a ejecutarlo sin contraseña. El
+`deploy_prod.sh` lo reejecuta cuando cambian `deploy/rf_power.sh`, `deploy/sudoers/**`
+o `deploy/install_power_ctl.sh`, e `install_services.sh` lo hace en instalaciones
+completas. Sin esa regla el botón devuelve error de permisos (el AJAX lo reporta como
+`ok:false`).
 
 ## Notas
 

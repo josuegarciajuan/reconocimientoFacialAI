@@ -85,6 +85,13 @@ if [ "${1:-}" = "start" ]; then
     systemctl status rf-detector --no-pager -l | head -8
 fi
 
+# Control de encendido/apagado del motor: instala el script y la regla sudoers
+# para que www-data (panel web) pueda apagar/encender sin depender de systemctl.
+if [ -f "$DIR/deploy/install_power_ctl.sh" ]; then
+    echo "==> Instalando control de encendido/apagado (rf_power + sudoers)"
+    bash "$DIR/deploy/install_power_ctl.sh" || echo "AVISO: no se pudo instalar rf-power" >&2
+fi
+
 echo "==> Listo. Comandos útiles:"
 echo "    systemctl status rf-{capturador,detector,clasificador,panel-control,live,conciliador,vinculador,alarmador,vigilar-deriva}"
 echo "    systemctl list-timers rf-vigilar-deriva"
