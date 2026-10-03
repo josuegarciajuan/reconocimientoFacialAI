@@ -3,25 +3,32 @@
 # Control de encendido/apagado del motor de reconocimiento facial.
 # Uso: sudo deploy/rf_power.sh [off|on|status]
 #
-#   off    -> detiene timers + servicios (captura, detector, clasificador, live,
-#             panel-control, conciliador, vinculador, alarmador) y libera la RAM
-#             de los hijos Python/Node del motor. El panel web (Apache + php-fpm)
-#             NO se toca, así el operador puede volver a encender.
+#   off    -> detiene timers + servicios del motor (captura, detector, clasificador,
+#             clasificador-serve, live, panel-control, conciliador, vinculador,
+#             alarmador, photo) y el servicio auxiliar Ollama (modelos VLM en RAM).
+#             Después libera la RAM de los hijos Python/Node que hayan escapado del
+#             cgroup. El panel web (Apache + php-fpm) NO se toca, así el operador
+#             puede volver a encender.
 #   on     -> rearranca servicios + timers (funcionamiento normal).
 #   status -> imprime "on" si rf-capturador está activo, si no "off".
 #
 # Los servicios son Type=simple con KillMode=control-group (default), por lo que
 # `systemctl stop` mata también a los hijos lanzados con `&` desde el orquestador
 # PHP. La red de seguridad con pkill cubre hijos que hayan escapado del cgroup
-# (p.ej. procesos en estado D o lanzados con setsid), igual que hace rf-reap.
+# (p.ej. procesos en estado D o lanzados con setsid, o el runner de Ollama).
 #
 # El estado NO persiste entre reinicios: tras un reboot, los servicios `enabled`
 # vuelven a arrancar (comportamiento deseado: un reinicio = funcionamiento normal).
 
 set -u
 
-SERVICES=(rf-capturador rf-detector rf-clasificador rf-live rf-panel-control rf-conciliador rf-vinculador rf-alarmador rf-photo)
-TIMERS=(rf-calibra.timer rf-reap.timer rf-vigilar-deriva.timer)
+# Daemons del motor (deben cubrir TODO lo que consume CPU/RAM de visión).
+SERVICES=(rf-capturador rf-detector rf-clasificador rf-clasificador-serve rf-live rf-panel-control rf-conciliador rf-vinculador rf-alarmador rf-photo)
+# Servicios auxiliares compartidos: Ollama mantiene los modelos VLM cargados en
+# RAM. Se para en OFF para liberar memoria y se rearranca en ON.
+AUX_SERVICES=(ollama)
+# Timers reales de deploy/systemd/. Se detienen para que no disparen en OFF.
+TIMERS=(rf-calibra.timer rf-vigilar-deriva.timer rf-reprocesa.timer rf-reten-backups.timer)
 
 # Procesos hijos del motor (visión/streaming) a purgar para liberar RAM residual.
 VISION_PATTERNS=(
@@ -32,6 +39,7 @@ VISION_PATTERNS=(
   "photo_worker.py"
   "pose.py"
   "mjpeg-stream.js"
+  "ollama_llama_server"
 )
 
 free_mb() {
@@ -48,7 +56,7 @@ cmd_off() {
   done
 
   # 2. Detener servicios (el cgroup arrastra a los hijos).
-  for s in "${SERVICES[@]}"; do
+  for s in "${SERVICES[@]}" "${AUX_SERVICES[@]}"; do
     systemctl stop "$s" 2>/dev/null || true
   done
 
@@ -65,6 +73,10 @@ cmd_off() {
 }
 
 cmd_on() {
+  # Arrancar primero el auxiliar (Ollama) para que el clasificador lo encuentre listo.
+  for s in "${AUX_SERVICES[@]}"; do
+    systemctl start "$s" 2>/dev/null || true
+  done
   for s in "${SERVICES[@]}"; do
     systemctl start "$s" 2>/dev/null || true
   done
