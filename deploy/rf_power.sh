@@ -4,12 +4,14 @@
 # Uso: sudo deploy/rf_power.sh [off|on|status]
 #
 #   off    -> detiene timers + servicios del motor (captura, detector, clasificador,
-#             clasificador-serve, live, panel-control, conciliador, vinculador,
+#             clasificador-serve, panel-control, conciliador, vinculador,
 #             alarmador, photo) y el servicio auxiliar Ollama (modelos VLM en RAM).
 #             Después libera la RAM de los hijos Python/Node que hayan escapado del
 #             cgroup. El panel web (Apache + php-fpm) NO se toca, así el operador
 #             puede volver a encender.
-#   on     -> rearranca servicios + timers (funcionamiento normal).
+#             NO se detiene rf-live: el "En Directo" del panel debe seguir siendo
+#             visible con el motor apagado (solo consume al haber espectadores).
+#   on     -> rearranca servicios + timers (funcionamiento normal) y asegura rf-live.
 #   status -> imprime "on" si rf-capturador está activo, si no "off".
 #
 # Los servicios son Type=simple con KillMode=control-group (default), por lo que
@@ -23,14 +25,19 @@
 set -u
 
 # Daemons del motor (deben cubrir TODO lo que consume CPU/RAM de visión).
-SERVICES=(rf-capturador rf-detector rf-clasificador rf-clasificador-serve rf-live rf-panel-control rf-conciliador rf-vinculador rf-alarmador rf-photo)
+# rf-live NO está aquí: es el "En Directo" y debe seguir activo con el motor apagado.
+SERVICES=(rf-capturador rf-detector rf-clasificador rf-clasificador-serve rf-panel-control rf-conciliador rf-vinculador rf-alarmador rf-photo)
+# Servicio de streaming en directo: se mantiene SIEMPRE activo (independiente del
+# apagado del motor). Se arranca en ON por robustez, pero OFF no lo detiene.
+LIVE_SERVICE=rf-live
 # Servicios auxiliares compartidos: Ollama mantiene los modelos VLM cargados en
 # RAM. Se para en OFF para liberar memoria y se rearranca en ON.
 AUX_SERVICES=(ollama)
 # Timers reales de deploy/systemd/. Se detienen para que no disparen en OFF.
 TIMERS=(rf-calibra.timer rf-vigilar-deriva.timer rf-reprocesa.timer rf-reten-backups.timer)
 
-# Procesos hijos del motor (visión/streaming) a purgar para liberar RAM residual.
+# Procesos hijos del motor (visión) a purgar para liberar RAM residual.
+# No se incluye mjpeg-stream.js: pertenece a rf-live, que permanece activo.
 VISION_PATTERNS=(
   "guarda_movimientosV3.py"
   "procesa_video.py"
@@ -38,7 +45,6 @@ VISION_PATTERNS=(
   "clasificador.py"
   "photo_worker.py"
   "pose.py"
-  "mjpeg-stream.js"
   "ollama_llama_server"
 )
 
@@ -80,6 +86,8 @@ cmd_on() {
   for s in "${SERVICES[@]}"; do
     systemctl start "$s" 2>/dev/null || true
   done
+  # El directo debe estar siempre disponible (aunque el motor estuviera apagado).
+  systemctl start "$LIVE_SERVICE" 2>/dev/null || true
   for t in "${TIMERS[@]}"; do
     systemctl start "$t" 2>/dev/null || true
   done
