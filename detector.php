@@ -348,11 +348,16 @@ while (true) {
                 // F6: log de procesa_video.py (antes /dev/null -> errores invisibles)
                 $log = RUTA_PROYECTO . "motor/logs/procesa_video_" . $cam_id . ".log";
                 if (ss_mode() === 'superserver') {
-                    // Modo pool (M3): el cálculo va a la flota y este proceso (bridge)
-                    // aplica los mismos efectos al volver. El `--tag` mantiene el
-                    // patrón de `pgrep` del detector para su control de marcadores.
+                    // Modo pool (M3) o distribuido (P1): el cálculo sale de la casa y
+                    // este proceso aplica los mismos efectos al volver. El `--tag`
+                    // mantiene el patrón de `pgrep` del detector para su control de
+                    // marcadores (pool_bridge y video_orchestrator comparten CLI).
+                    // RF_VIDEO_MODE=distributed (default `pool`) no cambia nada hasta
+                    // activarlo: trocea el clip por segmentos en la flota.
+                    $script = (defined('CONFIG_VIDEO_MODE') && CONFIG_VIDEO_MODE === 'distributed')
+                        ? "motor/video_orchestrator.py" : "motor/pool_bridge.py";
                     $tag = "procesa_video.py " . $local_id . " " . $cam_id . " " . $video;
-                    $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/pool_bridge.py "
+                    $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . $script . " "
                          . $local_id . " " . $cam_id . " " . escapeshellarg($video)
                          . " --ruta " . RUTA_PROYECTO
                          . " --tag " . escapeshellarg($tag)
