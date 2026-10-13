@@ -289,7 +289,8 @@ def guardar_cuerpo_sin_cara(ruta: str, local_id: str, camara_id: str, fichero: s
 def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,
                   cfg: Config, face_every: int, lineas: list | None = None,
                   efectos: bool = True, eventos: list | None = None,
-                  resumen: dict | None = None) -> int:
+                  resumen: dict | None = None,
+                  frame_ini: int = 0, frame_fin: int | None = None) -> int:
     video_path = os.path.join(ruta, "motor/videos", local_id, camara_id, fichero)
     if not os.path.exists(video_path):
         return 0
@@ -312,7 +313,13 @@ def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,
         return 0
 
     fps = cap.get(cv2.CAP_PROP_FPS) or 10.0
-    frame_idx = 0
+    # Rango de frames opcional (troceado distribuido): el índice es ABSOLUTO en el
+    # vídeo, de modo que `ts=frame_idx/fps` y el muestreo `frame_idx % face_every`
+    # coinciden con los de una pasada completa (los segmentos son consistentes).
+    frame_idx = int(frame_ini or 0)
+    frames_leidos = 0
+    if frame_ini:
+        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
     buffer = []
     body_buffer = []
     cruces = 0
@@ -324,6 +331,8 @@ def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,
     cuerpos = 0
 
     while True:
+        if frame_fin is not None and frame_idx >= frame_fin:
+            break
         ret, frame = cap.read()
         if not ret:
             break
@@ -358,6 +367,7 @@ def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,
                         cuerpos += 1
 
         frame_idx += 1
+        frames_leidos += 1
 
     cap.release()
 
@@ -366,7 +376,7 @@ def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,
         t_fin = time.time()
         log_latencia(
             ruta, local_id, "extract", cam=camara_id, fichero=fichero,
-            frames=frame_idx,
+            frames=frames_leidos,
             t_clip=(fecha_base.timestamp() if fecha_base else None),
             t_cierre=t_cierre, t_ini=t_ini, t_fin=t_fin,
             dur_s=(t_fin - t_ini),
@@ -381,23 +391,25 @@ def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,
 
         # Fase 0: registrar el resultado del vídeo para el embudo de recall.
         log_evento(ruta, local_id, "video", cam=camara_id, fichero=fichero,
-                   frames=frame_idx, caras_detect=caras_detect, caras_guard=caras_guard,
+                   frames=frames_leidos, caras_detect=caras_detect, caras_guard=caras_guard,
                    caras_borroso=caras_borroso, caras_dedup=caras_dedup,
                    cuerpos=cuerpos, cruces=cruces)
     elif resumen is not None:
         # Modo pool: la casa aplicará borrado, marker, cruces y embudo con estos datos.
         resumen.update({
             "local": local_id, "cam": camara_id, "fichero": fichero,
-            "frames": frame_idx, "cruces": len(eventos or []),
+            "frames": frames_leidos,
+            "frame_ini": frame_idx - frames_leidos, "frame_fin": frame_idx,
+            "cruces": len(eventos or []),
             "caras_detect": caras_detect, "caras_guard": caras_guard,
             "caras_borroso": caras_borroso, "caras_dedup": caras_dedup,
             "cuerpos": cuerpos,
         })
 
-    print(f"procesa_video {local_id}/{camara_id} {fichero}: {frame_idx} frames, {cruces} cruces, "
+    print(f"procesa_video {local_id}/{camara_id} {fichero}: {frames_leidos} frames, {cruces} cruces, "
           f"{caras_detect} caras detectadas, {caras_guard} guardadas "
           f"({caras_borroso} borrosas, {caras_dedup} dedup), {cuerpos} cuerpos-sin-cara", flush=True)
-    return frame_idx
+    return frames_leidos
 
 
 def main() -> int:
@@ -409,6 +421,8 @@ def main() -> int:
     ap.add_argument("--face-every", type=int, default=None)
     ap.add_argument("--min-sharpness", type=float, default=None)
     ap.add_argument("--dedup-cosine", type=float, default=0.97)
+    ap.add_argument("--from", dest="frame_ini", type=int, default=0)
+    ap.add_argument("--to", dest="frame_fin", type=int, default=None)
     args = ap.parse_args()
 
     # F1: topes de hilos OpenCV/torch (anti-sobresuscripción con el resto del
@@ -424,7 +438,8 @@ def main() -> int:
     cfg.dedup_cosine = args.dedup_cosine
     face_every = args.face_every if args.face_every is not None else cfg.face_every
 
-    process_video(args.local_id, args.camara_id, args.fichero, args.ruta, cfg, face_every)
+    process_video(args.local_id, args.camara_id, args.fichero, args.ruta, cfg, face_every,
+                  frame_ini=args.frame_ini, frame_fin=args.frame_fin)
     return 0
 
 
