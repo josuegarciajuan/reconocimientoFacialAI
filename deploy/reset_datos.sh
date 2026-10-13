@@ -106,8 +106,10 @@ TABLAS_DATOS=(personas estancias fotos videos cruces_lineas fichajes \
 RUTAS_BORRAR=(
   "motor/bbdd_reconocimiento/${LOCAL_ID}/face_enc_v2"
   "motor/bbdd_reconocimiento/${LOCAL_ID}/face_enc_v2.lock"
-  "motor/caras/${LOCAL_ID}"
-  "motor/caras/sinclasificar"
+  # `motor/caras` entero (no solo el local): contiene lotes de crops y metadatos
+  # de caras en directorios OCULTOS (.batch_<local>_<cam>_<hash>/, .faces_*.json)
+  # que un borrado por-local dejaba atrás. Se recrea `motor/caras/1` después.
+  "motor/caras"
   "motor/videos/${LOCAL_ID}"
   "motor/videos_archivo/${LOCAL_ID}"
   "motor/feedback/${LOCAL_ID}"
