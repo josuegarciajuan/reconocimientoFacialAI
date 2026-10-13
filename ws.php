@@ -12,6 +12,7 @@ ini_set('display_errors', '0');
 require_once("config/rutas.php");
 require_once("libs/db.php");
 require_once("libs/alarmas.php");
+require_once("libs/embudo.php");
 
 // acción desde GET o argv[1]
 $accion = $_GET["accion"] ?? ($argv[1] ?? "");
@@ -282,6 +283,15 @@ switch ($accion) {
             "personas" => $personas, "videos" => $videos,
             "por_camara" => $por_camara,
         ]);
+        exit;
+
+    case "embudo_latencia":
+        // P0/WS1: percentiles de latencia por etapa (lectura del JSONL del motor).
+        // argv/GET: local_id [desde YYYY-MM-DD] -> {extraccion_s,espera_cola_s,
+        // clasificacion_s,e2e_s} con {n,p50,p95,max}. Solo lectura.
+        $local_l = (int)($_GET["local_id"] ?? arg(2) ?? 0);
+        $desde_l = (string)($_GET["desde"] ?? arg(3) ?? "");
+        echo json_encode(embudo_resumen_latencia($local_l, $desde_l));
         exit;
 
     default:

@@ -33,9 +33,10 @@ import time
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from motor.core.embudo import log_evento                      # noqa: E402
+from motor.core.embudo import log_evento, log_latencia         # noqa: E402
 from motor.pool_ack import escribir_ack, job_dir_of            # noqa: E402
-from motor.procesa_video import PROYECTO, cargar_lineas, php_ws  # noqa: E402
+from motor.procesa_video import (PROYECTO, cargar_lineas,      # noqa: E402
+                                 fecha_base_video, php_ws)
 
 MODE_FILE = "/var/lib/taildeck/projects/reconocimientoFacial.mode"
 SPOOL_DIR = "/var/lib/taildeck/spool"
@@ -137,7 +138,7 @@ def _mover_archivos(src_dir: str, dst_dir: str) -> int:
 
 
 def aplicar(result_dir: str, data: dict, local_id: str, camara_id: str, fichero: str,
-            ruta: str) -> None:
+            ruta: str, t_ini: float = 0.0) -> None:
     """Aplica los efectos del proceso clásico sobre la casa (idéntico resultado final)."""
     artifacts = _artifact_root(result_dir)
     caras = 0
@@ -172,6 +173,22 @@ def aplicar(result_dir: str, data: dict, local_id: str, camara_id: str, fichero:
                cruces=data.get("cruces_count", cruces))
 
     video_path = os.path.join(ruta, "motor/videos", local_id, camara_id, fichero)
+    # P0/WS1: latencia end-to-end (cierre del clip -> efectos aplicados). El mtime
+    # del vídeo es el instante de cierre (rename atómico de guarda_movimientosV3).
+    t_fin = time.time()
+    try:
+        t_cierre = os.path.getmtime(video_path) if os.path.exists(video_path) else None
+    except OSError:
+        t_cierre = None
+    t_clip = fecha_base_video(fichero)
+    log_latencia(
+        ruta, local_id, "extract", cam=camara_id, fichero=fichero,
+        frames=data.get("frames", 0),
+        t_clip=(t_clip.timestamp() if t_clip else None),
+        t_cierre=t_cierre, t_ini=(t_ini or None), t_fin=t_fin,
+        dur_s=((t_fin - t_ini) if t_ini else None),
+        espera_s=((t_ini - t_cierre) if (t_ini and t_cierre) else None),
+    )
     if os.path.exists(video_path):
         os.remove(video_path)
     marker = os.path.join(ruta, "aux", fichero + ".txt")
@@ -205,6 +222,7 @@ def main() -> int:
                args.local_id, args.camara_id, args.fichero, "--ruta", args.ruta]
         return subprocess.call(cmd)
 
+    t_ini = time.time()
     lineas = lineas_payload(args.camara_id)
     req = build_request(args.local_id, args.camara_id, args.fichero, lineas)
     escribir_peticion(req)
@@ -216,7 +234,7 @@ def main() -> int:
         print(f"[pool-bridge] timeout esperando el resultado de {req['externalId']}", flush=True)
         return 1
     result_dir, data = got
-    aplicar(result_dir, data, args.local_id, args.camara_id, args.fichero, args.ruta)
+    aplicar(result_dir, data, args.local_id, args.camara_id, args.fichero, args.ruta, t_ini)
     escribir_ack(job_dir_of(result_dir), source="pool_bridge")
     return 0
 

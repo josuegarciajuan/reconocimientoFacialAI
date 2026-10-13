@@ -25,10 +25,11 @@ Reglas:
 from __future__ import annotations
 
 import json
+import math
 import os
 import time
 
-TIPOS = ("video", "descarte", "decision", "cuerpo")
+TIPOS = ("video", "descarte", "decision", "cuerpo", "latencia")
 
 
 def _path(ruta: str, local_id) -> str:
@@ -74,6 +75,93 @@ def leer_eventos(ruta: str, local_id) -> list[dict]:
     except OSError:
         return []
     return out
+
+
+def log_latencia(ruta: str, local_id, etapa: str, **campos) -> None:
+    """Registra una medida de latencia de una etapa del pipeline.
+
+    Etapas (contrato estable, lo consume `resumir_latencia`):
+    - ``extract`` : análisis del vídeo. Campos sugeridos: ``cam``, ``fichero``,
+      ``frames``, ``t_clip`` (epoch del inicio de captura), ``t_cierre`` (epoch
+      del cierre del clip, mtime), ``t_ini``/``t_fin`` (epoch del procesado),
+      ``dur_s`` (t_fin-t_ini: latencia de la etapa) y ``espera_s`` (t_ini-t_cierre:
+      tiempo en cola antes de procesar).
+    - ``classify``: decisión de un lote/batería. ``cam``, ``n_baterias``,
+      ``t_ini``/``t_fin``/``dur_s``.
+    - ``bd``      : foto publicada en BD. ``cam``, ``foto_id``, ``frame_ts``
+      (epoch del fotograma) y ``e2e_s`` (fin-a-fin: t_bd - frame_ts).
+
+    Best-effort: nunca lanza (no debe tumbar el pipeline por una métrica).
+    """
+    try:
+        campos["etapa"] = etapa
+        log_evento(ruta, local_id, "latencia", **campos)
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _pct(vals: list[float], p: float):
+    """Percentil por interpolación lineal (same as numpy 'linear' para n>1).
+
+    None si no hay datos; el mismo valor si solo hay uno.
+    """
+    xs = sorted(float(v) for v in vals if v is not None)
+    if not xs:
+        return None
+    if len(xs) == 1:
+        return xs[0]
+    k = (len(xs) - 1) * (float(p) / 100.0)
+    f = math.floor(k)
+    c = math.ceil(k)
+    if f == c:
+        return xs[int(k)]
+    return xs[f] + (xs[c] - xs[f]) * (k - f)
+
+
+def resumir_latencia(eventos: list[dict], desde: str | None = None) -> dict:
+    """Agrega los eventos `latencia` en percentiles por etapa (función pura).
+
+    Devuelve::
+
+        {
+          "extraccion_s":  {n,p50,p95,max},   # dur_s de extract
+          "espera_cola_s": {n,p50,p95,max},   # t_ini-t_cierre de extract
+          "clasificacion_s":{n,p50,p95,max},  # dur_s de classify
+          "e2e_s":         {n,p50,p95,max},   # t_bd-frame_ts de bd
+        }
+    """
+    extraccion: list[float] = []
+    espera: list[float] = []
+    clasificacion: list[float] = []
+    e2e: list[float] = []
+    for e in eventos:
+        if not isinstance(e, dict) or e.get("tipo") != "latencia":
+            continue
+        if desde and _fecha(e.get("ts")) < desde:
+            continue
+        etapa = e.get("etapa")
+        if etapa == "extract":
+            if e.get("dur_s") is not None:
+                extraccion.append(e["dur_s"])
+            if e.get("espera_s") is not None:
+                espera.append(e["espera_s"])
+        elif etapa == "classify":
+            if e.get("dur_s") is not None:
+                clasificacion.append(e["dur_s"])
+        elif etapa == "bd":
+            if e.get("e2e_s") is not None:
+                e2e.append(e["e2e_s"])
+
+    def _block(xs: list[float]) -> dict:
+        return {"n": len(xs), "p50": _pct(xs, 50), "p95": _pct(xs, 95),
+                "max": (max(xs) if xs else None)}
+
+    return {
+        "extraccion_s": _block(extraccion),
+        "espera_cola_s": _block(espera),
+        "clasificacion_s": _block(clasificacion),
+        "e2e_s": _block(e2e),
+    }
 
 
 def _fecha(ts: float) -> str:
