@@ -48,6 +48,10 @@ def main() -> int:
     ap.add_argument("--lineas", required=True, help="JSON con las líneas de la cámara")
     ap.add_argument("--out-json", required=True, help="ruta del JSON de efectos")
     ap.add_argument("--face-every", type=int, default=None)
+    ap.add_argument("--from", dest="frame_ini", type=int, default=0,
+                    help="primer frame del rango (troceado distribuido; default 0)")
+    ap.add_argument("--to", dest="frame_fin", type=int, default=None,
+                    help="frame final EXCLUSIVO del rango (default: fin del vídeo)")
     args = ap.parse_args()
 
     # Mismos topes de hilos que el proceso clásico (anti-sobresuscripción).
@@ -61,7 +65,8 @@ def main() -> int:
     eventos: list = []
     resumen: dict = {}
     process_video(args.local_id, args.camara_id, args.fichero, args.ruta, cfg, face_every,
-                  lineas=lineas, efectos=False, eventos=eventos, resumen=resumen)
+                  lineas=lineas, efectos=False, eventos=eventos, resumen=resumen,
+                  frame_ini=args.frame_ini, frame_fin=args.frame_fin)
     resumen["cruces_count"] = resumen.get("cruces", 0)
     resumen["cruces"] = eventos
     resumen["ts"] = time.time()
