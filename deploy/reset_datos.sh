@@ -29,7 +29,7 @@
 #                            por cámara; NO es identidad)
 #   Runtime (motor):         models/, venv/
 #
-# USO:  sudo bash deploy/reset_datos.sh [--hold N] [--dry-run]
+# USO:  sudo bash deploy/reset_datos.sh [--hold N] [--dry-run] [--no-start]
 #   El script: (A) detiene los servicios, (A2) MATA TODOS los procesos RF
 #   (incluidos huérfanos/hijos/ffmpeg que systemd no cubre) y VERIFICA que no
 #   queda ninguno vivo, (B) vacía la BD, (C) borra galería/media/estado runtime
@@ -38,6 +38,10 @@
 #   --hold N : tras parar, espera N segundos y re-verifica que todo sigue caído
 #              antes de rearrancar (evidencia visible de parada total).
 #   --dry-run: lista lo que se va a borrar sin tocar nada.
+#   --no-start (alias --keep-off): hace el purge completo (fases A/A2/B/C) pero
+#              NO rearranca servicios ni timers al final: el motor queda APAGADO.
+#              La guarda de RF_AUTOENROLL_NEW sí se aplica (el .env queda listo
+#              para cuando el operador reencienda con deploy/rf_power.sh on).
 #
 # GUARDA ANTI-TRAMPA (2026-09-29): tras vaciar la galería, un clasificador con
 #   RF_AUTOENROLL_NEW inactivo no puede producir ningún `match` y no crearía
@@ -50,12 +54,14 @@ set -euo pipefail
 
 DRY_RUN=0
 HOLD=0
+NO_START=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dry-run) DRY_RUN=1 ;;
     --hold) HOLD="${2:-0}"; shift ;;
     --hold=*) HOLD="${1#--hold=}" ;;
-    -h|--help) sed -n '2,42p' "$0"; exit 0 ;;
+    --no-start|--keep-off) NO_START=1 ;;
+    -h|--help) sed -n '2,43p' "$0"; exit 0 ;;
     *) printf '[reset] ERROR: flag desconocida: %s\n' "$1" >&2; exit 2 ;;
   esac
   shift
@@ -126,6 +132,10 @@ RUTAS_BORRAR=(
   # `personas` los AUTO_INCREMENT se reinician y los IDs se reutilizan; sin
   # borrar los ficheros viejos se asignarían a identidades nuevas.
   "admin/caras_procesadas"
+  # Fotos originales y de cámara del panel (identidad de visitantes, gitignored):
+  # no estaban cubiertas y también deben vaciarse en un reset a cero.
+  "admin/fotos_originales"
+  "admin/fotos_camara"
   # Cache de clasificación VLM/OpenAI por hash de imagen (identidad derivada).
   "motor/llm_cache"
   # Salidas/derivados de identidad y de evaluación.
@@ -148,6 +158,15 @@ RUTAS_BORRAR=(
   "motor/backups"
   "motor/revision_cuerpos"
   "motor/calibrador/deriva"
+  # Cola de evidencia/crops del clasificador, marcadores de reprocesado y
+  # diagnóstico de caras: datos runtime de identidad que no estaban cubiertos
+  # (untracked / gitignored) y que un reset a cero debe vaciar.
+  "motor/photo_evidence"
+  "motor/clasificador_daemon"
+  "motor/reprocesado"
+  "motor/diagnostics"
+  # Ficheros auxiliares por hilo del runtime (gitignored); se recrea vacío.
+  "libs/threads_files_aux"
   # Cola de marcadores del detector (markers .mp4.txt/.avi.txt, contadores
   # .intentos, logs procesar_*.txt y archiva_*). Borrarla entera garantiza que el
   # pipeline no arrastre historial de intentos ni parezca retomar vídeos previos.
@@ -458,6 +477,9 @@ cmd "Recrear ${PROYECTO}/aux" mkdir -p "${PROYECTO}/aux"
 cmd "Permisos ${PROYECTO}/aux" chmod 777 "${PROYECTO}/aux"
 # Logs del pipeline: directorio limpio (lo usan ffmpeg/procesa_video para >>).
 cmd "Recrear ${PROYECTO}/motor/logs" mkdir -p "${PROYECTO}/motor/logs"
+# Ficheros auxiliares por hilo del runtime: vacío y escribible por php-fpm.
+cmd "Recrear ${PROYECTO}/libs/threads_files_aux" mkdir -p "${PROYECTO}/libs/threads_files_aux"
+cmd "Permisos ${PROYECTO}/libs/threads_files_aux" chmod 777 "${PROYECTO}/libs/threads_files_aux"
 
 # aux/ ya se ha borrado entero en FASE C (markers, contadores .intentos y logs
 # procesar_*.txt), así que no quedan slot-markers huérfanos que saturarían
@@ -469,6 +491,22 @@ cmd "Recrear ${PROYECTO}/motor/logs" mkdir -p "${PROYECTO}/motor/logs"
 log "FASE D: asegurando RF_AUTOENROLL_NEW (guarda anti-trampa)..."
 asegurar_autoenroll
 verificar_autoenroll
+
+if [[ ${NO_START} -eq 1 ]]; then
+  # --no-start: el purge ya dejó todo parado; NO se reenciende nada. La guarda
+  # de RF_AUTOENROLL_NEW se aplicó igual para que al reencender sí enrolle.
+  log "FASE D: --no-start → NO se rearrancan servicios ni timers. Motor APAGADO."
+  if [[ ${DRY_RUN} -eq 0 ]]; then
+    log "FASE D2: estado de los servicios (deben quedar inactivos):"
+    for svc in "${SERVICIOS[@]}"; do
+      printf '[reset]   %-20s %s\n' "${svc}" \
+        "$(systemctl is-active "${svc}" 2>/dev/null || true)"
+    done
+  fi
+  log "Reset completado (motor APAGADO). Reencender cuando proceda con: deploy/rf_power.sh on"
+  [[ ${DRY_RUN} -eq 1 ]] && log "DRY-RUN: nada se ha modificado."
+  exit 0
+fi
 
 log "FASE D: rearrancando servicios y timers..."
 for svc in "${SERVICIOS[@]}"; do
