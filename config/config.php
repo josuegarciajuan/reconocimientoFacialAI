@@ -95,6 +95,11 @@ define("CONFIG_contourArea_MINIMO","1");
  */
 define("CONFIG_LIMITE_RAM",95); //limite de ram ocupada para seguir procesando videos (85->95: servidor sobrado de RAM)
 define("CONFIG_LIMITE_VIDEOS", env_or("RF_LIMITE_VIDEOS", "2")); //nº máx. de procesa_video simultáneos (cada uno ~1.5GB; en prod .env lo sube a 4)
+// P1 (tiempo real): modo de extracción del vídeo en `superserver`.
+//   pool        -> `pool_bridge.py` (proceso completo por vídeo; comportamiento actual)
+//   distributed -> `video_orchestrator.py` (trocea el vídeo por segmentos en la flota)
+// Default `pool`: NO cambia el comportamiento hasta activarlo explícitamente.
+define("CONFIG_VIDEO_MODE", env_or("RF_VIDEO_MODE", "pool"));
 define("CONFIG_CLASIF_CAMS_POR_PROC", env_or("RF_CLASIF_CAMS_POR_PROC", "2")); //nº de cámaras por proceso clasificador (pool: en prod .env=4 -> 2 procesos)
 define("CONFIG_REINTENTOS_VIDEO",3); //reintentos de un vídeo antes de descartarlo (F6: marcadores huérfanos)
 // Antigüedad mínima (s) del marcador para considerar muerto su proceso. 300 s
