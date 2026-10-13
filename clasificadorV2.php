@@ -14,6 +14,7 @@ require_once("libs/vinculos.php");
 require_once("libs/photo_audit.php");
 require_once("libs/photo_ingest.php");
 require_once("libs/photo_images.php");
+require_once("libs/embudo.php");
 
 /**
  * Asegura el directorio runtime donde el panel sirve las fotos publicadas
@@ -232,6 +233,18 @@ function procesa_foto($ruta, $elemento) {
     // identificador_unico is the classifier-generated correlation id. The audit
     // sidecar was produced before the INSERT; consume it once fotos.id + fichero existen.
     ingest_photo_audit((int)$foto_id, $identificador_unico, (string)$local_id, (string)$camara_id);
+
+    // P0/WS1: latencia end-to-end (fotograma -> foto publicada en BD). El instante
+    // del fotograma viene en el nombre del fichero (fecha_completa_consegs).
+    $frame_ts = strtotime((string)($datos["entrada"]["fecha_completa_consegs"] ?? ""));
+    if ($frame_ts) {
+        embudo_log_latencia($local_id, "bd", [
+            "cam" => (string)$camara_id,
+            "foto_id" => (int)$foto_id,
+            "frame_ts" => $frame_ts,
+            "e2e_s" => round(microtime(true) - $frame_ts, 3),
+        ]);
+    }
 }
 
 function extrae_datos($file) {

@@ -27,6 +27,7 @@ import os
 import random
 import subprocess
 import sys
+import time
 from datetime import datetime, timedelta
 
 import cv2
@@ -34,7 +35,7 @@ import cv2
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from motor.core.config import Config                       # noqa: E402
-from motor.core.embudo import log_evento                   # noqa: E402
+from motor.core.embudo import log_evento, log_latencia      # noqa: E402
 from motor.core.model import analyze                       # noqa: E402
 from motor.core.quality import face_sharpness              # noqa: E402
 from motor.cruces import (CrossingConfig, CrossingDetector, Line,  # noqa: E402
@@ -292,6 +293,11 @@ def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,
     video_path = os.path.join(ruta, "motor/videos", local_id, camara_id, fichero)
     if not os.path.exists(video_path):
         return 0
+    t_ini = time.time()
+    try:
+        t_cierre = os.path.getmtime(video_path)
+    except OSError:
+        t_cierre = None
 
     # En modo pool las líneas llegan del exterior (la casa las consulta en la BD):
     # el worker no habla con `ws.php`.
@@ -356,6 +362,16 @@ def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,
     cap.release()
 
     if efectos:
+        # P0/WS1: latencia end-to-end (cierre del clip -> análisis terminado).
+        t_fin = time.time()
+        log_latencia(
+            ruta, local_id, "extract", cam=camara_id, fichero=fichero,
+            frames=frame_idx,
+            t_clip=(fecha_base.timestamp() if fecha_base else None),
+            t_cierre=t_cierre, t_ini=t_ini, t_fin=t_fin,
+            dur_s=(t_fin - t_ini),
+            espera_s=((t_ini - t_cierre) if t_cierre else None),
+        )
         # Comportamiento clásico (local): borra origen + marker y registra el embudo.
         os.remove(video_path)
         # marker file de detector.php

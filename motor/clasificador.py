@@ -54,7 +54,7 @@ import numpy as np
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from motor.core.config import Config            # noqa: E402
-from motor.core.embudo import log_evento        # noqa: E402
+from motor.core.embudo import log_evento, log_latencia  # noqa: E402
 from motor.core.profiling import PROF           # noqa: E402
 from motor.core.matching import LayerScore, face_scores_per_person, match_group  # noqa: E402
 from motor.core.model import analyze            # noqa: E402
@@ -1957,11 +1957,17 @@ def _serve(args, cfg: Config, store, feedback) -> int:
                         import cProfile  # noqa: E402
                         pr = cProfile.Profile()
                         pr.enable()
+                    t_c = time.time()
                     try:
                         n = process_once(args.ruta, args.local_id, cam, cfg, store, feedback)
                     finally:
                         if pr is not None:
                             pr.disable()
+                    if n:
+                        t_cf = time.time()
+                        log_latencia(args.ruta, args.local_id, "classify", cam=cam,
+                                     n_baterias=n, t_ini=t_c, t_fin=t_cf,
+                                     dur_s=(t_cf - t_c))
                     if pr is not None:
                         import pstats  # noqa: E402
                         stats = pstats.Stats(pr).stats
@@ -2110,7 +2116,12 @@ def main() -> int:
                 time.sleep(5)
                 continue
             cam = cameras[cam_idx % len(cameras)]
+            t_c = time.time()
             n = process_once(args.ruta, args.local_id, cam, cfg, store, feedback)
+            if n:
+                t_cf = time.time()
+                log_latencia(args.ruta, args.local_id, "classify", cam=cam,
+                             n_baterias=n, t_ini=t_c, t_fin=t_cf, dur_s=(t_cf - t_c))
             nb = process_body_once(args.ruta, args.local_id, cam, cfg, store)
             if n or nb:
                 log(f"[{cam}] procesadas {n} batería(s) de caras, {nb} de cuerpos")

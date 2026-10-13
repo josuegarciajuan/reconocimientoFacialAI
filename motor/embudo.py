@@ -23,7 +23,8 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from motor.core.embudo import cobertura, leer_eventos, resumir  # noqa: E402
+from motor.core.embudo import (cobertura, leer_eventos,      # noqa: E402
+                               resumir, resumir_latencia)
 
 PROYECTO = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -49,7 +50,9 @@ def _fmt(v) -> str:
 
 
 def informe(ruta: str, local_id, desde: str | None = None, bd: dict | None = None) -> dict:
-    res = resumir(leer_eventos(ruta, local_id), desde=desde)
+    eventos = leer_eventos(ruta, local_id)
+    res = resumir(eventos, desde=desde)
+    lat = resumir_latencia(eventos, desde=desde)
     bd = bd if bd is not None else datos_bd(local_id, desde)
     cruces = bd.get("cruces", 0)
     estancias = bd.get("estancias", 0)
@@ -59,7 +62,18 @@ def informe(ruta: str, local_id, desde: str | None = None, bd: dict | None = Non
         "bd": bd,
         "cobertura": round(cobertura(estancias, cruces), 4),
         "resumen": res,
+        "latencia": lat,
     }
+
+
+def _fmt_block(b: dict | None) -> str:
+    if not b:
+        return "sin datos"
+    n = b.get("n", 0)
+    if not n:
+        return "sin datos"
+    p50, p95, mx = b.get("p50"), b.get("p95"), b.get("max")
+    return (f"n={n}  p50={_fmt(p50)}  p95={_fmt(p95)}  max={_fmt(mx)}")
 
 
 def imprimir(info: dict) -> None:
@@ -87,6 +101,12 @@ def imprimir(info: dict) -> None:
     print(f"  verdicts={verdicts or '{}'}")
     print(f"  descartes={descartes or '{}'}")
     print(f"  cuerpos={cuerpos or '{}'}")
+    lat = info.get("latencia") or {}
+    print("Latencia (segundos; P0/WS1):")
+    print(f"  extracción (por vídeo):      {_fmt_block(lat.get('extraccion_s'))}")
+    print(f"  espera en cola (cierre→INI): {_fmt_block(lat.get('espera_cola_s'))}")
+    print(f"  clasificación (por lote):    {_fmt_block(lat.get('clasificacion_s'))}")
+    print(f"  END-TO-END (fotograma→BD):   {_fmt_block(lat.get('e2e_s'))}")
     por_dia = (info.get("resumen") or {}).get("por_dia", {})
     if por_dia:
         print()
