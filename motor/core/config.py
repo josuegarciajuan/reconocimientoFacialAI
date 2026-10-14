@@ -414,6 +414,12 @@ class Config:
     openai_timeout_s: float = 45.0
     openai_retries: int = 2
 
+    # P2 (tiempo real): presupuesto del camino SÍNCRONO. Si > 0, las capas de
+    # cola larga (VLM/OpenAI) se cortan por tiempo por sub-clúster: pasado el
+    # presupuesto se devuelven como "sin señal" (mismo efecto que proveedor sin
+    # respuesta), y el caso se registra para revisión posterior. 0 = OFF (actual).
+    sync_tail_budget_ms: int = 0
+
     # --- feedback / calibración (F3) ---
     # ACTIVADOS por defecto (plan refinamiento-autoaprendizaje, F3): el
     # clasificador registra cada decisión y las acciones del panel ("Unir",
@@ -557,6 +563,7 @@ class Config:
         cfg.perfil_layer_enabled = get_bool(ruta, "RF_PERFIL_LAYER_ENABLED", cfg.perfil_layer_enabled)
         cfg.vlm_enabled = get_bool(ruta, "RF_VLM_ENABLED", cfg.vlm_enabled)
         cfg.openai_enabled = get_bool(ruta, "RF_OPENAI_ENABLED", cfg.openai_enabled)
+        cfg.sync_tail_budget_ms = get_int(ruta, "RF_SYNC_TAIL_BUDGET_MS", cfg.sync_tail_budget_ms)
         cfg.external_provider_allowed = get_bool(ruta, "RF_EXTERNAL_PROVIDER_ALLOWED", cfg.external_provider_allowed)
         cfg.min_layer_conf = get_float(ruta, "RF_MIN_LAYER_CONF", cfg.min_layer_conf)
         cfg.llm_min_conf = get_float(ruta, "RF_LLM_MIN_CONF", cfg.llm_min_conf)
