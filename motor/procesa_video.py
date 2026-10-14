@@ -286,6 +286,24 @@ def guardar_cuerpo_sin_cara(ruta: str, local_id: str, camara_id: str, fichero: s
     return True
 
 
+def _detect_faces(frame, cfg: Config) -> list:
+    """Detección de caras del frame; en DOS NIVELES (P3) hace una pasada barata.
+
+    Con `two_stage_det` (default OFF): se ejecuta primero `analyze` a
+    `two_stage_det_size` (barato); solo si esa pasada encuentra alguna cara se
+    ejecuta la pasada completa a `det_size`. Ahorra el coste dominante de
+    RetinaFace@1280 en los frames sin cara. Puede bajar recall (gate motor/eval).
+    """
+    full = (cfg.det_size, cfg.det_size)
+    if not getattr(cfg, "two_stage_det", False):
+        return analyze(frame, det_size=full, min_score=cfg.capture_min_det_score)
+    cheap_sz = int(getattr(cfg, "two_stage_det_size", 640) or 640)
+    pre = analyze(frame, det_size=(cheap_sz, cheap_sz), min_score=cfg.capture_min_det_score)
+    if not pre:
+        return []
+    return analyze(frame, det_size=full, min_score=cfg.capture_min_det_score)
+
+
 def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,
                   cfg: Config, face_every: int, lineas: list | None = None,
                   efectos: bool = True, eventos: list | None = None,
@@ -346,7 +364,7 @@ def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,
 
         # caras (muestreo para no saturar CPU)
         if frame_idx % face_every == 0:
-            faces = analyze(frame, det_size=(cfg.det_size, cfg.det_size), min_score=cfg.capture_min_det_score)
+            faces = _detect_faces(frame, cfg)
             caras_detect += len(faces)
             for fi, f in enumerate(faces):
                 estado = guardar_cara(ruta, local_id, camara_id, fichero, frame, f, ts,

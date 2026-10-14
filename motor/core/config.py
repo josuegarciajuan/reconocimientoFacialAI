@@ -23,6 +23,13 @@ class Config:
     # más pequeñas (coste ~4x en CPU, amortizado por el muestreo face-every).
     min_det_score: float = 0.4
     det_size: int = 1280
+    # P3 (tiempo real): detección en DOS NIVELES. Si activo, antes de la pasada
+    # cara (det_size) se hace una pasada BARATA a `two_stage_det_size`; solo si
+    # esa pasada encuentra cara se ejecuta la pasada completa. Ahorra el 89 % del
+    # coste (RetinaFace) en frames sin cara. OJO: puede bajar recall (la pasada
+    # barata ve menos) -> gate `motor/eval`. Default OFF.
+    two_stage_det: bool = False
+    two_stage_det_size: int = 640
     # det_size para CROPS de cara ya recortados (clasificador + re-embedding):
     # la imagen es pequeña (~85-130 px), subirla a 1280 solo desperdicia CPU.
     crop_det_size: int = 640
@@ -518,6 +525,8 @@ class Config:
         cfg.sr_embed_enabled = get_bool(ruta, "RF_SR_EMBED_ENABLED", cfg.sr_embed_enabled)
         cfg.min_display_side = get_int(ruta, "RF_MIN_DISPLAY_SIDE", cfg.min_display_side)
         cfg.det_size = get_int(ruta, "RF_DET_SIZE", cfg.det_size)
+        cfg.two_stage_det = get_bool(ruta, "RF_TWO_STAGE_DET", cfg.two_stage_det)
+        cfg.two_stage_det_size = get_int(ruta, "RF_TWO_STAGE_DET_SIZE", cfg.two_stage_det_size)
         cfg.crop_det_size = get_int(ruta, "RF_CROP_DET_SIZE", cfg.crop_det_size)
         cfg.face_fill = get_float(ruta, "RF_FACE_FILL", cfg.face_fill)
         cfg.face_min_pad = get_int(ruta, "RF_FACE_MIN_PAD", cfg.face_min_pad)
