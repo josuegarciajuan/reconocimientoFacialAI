@@ -35,3 +35,38 @@ def test_inventory_ignores_other_backup_types(tmp_path):
     (root / "20261002_100000_consolidar").mkdir()
     (root / "20261002_100000_reparacion").mkdir()
     assert len(inventory(str(root))) == 1
+
+
+# ---------------------------------------------------------------------------
+# Retención del spool del pool (returns/ + processed/)
+# ---------------------------------------------------------------------------
+
+def test_select_pool_purga_solo_antiguo():
+    from motor.retener_backups import select_pool
+    now = dt.datetime(2026, 10, 14, 12, 0, 0)
+    items = [
+        {"name": "returns/nuevo", "path": "/x/nuevo", "kind": "dir",
+         "ts": now - dt.timedelta(minutes=10)},
+        {"name": "returns/viejo", "path": "/x/viejo", "kind": "dir",
+         "ts": now - dt.timedelta(hours=30)},
+        {"name": "processed/antiguo", "path": "/y/antiguo", "kind": "file",
+         "ts": now - dt.timedelta(days=5)},
+    ]
+    keep, purge = select_pool(items, now, protect_hours=2)
+    assert {x["name"] for x in purge} == {"returns/viejo", "processed/antiguo"}
+    assert {x["name"] for x in keep} == {"returns/nuevo"}
+
+
+def test_inventory_pool_lista_returns_y_processed(tmp_path, monkeypatch):
+    import motor.retener_backups as rb
+    rroot = tmp_path / "returns"
+    proot = tmp_path / "processed"
+    (rroot / "jobA").mkdir(parents=True)
+    proot.mkdir()
+    (proot / "reqA.json").write_text("{}")
+    monkeypatch.setattr(rb, "RETURNS_DIR", str(rroot))
+    monkeypatch.setattr(rb, "PROCESSED_DIR", str(proot))
+    items = rb.inventory_pool()
+    names = {x["name"] for x in items}
+    assert "returns/jobA" in names
+    assert "processed/reqA.json" in names
