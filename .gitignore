@@ -37,6 +37,8 @@ motor/llm_cache/
 motor/calibrador/
 # Informes de re-matching (reagrupar.py)
 motor/reagrupar_out/
+# Sonda de calidad de imagen (quality_probe.py): tiras comparativas por cara
+motor/quality_probe/
 # Cola del worker único de foto HQ (motor/photo_worker.py)
 motor/photo_queue/
 motor/photo_evidence/
