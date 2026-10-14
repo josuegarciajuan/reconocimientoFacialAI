@@ -13,7 +13,7 @@ from fifo import fifo
 # y genera la miniatura. FTP legacy ya no se usa (el vídeo se queda local).
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from motor.core.video import H264VideoWriter, VideoConfig, write_frame_safe  # noqa: E402
-from motor.core.env import get_int  # noqa: E402
+from motor.core.env import get, get_int  # noqa: E402
 from motor.core.motion import MotionConfig, MotionDetector  # noqa: E402
 # F1: con 11 guarda_movimientos a la vez, el pool interno de OpenCV (resize,
 # blur, absdiff) multiplica hilos. Se fija a RF_CV_THREADS (default 1); el
@@ -106,6 +106,11 @@ THRESHOLD = _arg_int(17, get_int(None, "RF_MOV_THRESHOLD", 15), 1)
 BLUR = _arg_int(18, get_int(None, "RF_MOV_BLUR", 15), 3)
 DILATE = _arg_int(19, get_int(None, "RF_MOV_DILATE", 2), 0)
 CRF = get_int(None, "RF_VIDEO_CRF", 20)
+# Preset de x264 de la CAPTURA (ultrafast..veryslow). El default de `VideoConfig`
+# es "medium", pero con 11 cámaras a 1080p satura la CPU; `veryfast` recorta el
+# coste de codificación sin pérdida apreciable (mismo CRF, fichero algo mayor).
+# Esta variable (RF_VIDEO_PRESET) ya estaba documentada en .env.example.
+PRESET = get(None, "RF_VIDEO_PRESET", "medium")
 # Factor de la SUMA de contornos (multicontorno): recupera varias personas
 # pequeñas que juntas mueven área aunque ninguna supere `dontCare`. 0 lo desactiva.
 SUM_FACTOR = float(os.environ.get("RF_MOV_SUM_FACTOR", "2.0") or 2.0)
@@ -330,7 +335,8 @@ while(True):
             # Fase 4c: layout con subdirectorio de cámara (motor/videos/<local>/<cam>/)
             os.makedirs('motor/videos/'+LOCAL_ID+'/'+CAMARA_ID, exist_ok=True)
             writer = H264VideoWriter('motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/'+video_tmp,
-                                     size, int(FPS), VideoConfig(crf=CRF, fps=int(FPS)),
+                                     size, int(FPS), VideoConfig(crf=CRF, fps=int(FPS),
+                                                                 preset=PRESET),
                                      stderr_path='motor/logs/ffmpeg_'+CAMARA_ID+'.log')
             time_inicio = time.time()
             printLog ("Se empieza a generar el siguiente video:"+video_actual)
