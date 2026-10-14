@@ -90,7 +90,9 @@ def build_params(local_id: str, camara_id: str, fichero: str, ruta: str) -> dict
         "cam": str(camara_id),
         "fichero": fichero,
         "home": os.environ.get("RF_DIST_HOME", "").strip() or None,
-        "home_path": f"motor/videos/{local_id}/{camara_id}/{fichero}",
+        # Ruta ABSOLUTA en el nodo casa: el pull del executor la usa tal cual
+        # (mismo contrato que el pool: `${RF_HOME}/motor/videos/...`).
+        "home_path": os.path.abspath(os.path.join(ruta, "motor", "videos", local_id, camara_id, fichero)),
         "total_frames": total,
         "segment_frames": segment_frames,
         "fps": fps,

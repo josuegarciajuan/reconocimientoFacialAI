@@ -51,7 +51,7 @@ def test_build_params_segmenta_por_segundos(tmp_path, monkeypatch):
     params = vo.build_params("1", "9", fichero, ruta)
     assert params["total_frames"] == 50
     assert params["segment_frames"] == 10
-    assert params["home_path"] == f"motor/videos/1/9/{fichero}"
+    assert params["home_path"] == os.path.join(ruta, "motor", "videos", "1", "9", fichero)
     assert params["lineas"] == [{"id": "5"}]
 
 
