@@ -641,6 +641,36 @@ class _CascadeCtx:
         self._vlm = None
         self._openai = None
         self._torso_desc_cache = {}
+        # P2: presupuesto del camino síncrono por sub-clúster (0 = OFF).
+        self._t0 = time.time()
+        self._deferred_log = 0.0
+
+    def _tail_budget_exceeded(self) -> bool:
+        """True si el camino síncrono de este sub-clúster superó el presupuesto.
+
+        Las capas de cola larga (VLM/OpenAI) se cortan: devolverlas como "sin
+        señal" es equivalente al caso ya soportado de proveedor sin respuesta
+        (decisión con las capas rápidas). Reversible y sin efecto con budget=0.
+        """
+        try:
+            ms = int(getattr(self.cfg, "sync_tail_budget_ms", 0) or 0)
+        except (TypeError, ValueError):
+            ms = 0
+        if ms <= 0:
+            return False
+        elapsed = (time.time() - self._t0) * 1000.0
+        if elapsed < ms:
+            return False
+        # Registra el diferido (máx. 1 log cada 30 s para no inundar el embudo).
+        ahora = time.time()
+        if ahora - self._deferred_log > 30.0:
+            self._deferred_log = ahora
+            try:
+                log_evento(self.ruta, self.local_id, "deferred", cam=self.camara_id,
+                           motivo="presupuesto_sincrono", ms=ms)
+            except Exception:  # noqa: BLE001
+                pass
+        return True
 
     # --- L1b: cuerpo/apariencia (media superior, Fase 1) ---
     # Antes esta capa usaba un crop diminuto bajo la barbilla (o el fallback
@@ -818,6 +848,8 @@ class _CascadeCtx:
     def vlm_score(self, cod: str) -> LayerScore:
         if not self.cfg.vlm_enabled:
             return LayerScore(available=False)
+        if self._tail_budget_exceeded():
+            return LayerScore(available=False, reason="presupuesto_sincrono")
         if self._vlm is None:
             from motor.core.vlm_local import VLMClient
             self._vlm = VLMClient(self.cfg, self.ruta)
@@ -826,6 +858,8 @@ class _CascadeCtx:
     def openai_score(self, cod: str) -> LayerScore:
         if not self.cfg.openai_enabled:
             return LayerScore(available=False)
+        if self._tail_budget_exceeded():
+            return LayerScore(available=False, reason="presupuesto_sincrono")
         if self._openai is None:
             from motor.core.llm_openai import OpenAICompare
             self._openai = OpenAICompare(self.cfg, self.ruta)
