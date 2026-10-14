@@ -87,6 +87,25 @@ def test_debe_crear_identidad_galeria_llena_respeta_freno():
 
 
 # ---------------------------------------------------------------------------
+# Guarda de CALIDAD (2026-10-14): una cara de baja información NUNCA crea
+# identidad (ni con autoenroll ni en bootstrap). Incidente: 258 "visitantes",
+# uno por cada cara diminuta (< match_min_face_side) del mismo grupo de gente.
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("verdict,person,autoenroll,hay_galeria", [
+    ("uncertain", None, True, True),
+    ("uncertain", None, True, False),      # ni en bootstrap
+    ("new", None, True, True),
+    ("review", None, True, False),
+    ("match", "P123", True, True),         # low_q fuerza uncertain; aun así, False
+])
+def test_debe_crear_identidad_low_quality_nunca(verdict, person, autoenroll, hay_galeria):
+    cfg = Config(autoenroll_new=autoenroll)
+    assert debe_crear_identidad(verdict, person, cfg, hay_galeria=hay_galeria,
+                                low_quality=True) is False
+
+
+# ---------------------------------------------------------------------------
 # Default del dataclass
 # ---------------------------------------------------------------------------
 

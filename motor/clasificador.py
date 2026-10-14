@@ -449,26 +449,31 @@ def _preserve_evidence(ruta: str, local_id: str, camara_id: str,
 
 
 def debe_crear_identidad(verdict: str, person: str | None, cfg: Config,
-                         hay_galeria: bool = True) -> bool:
+                         hay_galeria: bool = True, low_quality: bool = False) -> bool:
     """Decide si un sub-clúster debe crear/actualizar una identidad persistente.
 
     Función PURA (sin E/S) que implementa la guarda anti-fragmentación:
 
+    - CALIDAD (2026-10-14): un sub-clúster de BAJA CALIDAD (`low_quality`, caras
+      por debajo del mínimo de información) NUNCA crea identidad, ni siquiera con
+      `autoenroll_new` activo ni en bootstrap. Su embedding no es discriminativo:
+      enrollarlo fabrica una identidad-junk que nadie podrá volver a matchear y,
+      en producción, generó 258 "visitantes" (uno por cara diminuta). Va a la
+      cola de revisión (rama `revision_only`).
     - BOOTSTRAPPING (2026-09-29): si la galería está VACÍA (`hay_galeria=False`)
-      SIEMPRE se crea identidad. Un sistema recién reseteado no tiene ningún
-      embedding contra el que hacer `match`, así que sin esta excepción el freno
-      anti-fragmentación dejaba el clasificador "muerto": todo iba a revisión y
-      nunca nacía ninguna persona (el panel de Visitantes quedaba vacío). En
-      cuanto hay galería vuelve a aplicarse el freno.
+      y la cara tiene calidad suficiente, SIEMPRE se crea identidad. Un sistema
+      recién reseteado no tiene ningún embedding contra el que hacer `match`, así
+      que sin esta excepción el freno anti-fragmentación dejaba el clasificador
+      "muerto": todo iba a revisión y nunca nacía ninguna persona.
     - Un `match` con persona asignada SIEMPRE escribe en esa identidad (True).
     - Cualquier otro caso (`new`, `uncertain`, `review`, o `match` sin persona)
-      NO crea identidad salvo que `cfg.autoenroll_new` esté activo. Con
-      `autoenroll_new=False` (default) el veredicto va a revisión sin tocar
-      galería ni BD; con `True` se recupera el comportamiento histórico.
+      NO crea identidad salvo que `cfg.autoenroll_new` esté activo.
 
     La rama de revisión-only pura (evidencia + auditoría, sin identidad) es la
     inversa: `not debe_crear_identidad(...)`.
     """
+    if low_quality:
+        return False
     if not hay_galeria:
         return True
     if verdict == "match" and person is not None:
@@ -1167,12 +1172,15 @@ def _process_subcluster_inner(sub, face_list, battery, ruta: str, local_id: str,
     # BOOTSTRAPPING (2026-09-29): una galería vacía (p. ej. tras un reset) no
     # puede producir ningún `match`; sin esta excepción el freno anti-fragmentación
     # dejaba el clasificador sin crear identidades para siempre.
+    # CALIDAD (2026-10-14): un sub-clúster de baja calidad (`low_q`) NUNCA crea
+    # identidad, ni con autoenroll ni en bootstrap: su embedding no discrimina y
+    # enrollarlo fabricaba 258 visitantes (uno por cara diminuta). Va a revisión.
     hay_galeria = bool(store.persons())
     if not hay_galeria:
         log(f"[bootstrap] galería vacía -> alta forzada "
             f"(verdict={result.verdict}, autoenroll_new={cfg.autoenroll_new})")
     if not debe_crear_identidad(result.verdict, result.person, cfg,
-                                hay_galeria=hay_galeria):
+                                hay_galeria=hay_galeria, low_quality=low_q):
         foto_id = random_code()
         _preserve_evidence(ruta, local_id, camara_id, rep_item["path"], rep_stem,
                            "revision-" + result.verdict)
