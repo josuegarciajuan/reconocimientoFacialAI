@@ -32,20 +32,27 @@ Consumo:
 - CLI: `motor/venv/bin/python motor/embudo.py <local> [--desde YYYY-MM-DD]`.
 - Panel/HTTP: `ws.php embudo_latencia <local> [desde]` (solo lectura).
 
-## 2. Plan por fases
+## 2. Plan por fases (estado)
 
-- **P0 — Medición** (esta fase): contrato de eventos + CLI + `ws.php`. Sin
-  cambio de comportamiento.
-- **P1 — Troceado intra-vídeo**: definición `rf-video-segments` en SuperServer
-  (split del clip por ventanas de ~10 s) + canal remoto casa→control plane
-  (`ss-dist-submit`, pull desde casa) + `motor/video_orchestrator.py` en la casa
-  que envía y aplica los mismos efectos. `RF_VIDEO_MODE=pool|distributed` con
-  fallback. Esperado: ÷3-4.
-- **P2 — Cola larga asíncrona + aplicación de `classify`**: VLM/OpenAI/SR/body en
-  worker de fondo (identidad provisional inmediata); acelerar el escritor único.
-- **P3 — Dos niveles de detección** (`RF_TWO_STAGE_DET`, gate `motor/eval`): pasada
-  barata + `RetinaFace@1280` solo donde hay cara. Esperado: ÷2-3 en coste/frame.
-- **P4 — (opcional) Streaming durante la grabación.**
+- **P0 — Medición** ✅ implementado y desplegado. Contrato de eventos `latencia` +
+  CLI + `ws.php embudo_latencia`.
+- **P1 — Troceado intra-vídeo** ✅ implementado (ambos repos), **inactivo**:
+  - Proyecto: `process_video(--from/--to)`, `motor/video_orchestrator.py`,
+    selector `RF_VIDEO_MODE=pool|distributed` (default `pool`).
+  - SuperServer: definición `rf-video-segments` (split por segmentos + `pull`
+    desde la casa), canal remoto `ss-dist-submit` + `server/distspool.js`.
+  - Sin activar: motor apagado, modo `local`, `taildeck` sin reiniciar.
+- **P2 — Cola larga / camino síncrono** ✅ implementado (inactivo). El escritor
+  único de galería ya agrupa escrituras por sub-clúster (`begin_defer`/
+  `flush_defer`). Se añade `RF_SYNC_TAIL_BUDGET_MS` (default 0): corta VLM/OpenAI
+  por tiempo por cara (equivalente a "proveedor sin respuesta"). La separación
+  completa en un worker de fondo queda pendiente de validar con datos reales.
+- **P3 — Dos niveles de detección** ✅ implementado, **flag OFF**
+  (`RF_TWO_STAGE_DET=0`): pasada barata + `RetinaFace@1280` solo donde hay cara.
+  Activar solo tras gate `motor/eval` (TAR/FAR) + cobertura del embudo.
+- **P4 — (opcional) Streaming durante la grabación** ⏸️ **diferido**: solo si
+  P1-P3 no bastan; requiere tocar la captura (`guarda_movimientosV3`) y validar
+  con el motor activo.
 
 ## 3. Reversibilidad
 
