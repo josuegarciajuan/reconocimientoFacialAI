@@ -73,3 +73,14 @@ def test_decode_crops_extrae_layout(tmp_path):
 
 def test_decode_crops_vacio_ok(tmp_path):
     assert vo.decode_crops("", str(tmp_path)) is True
+
+
+def test_result_of_desempaqueta_el_resumen():
+    # El canal devuelve el resumen de ejecución; el combinado va en `result`.
+    assert vo.result_of({"status": "done", "result": {"frames": 94}}) == {"frames": 94}
+    # Ejecución fallida o sin resultado -> None (para caer al fallback).
+    assert vo.result_of({"status": "failed", "result": None}) is None
+    assert vo.result_of({"status": "running", "result": {"x": 1}}) is None
+    # Formato ya combinado (pruebas) -> tal cual.
+    assert vo.result_of({"frames": 94}) == {"frames": 94}
+    assert vo.result_of(None) is None

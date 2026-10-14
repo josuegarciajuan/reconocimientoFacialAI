@@ -126,6 +126,25 @@ def submit(params: dict, exec_id: str, timeout: float) -> dict | None:
     return None
 
 
+def result_of(data: dict | None) -> dict | None:
+    """Extrae el resultado COMBINADO de la respuesta del canal.
+
+    El canal devuelve el resumen de la ejecución: `{status, result:{...combine...}}`.
+    El resultado combinado (crops/cruces/métricas) está en `result`; si `data` ya
+    es el combinado (p. ej. en pruebas), se devuelve tal cual. None si no hay
+    resultado (p. ej. ejecución fallida).
+    """
+    if not isinstance(data, dict):
+        return None
+    st = data.get("status")
+    if st is not None and st != "done":
+        return None
+    inner = data.get("result")
+    if isinstance(inner, dict):
+        return inner
+    return data if st is None else None
+
+
 def decode_crops(b64: str, dest_root: str) -> bool:
     """Decodifica el tar de crops al layout que espera `aplicar` (<root>/motor/...)."""
     if not b64:
@@ -180,15 +199,16 @@ def main() -> int:
           f"({len(params['lineas'])} líneas)", flush=True)
 
     data = submit(params, exec_id, args.timeout)
-    if not data:
+    result = result_of(data)
+    if not result:
         return fallback(args.local_id, args.camara_id, args.fichero, args.ruta)
 
     tmp = tempfile.mkdtemp(prefix="rf-dist-")
     try:
-        if not decode_crops(data.get("crops_tar_b64", ""), tmp):
+        if not decode_crops(result.get("crops_tar_b64", ""), tmp):
             return fallback(args.local_id, args.camara_id, args.fichero, args.ruta)
         # `aplicar` mueve crops/fotos, registra cruces, embudo y borra vídeo+marker.
-        aplicar(tmp, data, args.local_id, args.camara_id, args.fichero, args.ruta, t_ini)
+        aplicar(tmp, result, args.local_id, args.camara_id, args.fichero, args.ruta, t_ini)
     finally:
         try:
             import shutil
@@ -197,7 +217,7 @@ def main() -> int:
             pass
 
     print(f"[orquestador] {exec_id}: aplicado "
-          f"({data.get('unidades', '?')} unidades, {data.get('caras_guard', 0)} caras)", flush=True)
+          f"({result.get('unidades', '?')} unidades, {result.get('caras_guard', 0)} caras)", flush=True)
     return 0
 
 
