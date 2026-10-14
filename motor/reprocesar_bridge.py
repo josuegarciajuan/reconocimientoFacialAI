@@ -19,6 +19,7 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -48,14 +49,21 @@ def modo() -> str:
 
 def build_request(local_id: str, camara_id: str, fichero: str, face_every: int,
                   fingerprint_val: str | None = None, rid: str | None = None) -> dict:
-    rid = rid or f"req-{int(time.time())}-{os.getpid()}"
+    # El id DEBE ser único por petición. Antes era `req-<epoch>-<pid>`: al enviar
+    # varios rescans en el mismo segundo (paralelo=6) colisionaban, `en_vuelo`
+    # colapsaba a UNA entrada y el bridge terminaba tras el 1er vídeo (el resto
+    # quedaba huérfano en el pool). Se desambigua con el externalId (local/cam/
+    # fichero, ya único) — mismo patrón que clasificador_bridge con batch_id.
+    external_id = f"rescan:{local_id}/{camara_id}/{fichero}"
+    rid = rid or (f"req-{int(time.time())}-{os.getpid()}-"
+                  f"{hashlib.sha1(external_id.encode('utf-8', 'replace')).hexdigest()[:10]}")
     return {
         "id": rid,
         "project": "reconocimientoFacial",
         "process": "rescan",
         "params": {"local": local_id, "cam": camara_id, "fichero": fichero,
                    "face_every": face_every},
-        "externalId": f"rescan:{local_id}/{camara_id}/{fichero}",
+        "externalId": external_id,
         "fingerprint": fingerprint_val,
     }
 
