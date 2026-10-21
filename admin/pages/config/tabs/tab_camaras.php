@@ -14,9 +14,11 @@
  */
 require_once __DIR__ . "/../../../../libs/etiquetas.php";
 require_once __DIR__ . "/../../../../libs/calibracion.php";
+require_once __DIR__ . "/../../../../libs/camara_perfil.php";
 
 $calib_params = calib_parametros();
 $reco_cam = $camara_sel ? calib_recomendaciones_camara((int) $camara_sel["id"]) : [];
+$perfil_cam = $camara_sel ? rf_camara_perfil_resumen((string)($camara_sel["url_conexion"] ?? "")) : null;
 
 /* Globales RF_* mostrados en "Configuración general" (fábrica = default del código). */
 $globales_ui = [
@@ -79,6 +81,26 @@ $deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0))
             </select>
         </div>
 
+        <?php if (is_array($perfil_cam)): ?>
+        <div class="form-grid__full">
+            <div class="box p-3" style="border-left:3px solid var(--mordor-oro)">
+                <strong>Perfil camaraESP:</strong>
+                <?= htmlspecialchars($perfil_cam["model"] ?: "cámara camaraip", ENT_QUOTES); ?>
+                · <?= (int)$perfil_cam["width"]; ?>×<?= (int)$perfil_cam["height"]; ?>
+                · <?= (int)$perfil_cam["fps"]; ?> fps
+                · JPEG q<?= (int)$perfil_cam["jpeg_quality"]; ?>
+                <?php if ($perfil_cam["measured_fps"] !== null): ?>
+                    · medido <?= number_format((float)$perfil_cam["measured_fps"], 1); ?> fps
+                <?php endif; ?>
+                <div class="text-xs text-gray-500 dark:text-gray-600 mt-1">
+                    El fps, la resolución del stream y los controles de sensor/UVC los
+                    gobierna <code>camaraESP</code>. Aquí solo se editan los parámetros
+                    de análisis de Ojos.
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <div>
             <label for="nombre" class="field-label">Descripción</label>
             <input type="text" name="nombre" id="nombre" class="input border w-full" placeholder="Descripción" value="<?= htmlspecialchars($camara_sel["descripcion"] ?? ""); ?>">
@@ -140,7 +162,10 @@ $deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0))
         <p class="text-xs text-gray-500 dark:text-gray-600 mb-2"><?= htmlspecialchars($d[2]); ?></p>
         <div class="form-grid">
             <?php foreach ($calib_params as $k => $meta): if ($meta["dominio"] !== $dom) { continue; } ?>
-                <?php $tiene_reco = isset($reco_cam[$k]); ?>
+                <?php
+                $tiene_reco = isset($reco_cam[$k]);
+                $forzar_fps = is_array($perfil_cam) && $k === "fps";
+                ?>
                 <div>
                     <label for="<?= $k; ?>" class="field-label">
                         <?= htmlspecialchars($meta["label"]); ?>
@@ -152,13 +177,19 @@ $deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0))
                         <?php endif; ?>
                     </label>
                     <div class="flex items-center gap-2">
-                        <select name="<?= $k; ?>" id="<?= $k; ?>" class="input border w-full" data-default="<?= (int)$meta["factory"]; ?>">
-                            <?= rf_cfg_select_rango((int)$meta["rango"][0], (int)$meta["rango"][1], $cfg[$k]); ?>
+                        <select name="<?= $k; ?>" id="<?= $k; ?>" class="input border w-full" data-default="<?= (int)$meta["factory"]; ?>" <?= $forzar_fps ? "disabled aria-disabled='true'" : ""; ?>>
+                            <?= rf_cfg_select_rango((int)$meta["rango"][0], (int)$meta["rango"][1], $forzar_fps ? (int)$perfil_cam["fps"] : $cfg[$k]); ?>
                         </select>
+                        <?php if ($forzar_fps): ?>
+                            <input type="hidden" name="fps" value="<?= (int)$perfil_cam["fps"]; ?>">
+                        <?php endif; ?>
                         <button type="button" class="button button--sm bg-gray-700 text-white"
                                 onclick="RestaurarCampo('<?= $k; ?>')" title="Restaurar a fábrica (<?= (int)$meta["factory"]; ?>)">↺</button>
                     </div>
                     <p class="text-xs text-gray-500 dark:text-gray-600 mt-1"><?= htmlspecialchars($meta["lore"]); ?></p>
+                    <?php if ($forzar_fps): ?>
+                        <p class="text-xs mt-1" style="color:#2e9e44">Forzado por el perfil de camaraESP (<?= (int)$perfil_cam["fps"]; ?> fps reales).</p>
+                    <?php endif; ?>
                     <?php if ($tiene_reco && !empty($reco_cam[$k]["motivo"])): ?>
                         <p class="text-xs mt-1" style="color:#2e9e44">💡 <?= htmlspecialchars($reco_cam[$k]["motivo"]); ?></p>
                     <?php endif; ?>

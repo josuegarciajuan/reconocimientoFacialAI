@@ -30,6 +30,7 @@
  */
 
 const http = require("http");
+const https = require("https");
 const { spawn } = require("child_process");
 const { createHmac, timingSafeEqual } = require("crypto");
 
@@ -123,6 +124,56 @@ function tokenValido(id, token) {
 function urlDeLaCamara(cam) {
   const desdeServer = (cam.url_desdeserver || "").trim();
   return desdeServer !== "" ? desdeServer : (cam.url_conexion || "").trim();
+}
+
+/**
+ * ¿Es una cámara del bridge camaraip? Para esas URLs el bridge ya entrega
+ * MJPEG; no hace falta lanzar ffmpeg ni reencode/upscale (causa de lag).
+ */
+function esCamaraip(url) {
+  try {
+    const u = new URL(url);
+    return /^https?:$/.test(u.protocol) && /^\/camaraip\/(stream|latest\.jpg)/.test(u.pathname);
+  } catch (_) {
+    return false;
+  }
+}
+
+/**
+ * Proxy directo del MJPEG del bridge. El bridge ya hace fan-out y descarta
+ * frames si el cliente va lento; pipe() aplica backpressure sin acumular.
+ */
+function proxyCamaraip(req, res, url) {
+  res.writeHead(200, {
+    "Content-Type": "multipart/x-mixed-replace; boundary=frame",
+    "Cache-Control": "no-store, no-cache, must-revalidate",
+    Pragma: "no-cache",
+    "X-Accel-Buffering": "no",
+    Connection: "close",
+  });
+
+  const transport = /^https:/i.test(url) ? https : http;
+  const upstream = transport.get(url, (up) => {
+    if (up.statusCode !== 200) {
+      log(`camaraip upstream status=${up.statusCode}`);
+      up.resume();
+      res.end();
+      return;
+    }
+    up.pipe(res);
+  });
+  upstream.on("error", (err) => {
+    log(`camaraip upstream error: ${err.message}`);
+    try { res.end(); } catch (_) {}
+  });
+  const cerrar = () => {
+    try { upstream.destroy(); } catch (_) {}
+    try { res.end(); } catch (_) {}
+  };
+  req.on("close", cerrar);
+  res.on("close", () => {
+    try { upstream.destroy(); } catch (_) {}
+  });
 }
 
 function frameMjpeg(frame) {
@@ -253,6 +304,11 @@ function handleLive(req, res) {
     res.writeHead(404, { "Content-Type": "text/plain" });
     res.end("cámara sin URL de conexión");
     return;
+  }
+
+  // camaraip: proxy directo, sin ffmpeg ni reencode.
+  if (esCamaraip(url)) {
+    return proxyCamaraip(req, res, url);
   }
 
   res.writeHead(200, {

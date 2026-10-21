@@ -16,6 +16,20 @@ de cruces de línea virtuales, control de aforo y fichajes.
   panel-control, conciliador de fichajes y vinculador de vídeos/personas/cruces.
   Logs vía `journalctl` (rotación del sistema).
 
+## Cámaras camaraip (perfil operativo)
+
+Las cámaras servidas por `camaraESP` (`esp32-oficina`, `cam-oficina`, etc.) usan
+un perfil operativo del bridge (`http://127.0.0.1:8111/camaraip/profile`). Ojos
+lo lee para:
+
+- usar el fps real en `guarda_movimientosV3` y en el calibrador;
+- generar snapshots desde `latest.jpg` sin abrir el stream;
+- proxyar el directo MJPEG sin reencode (`live/mjpeg-stream.js`).
+
+El formulario de cámara muestra el perfil y bloquea el fps para estas cámaras.
+Las RTSP de laboral no se ven afectadas. Detalle:
+`docs/specs/20-instancia-ojos.md` y `libs/camara_perfil.php`.
+
 ## Procesos (daemons)
 
 | Servicio | Script | Rol |

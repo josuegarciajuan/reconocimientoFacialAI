@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from motor.core.video import H264VideoWriter, VideoConfig, write_frame_safe  # noqa: E402
 from motor.core.env import get, get_int  # noqa: E402
 from motor.core.motion import MotionConfig, MotionDetector  # noqa: E402
+from motor.core.camara_perfil import camera_id_from_url, profile_fps  # noqa: E402
 # F1: con 11 guarda_movimientos a la vez, el pool interno de OpenCV (resize,
 # blur, absdiff) multiplica hilos. Se fija a RF_CV_THREADS (default 1); el
 # resultado de la detección de movimiento es idéntico.
@@ -82,6 +83,27 @@ FTP_USER = sys.argv[13] if len(sys.argv) > 13 else "-"
 FTP_PASS = sys.argv[14] if len(sys.argv) > 14 else "-"
 URL_CONEXION = sys.argv[15] if len(sys.argv) > 15 else (sys.argv[13] if len(sys.argv) > 13 else "")
 BASE_URL = sys.argv[16] if len(sys.argv) > 16 else "http://localhost/reconocimientoFacial/"
+_ES_CAMARAIP = camera_id_from_url(URL_CONEXION) is not None
+
+# camaraip: el fps efectivo lo gobierna camaraESP. El 14 de la BD descuadraba
+# pre/post-roll, el buffer de movimiento y los timestamps del MP4.
+if _ES_CAMARAIP:
+    FPS = profile_fps(URL_CONEXION, FPS)
+    os.environ.setdefault(
+        "OPENCV_FFMPEG_CAPTURE_OPTIONS",
+        "fflags;nobuffer|flags;low_delay|timeout;5000000",
+    )
+
+
+def _abrir_captura(url):
+    """VideoCapture con buffer mínimo para no acumular latencia en camaraip."""
+    cap = cv2.VideoCapture(url)
+    if _ES_CAMARAIP:
+        try:
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        except Exception:
+            pass
+    return cap
 
 # Umbrales del análisis. Prioridad: parámetro POR CÁMARA (argv 17/18/19,
 # enviado por capturador.php desde la tabla `camaras`); si viene vacío (-1),
@@ -144,7 +166,7 @@ maximo_videos_boost = int(maximo_videos * 2)  # clips más largos en modo asedio
 printLog("frames_a_analizar:"+str(frames_a_analizar))
 printLog("frames_con_movimiento:"+str(frames_con_movimiento))
 
-cap = cv2.VideoCapture(URL_CONEXION)
+cap = _abrir_captura(URL_CONEXION)
 #cap.set(cv2.CAP_PROP_FPS, FPS)
 #counter for the detection
 
@@ -242,7 +264,7 @@ while(True):
             except Exception:
                 pass
             time.sleep(2)
-            cap = cv2.VideoCapture(URL_CONEXION)
+            cap = _abrir_captura(URL_CONEXION)
             fallos_lectura = 0
         continue
     fallos_lectura = 0

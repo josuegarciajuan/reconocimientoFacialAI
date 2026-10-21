@@ -8,6 +8,7 @@ require_once __DIR__ . "/../../../config/rutas.php";
 require_once __DIR__ . "/../../../libs/db.php";
 require_once __DIR__ . "/../../../libs/nodos.php";
 require_once __DIR__ . "/../../../libs/lineas_plano.php";
+require_once __DIR__ . "/../../../libs/camara_perfil.php";
 
 /* La sesión debe estar iniciada para leer $_SESSION["local_id"] (caso 8: mover cámara).
  * Este fichero se llama por fetch directo (no pasa por index.php), así que hay que
@@ -41,7 +42,7 @@ switch ($_GET["a"]) {
         $cam_id = (int)($_GET["camara"] ?? 0);
         $cam = DB::selectOne("SELECT id, url_conexion FROM camaras WHERE id = ?", [$cam_id]);
         if ($cam) {
-            $foto = RUTA_PROYECTO . "admin/fotos_camara/" . $cam_id . ".png";
+            $foto = RUTA_PROYECTO . "admin/fotos_camara/" . $cam_id . ".jpg";
             if (!is_file($foto) || (time() - filemtime($foto)) > 15) {
                 $url = str_replace("'", "", (string)$cam["url_conexion"]);
                 $cmd = RUTA_PYTHON . " " . RUTA_PROYECTO . "motor/dofoto.py " . $cam_id
@@ -447,9 +448,10 @@ switch ($_GET["a"]) {
                 break;
             }
             $url = str_replace("'", "", (string)$cam["url_conexion"]);
+            $fps_cam = rf_camara_perfil_fps($url, (int)$cam["fps"]);
             $parametros = implode(",", [
                 (int)$cam["segundos_analizar"], (int)$cam["porcentaje_mov"], (int)$cam["dontCare"],
-                (int)$cam["fps"], (int)$cam["redimesionframe"], (int)$cam["sensibilidad"],
+                $fps_cam, (int)$cam["redimesionframe"], (int)$cam["sensibilidad"],
             ]);
         } else {
             // Ritual E (identidad): offline, no necesita cámara ni URL.

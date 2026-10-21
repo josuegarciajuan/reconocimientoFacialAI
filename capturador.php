@@ -23,6 +23,7 @@ if(isset($argv[2]) and $argv[2]!=""){
 
 
 require_once("config/rutas.php");
+require_once("libs/camara_perfil.php");
 require_once("libs/Jos_thread.class.php");
 
 
@@ -64,6 +65,9 @@ while(true){
             $porcentaje_mov=$data["valores"][$i]["porcentaje_mov"];
             $dontCare=$data["valores"][$i]["dontCare"];
             $fps=$data["valores"][$i]["fps"];
+            // camaraip: el fps efectivo lo gobierna camaraESP. El valor de la
+            // BD (14) descuadraba pre/post-roll y la velocidad de los clips.
+            $fps = rf_camara_perfil_fps($cadena_conexion, (int)$fps);
             $maximo_videos=$data["valores"][$i]["maximo_videos"];
             $redimesionframe=$data["valores"][$i]["redimesionframe"]/100;
             $sensibilidad=$data["valores"][$i]["sensibilidad"];
