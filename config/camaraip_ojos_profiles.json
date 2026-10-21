@@ -1,0 +1,334 @@
+{
+    "version": 1,
+    "instance": "ojos",
+    "saved_at": "2026-10-21T16:03:41+02:00",
+    "source": "camaraESP /camaraip/profile + camaras (OJOS)",
+    "cameras": {
+        "esp32-oficina": {
+            "camera_id": 1,
+            "label": "ESP32 oficina",
+            "url_conexion": "http://127.0.0.1:8111/camaraip/stream?camera=esp32-oficina",
+            "active": true,
+            "encendida": 1,
+            "profile": {
+                "label": "ESP32 oficina",
+                "model": "AI-Thinker ESP32-CAM",
+                "sensor": "OV3660",
+                "kind": "serial",
+                "active": true,
+                "stream": {
+                    "width": 320,
+                    "height": 240,
+                    "fps": 5,
+                    "jpeg_quality": 12,
+                    "rotation": 90
+                },
+                "view": {
+                    "stream_url": "/camaraip/stream?camera=esp32-oficina",
+                    "latest_url": "/camaraip/latest.jpg?camera=esp32-oficina"
+                },
+                "device": {
+                    "serial": {
+                        "baud": 460800,
+                        "frame_interval_ms": 200,
+                        "fb_count": 2,
+                        "grab_mode": "latest"
+                    },
+                    "sensor": {
+                        "brightness": 0,
+                        "contrast": 0,
+                        "saturation": 0,
+                        "sharpness": 0,
+                        "wb_mode": 0,
+                        "ae_level": 0,
+                        "gainceiling": 1,
+                        "bpc": 1,
+                        "wpc": 1,
+                        "raw_gma": 1,
+                        "lenc": 1,
+                        "hmirror": 0,
+                        "vflip": 0
+                    }
+                }
+            },
+            "ojos": {
+                "fps_objetivo": 5,
+                "fps_efectivo": 3,
+                "snapshot": "latest.jpg",
+                "live": "direct",
+                "analysis": {
+                    "segundos_analizar": 2,
+                    "porcentaje_mov": 35,
+                    "dontCare": 120,
+                    "maximo_videos": 60,
+                    "redimesionframe": 60,
+                    "sensibilidad": 1,
+                    "threshold": 15,
+                    "blur": 15,
+                    "dilate": 2,
+                    "seg_antes": 4,
+                    "seg_despues": 4
+                }
+            }
+        },
+        "cam-oficina": {
+            "camera_id": 2,
+            "label": "Webcam oficina",
+            "url_conexion": "http://127.0.0.1:8111/camaraip/stream?camera=cam-oficina",
+            "active": true,
+            "encendida": 1,
+            "profile": {
+                "label": "Webcam oficina",
+                "model": "SiGma Micro USB Web Camera",
+                "sensor": "UVC 1c4f:3000",
+                "kind": "uvc",
+                "active": true,
+                "stream": {
+                    "width": 320,
+                    "height": 240,
+                    "fps": 5,
+                    "jpeg_quality": 7,
+                    "rotation": 180
+                },
+                "view": {
+                    "stream_url": "/camaraip/stream?camera=cam-oficina",
+                    "latest_url": "/camaraip/latest.jpg?camera=cam-oficina"
+                },
+                "device": {
+                    "uvc": {
+                        "device": "/dev/video0",
+                        "input_format": "mjpeg",
+                        "source": {
+                            "width": 320,
+                            "height": 240,
+                            "fps": 30
+                        },
+                        "copy": true,
+                        "warmup_s": 2,
+                        "controls": {
+                            "brightness": 6,
+                            "contrast": 8,
+                            "saturation": 28,
+                            "hue": 0,
+                            "gamma": 32,
+                            "power_line_frequency": 1,
+                            "auto_exposure": 3,
+                            "sharpness": 3
+                        }
+                    }
+                }
+            },
+            "ojos": {
+                "fps_objetivo": 5,
+                "fps_efectivo": 3,
+                "snapshot": "latest.jpg",
+                "live": "direct",
+                "analysis": {
+                    "segundos_analizar": 2,
+                    "porcentaje_mov": 35,
+                    "dontCare": 120,
+                    "maximo_videos": 60,
+                    "redimesionframe": 60,
+                    "sensibilidad": 1,
+                    "threshold": 15,
+                    "blur": 15,
+                    "dilate": 2,
+                    "seg_antes": 4,
+                    "seg_despues": 4
+                }
+            }
+        },
+        "onx-josue": {
+            "camera_id": 3,
+            "label": "ONX josue",
+            "url_conexion": "http://127.0.0.1:8111/camaraip/stream?camera=onx-josue",
+            "active": false,
+            "encendida": 1,
+            "profile": {
+                "label": "ONX josue",
+                "model": "ONX3248G035",
+                "sensor": "OV2640",
+                "kind": "serial",
+                "active": false,
+                "stream": {
+                    "width": 320,
+                    "height": 240,
+                    "fps": 2,
+                    "jpeg_quality": 12,
+                    "rotation": 0
+                },
+                "view": {
+                    "stream_url": "/camaraip/stream?camera=onx-josue",
+                    "latest_url": "/camaraip/latest.jpg?camera=onx-josue"
+                },
+                "device": {
+                    "serial": {
+                        "baud": 115200,
+                        "frame_interval_ms": 500,
+                        "fb_count": 1,
+                        "grab_mode": "when_empty"
+                    },
+                    "sensor": {
+                        "brightness": 0,
+                        "contrast": 0,
+                        "saturation": 0,
+                        "sharpness": 0,
+                        "wb_mode": 0,
+                        "ae_level": 0,
+                        "gainceiling": 1,
+                        "bpc": 1,
+                        "wpc": 1,
+                        "raw_gma": 1,
+                        "lenc": 1,
+                        "hmirror": 0,
+                        "vflip": 0
+                    }
+                }
+            },
+            "ojos": {
+                "fps_objetivo": 2,
+                "fps_efectivo": 2,
+                "snapshot": "latest.jpg",
+                "live": "direct",
+                "analysis": {
+                    "segundos_analizar": 2,
+                    "porcentaje_mov": 35,
+                    "dontCare": 120,
+                    "maximo_videos": 60,
+                    "redimesionframe": 60,
+                    "sensibilidad": 1,
+                    "threshold": 15,
+                    "blur": 15,
+                    "dilate": 2,
+                    "seg_antes": 4,
+                    "seg_despues": 4
+                }
+            }
+        },
+        "cam-portatil": {
+            "camera_id": 4,
+            "label": "Cam portatil",
+            "url_conexion": "http://127.0.0.1:8111/camaraip/stream?camera=cam-portatil",
+            "active": false,
+            "encendida": 1,
+            "profile": {
+                "label": "Cam portátil",
+                "model": "Webcam UVC",
+                "sensor": "UVC",
+                "kind": "uvc",
+                "active": false,
+                "stream": {
+                    "width": 320,
+                    "height": 240,
+                    "fps": 2,
+                    "jpeg_quality": 7,
+                    "rotation": 0
+                },
+                "view": {
+                    "stream_url": "/camaraip/stream?camera=cam-portatil",
+                    "latest_url": "/camaraip/latest.jpg?camera=cam-portatil"
+                },
+                "device": {
+                    "uvc": {
+                        "device": "/dev/video0",
+                        "input_format": "mjpeg",
+                        "source": {
+                            "width": 640,
+                            "height": 480,
+                            "fps": 15
+                        },
+                        "copy": false,
+                        "warmup_s": 1,
+                        "controls": []
+                    }
+                }
+            },
+            "ojos": {
+                "fps_objetivo": 2,
+                "fps_efectivo": 2,
+                "snapshot": "latest.jpg",
+                "live": "direct",
+                "analysis": {
+                    "segundos_analizar": 2,
+                    "porcentaje_mov": 35,
+                    "dontCare": 120,
+                    "maximo_videos": 60,
+                    "redimesionframe": 60,
+                    "sensibilidad": 1,
+                    "threshold": 15,
+                    "blur": 15,
+                    "dilate": 2,
+                    "seg_antes": 4,
+                    "seg_despues": 4
+                }
+            }
+        },
+        "esp32-josue": {
+            "camera_id": 5,
+            "label": "ESP32 josue",
+            "url_conexion": "http://127.0.0.1:8111/camaraip/stream?camera=esp32-josue",
+            "active": false,
+            "encendida": 1,
+            "profile": {
+                "label": "ESP32 josue",
+                "model": "AI-Thinker ESP32-CAM",
+                "sensor": "OV3660",
+                "kind": "serial",
+                "active": false,
+                "stream": {
+                    "width": 320,
+                    "height": 240,
+                    "fps": 2,
+                    "jpeg_quality": 12,
+                    "rotation": 0
+                },
+                "view": {
+                    "stream_url": "/camaraip/stream?camera=esp32-josue",
+                    "latest_url": "/camaraip/latest.jpg?camera=esp32-josue"
+                },
+                "device": {
+                    "serial": {
+                        "baud": 115200,
+                        "frame_interval_ms": 500,
+                        "fb_count": 1,
+                        "grab_mode": "when_empty"
+                    },
+                    "sensor": {
+                        "brightness": 0,
+                        "contrast": 0,
+                        "saturation": 0,
+                        "sharpness": 0,
+                        "wb_mode": 0,
+                        "ae_level": 0,
+                        "gainceiling": 1,
+                        "bpc": 1,
+                        "wpc": 1,
+                        "raw_gma": 1,
+                        "lenc": 1,
+                        "hmirror": 0,
+                        "vflip": 0
+                    }
+                }
+            },
+            "ojos": {
+                "fps_objetivo": 2,
+                "fps_efectivo": 2,
+                "snapshot": "latest.jpg",
+                "live": "direct",
+                "analysis": {
+                    "segundos_analizar": 2,
+                    "porcentaje_mov": 35,
+                    "dontCare": 120,
+                    "maximo_videos": 60,
+                    "redimesionframe": 60,
+                    "sensibilidad": 1,
+                    "threshold": 15,
+                    "blur": 15,
+                    "dilate": 2,
+                    "seg_antes": 4,
+                    "seg_despues": 4
+                }
+            }
+        }
+    }
+}

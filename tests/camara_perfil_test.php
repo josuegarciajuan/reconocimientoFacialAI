@@ -44,7 +44,17 @@ ok(rf_camara_perfil_latest_url("rtsp://example.invalid/cam") === null,
 $old = getenv("RF_CAMARA_PROFILE_URL");
 putenv("RF_CAMARA_PROFILE_URL=http://127.0.0.1:9/profile");
 ok(rf_camara_perfil("http://127.0.0.1:8111/camaraip/stream?camera=no-existe", 0.1) === null,
-    "9. Bridge caído -> null (degradación controlada)");
+    "9. Bridge caído y sin copia guardada -> null");
+
+$saved = rf_camara_perfil("http://127.0.0.1:8111/camaraip/stream?camera=cam-oficina", 0.1);
+ok(is_array($saved) && ($saved["config_source"] ?? "") === "saved",
+    "10. Bridge caído -> usa la copia guardada de /ojos");
+ok(is_array($saved) && ($saved["profile"]["model"] ?? "") === "SiGma Micro USB Web Camera",
+    "11. La copia guardada conserva el modelo de la webcam");
+ok(is_array($saved) && (int)($saved["profile"]["stream"]["rotation"] ?? 0) === 180,
+    "12. La copia guardada conserva la rotación 180°");
+ok(rf_camara_perfil_fps("http://127.0.0.1:8111/camaraip/stream?camera=cam-oficina", 14) >= 1,
+    "13. La copia guardada aporta un fps válido");
 putenv("RF_CAMARA_PROFILE_URL=" . ($old === false ? "" : $old));
 
 echo "\n$total tests, $fallos fallos\n";
