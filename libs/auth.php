@@ -55,3 +55,53 @@ function session_user_id(): string
 {
     return bin2hex(random_bytes(8));
 }
+
+
+/* -------------------------------------------------------------------------
+ * Autenticación por el gate universal de patrón (panel-gate).
+ *
+ * Solo se usa cuando RF_AUTH_MODE=gate (instancia `ojos`). El gate inyecta
+ * `X-Panel-Gate: 1` en la petición proxada desde loopback. Nunca se acepta esa
+ * cabecera si el cliente no es la propia máquina: un cliente público no puede
+ * falsificarla porque Apache/panel-gate la eliminan y solo la añaden desde
+ * 127.0.0.1.
+ * ---------------------------------------------------------------------- */
+
+function rf_auth_mode_gate(): bool
+{
+    return defined("RF_AUTH_MODE") && RF_AUTH_MODE === "gate";
+}
+
+function rf_gate_client_is_loopback(): bool
+{
+    $addr = (string)($_SERVER["REMOTE_ADDR"] ?? "");
+    return in_array($addr, ["127.0.0.1", "::1", "::ffff:127.0.0.1"], true);
+}
+
+function rf_gate_authenticated(): bool
+{
+    return rf_gate_client_is_loopback()
+        && (string)($_SERVER["HTTP_X_PANEL_GATE"] ?? "") === "1";
+}
+
+/** Crea la sesión admin una sola vez tras validar el patrón. */
+function rf_gate_start_session(): void
+{
+    if (isset($_SESSION["user"]) && $_SESSION["user"] !== "") {
+        return;
+    }
+    $_SESSION["user"] = session_user_id();
+    $_SESSION["local_id"] = 1;
+    $_SESSION["admin"] = 1;
+    $_SESSION["auth_via"] = "gate";
+    session_regenerate_id(true);
+}
+
+/** Rechaza accesos al backend interno que no vengan del gate. */
+function rf_gate_deny(): void
+{
+    http_response_code(403);
+    header("Content-Type: text/plain; charset=utf-8");
+    echo "Acceso restringido: entra por https://josue.ink/ojos/";
+    exit;
+}

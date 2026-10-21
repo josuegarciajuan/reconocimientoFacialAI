@@ -16,6 +16,17 @@ require_once __DIR__ . '/includes/terminos.php';
 // Identidad de instancia (marca, icono, PWA)
 require_once __DIR__ . '/includes/brand.php';
 
+// En `ojos` el único login es el patrón universal de panel-gate. Si el gate ya
+// validó la sesión, no se muestra el formulario: se entra directo al panel.
+if (rf_auth_mode_gate()) {
+    if (!rf_gate_authenticated()) {
+        rf_gate_deny();
+    }
+    rf_gate_start_session();
+    header("Location: ./index.php");
+    exit;
+}
+
 $login_error = "";
 
 // Auto-login por dispositivo (matrícula única): solo GET + HTTPS + sin sesión.

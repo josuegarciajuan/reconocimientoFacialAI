@@ -115,6 +115,9 @@ switch($server){
 // liveyourdre2). Los valores por defecto preservan el comportamiento actual.
 // ---------------------------------------------------------------------------
 define("RF_INSTANCE", env_or("RF_INSTANCE", "laboral"));
+// Autenticación: `password` (login propio, laboral) o `gate` (solo el patrón
+// universal de panel-gate, ojos). El valor por defecto no altera laboral.
+define("RF_AUTH_MODE", env_or("RF_AUTH_MODE", "password"));
 define("RF_BASE_PATH", rtrim(env_or("RF_BASE_PATH", "/reconocimientoFacial/"), "/") . "/");
 define("RF_SUPERSERVER_PROJECT", env_or("RF_SUPERSERVER_PROJECT", "reconocimientoFacial"));
 
