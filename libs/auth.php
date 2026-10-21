@@ -105,3 +105,31 @@ function rf_gate_deny(): void
     echo "Acceso restringido: entra por https://josue.ink/ojos/";
     exit;
 }
+
+
+/**
+ * Cierra la sesión PHP y la del patrón universal.
+ *
+ * No se puede cerrar `pg_session` desde PHP (es HttpOnly y la emite el gate):
+ * se devuelve una página mínima que hace POST a /__gate/logout y vuelve a la
+ * pantalla de patrón. Solo se usa con RF_AUTH_MODE=gate.
+ */
+function rf_gate_logout_page(): void
+{
+    $_SESSION = [];
+    if (ini_get("session.use_cookies")) {
+        $p = session_get_cookie_params();
+        setcookie(session_name(), "", time() - 42000,
+            $p["path"] ?: "/", $p["domain"] ?: "",
+            !empty($p["secure"]), !empty($p["httponly"]));
+    }
+    @session_destroy();
+    $base = defined("RF_BASE_PATH") ? RF_BASE_PATH : "/ojos/";
+    header("Content-Type: text/html; charset=utf-8");
+    header("Cache-Control: no-store");
+    echo "<!doctype html><meta charset=\"utf-8\"><title>Cerrando sesión</title><script>"
+       . "fetch('/__gate/logout',{method:'POST',credentials:'same-origin'})"
+       . ".catch(function(){}).finally(function(){location.replace(" . json_encode($base) . ");});"
+       . "</script>";
+    exit;
+}
