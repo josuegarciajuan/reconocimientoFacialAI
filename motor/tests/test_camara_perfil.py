@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from motor.core.camara_perfil import (
     camera_id_from_url,
@@ -36,6 +37,22 @@ class CamaraPerfilTests(unittest.TestCase):
             latest_jpeg_url(url),
             "http://127.0.0.1:8111/camaraip/latest.jpg?camera=cam-oficina",
         )
+
+    def test_prioriza_fps_medido(self):
+        data = {"profile": {"stream": {"fps": 5}}, "measured": {"fps": 2.0}}
+        with patch("motor.core.camara_perfil.fetch_profile", return_value=data):
+            self.assertEqual(
+                profile_fps("http://127.0.0.1:8111/camaraip/stream?camera=x", 0),
+                2.0,
+            )
+
+    def test_usa_perfil_si_no_hay_medida(self):
+        data = {"profile": {"stream": {"fps": 5}}, "measured": {"fps": 0}}
+        with patch("motor.core.camara_perfil.fetch_profile", return_value=data):
+            self.assertEqual(
+                profile_fps("http://127.0.0.1:8111/camaraip/stream?camera=x", 0),
+                5.0,
+            )
 
 
 if __name__ == "__main__":

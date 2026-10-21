@@ -85,10 +85,18 @@ function rf_camara_perfil_fps(?string $url, int $fallback): int
         return $fallback;
     }
     $fps = $data['profile']['stream']['fps'] ?? null;
-    if (!is_numeric($fps)) {
-        return $fallback;
+    $perfil_fps = is_numeric($fps) ? max(1, (int)round((float)$fps)) : $fallback;
+
+    // Si el bridge ya está midiendo, usar el fps REAL: evita que un agente
+    // antiguo (2 fps) se grabe con el fps objetivo (5) y acelere los clips.
+    $measured = $data['measured']['fps'] ?? null;
+    if (is_numeric($measured) && (float)$measured >= 1.0) {
+        $medido = (int)round((float)$measured);
+        if ($medido <= max($perfil_fps * 2, 10)) {
+            return $medido;
+        }
     }
-    return max(1, (int)round((float)$fps));
+    return $perfil_fps;
 }
 
 /** Resumen listo para pintar en la UI. */
