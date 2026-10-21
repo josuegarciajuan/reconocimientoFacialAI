@@ -68,12 +68,12 @@ if [ ! -f "$SECRETS_DIR/initialized-data" ]; then
         motor/revision motor/revision_cuerpos motor/backups motor/calib motor/llm_cache \
         motor/calibrador motor/reagrupar_out motor/quality_probe motor/photo_queue \
         motor/photo_evidence motor/reprocesado motor/pending motor/portraits \
-        motor/audit motor/audit_queue motor/dedup \
+        motor/audit_queue motor/dedup motor/clasificador_daemon motor/pending \
         admin/caras_procesadas admin/fotos_originales admin/fotos_camara \
         admin/files/videos_registro admin/files/videos_registro_posiciones \
         admin/files/videos_registro_pruebas admin/files/videos_registro_resultados \
         admin/files/videos_registro_videos admin/files/videos_registro_videos_partidos \
-        admin/pages/config/planos libs/threads_files_aux; do
+        libs/threads_files_aux; do
         archive_dir "$rel"
     done
     echo "$BACKUP_DIR" > "$SECRETS_DIR/last-data-backup"

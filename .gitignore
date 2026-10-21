@@ -81,3 +81,5 @@ test.txt
 readme_def.txt
 *.pkl
 *.npy
+motor/clasificador_daemon/
+motor/pending/
