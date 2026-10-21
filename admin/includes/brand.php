@@ -64,6 +64,28 @@ function rf_brand_login_logo(): string
     return defined("RF_BRAND_LOGIN_LOGO") ? RF_BRAND_LOGIN_LOGO : "./files_login/logo-sauron.png";
 }
 
+
+/** Ruta RELATIVA al manifiesto (./files/...). Evita depender del prefijo
+ *  público y funciona igual bajo /reconocimientoFacial, /rf y /ojos. */
+function rf_brand_icon_rel(int $size = 192): string
+{
+    $dir = defined("RF_BRAND_ICON_DIR") ? RF_BRAND_ICON_DIR : "files";
+    $file = "icon-192.png";
+    if ($size >= 512) {
+        $file = defined("RF_BRAND_ICON_512") ? RF_BRAND_ICON_512 : "icon-512.png";
+    } elseif ($size >= 192) {
+        $file = defined("RF_BRAND_ICON_192") ? RF_BRAND_ICON_192 : "icon-192.png";
+    }
+    return "./" . trim($dir, "/") . "/" . ltrim($file, "/");
+}
+
+function rf_brand_maskable_icon_rel(): string
+{
+    $dir = defined("RF_BRAND_ICON_DIR") ? RF_BRAND_ICON_DIR : "files";
+    $file = defined("RF_BRAND_ICON_MASKABLE") ? RF_BRAND_ICON_MASKABLE : "icon-512.png";
+    return "./" . trim($dir, "/") . "/" . ltrim($file, "/");
+}
+
 function rf_brand_manifest_start(): string
 {
     return RF_BASE_PATH . "admin/";

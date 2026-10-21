@@ -12,22 +12,22 @@ require_once __DIR__ . '/includes/brand.php';
 header('Content-Type: application/manifest+json; charset=utf-8');
 header('Cache-Control: public, max-age=300');
 
-$start = rf_brand_manifest_start();
+$start = './';
 $icons = [
     [
-        'src' => rf_brand_icon_url(192),
+        'src' => rf_brand_icon_rel(192),
         'sizes' => '192x192',
         'type' => 'image/png',
         'purpose' => 'any',
     ],
     [
-        'src' => rf_brand_icon_url(512),
+        'src' => rf_brand_icon_rel(512),
         'sizes' => '512x512',
         'type' => 'image/png',
         'purpose' => 'any',
     ],
     [
-        'src' => rf_brand_maskable_icon_url(),
+        'src' => rf_brand_maskable_icon_rel(),
         'sizes' => '512x512',
         'type' => 'image/png',
         'purpose' => 'maskable',
@@ -35,12 +35,12 @@ $icons = [
 ];
 
 echo json_encode([
-    'id' => $start,
+    'id' => './',
     'name' => rf_brand_name(),
     'short_name' => rf_brand_short(),
     'description' => rf_brand_desc(),
-    'start_url' => $start,
-    'scope' => $start,
+    'start_url' => './',
+    'scope' => './',
     'display' => 'standalone',
     'display_override' => ['standalone', 'minimal-ui'],
     'background_color' => defined('RF_BRAND_BG_COLOR') ? RF_BRAND_BG_COLOR : '#0b0a0e',
