@@ -166,7 +166,7 @@ desired = {
     "RF_BRAND_ICON_DIR": "files/branding",
     "RF_BRAND_ICON_192": "icon-192.png",
     "RF_BRAND_ICON_512": "icon-512.png",
-    "RF_BRAND_ICON_MASKABLE": "icon-512.png",
+    "RF_BRAND_ICON_MASKABLE": "icon-maskable-512.png",
     "RF_BRAND_LOGIN_LOGO": "./files/branding/ojos-logo.png",
     "RF_BRAND_PWA_EMOJI": "👁️",
     "RF_BRAND_INSTALL_TITLE": "Instalar Ojos",

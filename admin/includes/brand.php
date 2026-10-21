@@ -40,6 +40,16 @@ function rf_brand_desc(): string
     return defined("RF_BRAND_DESC") ? RF_BRAND_DESC : "Mordor · Vigilancia y Control de Accesos por Reconocimiento Facial.";
 }
 
+/** Versión del icono para cache-busting (`?v=<mtime>`).
+ *  Chrome/Android cachea los iconos del manifest con avidez; al cambiar el PNG
+ *  cambia el mtime y la URL, sin tocar el `id` del manifest. */
+function rf_brand_icon_ver(string $dir, string $file): string
+{
+    $path = __DIR__ . "/../" . trim($dir, "/") . "/" . ltrim($file, "/");
+    $mtime = @filemtime($path);
+    return $mtime ? (string) $mtime : "1";
+}
+
 function rf_brand_icon_url(int $size = 192): string
 {
     $dir = defined("RF_BRAND_ICON_DIR") ? RF_BRAND_ICON_DIR : "files";
@@ -49,14 +59,16 @@ function rf_brand_icon_url(int $size = 192): string
     } elseif ($size >= 192) {
         $file = defined("RF_BRAND_ICON_192") ? RF_BRAND_ICON_192 : "icon-192.png";
     }
-    return RF_BASE_PATH . "admin/" . trim($dir, "/") . "/" . ltrim($file, "/");
+    return RF_BASE_PATH . "admin/" . trim($dir, "/") . "/" . ltrim($file, "/")
+        . "?v=" . rf_brand_icon_ver($dir, $file);
 }
 
 function rf_brand_maskable_icon_url(): string
 {
     $dir = defined("RF_BRAND_ICON_DIR") ? RF_BRAND_ICON_DIR : "files";
     $file = defined("RF_BRAND_ICON_MASKABLE") ? RF_BRAND_ICON_MASKABLE : "icon-512.png";
-    return RF_BASE_PATH . "admin/" . trim($dir, "/") . "/" . ltrim($file, "/");
+    return RF_BASE_PATH . "admin/" . trim($dir, "/") . "/" . ltrim($file, "/")
+        . "?v=" . rf_brand_icon_ver($dir, $file);
 }
 
 function rf_brand_login_logo(): string
@@ -76,14 +88,16 @@ function rf_brand_icon_rel(int $size = 192): string
     } elseif ($size >= 192) {
         $file = defined("RF_BRAND_ICON_192") ? RF_BRAND_ICON_192 : "icon-192.png";
     }
-    return "./" . trim($dir, "/") . "/" . ltrim($file, "/");
+    return "./" . trim($dir, "/") . "/" . ltrim($file, "/")
+        . "?v=" . rf_brand_icon_ver($dir, $file);
 }
 
 function rf_brand_maskable_icon_rel(): string
 {
     $dir = defined("RF_BRAND_ICON_DIR") ? RF_BRAND_ICON_DIR : "files";
     $file = defined("RF_BRAND_ICON_MASKABLE") ? RF_BRAND_ICON_MASKABLE : "icon-512.png";
-    return "./" . trim($dir, "/") . "/" . ltrim($file, "/");
+    return "./" . trim($dir, "/") . "/" . ltrim($file, "/")
+        . "?v=" . rf_brand_icon_ver($dir, $file);
 }
 
 function rf_brand_manifest_start(): string
