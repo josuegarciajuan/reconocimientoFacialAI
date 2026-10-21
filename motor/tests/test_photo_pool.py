@@ -1,3 +1,6 @@
+import os
+
+os.environ["RF_SUPERSERVER_PROJECT"] = "reconocimientoFacial"
 """Contrato del puente de foto HQ (M3): petición, rutas y lectura de jobs."""
 import json
 
