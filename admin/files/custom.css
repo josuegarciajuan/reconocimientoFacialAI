@@ -1718,6 +1718,13 @@ input:focus-visible {
   box-shadow: 0 0 12px -3px rgba(255, 90, 31, 0.55);
 }
 
+/* Los Palantíri: acceso a la configuración de las cámaras (solo ojos). */
+.ring-hub__nav-link--palantir {
+  grid-column: 1 / -1;
+  justify-content: center;
+  border-color: rgba(201, 162, 39, 0.35);
+}
+
 /* --- "La Almenara": banner de alarma activa -------------------- */
 .banner-alarma {
   display: flex;
