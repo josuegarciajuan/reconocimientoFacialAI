@@ -23,7 +23,7 @@ sistema, no un fork. Código compartido; BD, datos, PWA y SuperServer propios.
 - **Datos**: los directorios runtime del checkout de `liveyourdre2` se archivan
   en `/root/onx-backups/ojos-preinit-*` y se recrean vacíos. Nada se copia de
   `mail`.
-- **Web**: vhost interno `127.0.0.1:8086`, pool PHP-FPM `ojos`, sesión
+- **Web**: vhost interno `127.0.0.1:8088`, pool PHP-FPM `ojos`, sesión
   `OJOSSESSID` y cookie con path `/ojos/`.
 - **PWA**: manifiesto dinámico `admin/manifest.php`, iconos propios, service
   worker con cache derivada de su scope y prompt de instalación con clave
