@@ -17,6 +17,17 @@ if (isset($_GET["debug"]) and $_GET["debug"] == 1) {
 } else {
     ini_set('display_errors', '0');
 }
+
+// Autenticación de instancia: `ojos` confía en el patrón de panel-gate.
+require_once '../config/rutas.php';
+require_once '../libs/auth.php';
+if (rf_auth_mode_gate()) {
+    if (!rf_gate_authenticated()) {
+        rf_gate_deny();
+    }
+    rf_gate_start_session();
+}
+
 if(!isset($_SESSION["user"])){
     header('Location: ./login.php');
     exit;
@@ -41,7 +52,6 @@ if(isset($_GET["descargar"]) and $_GET["descargar"]!=""){
     }
 }
 
-require_once '../config/rutas.php';
 require_once '../libs/db.php';
 // Lore: glosario de terminología temática (Barad-dûr/Mordor) -> window.RF_GLOSARIO
 require_once __DIR__ . '/includes/glosario.php';

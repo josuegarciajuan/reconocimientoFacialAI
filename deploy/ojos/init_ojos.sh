@@ -142,6 +142,7 @@ desired = {
     "RF_DB_PASS": os.environ["OJOS_DB_PASS"],
     "RF_DB_HOST": "localhost",
     "RF_INSTANCE": "ojos",
+    "RF_AUTH_MODE": "gate",
     "RF_BASE_PATH": "/ojos/",
     "RF_SUPERSERVER_PROJECT": "ojos",
     "RF_URL": "https://josue.ink/ojos/",

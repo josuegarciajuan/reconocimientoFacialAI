@@ -74,3 +74,15 @@ Para volver a local: `printf 'local\n' > /var/lib/taildeck/projects/ojos.mode`.
 - No se reinicia `josue` ni se restauran sus backups sin autorización.
 - Si en el futuro las dos instancias comparten host, hará falta separar
   `RUTA_DATOS` del árbol de código; hoy están en hosts distintos.
+
+
+## Autenticación (solo ojos)
+
+- `RF_AUTH_MODE=gate` en el `.env` de `ojos`: el único login es el **patrón
+  universal** de `panel-gate` (`pg_session`). La app confía en la cabecera
+  `X-Panel-Gate: 1` solo si llega desde loopback.
+- `admin/login.php` no muestra usuario/contraseña: si el patrón ya está
+  validado, entra directo a `index.php`; si no, el gate muestra el patrón.
+- El botón de cerrar sesión limpia la sesión PHP y hace
+  `POST /__gate/logout`, volviendo a `/ojos/` (pantalla de patrón).
+- Laboral usa `RF_AUTH_MODE=password` por defecto y conserva su login actual.
