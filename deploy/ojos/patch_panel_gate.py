@@ -20,7 +20,7 @@ def main() -> int:
         text = text.replace(
             "const BACKEND_IA = process.env.BACKEND_IA || 'http://127.0.0.1:8140';\n",
             "const BACKEND_IA = process.env.BACKEND_IA || 'http://127.0.0.1:8140';\n"
-            "const BACKEND_OJOS = process.env.BACKEND_OJOS || 'http://127.0.0.1:8086';\n",
+            "const BACKEND_OJOS = process.env.BACKEND_OJOS || 'http://127.0.0.1:8088';\n",
             1,
         )
 
