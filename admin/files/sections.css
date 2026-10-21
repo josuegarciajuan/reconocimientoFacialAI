@@ -113,6 +113,16 @@
   margin-right: 0;
 }
 
+.cam-card__status--offline {
+  color: #f3d38a;
+  border-color: rgba(201, 162, 39, 0.55);
+}
+
+.cam-card__status--offline .live-dot {
+  background: #c9a227;
+  animation: none;
+}
+
 .cam-card__body {
   display: flex;
   align-items: center;

@@ -73,6 +73,37 @@ function token_live_camara(int $camara_id): string
 $live_token = token_live_camara((int)($_GET["id"] ?? 0));
 
 /**
+ * Estado del bridge `camaraip` para una cámara concreta (opcional).
+ *
+ * Solo se activa si RF_CAMERA_STATUS_URL está definido (instancia `ojos`).
+ * Las cámaras RTSP de laboral no tienen ese endpoint y conservan el badge
+ * "EN VIVO" de siempre. Devuelve null si no se puede consultar.
+ */
+function camara_bridge_estado(string $url_conexion): ?array
+{
+    $base = getenv("RF_CAMERA_STATUS_URL");
+    if ($base === false || $base === "") {
+        return null;
+    }
+    $query = parse_url($url_conexion, PHP_URL_QUERY);
+    if (!is_string($query) || $query === "") {
+        return null;
+    }
+    parse_str($query, $params);
+    $camara = (string)($params["camera"] ?? "");
+    if ($camara === "") {
+        return null;
+    }
+    $ctx = stream_context_create(["http" => ["timeout" => 0.8]]);
+    $raw = @file_get_contents(rtrim($base, "?&") . "?camera=" . urlencode($camara), false, $ctx);
+    if ($raw === false) {
+        return null;
+    }
+    $data = json_decode($raw, true);
+    return is_array($data) ? $data : null;
+}
+
+/**
  * Normaliza a UTF-8 el texto que viene de la BD (la conexión PDO usa
  * latin1): sin esto, json_encode() falla con bytes latin1 y el onclick
  * del modal saldría vacío. ASCII puro pasa intacto.
@@ -115,6 +146,7 @@ $ph_uri = "data:image/svg+xml;base64," . base64_encode(
         $camara_id = (int)$c["id"];
         $descripcion = camara_label(rf_utf8_normalizar((string)($c["descripcion"] ?? "Cámara " . $camara_id)));
         $url_conexion = (string)($c["url_conexion"] ?? "");
+        $estado_bridge = camara_bridge_estado($url_conexion);
 
         refrescar_snapshot($camara_id, $url_conexion);
 
@@ -153,7 +185,11 @@ $ph_uri = "data:image/svg+xml;base64," . base64_encode(
                  data-ph-uri="<?= $ph_uri; ?>"
                  draggable="false" decoding="async"
                  alt="<?= htmlspecialchars($alt, ENT_QUOTES); ?>">
-            <span class="cam-card__status"><span class="live-dot" aria-hidden="true"></span> EN VIVO</span>
+            <?php
+                $offline = is_array($estado_bridge) && array_key_exists("device_online", $estado_bridge)
+                    && !$estado_bridge["device_online"];
+            ?>
+            <span class="cam-card__status<?= $offline ? " cam-card__status--offline" : ""; ?>"><span class="live-dot" aria-hidden="true"></span> <?= $offline ? "OFFLINE" : "EN VIVO"; ?></span>
         </span>
         <span class="cam-card__body">
             <span class="cam-card__grip" aria-hidden="true" title="Arrastra para reordenar">
