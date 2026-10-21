@@ -89,6 +89,9 @@ $deriva_alertas_local = calib_deriva_alertas((int) ($_SESSION["local_id"] ?? 0))
                 · <?= (int)$perfil_cam["width"]; ?>×<?= (int)$perfil_cam["height"]; ?>
                 · <?= (int)$perfil_cam["fps"]; ?> fps
                 · JPEG q<?= (int)$perfil_cam["jpeg_quality"]; ?>
+                <?php if (!empty($perfil_cam["rotation"])): ?>
+                    · rot <?= (int)$perfil_cam["rotation"]; ?>°
+                <?php endif; ?>
                 <?php if ($perfil_cam["measured_fps"] !== null): ?>
                     · medido <?= number_format((float)$perfil_cam["measured_fps"], 1); ?> fps
                 <?php endif; ?>

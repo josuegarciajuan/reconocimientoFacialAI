@@ -209,6 +209,9 @@ $ph_uri = "data:image/svg+xml;base64," . base64_encode(
                     $perfil_fps_txt .= " · "
                         . number_format((float)$perfil_cam["measured_fps"], 1) . " med.";
                 }
+                if (!empty($perfil_cam["rotation"])) {
+                    $perfil_fps_txt .= " · rot " . (int)$perfil_cam["rotation"] . "°";
+                }
             ?>
             <span class="cam-card__profile text-xs text-gray-500 dark:text-gray-600">
                 <?= htmlspecialchars(

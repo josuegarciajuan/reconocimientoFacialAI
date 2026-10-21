@@ -117,6 +117,7 @@ function rf_camara_perfil_resumen(?string $url): ?array
         'height' => (int)($stream['height'] ?? 0),
         'fps' => (int)round((float)($stream['fps'] ?? 0)),
         'jpeg_quality' => (int)($stream['jpeg_quality'] ?? 0),
+        'rotation' => (int)($stream['rotation'] ?? 0),
         'measured_fps' => isset($data['measured']['fps']) ? (float)$data['measured']['fps'] : null,
         'config_source' => (string)($data['config_source'] ?? ''),
     ];
