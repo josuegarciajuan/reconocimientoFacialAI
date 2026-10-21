@@ -77,10 +77,22 @@ def profile_fps(url: str | None, fallback: float) -> float:
         return float(fallback)
     stream = (data.get("profile") or {}).get("stream") or {}
     try:
-        value = float(stream.get("fps"))
+        perfil_fps = float(stream.get("fps"))
     except (TypeError, ValueError):
-        return float(fallback)
-    return value if value > 0 else float(fallback)
+        perfil_fps = float(fallback)
+    if perfil_fps <= 0:
+        perfil_fps = float(fallback)
+
+    # Preferir el fps medido por el bridge cuando ya hay frames: si el agente
+    # todavía va a 2 fps, grabar a 5 aceleraría los clips.
+    measured = (data.get("measured") or {}).get("fps")
+    try:
+        medido = float(measured)
+    except (TypeError, ValueError):
+        medido = 0.0
+    if medido >= 1.0 and medido <= max(perfil_fps * 2.0, 10.0):
+        return medido
+    return perfil_fps
 
 
 def profile_stream_size(url: str | None) -> tuple[int, int] | None:
