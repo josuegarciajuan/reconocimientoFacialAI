@@ -12,6 +12,7 @@
 require_once __DIR__ . "/../../../libs/db.php";
 require_once __DIR__ . "/../../../libs/planos.php";
 require_once __DIR__ . "/../../../libs/calibracion.php";
+require_once __DIR__ . "/../../../libs/camara_perfil.php";
 
 $extensiones = plano_extensiones();
 
@@ -21,6 +22,7 @@ $local_id = (int)($_SESSION["local_id"] ?? 0);
 switch ($_GET["accion"] ?? "") {
     case "crear":
         $url_conexion = str_replace("--jos--", "&", $_GET["url_conexion"] ?? "");
+        $fps_nueva = rf_camara_perfil_fps($url_conexion, (int)CONFIG_fps);
         $id = DB::insert(
             "INSERT INTO camaras (local_id, descripcion, url_conexion, sistema, puerta, salida, encendida, ipcamlive_alias, segundos_analizar, porcentaje_mov, dontCare, fps, maximo_videos, redimesionframe, sensibilidad, alarma_heredar, alarma_24h, threshold, blur, dilate, seg_antes, seg_despues)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)",
@@ -28,7 +30,7 @@ switch ($_GET["accion"] ?? "") {
                 (int)$_SESSION["local_id"], $_GET["nombre_nueva"], $url_conexion, 0,
                 (int)($_GET["puerta"] ?? 0), (int)($_GET["salida"] ?? 0), (int)($_GET["encendida_nueva"] ?? 0),
                 "-",
-                CONFIG_segundos_analizar, CONFIG_porcentaje_mov, CONFIG_dontCare, CONFIG_fps,
+                CONFIG_segundos_analizar, CONFIG_porcentaje_mov, CONFIG_dontCare, $fps_nueva,
                 CONFIG_maximo_videos, CONFIG_redimesionframe, CONFIG_sensibilidad,
                 (int)($_GET["alarma_24h"] ?? 0),
                 CONFIG_threshold, CONFIG_blur, CONFIG_dilate,
@@ -56,6 +58,13 @@ switch ($_GET["accion"] ?? "") {
         $alarma_24h = (int)($_GET["alarma_24h"] ?? 0);
         $alarma_hora_inicio = ($_GET["alarma_hora_inicio"] ?? "") !== "" ? $_GET["alarma_hora_inicio"] : null;
         $alarma_hora_fin    = ($_GET["alarma_hora_fin"] ?? "") !== "" ? $_GET["alarma_hora_fin"] : null;
+        // camaraip: el fps operativo lo fija camaraESP; no aceptar el valor
+        // viejo de la BD ni el que llegue del formulario.
+        $fps_guardar = (int)($_GET["fps"] ?? 0);
+        $fps_perfil = rf_camara_perfil_fps($url_conexion, 0);
+        if ($fps_perfil > 0) {
+            $fps_guardar = $fps_perfil;
+        }
         DB::execute(
             "UPDATE camaras SET local_id=?, descripcion=?, url_conexion=?, sistema=?, puerta=?, salida=?, encendida=?, ipcamlive_alias=?, url_desdeserver=?, segundos_analizar=?, porcentaje_mov=?, dontCare=?, fps=?, maximo_videos=?, redimesionframe=?, sensibilidad=?, alarma_heredar=?, alarma_hora_inicio=?, alarma_hora_fin=?, alarma_24h=?, threshold=?, blur=?, dilate=?, seg_antes=?, seg_despues=? WHERE id=?",
             [
@@ -63,7 +72,7 @@ switch ($_GET["accion"] ?? "") {
                 (int)($_GET["puerta"] ?? 0), (int)($_GET["salida"] ?? 0), (int)($_GET["encendida"] ?? 0),
                 "-", $url_desdeserver,
                 (int)($_GET["segundos_analizar"] ?? 0), (int)($_GET["porcentaje_mov"] ?? 0), (int)($_GET["dontCare"] ?? 0),
-                (int)($_GET["fps"] ?? 0), (int)($_GET["maximo_videos"] ?? 0), (int)($_GET["redimesionframe"] ?? 0),
+                $fps_guardar, (int)($_GET["maximo_videos"] ?? 0), (int)($_GET["redimesionframe"] ?? 0),
                 (int)($_GET["sensibilidad"] ?? 0),
                 $alarma_heredar, $alarma_hora_inicio, $alarma_hora_fin, $alarma_24h,
                 (int)($_GET["threshold"] ?? CONFIG_threshold),

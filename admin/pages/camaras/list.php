@@ -16,6 +16,7 @@
 
 require_once __DIR__ . "/../../../libs/db.php";
 require_once __DIR__ . "/../../../libs/etiquetas.php";
+require_once __DIR__ . "/../../../libs/camara_perfil.php";
 
 $local_id = (int)($_SESSION["local_id"] ?? 0);
 $camaras = DB::select("SELECT * FROM camaras WHERE local_id = ? AND sistema = 0 AND encendida = 1 ORDER BY orden ASC, descripcion ASC", [$local_id]);
@@ -147,6 +148,7 @@ $ph_uri = "data:image/svg+xml;base64," . base64_encode(
         $descripcion = camara_label(rf_utf8_normalizar((string)($c["descripcion"] ?? "Cámara " . $camara_id)));
         $url_conexion = (string)($c["url_conexion"] ?? "");
         $estado_bridge = camara_bridge_estado($url_conexion);
+        $perfil_cam = rf_camara_perfil_resumen($url_conexion);
 
         refrescar_snapshot($camara_id, $url_conexion);
 
@@ -200,6 +202,16 @@ $ph_uri = "data:image/svg+xml;base64," . base64_encode(
                 </svg>
             </span>
             <span class="cam-card__name"><?= htmlspecialchars($descripcion, ENT_QUOTES); ?></span>
+            <?php if (is_array($perfil_cam)): ?>
+            <span class="cam-card__profile text-xs text-gray-500 dark:text-gray-600">
+                <?= htmlspecialchars(
+                    trim(($perfil_cam["model"] !== "" ? $perfil_cam["model"] : "camaraESP")
+                        . " · " . $perfil_cam["width"] . "x" . $perfil_cam["height"]
+                        . " · " . $perfil_cam["fps"] . " fps"),
+                    ENT_QUOTES
+                ); ?>
+            </span>
+            <?php endif; ?>
             <span class="cam-card__cta">Ver
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path>
