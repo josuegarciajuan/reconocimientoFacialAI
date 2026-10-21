@@ -27,8 +27,12 @@ lo lee para:
 - proxyar el directo MJPEG sin reencode (`live/mjpeg-stream.js`).
 
 El formulario de cámara muestra el perfil y bloquea el fps para estas cámaras.
-Las RTSP de laboral no se ven afectadas. Detalle:
-`docs/specs/20-instancia-ojos.md` y `libs/camara_perfil.php`.
+Las RTSP de laboral no se ven afectadas. Además, `/ojos` guarda una copia
+versionada por cámara en `config/camaraip_ojos_profiles.json` (perfil + ajustes
+de análisis) y la usa si el bridge no responde. Se regenera con
+`php tools/export_camaraip_profiles.php`. Detalle:
+`docs/specs/20-instancia-ojos.md`, `docs/specs/21-perfiles-camaraip-ojos.md` y
+`libs/camara_perfil.php`.
 
 ## Procesos (daemons)
 

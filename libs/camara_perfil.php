@@ -37,6 +37,49 @@ function rf_camaraip_id(?string $url): ?string
     return $id !== '' ? $id : null;
 }
 
+
+/**
+ * Copia versionada de los perfiles de las cámaras camaraip para /ojos.
+ * Se genera con tools/export_camaraip_profiles.php.
+ */
+function rf_camaraip_saved_profiles(): array
+{
+    static $cache = null;
+    if ($cache !== null) {
+        return $cache;
+    }
+    $file = __DIR__ . "/../config/camaraip_ojos_profiles.json";
+    $raw = @file_get_contents($file);
+    $data = json_decode((string)$raw, true);
+    $cache = is_array($data) && is_array($data["cameras"] ?? null)
+        ? $data
+        : ["version" => 1, "instance" => "ojos", "cameras" => []];
+    return $cache;
+}
+
+/** Respuesta sintética desde la copia guardada, o null si no existe. */
+function rf_camaraip_saved_response(string $cameraId): ?array
+{
+    $doc = rf_camaraip_saved_profiles();
+    $cam = $doc["cameras"][$cameraId] ?? null;
+    if (!is_array($cam) || !is_array($cam["profile"] ?? null)) {
+        return null;
+    }
+    $ojos = is_array($cam["ojos"] ?? null) ? $cam["ojos"] : [];
+    return [
+        "ok" => true,
+        "camera" => $cameraId,
+        "version" => (int)($doc["version"] ?? 1),
+        "profile" => $cam["profile"],
+        "measured" => [
+            "fps" => (float)($ojos["fps_efectivo"] ?? 0),
+            "frame_bytes" => 0,
+            "last_frame_age_ms" => null,
+        ],
+        "config_source" => "saved",
+    ];
+}
+
 /**
  * Perfil completo devuelto por GET /camaraip/profile.
  * Cachea 10 s por ID para no golpear el bridge en cada render.
@@ -67,11 +110,19 @@ function rf_camara_perfil(?string $url, float $timeout = 0.8): ?array
     ]);
     $raw = @file_get_contents($base . $sep . 'camera=' . urlencode($id), false, $ctx);
     if ($raw === false || $raw === '') {
-        return null;
+        $saved = rf_camaraip_saved_response($id);
+        if ($saved !== null) {
+            $cache[$id] = ['ts' => $now, 'data' => $saved];
+        }
+        return $saved;
     }
     $data = json_decode($raw, true);
     if (!is_array($data) || !isset($data['profile']) || !is_array($data['profile'])) {
-        return null;
+        $saved = rf_camaraip_saved_response($id);
+        if ($saved !== null) {
+            $cache[$id] = ['ts' => $now, 'data' => $saved];
+        }
+        return $saved;
     }
     $cache[$id] = ['ts' => $now, 'data' => $data];
     return $data;

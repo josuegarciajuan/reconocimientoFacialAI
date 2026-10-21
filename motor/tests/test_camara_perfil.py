@@ -1,8 +1,10 @@
 import unittest
 from unittest.mock import patch
 
+import motor.core.camara_perfil as camara_perfil
 from motor.core.camara_perfil import (
     camera_id_from_url,
+    fetch_profile,
     latest_jpeg_url,
     profile_fps,
     profile_stream_size,
@@ -53,6 +55,19 @@ class CamaraPerfilTests(unittest.TestCase):
                 profile_fps("http://127.0.0.1:8111/camaraip/stream?camera=x", 0),
                 5.0,
             )
+
+    def test_fallback_a_copia_guardada(self):
+        camara_perfil._CACHE.clear()
+        url = "http://127.0.0.1:8111/camaraip/stream?camera=cam-oficina"
+        with patch("motor.core.camara_perfil.urlopen", side_effect=OSError("sin bridge")):
+            data = fetch_profile(url)
+        self.assertIsNotNone(data)
+        self.assertEqual(data["config_source"], "saved")
+        self.assertEqual(data["profile"]["stream"]["rotation"], 180)
+        self.assertEqual(data["profile"]["model"], "SiGma Micro USB Web Camera")
+        camara_perfil._CACHE.clear()
+        with patch("motor.core.camara_perfil.urlopen", side_effect=OSError("sin bridge")):
+            self.assertGreaterEqual(profile_fps(url, 14), 1)
 
 
 if __name__ == "__main__":

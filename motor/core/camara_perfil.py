@@ -14,12 +14,15 @@ from __future__ import annotations
 import json
 import os
 import time
+from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 from urllib.request import Request, urlopen
 
 _CACHE: dict[str, tuple[float, dict | None]] = {}
 _CACHE_TTL = 30.0
 _DEFAULT_PROFILE_URL = "http://127.0.0.1:8111/camaraip/profile"
+_SAVED_FILE = Path(__file__).resolve().parents[2] / "config" / "camaraip_ojos_profiles.json"
+_SAVED_CACHE: tuple[float, dict | None] | None = None
 
 
 def camera_id_from_url(url: str | None) -> str | None:
@@ -42,6 +45,44 @@ def camera_id_from_url(url: str | None) -> str | None:
     camera_id = values[0].strip() if values else ""
     return camera_id or None
 
+
+
+def _saved_document() -> dict | None:
+    """Copia versionada de perfiles para /ojos (fallback si el bridge no responde)."""
+    global _SAVED_CACHE
+    try:
+        mtime = _SAVED_FILE.stat().st_mtime
+    except OSError:
+        return None
+    if _SAVED_CACHE is not None and _SAVED_CACHE[0] == mtime:
+        return _SAVED_CACHE[1]
+    try:
+        data = json.loads(_SAVED_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        data = None
+    if not isinstance(data, dict) or not isinstance(data.get("cameras"), dict):
+        data = None
+    _SAVED_CACHE = (mtime, data)
+    return data
+
+
+def _saved_response(camera_id: str) -> dict | None:
+    doc = _saved_document()
+    if not doc:
+        return None
+    cam = doc["cameras"].get(camera_id)
+    if not isinstance(cam, dict) or not isinstance(cam.get("profile"), dict):
+        return None
+    ojos = cam.get("ojos") if isinstance(cam.get("ojos"), dict) else {}
+    try:
+        fps = float(ojos.get("fps_efectivo") or 0)
+    except (TypeError, ValueError):
+        fps = 0.0
+    return {
+        "profile": cam["profile"],
+        "measured": {"fps": fps, "frame_bytes": 0, "last_frame_age_ms": None},
+        "config_source": "saved",
+    }
 
 def fetch_profile(url: str | None, timeout: float = 0.8) -> dict | None:
     """Perfil completo del bridge para una URL camaraip, o ``None``."""
@@ -66,6 +107,8 @@ def fetch_profile(url: str | None, timeout: float = 0.8) -> dict | None:
             data = parsed
     except Exception:
         data = None
+    if data is None:
+        data = _saved_response(camera_id)
     _CACHE[camera_id] = (now, data)
     return data
 
