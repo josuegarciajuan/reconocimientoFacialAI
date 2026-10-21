@@ -36,6 +36,11 @@ function rf_glosario() {
             "significado" => "El Ojo de Sauron: en la app es la red de cámaras que vigila en tiempo real cada entrada y salida.",
             "match"      => "auto",
         ],
+        "palantiri" => [
+            "termino"    => "Los Palantíri",
+            "significado" => "Las piedras videntes de Númenor: en la app son las cámaras del bridge camaraip. Desde aquí se encienden, se ajustan y se comprueba qué Ojo sigue viendo.",
+            "match"      => "explicito",
+        ],
         "puerta-negra" => [
             "termino"    => "La Puerta Negra",
             "significado" => "La entrada a Mordor: en la app es la pantalla de inicio de sesión. Cruza la puerta solo si tienes credenciales.",

@@ -586,6 +586,10 @@ html.theme-pro .ring-hub__nav-link--featured {
   background: linear-gradient(135deg, rgba(47, 191, 143, 0.12), rgba(15, 90, 80, 0.04));
   color: var(--pro-primary);
 }
+html.theme-pro .ring-hub__nav-link--palantir {
+  grid-column: 1 / -1;
+  justify-content: center;
+}
 html.theme-pro .ring-hub__daemons { border-top-color: var(--pro-border); }
 html.theme-pro .ring-hub__daemons-hint { color: var(--pro-ink-muted); }
 html.theme-pro .ring-hub .daemon-tile {

@@ -52,6 +52,9 @@ function rf_terminos() {
         "nav-rutas"      => ["mordor" => "Caminos", "pro" => "Rutas"],
         "nav-lineas"     => ["mordor" => "Líneas", "pro" => "Líneas"],
         "nav-ayuda"      => ["mordor" => "El Concilio", "pro" => "Ayuda"],
+        "nav-camaraip"   => ["mordor" => "Los Palantíri", "pro" => "Cámaras IP"],
+        "nav-camaraip-aria" => ["mordor" => "Los Palantíri — abrir la configuración de las cámaras",
+                                "pro"    => "Abrir la configuración de las cámaras IP"],
 
         /* ---------------- Centro de mando (hub) ---------------- */
         "anillo"          => ["mordor" => "Un Anillo", "pro" => "Centro de mando"],

@@ -129,13 +129,13 @@ $rf_tema_color = ($rf_tema === "mordor") ? "#16121a" : "#F5F3EC";
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Cinzel:wght@500;600;700;800&family=Cinzel+Decorative:wght@700;900&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="./files/app.css">
-        <link rel="stylesheet" href="./files/custom.css?v=6">
+        <link rel="stylesheet" href="./files/custom.css?v=7">
         <link rel="stylesheet" href="./files/sections.css?v=20261021">
         <?php if (($_GET["page"] ?? "dash") === "dash"): ?>
         <link rel="stylesheet" href="./files/dashboard.css?v=20260819">
         <?php endif; ?>
         <!-- Tema profesional "Iris" (claro). Cargado el último para ganar en cascada. -->
-        <link rel="stylesheet" href="./files/theme-pro.css?v=1">
+        <link rel="stylesheet" href="./files/theme-pro.css?v=2">
         <!-- END: CSS Assets-->
         <script type="text/javascript" src="./includes/jquery.js"></script>
         <script type="text/javascript" src="./includes/ajax.js"></script>
@@ -1824,6 +1824,14 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
                     <a class="ring-hub__nav-link" href="?page=lineas"><span aria-hidden="true">📐</span> <?= rf_term_html("nav-lineas"); ?></a>
                     <a class="ring-hub__nav-link" href="?page=config"><span aria-hidden="true">⚒️</span> <?= rf_term_html("nav-config"); ?></a>
                     <a class="ring-hub__nav-link" href="?page=ayuda"><span aria-hidden="true">📜</span> <?= rf_term_html("nav-ayuda"); ?></a>
+                    <?php if (defined("RF_INSTANCE") && RF_INSTANCE === "ojos"): ?>
+                    <a class="ring-hub__nav-link ring-hub__nav-link--palantir"
+                       href="https://josue.ink/camaraip"
+                       data-lore="palantiri"
+                       aria-label="<?= htmlspecialchars(rf_term("nav-camaraip-aria"), ENT_QUOTES); ?>">
+                        <span aria-hidden="true">🔮</span> <?= rf_term_html("nav-camaraip"); ?>
+                    </a>
+                    <?php endif; ?>
                 </nav>
 
                 <div class="ring-hub__daemons">
