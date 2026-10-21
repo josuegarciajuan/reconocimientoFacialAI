@@ -203,11 +203,18 @@ $ph_uri = "data:image/svg+xml;base64," . base64_encode(
             </span>
             <span class="cam-card__name"><?= htmlspecialchars($descripcion, ENT_QUOTES); ?></span>
             <?php if (is_array($perfil_cam)): ?>
+            <?php
+                $perfil_fps_txt = (int)$perfil_cam["fps"] . " fps obj.";
+                if ($perfil_cam["measured_fps"] !== null && (float)$perfil_cam["measured_fps"] > 0) {
+                    $perfil_fps_txt .= " · "
+                        . number_format((float)$perfil_cam["measured_fps"], 1) . " med.";
+                }
+            ?>
             <span class="cam-card__profile text-xs text-gray-500 dark:text-gray-600">
                 <?= htmlspecialchars(
                     trim(($perfil_cam["model"] !== "" ? $perfil_cam["model"] : "camaraESP")
                         . " · " . $perfil_cam["width"] . "x" . $perfil_cam["height"]
-                        . " · " . $perfil_cam["fps"] . " fps"),
+                        . " · " . $perfil_fps_txt),
                     ENT_QUOTES
                 ); ?>
             </span>
