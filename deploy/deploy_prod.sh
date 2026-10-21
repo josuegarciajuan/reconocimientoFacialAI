@@ -97,6 +97,15 @@ fi
 CHANGED="$(git diff --name-only "$OLD" "$NEW")"
 echo "[deploy] ficheros cambiados: $(printf '%s\n' "$CHANGED" | grep -c .)"
 
+# ¿Motor deliberadamente en standby? (capturador disabled + inactive)
+# Evita que un deploy reactive rf: ni timers, ni clasificador-serve, ni daemons.
+# En ojos el capturador está enabled+active => STANDBY=0 (comportamiento normal).
+STANDBY=0
+if ! systemctl is-enabled --quiet rf-capturador 2>/dev/null && ! systemctl is-active --quiet rf-capturador 2>/dev/null; then
+    STANDBY=1
+    echo "[deploy] rf-capturador disabled+inactive -> motor en standby"
+fi
+
 # Prerrequisitos de runtime (no versionados).
 mkdir -p aux motor/logs libs/threads_files_aux admin/caras_procesadas && chmod 777 libs/threads_files_aux
 if [ -f .env ]; then
@@ -111,8 +120,14 @@ if printf '%s\n' "$CHANGED" | grep -qE '^(deploy/systemd/|deploy/install_service
     systemctl daemon-reload
     # Timers one-shot: enable --now es idempotente y asegura que un timer nuevo
     # (p. ej. rf-reprocesa, spec 17) quede armado aunque el instalador no lo arranque.
-    systemctl enable --now rf-calibra.timer rf-vigilar-deriva.timer rf-reprocesa.timer rf-reten-backups.timer 2>/dev/null || true
-    systemctl enable --now rf-clasificador-serve 2>/dev/null || true
+    if [ "$STANDBY" = 0 ]; then
+        systemctl enable --now rf-calibra.timer rf-vigilar-deriva.timer rf-reprocesa.timer rf-reten-backups.timer 2>/dev/null || true
+        systemctl enable --now rf-clasificador-serve 2>/dev/null || true
+    else
+        # Housekeeping (no motor): la retención de backups sigue armada.
+        systemctl enable --now rf-reten-backups.timer 2>/dev/null || true
+        echo "[deploy] standby: no se rearman timers de motor ni rf-clasificador-serve"
+    fi
 fi
 
 # Vhost Apache del panel.
@@ -146,8 +161,12 @@ done <<< "$CHANGED"
 
 # Timers de one-shots (calibración / vigilancia de deriva).
 if printf '%s\n' "$CHANGED" | grep -qE '^motor/(calibrar|vigilar_deriva)\.py$'; then
-    echo "[deploy] one-shots cambiados -> rearmando timers"
-    systemctl restart rf-calibra.timer rf-vigilar-deriva.timer 2>/dev/null || true
+    if [ "$STANDBY" = 0 ]; then
+        echo "[deploy] one-shots cambiados -> rearmando timers"
+        systemctl restart rf-calibra.timer rf-vigilar-deriva.timer 2>/dev/null || true
+    else
+        echo "[deploy] standby: one-shots cambiados, timers no rearmados"
+    fi
 fi
 
 # Migraciones SQL pendientes: SOLO los ficheros NUEVOS (--diff-filter=A).
@@ -203,8 +222,20 @@ if [ "$ALL" = 1 ]; then
 fi
 SVC="$(for s in $SVC; do echo "$s"; done | sort -u | tr '\n' ' ' | sed 's/ *$//')"
 
+# Respetar el apagado deliberado: no arrancar unidades disabled+inactive.
+# Un `systemctl restart` arrancaría una unit apagada a mano, incluso disabled.
+SVC_FILTERED=""
+for s in $SVC; do
+    if ! systemctl is-enabled --quiet "$s" 2>/dev/null && ! systemctl is-active --quiet "$s" 2>/dev/null; then
+        echo "[deploy] $s disabled+inactive: se mantiene apagado"
+        continue
+    fi
+    SVC_FILTERED="$SVC_FILTERED $s"
+done
+SVC="$(for s in $SVC_FILTERED; do echo "$s"; done | sort -u | tr '\n' ' ' | sed 's/ *$//')"
+
 if [ -z "$SVC" ]; then
-    echo "[deploy] cambios sin impacto en daemons (solo web/docs). Pull aplicado."
+    echo "[deploy] cambios sin impacto en daemons activos (solo web/docs/standby). Pull aplicado."
     exit 0
 fi
 
