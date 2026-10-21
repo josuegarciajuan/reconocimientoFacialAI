@@ -34,8 +34,15 @@ if (is_file($env_file)) {
             continue;
         }
         list($k, $v) = explode("=", $linea, 2);
+        $v = trim($v);
+        // Mismo criterio que motor/core/env.py: aceptar valores entrecomillados
+        // (necesario para marcas con espacios, p. ej. RF_BRAND_NAME="Ojos ...").
+        if (strlen($v) >= 2 && (($v[0] === '"' && substr($v, -1) === '"')
+                || ($v[0] === "'" && substr($v, -1) === "'"))) {
+            $v = substr($v, 1, -1);
+        }
         if (getenv($k) === false) {
-            putenv($k . "=" . trim($v));
+            putenv($k . "=" . $v);
         }
     }
 }
@@ -102,6 +109,32 @@ switch($server){
     default:
         die("Entorno no soportado: ".$server);
 }
+
+// ---------------------------------------------------------------------------
+// Identidad de instancia (multi-instancia: laboral en `mail`, personal en
+// liveyourdre2). Los valores por defecto preservan el comportamiento actual.
+// ---------------------------------------------------------------------------
+define("RF_INSTANCE", env_or("RF_INSTANCE", "laboral"));
+define("RF_BASE_PATH", rtrim(env_or("RF_BASE_PATH", "/reconocimientoFacial/"), "/") . "/");
+define("RF_SUPERSERVER_PROJECT", env_or("RF_SUPERSERVER_PROJECT", "reconocimientoFacial"));
+
+// Marca visible (topbar, login y PWA). Para `ojos` se sobreescribe en .env.
+define("RF_BRAND_NAME", env_or("RF_BRAND_NAME", "Mordor · El Ojo que Todo lo Ve"));
+define("RF_BRAND_SHORT", env_or("RF_BRAND_SHORT", "Barad-dûr"));
+define("RF_BRAND_TOPBAR", env_or("RF_BRAND_TOPBAR", "Panel de Vigilancia"));
+define("RF_BRAND_SUB", env_or("RF_BRAND_SUB", "El Ojo que Todo lo Ve"));
+define("RF_BRAND_SUB_PRO", env_or("RF_BRAND_SUB_PRO", "Reconocimiento facial · Control de accesos"));
+define("RF_BRAND_DESC", env_or("RF_BRAND_DESC", "Mordor · Vigilancia y Control de Accesos por Reconocimiento Facial."));
+define("RF_BRAND_THEME_COLOR", env_or("RF_BRAND_THEME_COLOR", "#16121a"));
+define("RF_BRAND_BG_COLOR", env_or("RF_BRAND_BG_COLOR", "#0b0a0e"));
+define("RF_BRAND_ICON_DIR", env_or("RF_BRAND_ICON_DIR", "files"));
+define("RF_BRAND_ICON_192", env_or("RF_BRAND_ICON_192", "icon-192.png"));
+define("RF_BRAND_ICON_512", env_or("RF_BRAND_ICON_512", "icon-512.png"));
+define("RF_BRAND_ICON_MASKABLE", env_or("RF_BRAND_ICON_MASKABLE", "icon-512.png"));
+define("RF_BRAND_LOGIN_LOGO", env_or("RF_BRAND_LOGIN_LOGO", "./files_login/logo-sauron.png"));
+define("RF_BRAND_PWA_EMOJI", env_or("RF_BRAND_PWA_EMOJI", "👁️"));
+define("RF_BRAND_INSTALL_TITLE", env_or("RF_BRAND_INSTALL_TITLE", "Instalar Mordor"));
+define("RF_BRAND_INSTALL_SUB", env_or("RF_BRAND_INSTALL_SUB", "El Ojo que Todo lo Ve, como una app: sin barra del navegador, más rápido y siempre a mano en tu escritorio."));
 
 // Credenciales del superadmin (M10: desde .env). Por defecto: cambiar-ahora.
 define("ADMIN_USER", env_or("RF_ADMIN_USER", "admin"));

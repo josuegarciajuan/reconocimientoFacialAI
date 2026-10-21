@@ -90,7 +90,7 @@ function autologin_set_cookie(string $token): void
 {
     setcookie(AUTOLOGIN_COOKIE, $token, [
         "expires"  => time() + 31536000,
-        "path"     => "/reconocimientoFacial/",
+        "path"     => defined("RF_BASE_PATH") ? RF_BASE_PATH : "/reconocimientoFacial/",
         "secure"   => true,
         "httponly" => true,
         "samesite" => "Lax",

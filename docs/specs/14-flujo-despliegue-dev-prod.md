@@ -166,3 +166,19 @@ mysql -u<user> -p<pass> reconocimientofacial -e \
 systemctl is-active rf-capturador rf-detector rf-clasificador
 ps -eo pid,args | grep '[c]lasificador.py'   # debe salir SOLO el daemon fresco
 ```
+
+
+## Instancia personal `ojos` (2026-10-21)
+
+Además de producción (`mail`), `liveyourdre2` ejecuta la instancia personal
+`ojos` desde el mismo checkout y la misma rama `main`:
+
+```bash
+bash deploy/ojos/deploy_ojos.sh     # solo ojos (liveyourdre2)
+bash deploy/deploy_all.sh           # laboral (mail) + ojos
+```
+
+- BD/datos propios: `reconocimientofacial_ojos` en `liveyourdre2`.
+- Panel: `https://josue.ink/ojos/admin/` (pool PHP-FPM `ojos`).
+- SuperServer: proyecto `ojos` (spool/retornos/modo propios).
+- Detalle: `docs/specs/20-instancia-ojos.md`.

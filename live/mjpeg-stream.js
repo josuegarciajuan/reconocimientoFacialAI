@@ -182,8 +182,11 @@ function getStream(id, url) {
   let st = streams.get(id);
   if (st) return st;
 
+  // `-rtsp_transport` solo aplica a RTSP; las cámaras UVC/ESP32 del bridge
+  // camaraip se sirven como MJPEG HTTP y ffmpeg rechaza esa opción.
+  const inputArgs = /^rtsp:/i.test(url) ? ["-rtsp_transport", "tcp"] : [];
   const args = [
-    "-rtsp_transport", "tcp",
+    ...inputArgs,
     "-loglevel", "error",
     "-i", url,
     "-vf", `fps=${FPS},scale=${SCALE}`,

@@ -1,5 +1,5 @@
 /**
- * pwa-install.js — Mordor Panel (Barad-dûr)
+ * pwa-install.js — Panel multi-instancia (marca desde window.RF_BRAND)
  * - Registra el Service Worker (solo HTTPS)
  * - Maneja el evento beforeinstallprompt
  * - Muestra modal central de instalación post-login (primera visita)
@@ -10,12 +10,15 @@
 
   // ── Service Worker registration (solo en HTTPS; sin SW la app sigue funcionando) ──
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
-    navigator.serviceWorker.register('./sw.js?v=1', { scope: './' }).catch(function () {
+    navigator.serviceWorker.register('./sw.js?v=2', { scope: './' }).catch(function () {
       // Fallo silencioso: la app funciona sin SW
     });
   }
 
   // ── PWA Install Prompt ──
+  var BRAND = window.RF_BRAND || {};
+  var INSTANCE = BRAND.instance || 'laboral';
+  var PROMPT_KEY = 'pwa_install_prompt_ts' + (INSTANCE === 'laboral' ? '' : '-' + INSTANCE);
   var deferredPrompt = null;
   var installPromptShown = false;
 
@@ -35,7 +38,7 @@
   // Comprueba si el aviso se mostró en los últimos 7 días
   function wasPromptedRecently() {
     try {
-      var ts = localStorage.getItem('pwa_install_prompt_ts');
+      var ts = localStorage.getItem(PROMPT_KEY);
       if (ts) {
         var age = Date.now() - parseInt(ts, 10);
         return age < 7 * 24 * 60 * 60 * 1000; // 7 días
@@ -47,7 +50,7 @@
   // Registra que el aviso ya se mostró
   function markPrompted() {
     try {
-      localStorage.setItem('pwa_install_prompt_ts', String(Date.now()));
+      localStorage.setItem(PROMPT_KEY, String(Date.now()));
     } catch (e) {}
   }
 
@@ -64,9 +67,9 @@
 
     overlay.innerHTML =
       '<div class="pwa-install-card">' +
-        '<div class="pwa-icon">👁️</div>' +
-        '<h2 id="pwaTitle">Instalar Mordor</h2>' +
-        '<p class="pwa-sub">El Ojo que Todo lo Ve, como una app: sin barra del navegador, más rápido y siempre a mano en tu escritorio.</p>' +
+        '<div class="pwa-icon">' + (BRAND.emoji || '👁️') + '</div>' +
+        '<h2 id="pwaTitle">' + (BRAND.installTitle || 'Instalar app') + '</h2>' +
+        '<p class="pwa-sub">' + (BRAND.installSub || 'Sin barra del navegador, más rápido y siempre a mano.') + '</p>' +
         '<button class="pwa-btn-install" id="pwaInstallBtn">' +
           '<span class="pwa-btn-icon">⬇️</span> Instalar App' +
         '</button>' +
@@ -154,7 +157,7 @@
   window.addEventListener('appinstalled', function () {
     deferredPrompt = null;
     try {
-      localStorage.setItem('pwa_install_prompt_ts', String(Date.now()));
+      localStorage.setItem(PROMPT_KEY, String(Date.now()));
     } catch (e) {}
     var overlay = document.querySelector('.pwa-install-overlay');
     if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
