@@ -1,3 +1,6 @@
+import os
+
+os.environ["RF_SUPERSERVER_PROJECT"] = "reconocimientoFacial"
 """Contrato del puente del pool de SuperServer (M3).
 
 Prueba pura (sin vídeo ni modelos): forma de la petición de spool y rutas del
