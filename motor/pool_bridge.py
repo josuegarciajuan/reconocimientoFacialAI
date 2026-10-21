@@ -34,13 +34,14 @@ import time
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from motor.core.embudo import log_evento, log_latencia         # noqa: E402
+from motor.core.instance import mode_file, project_id, returns_dir  # noqa: E402
 from motor.pool_ack import escribir_ack, job_dir_of            # noqa: E402
 from motor.procesa_video import (PROYECTO, cargar_lineas,      # noqa: E402
                                  fecha_base_video, php_ws)
 
-MODE_FILE = "/var/lib/taildeck/projects/reconocimientoFacial.mode"
+MODE_FILE = mode_file(PROYECTO)
 SPOOL_DIR = "/var/lib/taildeck/spool"
-RETURNS_DIR = "/var/lib/taildeck/returns/reconocimientoFacial"
+RETURNS_DIR = returns_dir(PROYECTO)
 
 
 def modo() -> str:
@@ -64,7 +65,7 @@ def build_request(local_id: str, camara_id: str, fichero: str, lineas: list[dict
     rid = rid or f"req-{int(time.time())}-{os.getpid()}"
     return {
         "id": rid,
-        "project": "reconocimientoFacial",
+        "project": project_id(PROYECTO),
         "process": "video_faces",
         "params": {"local": local_id, "cam": camara_id, "fichero": fichero, "lineas": lineas},
         "externalId": f"video:{local_id}/{camara_id}/{fichero}",

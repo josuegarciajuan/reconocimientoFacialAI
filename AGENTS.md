@@ -56,3 +56,14 @@ Opciones: `--all`, `--no-restart`, `--dry-run`. Si el deploy falla, hay que repo
 - Flujo completo: `docs/specs/14-flujo-despliegue-dev-prod.md`.
 - Credenciales: solo en `.env` (gitignored). Cualquier valor que parezca un secreto
   (`password`, `token`, `api_key`, …) está bloqueado por el hook pre-commit.
+
+
+## Multi-instancia (2026-10-21)
+
+- **Laboral**: `mail`, BD `reconocimientofacial`, panel `https://josue.ink/rf/`.
+- **Personal `ojos`**: `liveyourdre2`, BD `reconocimientofacial_ojos`, panel
+  `https://josue.ink/ojos/`, mismo checkout y mismo `main`.
+- Cualquier cambio de código se despliega a las dos instancias:
+  `bash deploy/deploy_all.sh` (o `deploy_prod.sh` + `deploy/ojos/deploy_ojos.sh`).
+- Los datos de `ojos` viven en `liveyourdre2`; no se copian ni se reutilizan los
+  de `mail`. Ver `docs/specs/20-instancia-ojos.md`.

@@ -47,6 +47,8 @@ require_once '../libs/db.php';
 require_once __DIR__ . '/includes/glosario.php';
 // Terminología por tema (Mordor <-> Profesional) -> helpers rf_term()/rf_term_html()
 require_once __DIR__ . '/includes/terminos.php';
+// Identidad de instancia (marca, icono, PWA)
+require_once __DIR__ . '/includes/brand.php';
 
 // B9: consulta del local actual con PDO
 $local = DB::selectOne("SELECT * FROM locales WHERE id = ?", [(int)($_SESSION["local_id"] ?? 0)]);
@@ -76,18 +78,18 @@ $rf_tema_color = ($rf_tema === "mordor") ? "#16121a" : "#F5F3EC";
         
         <link href="./files/logo-sauron.png" rel="shortcut icon">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="Mordor · El Ojo que Todo lo Ve. Vigilancia y Control de Accesos por Reconocimiento Facial.">
+        <meta name="description" content="<?= htmlspecialchars(rf_brand_desc(), ENT_QUOTES); ?>">
         <meta name="keywords" content="Reconocimiento Facial">
         <meta name="author" content="Josue">
-        <title>Mordor · El Ojo que Todo lo Ve</title>
+        <title><?= htmlspecialchars(rf_brand_name(), ENT_QUOTES); ?></title>
         <!-- PWA: manifest + instalación (ver files/pwa-install.js) -->
-        <link rel="manifest" href="./manifest.json">
+        <link rel="manifest" href="./manifest.php">
         <meta name="theme-color" id="rf-theme-color" content="<?= $rf_tema_color; ?>">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-        <meta name="apple-mobile-web-app-title" content="Barad-dûr">
-        <link rel="apple-touch-icon" href="./files/icon-192.png">
+        <meta name="apple-mobile-web-app-title" content="<?= htmlspecialchars(rf_brand_short(), ENT_QUOTES); ?>">
+        <link rel="apple-touch-icon" href="<?= htmlspecialchars(rf_brand_icon_url(192), ENT_QUOTES); ?>">
         <!-- Tema antes del primer pintado (anti-FOUC): localStorage > cookie > profesional -->
         <script>
         (function () {
@@ -1738,10 +1740,10 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
                         <path d="M28 17.07 L34.5 5.81" stroke-width="1.6" stroke-linecap="round"/>
                     </svg>
                     <span class="baradur-brand__word">
-                        <span class="rf-brand-mordor">Barad-<span class="font-medium">dûr</span></span>
-                        <span class="rf-brand-pro">Panel de <span class="font-medium">Vigilancia</span></span>
-                        <span class="baradur-brand__sub rf-brand-mordor">El Ojo que Todo lo Ve</span>
-                        <span class="baradur-brand__sub rf-brand-pro">Reconocimiento facial · Control de accesos</span>
+                        <span class="rf-brand-mordor"><?= htmlspecialchars(rf_brand_short(), ENT_QUOTES); ?></span>
+                        <span class="rf-brand-pro"><?= htmlspecialchars(rf_brand_topbar(), ENT_QUOTES); ?></span>
+                        <span class="baradur-brand__sub rf-brand-mordor"><?= htmlspecialchars(rf_brand_sub(), ENT_QUOTES); ?></span>
+                        <span class="baradur-brand__sub rf-brand-pro"><?= htmlspecialchars(rf_brand_sub_pro(), ENT_QUOTES); ?></span>
                     </span>
                 </a>
                 <!-- END: Logo -->
@@ -1854,7 +1856,8 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
         <!-- END: JS Assets-->
 
         <!-- PWA: registro SW + modal de instalación (post-login) -->
-        <script src="./files/pwa-install.js?v=1"></script>
+        <script>window.RF_BRAND = <?= json_encode(rf_brand_js(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP); ?>;</script>
+        <script src="./files/pwa-install.js?v=2"></script>
 
 </body></html>
 

@@ -15,7 +15,8 @@ User=root
 # para no robar CPU a captura (2-4) ni a inferencia (5-9).
 CPUAffinity=0-1
 Environment=LIVE_PORT=8084
-Environment=RF_WS_URL=http://127.0.0.1:8090/reconocimientoFacial/ws.php
+# RF_WS_URL y RF_LIVE_TOKEN se toman del .env (EnvironmentFile) para que la
+# instancia personal pueda apuntar a su propio /ojos/ws.php.
 # RF_LIVE_TOKEN se inyecta desde /root/reconocimientoFacial/.env en la instalación
 EnvironmentFile=-/root/reconocimientoFacial/.env
 

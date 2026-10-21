@@ -18,11 +18,13 @@ import os
 import shutil
 import time
 
+from motor.core.instance import mode_file, project_id, returns_dir  # noqa: E402
 from motor.pool_ack import escribir_ack, job_dir_of
 
-MODE_FILE = "/var/lib/taildeck/projects/reconocimientoFacial.mode"
+PROYECTO = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+MODE_FILE = mode_file(PROYECTO)
 SPOOL_DIR = "/var/lib/taildeck/spool"
-RETURNS_DIR = "/var/lib/taildeck/returns/reconocimientoFacial"
+RETURNS_DIR = returns_dir(PROYECTO)
 
 
 def modo() -> str:
@@ -41,7 +43,7 @@ def build_request(out: str, frames: list[dict], rid: str | None = None) -> dict:
     rid = rid or f"req-{int(time.time())}-{os.getpid()}"
     return {
         "id": rid,
-        "project": "reconocimientoFacial",
+        "project": project_id(PROYECTO),
         "process": "hq_photo",
         "params": {"out": out, "frames": frames},
         "externalId": f"photo:{out}",

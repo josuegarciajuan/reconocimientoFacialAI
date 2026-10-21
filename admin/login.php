@@ -13,6 +13,8 @@ require_once '../libs/autologin.php';
 require_once __DIR__ . '/includes/glosario.php';
 // Terminología por tema (Mordor <-> Profesional)
 require_once __DIR__ . '/includes/terminos.php';
+// Identidad de instancia (marca, icono, PWA)
+require_once __DIR__ . '/includes/brand.php';
 
 $login_error = "";
 
@@ -79,18 +81,18 @@ if(isset($_GET["login"]) and $_GET["login"]==1 and $_SERVER["REQUEST_METHOD"]===
         
         <link href="./files_login/logo-sauron.png" rel="shortcut icon">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="Acceso al panel de vigilancia y control de accesos por reconocimiento facial.">
+        <meta name="description" content="<?= htmlspecialchars(rf_brand_desc(), ENT_QUOTES); ?>">
         <meta name="keywords" content="Reconocimiento Facial">
         <meta name="author" content="Josue">
-        <title><?= htmlspecialchars(rf_term("login-marca"), ENT_QUOTES); ?> · Acceso</title>
+        <title><?= htmlspecialchars(rf_brand_short(), ENT_QUOTES); ?> · Acceso</title>
         <!-- PWA: manifest + instalación (el modal solo aparece en index.php tras el login) -->
-        <link rel="manifest" href="./manifest.json">
+        <link rel="manifest" href="./manifest.php">
         <meta name="theme-color" id="rf-theme-color" content="#F5F3EC">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-        <meta name="apple-mobile-web-app-title" content="Barad-dûr">
-        <link rel="apple-touch-icon" href="./files/icon-192.png">
+        <meta name="apple-mobile-web-app-title" content="<?= htmlspecialchars(rf_brand_short(), ENT_QUOTES); ?>">
+        <link rel="apple-touch-icon" href="<?= htmlspecialchars(rf_brand_icon_url(192), ENT_QUOTES); ?>">
         <!-- Login en tema profesional (v1). El login por cookie llegará en el refinado. -->
         <script>
         (function () {
@@ -1688,8 +1690,8 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
                             </svg>
                         </div>
                         <div class="login-brand__overlay">
-                            <img class="login-brand__logo login-brand__logo--mordor" src="./files_login/logo-sauron.png" alt="Barad-dûr">
-                            <div class="login-brand__title"><?= rf_term_html("login-marca"); ?></div>
+                            <img class="login-brand__logo login-brand__logo--mordor" src="<?= htmlspecialchars(rf_brand_login_logo(), ENT_QUOTES); ?>" alt="<?= htmlspecialchars(rf_brand_short(), ENT_QUOTES); ?>">
+                            <div class="login-brand__title"><?= htmlspecialchars(rf_brand_short(), ENT_QUOTES); ?></div>
                             <div class="login-brand__tagline" data-lore="inscripcion-anillo"><?= rf_term_html("login-tagline1"); ?></div>
                             <div class="login-brand__tagline mt-2" style="font-size:0.85rem" data-lore="ojo-todo-lo-ve"><?= rf_term_html("login-tagline2"); ?></div>
                         </div>
@@ -1703,6 +1705,7 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
         <script src="./files_login/app.js"></script>
         <!-- Lore: glosario temático + motor de bocadillos -->
         <script>window.RF_GLOSARIO = <?= rf_glosario_json(); ?>;</script>
+        <script>window.RF_BRAND = <?= json_encode(rf_brand_js(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP); ?>;</script>
         <script src="./files/lore.js"></script>
         <script>
         function alternarContrasenya() {
@@ -1730,7 +1733,7 @@ a.note-dropdown-item,a.note-dropdown-item:hover{
         <!-- PWA: registro del Service Worker (el modal de instalación solo aparece tras el login) -->
         <script>
         if ('serviceWorker' in navigator && location.protocol === 'https:') {
-            navigator.serviceWorker.register('./sw.js?v=1', { scope: './' }).catch(function () {});
+            navigator.serviceWorker.register('./sw.js?v=2', { scope: './' }).catch(function () {});
         }
         </script>
     

@@ -29,12 +29,13 @@ import time
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+from motor.core.instance import mode_file, project_id, returns_dir  # noqa: E402
 from motor.pool_ack import escribir_ack, job_dir_of, fingerprint  # noqa: E402
 
-MODE_FILE = "/var/lib/taildeck/projects/reconocimientoFacial.mode"
-SPOOL_DIR = "/var/lib/taildeck/spool"
-RETURNS_DIR = "/var/lib/taildeck/returns/reconocimientoFacial"
 PROYECTO = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+MODE_FILE = mode_file(PROYECTO)
+SPOOL_DIR = "/var/lib/taildeck/spool"
+RETURNS_DIR = returns_dir(PROYECTO)
 IMG_EXTS = (".jpg", ".jpeg", ".png")
 # F18: el stdout del bridge va a /dev/null (Jos_Thread), así que se registra en
 # fichero para poder diagnosticar el dispatcher en producción.
@@ -77,7 +78,7 @@ def build_request(local_id: str, camara_id: str, carpeta: str,
         params["bustoDir"] = busto_dir
     return {
         "id": rid,
-        "project": "reconocimientoFacial",
+        "project": project_id(PROYECTO),
         "process": "classify",
         "params": params,
         "externalId": ext,

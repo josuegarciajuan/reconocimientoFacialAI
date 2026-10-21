@@ -29,13 +29,14 @@ import time
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+from motor.core.instance import mode_file, project_id, returns_dir  # noqa: E402
 from motor.reprocesar import _locales_disponibles          # noqa: E402
 from motor.pool_ack import escribir_ack, job_dir_of, fingerprint  # noqa: E402
 
-MODE_FILE = "/var/lib/taildeck/projects/reconocimientoFacial.mode"
-SPOOL_DIR = "/var/lib/taildeck/spool"
-RETURNS_DIR = "/var/lib/taildeck/returns/reconocimientoFacial"
 PROYECTO = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+MODE_FILE = mode_file(PROYECTO)
+SPOOL_DIR = "/var/lib/taildeck/spool"
+RETURNS_DIR = returns_dir(PROYECTO)
 SUFIJOS = ("", "_busto", "_cuerpo", "_frame")
 
 
@@ -59,7 +60,7 @@ def build_request(local_id: str, camara_id: str, fichero: str, face_every: int,
                   f"{hashlib.sha1(external_id.encode('utf-8', 'replace')).hexdigest()[:10]}")
     return {
         "id": rid,
-        "project": "reconocimientoFacial",
+        "project": project_id(PROYECTO),
         "process": "rescan",
         "params": {"local": local_id, "cam": camara_id, "fichero": fichero,
                    "face_every": face_every},

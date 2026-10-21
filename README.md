@@ -85,3 +85,11 @@ php tests/vinculos_test.php                           # lógica de vínculos ví
 - Credenciales en `.env` (fuera de git). El histórico `readme.txt` (con credenciales de
   servidores antiguos) fue **eliminado** — rotar cualquier credencial que hubiera compartido.
 - SQLi eliminado (PDO en toda la app); login con `password_hash`/`password_verify` + rate-limit.
+
+
+## Multi-instancia
+
+El mismo código sirve a la instancia laboral (`mail`, `/rf/`) y a la personal
+`ojos` (`liveyourdre2`, `/ojos/`). Cada una tiene su BD, datos, sesión/PWA y
+proyecto de SuperServer; los cambios se despliegan a las dos. Ver
+`docs/specs/20-instancia-ojos.md`.

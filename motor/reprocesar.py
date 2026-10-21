@@ -42,6 +42,7 @@ import cv2
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from motor.core.config import Config                            # noqa: E402
+from motor.core.instance import mode_file                       # noqa: E402
 from motor.core.model import analyze                            # noqa: E402
 from motor.core.quality import face_sharpness, pose_label       # noqa: E402
 from motor.core.store import FaceStore                          # noqa: E402
@@ -49,10 +50,10 @@ from motor.core.superres import enhance_embedding, restore_face   # noqa: E402
 from motor.procesa_video import guardar_cara                    # noqa: E402
 
 
-def _ss_mode() -> str:
+def _ss_mode(ruta: str) -> str:
     """Modo del proyecto para SuperServer (local por defecto)."""
     try:
-        with open("/var/lib/taildeck/projects/reconocimientoFacial.mode", encoding="utf-8") as fh:
+        with open(mode_file(ruta), encoding="utf-8") as fh:
             return "superserver" if fh.read().strip() == "superserver" else "local"
     except OSError:
         return "local"
@@ -243,7 +244,7 @@ def main() -> int:
         print(f"fotos reprocesadas: {n}", flush=True)
 
     locales = _locales_disponibles(args.ruta) if args.todos else ([args.local_id] if args.local_id else [])
-    delegar_videos = bool(args.videos) and _ss_mode() == "superserver"
+    delegar_videos = bool(args.videos) and _ss_mode(args.ruta) == "superserver"
     if not locales and not delegar_videos:
         ap.error("indica local_id o usa --todos (con vídeos archivados)")
 

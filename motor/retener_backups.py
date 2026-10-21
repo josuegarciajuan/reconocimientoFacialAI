@@ -11,13 +11,18 @@ import datetime as dt
 import os
 import re
 import shutil
+import sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from motor.core.instance import returns_dir  # noqa: E402
 
 PATTERN = re.compile(r"^(\d{8})_(\d{6})_consolidar$")
 
 # Spool del pool (Superserver). Los bridges ESCANEAN `returns/` para casar cada
 # resultado y ese directorio crecía sin límite (10k dirs / 1,2 GB en producción),
 # ralentizando todos los bridges. Aquí se le aplica la misma retención diaria.
-RETURNS_DIR = "/var/lib/taildeck/returns/reconocimientoFacial"
+RETURNS_DIR = returns_dir()
 PROCESSED_DIR = "/var/lib/taildeck/spool/processed"
 
 

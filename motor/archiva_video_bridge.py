@@ -37,9 +37,11 @@ from motor.archiva_video import PROYECTO, fecha_base_video, php_ws  # noqa: E402
 from motor.pool_ack import escribir_ack, job_dir_of               # noqa: E402
 from motor.core.video import ruta_archivo, ruta_video  # noqa: E402
 
-MODE_FILE = "/var/lib/taildeck/projects/reconocimientoFacial.mode"
+from motor.core.instance import mode_file, project_id, returns_dir  # noqa: E402
+
+MODE_FILE = mode_file(PROYECTO)
 SPOOL_DIR = "/var/lib/taildeck/spool"
-RETURNS_DIR = "/var/lib/taildeck/returns/reconocimientoFacial"
+RETURNS_DIR = returns_dir(PROYECTO)
 
 
 def modo() -> str:
@@ -59,7 +61,7 @@ def build_request(local_id: str, camara_id: str, fichero: str,
     rid = rid or f"req-{int(time.time())}-{os.getpid()}"
     return {
         "id": rid,
-        "project": "reconocimientoFacial",
+        "project": project_id(PROYECTO),
         "process": "archive",
         "params": {"local": local_id, "cam": camara_id, "fichero": fichero,
                    "crf": crf, "fps": fps, "preset": preset, "name": nombre_mp4(fichero)},

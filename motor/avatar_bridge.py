@@ -24,6 +24,7 @@ import time
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+from motor.core.instance import project_id  # noqa: E402
 from motor.photo_pool import RETURNS_DIR, escribir_peticion, modo  # noqa: E402
 from motor.pool_ack import escribir_ack, job_dir_of               # noqa: E402
 
@@ -34,7 +35,7 @@ def build_request(fotos: list[dict], out: str, size: int, rid: str | None = None
     rid = rid or f"req-{int(time.time())}-{os.getpid()}"
     return {
         "id": rid,
-        "project": "reconocimientoFacial",
+        "project": project_id(PROYECTO),
         "process": "avatar",
         "params": {"fotos": fotos, "out": out, "size": size},
         "externalId": f"avatar:{out}",
