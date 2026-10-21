@@ -223,9 +223,9 @@ mkdir -p /var/lib/php/sessions-ojos
 chown www-data:www-data /var/lib/php/sessions-ojos
 chmod 700 /var/lib/php/sessions-ojos
 
-SOCK="$(ls -1 /run/php/php*-fpm.sock 2>/dev/null | sort -V | tail -1 || true)"
+SOCK="$(ls -1 /run/php/php[0-9]*-fpm.sock 2>/dev/null | sort -V | tail -1 || true)"
 [ -n "$SOCK" ] || { echo "ERROR: no hay socket php-fpm" >&2; exit 1; }
-PHPVER="$(basename "$SOCK" | sed -E 's/php([0-9.]+)-fpm.sock/\1/')"
+PHPVER="$(basename "$SOCK" | sed -E 's/^php([0-9.]+)-fpm\.sock$/\1/')"
 cp "$DIR/deploy/ojos/ojos-fpm.conf" "/etc/php/$PHPVER/fpm/pool.d/ojos.conf"
 /usr/sbin/php-fpm"$PHPVER" -t
 systemctl restart "php$PHPVER-fpm"
