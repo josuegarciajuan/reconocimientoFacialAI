@@ -32,6 +32,10 @@ if(!isset($_SESSION["user"])){
     header('Location: ./login.php');
     exit;
 }
+if ((string)($_GET["desconectar"] ?? "") === "1" && rf_auth_mode_gate()) {
+    // Se intercepta antes de pintar el panel: el cierre incluye el gate.
+    rf_gate_logout_page();
+}
 if(isset($_GET["descargar"]) and $_GET["descargar"]!=""){
     // B19: descarga segura de la foto de una estancia (antes: $tmp sin instanciar -> fatal)
     require_once '../libs/db.php';

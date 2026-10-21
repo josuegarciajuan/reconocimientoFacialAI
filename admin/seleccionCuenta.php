@@ -8,23 +8,8 @@ require_once __DIR__ . "/../libs/db.php";
 
 if (isset($_GET["desconectar"]) and $_GET["desconectar"] == "1") {
     if (function_exists("rf_auth_mode_gate") && rf_auth_mode_gate()) {
-        // Ojos: la sesión real es la cookie del patrón (`pg_session`). Hay que
-        // cerrarla en panel-gate; si solo se limpia PHP, el gate reautenticaría.
-        $_SESSION = [];
-        if (ini_get("session.use_cookies")) {
-            $p = session_get_cookie_params();
-            setcookie(session_name(), "", time() - 42000,
-                $p["path"] ?: "/", $p["domain"] ?: "",
-                !empty($p["secure"]), !empty($p["httponly"]));
-        }
-        @session_destroy();
-        $base = defined("RF_BASE_PATH") ? RF_BASE_PATH : "/ojos/";
-        header("Content-Type: text/html; charset=utf-8");
-        echo "<!doctype html><meta charset=\"utf-8\"><script>"
-           . "fetch('/__gate/logout',{method:'POST',credentials:'same-origin'})"
-           . ".catch(function(){}).finally(function(){location.replace(" . json_encode($base) . ");});"
-           . "</script>";
-        exit;
+        // Fallback: index.php ya intercepta ?desconectar=1 antes de pintar.
+        rf_gate_logout_page();
     }
     $_SESSION["user"] = "";
     $_SESSION["local_id"] = "";
