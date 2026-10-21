@@ -70,9 +70,9 @@ if [ -d "$DIR/sql" ]; then
 fi
 
 # Recargar PHP-FPM/Apache (configs de la instancia).
-SOCK="$(ls -1 /run/php/php*-fpm.sock 2>/dev/null | sort -V | tail -1 || true)"
+SOCK="$(ls -1 /run/php/php[0-9]*-fpm.sock 2>/dev/null | sort -V | tail -1 || true)"
 if [ -n "$SOCK" ]; then
-    PHPVER="$(basename "$SOCK" | sed -E 's/php([0-9.]+)-fpm.sock/\1/')"
+    PHPVER="$(basename "$SOCK" | sed -E 's/^php([0-9.]+)-fpm\.sock$/\1/')"
     systemctl reload "php$PHPVER-fpm" 2>/dev/null || true
 fi
 apache2ctl configtest >/dev/null 2>&1 && systemctl reload apache2 2>/dev/null || true
