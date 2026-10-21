@@ -116,7 +116,7 @@ $rf_tema_color = ($rf_tema === "mordor") ? "#16121a" : "#F5F3EC";
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Cinzel:wght@500;600;700;800&family=Cinzel+Decorative:wght@700;900&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="./files/app.css">
         <link rel="stylesheet" href="./files/custom.css?v=6">
-        <link rel="stylesheet" href="./files/sections.css?v=20260819b">
+        <link rel="stylesheet" href="./files/sections.css?v=20261021">
         <?php if (($_GET["page"] ?? "dash") === "dash"): ?>
         <link rel="stylesheet" href="./files/dashboard.css?v=20260819">
         <?php endif; ?>
