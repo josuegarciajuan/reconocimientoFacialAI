@@ -86,3 +86,34 @@ Para volver a local: `printf 'local\n' > /var/lib/taildeck/projects/ojos.mode`.
 - El botón de cerrar sesión limpia la sesión PHP y hace
   `POST /__gate/logout`, volviendo a `/ojos/` (pantalla de patrón).
 - Laboral usa `RF_AUTH_MODE=password` por defecto y conserva su login actual.
+
+## Modo standby del motor
+
+`ojos` puede quedar con el motor apagado y el panel operativo, igual que
+laboral. Estado objetivo:
+
+- **Apagados y disabled**: `rf-capturador`, `rf-detector`, `rf-clasificador`,
+  `rf-clasificador-serve`, `rf-panel-control`, `rf-conciliador`,
+  `rf-vinculador`, `rf-alarmador`, `rf-photo`.
+- **Activos**: `rf-live` (reproducción en directo) y `ollama`.
+- **Timers**: solo `rf-reten-backups.timer`; los de motor
+  (`rf-calibra`, `rf-vigilar-deriva`, `rf-reprocesa`) quedan parados.
+
+Parar (root, liveyourdre2):
+
+```bash
+bash deploy/rf_power.sh off          # motor + timers + hijos escapados; no toca rf-live
+systemctl disable rf-capturador rf-detector rf-clasificador rf-clasificador-serve \
+  rf-panel-control rf-conciliador rf-vinculador rf-alarmador rf-photo
+systemctl stop rf-reprocesa.service 2>/dev/null || true
+systemctl disable --now rf-calibra.timer rf-vigilar-deriva.timer rf-reprocesa.timer
+systemctl start ollama
+```
+
+Reactivar (equivale a encender desde el panel): `bash deploy/rf_power.sh on` y
+`systemctl enable` de las unidades del motor.
+
+`deploy_ojos.sh` detecta `rf-capturador` disabled+inactive (STANDBY=1) y en ese
+caso **no** reinicia las unidades apagadas; solo las que siguen
+`enabled`/`active` (normalmente `rf-live`). Así un despliegue no deshace el
+apagado deliberado.

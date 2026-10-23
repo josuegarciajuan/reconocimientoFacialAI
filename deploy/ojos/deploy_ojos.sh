@@ -4,7 +4,9 @@
 #
 # No usa SSH: el código de `ojos` vive en el mismo checkout que se despliega.
 # Hace pull fast-forward, gate de sintaxis, migraciones SQL nuevas, recarga de
-# PHP-FPM/Apache y reinicio de los servicios del motor personal.
+# PHP-FPM/Apache y reinicio de los servicios del motor personal. Si el motor
+# está en standby (rf-capturador disabled+inactive) NO reactiva las unidades
+# apagadas a mano: solo reinicia las que siguen enabled/active (p. ej. rf-live).
 #
 # Uso (root): bash deploy/ojos/deploy_ojos.sh [--no-pull] [--no-restart]
 # =============================================================================
@@ -83,6 +85,34 @@ if [ "$NO_RESTART" = 1 ]; then
 fi
 
 SERVICES="rf-capturador rf-detector rf-clasificador rf-clasificador-serve rf-panel-control rf-live rf-conciliador rf-vinculador rf-alarmador rf-photo"
+
+# ¿Motor deliberadamente en standby? (capturador disabled + inactive).
+# Mismo criterio que deploy_prod.sh: un despliegue no debe reactivar el motor
+# que se apagó a mano. En ojos el standby replica el estado de laboral:
+# motor apagado y rf-live activo.
+STANDBY=0
+if ! systemctl is-enabled --quiet rf-capturador 2>/dev/null && ! systemctl is-active --quiet rf-capturador 2>/dev/null; then
+    STANDBY=1
+    echo "[ojos] rf-capturador disabled+inactive -> motor en standby"
+fi
+if [ "$STANDBY" = 1 ]; then
+    # Respetar unidades apagadas a mano: `systemctl restart` las arrancaría.
+    ACTIVOS=""
+    for s in $SERVICES; do
+        if systemctl is-enabled --quiet "$s" 2>/dev/null || systemctl is-active --quiet "$s" 2>/dev/null; then
+            ACTIVOS="$ACTIVOS $s"
+        else
+            echo "[ojos] $s disabled+inactive: se mantiene apagado"
+        fi
+    done
+    SERVICES="$ACTIVOS"
+fi
+
+if [ -z "${SERVICES// /}" ]; then
+    echo "[ojos] standby: no hay servicios activos que reiniciar."
+    exit 0
+fi
+
 echo "[ojos] reiniciando servicios personales"
 systemctl restart $SERVICES
 sleep 4

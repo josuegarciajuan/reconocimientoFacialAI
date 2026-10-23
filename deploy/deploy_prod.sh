@@ -99,7 +99,8 @@ echo "[deploy] ficheros cambiados: $(printf '%s\n' "$CHANGED" | grep -c .)"
 
 # ¿Motor deliberadamente en standby? (capturador disabled + inactive)
 # Evita que un deploy reactive rf: ni timers, ni clasificador-serve, ni daemons.
-# En ojos el capturador está enabled+active => STANDBY=0 (comportamiento normal).
+# En ojos se usa el mismo criterio (ver deploy/ojos/deploy_ojos.sh): standby
+# cuando el capturador está disabled+inactive.
 STANDBY=0
 if ! systemctl is-enabled --quiet rf-capturador 2>/dev/null && ! systemctl is-active --quiet rf-capturador 2>/dev/null; then
     STANDBY=1
