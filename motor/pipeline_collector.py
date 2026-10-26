@@ -34,12 +34,17 @@ class PipelineCollector:
         project_root: str,
         returns_dir_override: str | None = None,
         ack: bool = True,
+        verify_artifacts: bool = False,
     ):
         self.store = job_store
         self.project_root = project_root
         self.project_id = project_id(project_root)
         self.returns_dir = returns_dir_override or returns_dir(project_root)
         self.ack = ack
+        # En la casa los artefactos llegan después del resultado; el aplicador
+        # los verifica al moverlos. En un entorno con el sandbox del worker
+        # accesible se puede activar esta comprobación.
+        self.verify_artifacts = verify_artifacts
 
     def _result_file(self, job_dir: str) -> str | None:
         """Devuelve la ruta del fichero de resultado si existe."""
@@ -105,6 +110,18 @@ class PipelineCollector:
                 f"generación {run_generation} no activa; resultado rechazado",
             )
             return None
+
+        # Verificar que los artefactos declarados están completos. Cuando la
+        # comprobación está activa (sandbox del worker accesible), no se acepta
+        # un resultado cuyos ficheros aún no existen.
+        artifacts = result.unit_result.artifacts or {}
+        if self.verify_artifacts and artifacts:
+            missing = [p for p in artifacts.values() if not os.path.exists(p)]
+            if missing:
+                self._mark_error(
+                    job_dir, job_id, f"artefactos incompletos: {missing}"
+                )
+                return None
 
         try:
             result_id = self.store.save_result(result)

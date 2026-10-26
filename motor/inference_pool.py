@@ -9,9 +9,8 @@ Uso (en el worker, con ``--ruta`` apuntando al sandbox/proyecto):
 Lee la petición en formato SuperServer, extrae la ``AnalysisUnit`` de los
 parámetros, ejecuta el ``InferenceWorker`` y escribe ``result.json``.
 
-En esta fase el procesador concreto de vídeo es un stub que debe ser
-reemplazado/extendido en fases posteriores; la infraestructura del worker ya
-está operativa.
+Por defecto usa el procesador real de vídeo (``motor.processors.video_processor``).
+El procesador ``stub`` queda disponible para pruebas sin vídeo real.
 """
 from __future__ import annotations
 
@@ -87,6 +86,12 @@ def main() -> int:
     ap.add_argument("--request", required=True, help="ruta al JSON de petición de SuperServer")
     ap.add_argument("--out-dir", required=True, help="directorio donde escribir result.json")
     ap.add_argument("--ruta", default=os.getcwd(), help="raíz del proyecto")
+    ap.add_argument(
+        "--processor",
+        choices=["real", "stub"],
+        default="real",
+        help="procesador de vídeo (real por defecto; stub para pruebas)",
+    )
     args = ap.parse_args()
 
     try:
@@ -102,8 +107,14 @@ def main() -> int:
         return 1
 
     worker = InferenceWorker(project_root=args.ruta)
-    worker.register_processor("video_faces", _video_processor_stub)
-    worker.register_processor("detect", _video_processor_stub)
+    if args.processor == "real":
+        from motor.processors.video_processor import process_unit
+
+        worker.register_processor("video_faces", process_unit)
+        worker.register_processor("detect", process_unit)
+    else:
+        worker.register_processor("video_faces", _video_processor_stub)
+        worker.register_processor("detect", _video_processor_stub)
 
     try:
         result = worker.process_request(request)

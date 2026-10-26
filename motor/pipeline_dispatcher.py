@@ -54,6 +54,14 @@ class PipelineDispatcher:
         """
         unit = job.unit
         event = unit.event
+        config = unit.config.to_dict()
+        # La casa consulta las líneas (el worker no debe hablar con la BD) y las
+        # adjunta a la unidad. Si la consulta falla, se despacha sin cruces.
+        lineas = self._camera_lines(event.camera.camera_id)
+        if lineas:
+            params = dict(config.get("params") or {})
+            params.setdefault("lineas", lineas)
+            config = {**config, "params": params}
         return {
             "id": job.job_id,
             "project": self.project_id,
@@ -67,7 +75,7 @@ class PipelineDispatcher:
                 "unit_id": unit.unit_id,
                 "frame_range": unit.frame_range.to_dict(),
                 "source_paths": unit.source_paths,
-                "config": unit.config.to_dict(),
+                "config": config,
                 "requested_stages": unit.requested_stages,
                 "trace_id": unit.trace_id,
             },
@@ -79,6 +87,24 @@ class PipelineDispatcher:
             "priority": job.priority,
             "deadline": job.deadline_at,
         }
+
+    def _camera_lines(self, camera_id: str) -> list[dict[str, Any]]:
+        """Líneas de la cámara consultadas en la casa (best-effort)."""
+        try:
+            from motor.procesa_video import cargar_lineas
+
+            return [
+                {
+                    "id": ln.line_id,
+                    "x1": ln.x1,
+                    "y1": ln.y1,
+                    "x2": ln.x2,
+                    "y2": ln.y2,
+                }
+                for ln in cargar_lineas(camera_id)
+            ]
+        except Exception:  # noqa: BLE001 — sin líneas, el resto del pipeline sigue
+            return []
 
     def _process_name(self, unit: AnalysisUnit) -> str:  # noqa: ARG002
         """Nombre del proceso SuperServer según el tipo de unidad."""

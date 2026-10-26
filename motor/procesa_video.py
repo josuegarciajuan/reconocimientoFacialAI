@@ -308,7 +308,8 @@ def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,
                   cfg: Config, face_every: int, lineas: list | None = None,
                   efectos: bool = True, eventos: list | None = None,
                   resumen: dict | None = None,
-                  frame_ini: int = 0, frame_fin: int | None = None) -> int:
+                  frame_ini: int = 0, frame_fin: int | None = None,
+                  collector=None) -> int:
     video_path = os.path.join(ruta, "motor/videos", local_id, camara_id, fichero)
     if not os.path.exists(video_path):
         return 0
@@ -360,6 +361,11 @@ def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,
         for det, linea in zip(detectores, lineas):
             for ev in det.process(frame, ts):
                 guardar_cruce(ruta, ev, linea, fecha_base, efectos=efectos, eventos=eventos)
+                if collector is not None:
+                    try:
+                        collector.on_crossing(ev, linea)
+                    except Exception:  # noqa: BLE001 — la captura nunca se rompe por un colector
+                        pass
                 cruces += 1
 
         # caras (muestreo para no saturar CPU)
@@ -375,10 +381,20 @@ def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,
                     caras_borroso += 1
                 elif estado == "dedup":
                     caras_dedup += 1
+                if collector is not None:
+                    try:
+                        collector.on_face(f, frame_idx, ts, estado)
+                    except Exception:  # noqa: BLE001
+                        pass
 
             # F7: personas SIN cara (de espaldas) -> crop de cuerpo
             for bb in persona_det.process(frame):
                 tiene_cara = any(bbox_overlap(bb, tuple(f.bbox)) for f in faces)
+                if collector is not None:
+                    try:
+                        collector.on_body(bb, frame_idx, ts, tiene_cara)
+                    except Exception:  # noqa: BLE001
+                        pass
                 if not tiene_cara:
                     if guardar_cuerpo_sin_cara(ruta, local_id, camara_id, fichero,
                                                frame, bb, ts, cfg, body_buffer):

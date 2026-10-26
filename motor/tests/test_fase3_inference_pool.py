@@ -59,6 +59,7 @@ class TestInferencePool:
                 "--request", str(req_file),
                 "--out-dir", str(out_dir),
                 "--ruta", str(tmp_path),
+                "--processor", "stub",
             ]
             rc = main()
         finally:
