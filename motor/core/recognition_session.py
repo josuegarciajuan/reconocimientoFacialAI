@@ -242,12 +242,27 @@ class RecognitionSession:
         return max(self._results, key=lambda r: r.generated_at)
 
     def _candidates(self, *, confirm: bool) -> list[RecognitionCandidate]:
+        clusters = [
+            c for c in self.clusters
+            if c.size >= self.config.early_min_faces
+        ]
+        centroids = [c.centroid for c in clusters]
+        # Si la galería soporta lotes, se consulta todo de una vez (una sola
+        # multiplicación de matrices). El resultado es idéntico al individual.
+        matches: list = [None] * len(clusters)
+        pairs = [(i, c) for i, c in enumerate(centroids) if c]
+        if pairs:
+            batch_fn = getattr(self.gallery, "match_batch", None)
+            if callable(batch_fn):
+                results = batch_fn([c for _i, c in pairs])
+                for (i, _c), r in zip(pairs, results):
+                    matches[i] = r
+            else:
+                for i, c in pairs:
+                    matches[i] = self.gallery.match(c)
+
         candidates: list[RecognitionCandidate] = []
-        for cluster in self.clusters:
-            if cluster.size < self.config.early_min_faces:
-                continue
-            centroid = cluster.centroid
-            match = self.gallery.match(centroid) if centroid else None
+        for cluster, match in zip(clusters, matches):
             score = 0.0
             person_id = None
             label = None
