@@ -90,6 +90,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     trace_id TEXT NOT NULL,
     submitted_at REAL NOT NULL,
     status TEXT NOT NULL DEFAULT 'pendiente',
+    error TEXT,
     result_id INTEGER,
     UNIQUE(instance, run_generation, job_id)
 );
@@ -187,6 +188,11 @@ class JobStore:
     def _ensure_schema(self) -> None:
         with self._conn() as conn:
             conn.executescript(SCHEMA)
+            # Migración: asegurar columna error en jobs (añadida en Fase 2).
+            try:
+                conn.execute("SELECT error FROM jobs LIMIT 1")
+            except sqlite3.OperationalError:
+                conn.execute("ALTER TABLE jobs ADD COLUMN error TEXT")
 
     def _begin(self, conn: sqlite3.Connection) -> None:
         conn.execute("BEGIN IMMEDIATE")

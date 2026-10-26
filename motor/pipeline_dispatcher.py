@@ -1,0 +1,150 @@
+"""Despachador asíncrono de trabajos hacia SuperServer.
+
+Lee trabajos en estado ``pendiente`` del ``JobStore`` y los escribe en el spool
+de SuperServer (``/var/lib/taildeck/spool``). No bloquea esperando el resultado;
+eso lo hace el ``pipeline_collector``.
+
+El despachador respeta una ventana máxima de trabajos enviados para no
+inundar la pool. Cuando la ventana está llena, los trabajos permanecen en el
+``JobStore`` hasta que haya capacidad.
+"""
+from __future__ import annotations
+
+import json
+import os
+import time
+from typing import Any
+
+from motor.core.job_store import JobStatus
+from motor.core.pipeline_contracts import AnalysisUnit, JobRequest
+from motor.core.instance import project_id
+
+
+SPOOL_DIR = "/var/lib/taildeck/spool"
+
+
+class DispatcherError(Exception):
+    """Error del despachador."""
+
+
+class PipelineDispatcher:
+    """Despacha trabajos del JobStore al spool de SuperServer."""
+
+    def __init__(
+        self,
+        job_store,
+        *,
+        project_root: str,
+        spool_dir: str = SPOOL_DIR,
+        max_sent: int = 20,
+        max_concurrent_by_stage: dict[str, int] | None = None,
+    ):
+        self.store = job_store
+        self.project_root = project_root
+        self.spool_dir = spool_dir
+        self.max_sent = max_sent
+        self.max_concurrent_by_stage = max_concurrent_by_stage or {}
+        self.project_id = project_id(project_root)
+
+    def _to_superserver_request(self, job: JobRequest) -> dict[str, Any]:
+        """Convierte un ``JobRequest`` al formato esperado por SuperServer.
+
+        Incluye el ``trace_id`` y los identificadores de generación para que el
+        collector pueda validar el resultado.
+        """
+        unit = job.unit
+        event = unit.event
+        return {
+            "id": job.job_id,
+            "project": self.project_id,
+            "process": self._process_name(unit),
+            "params": {
+                "instance": event.camera.instance.instance,
+                "run_generation": event.camera.instance.run_generation,
+                "local_id": event.camera.local_id,
+                "camera_id": event.camera.camera_id,
+                "event_id": event.event_id,
+                "unit_id": unit.unit_id,
+                "frame_range": unit.frame_range.to_dict(),
+                "source_paths": unit.source_paths,
+                "config": unit.config.to_dict(),
+                "requested_stages": unit.requested_stages,
+                "trace_id": unit.trace_id,
+            },
+            "externalId": (
+                f"{event.camera.instance.instance}:"
+                f"{event.camera.local_id}/{event.camera.camera_id}/"
+                f"{event.event_id}/{unit.unit_id}"
+            ),
+            "priority": job.priority,
+            "deadline": job.deadline_at,
+        }
+
+    def _process_name(self, unit: AnalysisUnit) -> str:  # noqa: ARG002
+        """Nombre del proceso SuperServer según el tipo de unidad."""
+        # En la fase actual solo existe el pipeline facial. Se deja extensible
+        # para cuando haya procesos separados (cuerpo, pose, etc.).
+        return "video_faces"
+
+    def _write_spool(self, req: dict[str, Any]) -> str:
+        os.makedirs(self.spool_dir, exist_ok=True)
+        dst = os.path.join(self.spool_dir, f"{req['id']}.json")
+        tmp = dst + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(req, fh, ensure_ascii=False, default=str)
+        os.replace(tmp, dst)
+        return dst
+
+    def _count_sent(self, run_generation: str) -> int:
+        return len(self.store.list_jobs(status=JobStatus.ENVIADO, run_generation=run_generation))
+
+    def dispatch_one(self, run_generation: str | None = None) -> str | None:
+        """Despacha el siguiente trabajo pendiente si cabe en la ventana.
+
+        Devuelve el ``job_id`` enviado o None si no hay nada disponible.
+        """
+        gen = run_generation or self.store.active_generation()
+        if not gen:
+            return None
+
+        if self._count_sent(gen) >= self.max_sent:
+            return None
+
+        pending = self.store.list_jobs(
+            status=JobStatus.PENDIENTE,
+            run_generation=gen,
+            limit=1,
+        )
+        if not pending:
+            return None
+
+        row = pending[0]
+        request = JobRequest.from_dict(json.loads(row["job_json"]))
+        job_id = request.job_id
+
+        req_payload = self._to_superserver_request(request)
+        self._write_spool(req_payload)
+
+        self.store.set_job_status(job_id, gen, JobStatus.ENVIADO)
+        self.store.record_attempt(
+            job_id=job_id,
+            run_generation=gen,
+            worker_id=None,
+            status=JobStatus.ENVIADO.value,
+            started_at=time.time(),
+        )
+        return job_id
+
+    def dispatch_all(self, run_generation: str | None = None) -> list[str]:
+        """Despacha todos los trabajos pendientes que quepan en la ventana."""
+        sent: list[str] = []
+        while True:
+            job_id = self.dispatch_one(run_generation)
+            if job_id is None:
+                break
+            sent.append(job_id)
+        return sent
+
+    def run_once(self, run_generation: str | None = None) -> list[str]:
+        """Un ciclo completo: despacha pendientes y devuelve la lista enviada."""
+        return self.dispatch_all(run_generation)
