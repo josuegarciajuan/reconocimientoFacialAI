@@ -6,11 +6,12 @@ Uso (en el worker, con ``--ruta`` apuntando al sandbox/proyecto):
         --request <spool>/<job>.json \
         --out-dir <returns>/<project>/<job>/result
 
-Lee la petición en formato SuperServer, extrae la ``AnalysisUnit`` de los
-parámetros, ejecuta el ``InferenceWorker`` y escribe ``result.json``.
+Acepta dos formatos de petición:
 
-Por defecto usa el procesador real de vídeo (``motor.processors.video_processor``).
-El procesador ``stub`` queda disponible para pruebas sin vídeo real.
+1. ``JobRequest`` directo (``{"job_id":..., "unit": {...}}``).
+2. Petición de spool (``{"id":..., "params": {"unit": {...}}}``).
+
+Escribe ``result.json`` con el formato ``JobResult`` que consume el colector.
 """
 from __future__ import annotations
 
@@ -24,27 +25,20 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from motor.core.pipeline_contracts import (  # noqa: E402
     AnalysisUnit,
-    InstanceRef,
     JobRequest,
+    JobResult,
     PipelineStage,
     ResultKind,
     UnitResult,
 )
+from motor.core.pipeline_metrics import MetricsRecorder  # noqa: E402
 from motor.inference_worker import InferenceContext, InferenceWorker  # noqa: E402
 
 
 def _video_processor_stub(unit: AnalysisUnit, ctx: InferenceContext) -> UnitResult:
-    """Procesador de vídeo provisional.
-
-    En fases posteriores se reemplazará por la invocación real a
-    ``procesa_video.process_video`` o a un analizador por unidades. Ahora solo
-    demuestra el contrato: devuelve un resultado con métricas básicas.
-    """
+    """Procesador de vídeo provisional para pruebas de plumbing."""
     ts_infer = ctx.record_stage_start(PipelineStage.INFERENCIA)
-
-    # Simulación de trabajo: contar fotogramas del rango.
     frame_count = unit.frame_range.frame_count
-
     ctx.record_stage_end(PipelineStage.INFERENCIA, ts_infer)
 
     return UnitResult(
@@ -57,6 +51,9 @@ def _video_processor_stub(unit: AnalysisUnit, ctx: InferenceContext) -> UnitResu
         bodies=[],
         candidates=[],
         artifacts={},
+        event_id=unit.event.event_id,
+        local_id=unit.event.camera.local_id,
+        camera_id=unit.event.camera.camera_id,
         metrics={
             "frames": frame_count,
             "processor": "video_faces_stub",
@@ -65,12 +62,12 @@ def _video_processor_stub(unit: AnalysisUnit, ctx: InferenceContext) -> UnitResu
 
 
 def _build_request_from_superserver(data: dict) -> JobRequest:
-    """Reconstruye un ``JobRequest`` desde el JSON de SuperServer."""
+    """Reconstruye un ``JobRequest`` desde cualquiera de los dos formatos."""
+    # Formato 1: JobRequest directo (lo usa el adaptador del worker).
+    if "job_id" in data and "unit" in data:
+        return JobRequest.from_dict(data)
+    # Formato 2: petición de spool.
     params = data.get("params", {})
-    instance_ref = InstanceRef(
-        instance=params["instance"],
-        run_generation=params["run_generation"],
-    )
     unit = AnalysisUnit.from_dict(params["unit"])
     return JobRequest(
         job_id=data["id"],
@@ -81,9 +78,15 @@ def _build_request_from_superserver(data: dict) -> JobRequest:
     )
 
 
-def main() -> int:
+def _write_error(out_dir: str, message: str, job_id: str | None) -> None:
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "result.json"), "w", encoding="utf-8") as fh:
+        json.dump({"error": message, "job_id": job_id}, fh, ensure_ascii=False)
+
+
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--request", required=True, help="ruta al JSON de petición de SuperServer")
+    ap.add_argument("--request", required=True, help="ruta al JSON de petición")
     ap.add_argument("--out-dir", required=True, help="directorio donde escribir result.json")
     ap.add_argument("--ruta", default=os.getcwd(), help="raíz del proyecto")
     ap.add_argument(
@@ -92,21 +95,20 @@ def main() -> int:
         default="real",
         help="procesador de vídeo (real por defecto; stub para pruebas)",
     )
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
 
     try:
         with open(args.request, encoding="utf-8") as fh:
             data = json.load(fh)
         request = _build_request_from_superserver(data)
     except Exception as exc:
-        err = {"error": f"petición inválida: {exc}", "job_id": None}
-        os.makedirs(args.out_dir, exist_ok=True)
-        with open(os.path.join(args.out_dir, "result.json"), "w", encoding="utf-8") as fh:
-            json.dump(err, fh, ensure_ascii=False)
+        _write_error(args.out_dir, f"petición inválida: {exc}", None)
         print(f"[inference-pool] ERROR petición inválida: {exc}", flush=True)
         return 1
 
-    worker = InferenceWorker(project_root=args.ruta)
+    local_id = int(request.unit.event.camera.local_id or 1)
+    metrics = MetricsRecorder(args.ruta, local_id)
+    worker = InferenceWorker(project_root=args.ruta, metrics=metrics)
     if args.processor == "real":
         from motor.processors.video_processor import process_unit
 
@@ -119,16 +121,18 @@ def main() -> int:
     try:
         result = worker.process_request(request)
     except Exception as exc:
-        err = {"error": str(exc), "job_id": data.get("id")}
-        os.makedirs(args.out_dir, exist_ok=True)
-        with open(os.path.join(args.out_dir, "result.json"), "w", encoding="utf-8") as fh:
-            json.dump(err, fh, ensure_ascii=False)
+        _write_error(args.out_dir, str(exc), request.job_id)
         print(f"[inference-pool] ERROR {exc}", flush=True)
         return 1
 
+    job_result = JobResult(
+        job_id=request.job_id,
+        unit_result=result,
+        received_at=time.time(),
+    )
     os.makedirs(args.out_dir, exist_ok=True)
     with open(os.path.join(args.out_dir, "result.json"), "w", encoding="utf-8") as fh:
-        json.dump(result.to_dict(), fh, ensure_ascii=False, indent=2)
+        json.dump(job_result.to_dict(), fh, ensure_ascii=False, indent=2)
 
     print(f"[inference-pool] {request.job_id} → {args.out_dir}", flush=True)
     return 0

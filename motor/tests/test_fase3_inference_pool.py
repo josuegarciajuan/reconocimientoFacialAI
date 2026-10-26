@@ -69,10 +69,11 @@ class TestInferencePool:
         result_path = out_dir / "result.json"
         assert result_path.exists()
         data = json.loads(result_path.read_text(encoding="utf-8"))
-        assert data["unit_id"] == "u1"
-        assert data["instance"]["instance"] == "ojos"
-        assert data["metrics"]["frames"] == 21
-        assert data["kind"] == C.ResultKind.FINAL.value
+        assert data["job_id"] == "j1"
+        assert data["unit_result"]["unit_id"] == "u1"
+        assert data["unit_result"]["instance"]["instance"] == "ojos"
+        assert data["unit_result"]["metrics"]["frames"] == 21
+        assert data["unit_result"]["kind"] == C.ResultKind.FINAL.value
 
     def test_main_writes_error_on_bad_request(self, tmp_path):
         req_file = tmp_path / "request.json"
