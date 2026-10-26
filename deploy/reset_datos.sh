@@ -18,6 +18,9 @@
 #   Estado runtime (motor):  logs/, backups/ (incl. .bak de face_enc_v2),
 #                            revision_cuerpos/, calibrador/deriva/ y la cola de
 #                            marcadores aux/ (markers, .intentos, procesar_*.txt)
+#   Pipeline tiempo real:    motor/jobs/ (cola duradera y generaciones),
+#                            motor/artifacts/ (manifiestos) y las peticiones/
+#                            retornos pendientes de esta instancia en SuperServer.
 #   Fotos publicadas (panel): admin/caras_procesadas/ (jpg + avatares/) y los
 #                            uploads de registro (admin/files/videos_registro*)
 #
@@ -30,6 +33,7 @@
 #   Runtime (motor):         models/, venv/
 #
 # USO:  sudo bash deploy/reset_datos.sh [--hold N] [--dry-run] [--no-start]
+#                                     [--expect-host NOMBRE] [--no-autoenroll-guard]
 #   El script: (A) detiene los servicios, (A2) MATA TODOS los procesos RF
 #   (incluidos huérfanos/hijos/ffmpeg que systemd no cubre) y VERIFICA que no
 #   queda ninguno vivo, (B) vacía la BD, (C) borra galería/media/estado runtime
@@ -42,6 +46,9 @@
 #              NO rearranca servicios ni timers al final: el motor queda APAGADO.
 #              La guarda de RF_AUTOENROLL_NEW sí se aplica (el .env queda listo
 #              para cuando el operador reencienda con deploy/rf_power.sh on).
+#   --no-autoenroll-guard: NO fuerza RF_AUTOENROLL_NEW (preserva la configuración
+#              tal cual; lo usa reset_all.sh para dejar el .env intacto).
+#   --expect-host NOMBRE: aborta si `hostname` no coincide (protección de instancia).
 #
 # GUARDA ANTI-TRAMPA (2026-09-29): tras vaciar la galería, un clasificador con
 #   RF_AUTOENROLL_NEW inactivo no puede producir ningún `match` y no crearía
@@ -55,13 +62,18 @@ set -euo pipefail
 DRY_RUN=0
 HOLD=0
 NO_START=0
+NO_AUTOENROLL_GUARD=0
+EXPECT_HOST=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dry-run) DRY_RUN=1 ;;
     --hold) HOLD="${2:-0}"; shift ;;
     --hold=*) HOLD="${1#--hold=}" ;;
     --no-start|--keep-off) NO_START=1 ;;
-    -h|--help) sed -n '2,43p' "$0"; exit 0 ;;
+    --no-autoenroll-guard) NO_AUTOENROLL_GUARD=1 ;;
+    --expect-host) EXPECT_HOST="${2:-}"; shift ;;
+    --expect-host=*) EXPECT_HOST="${1#--expect-host=}" ;;
+    -h|--help) sed -n '2,45p' "$0"; exit 0 ;;
     *) printf '[reset] ERROR: flag desconocida: %s\n' "$1" >&2; exit 2 ;;
   esac
   shift
@@ -96,7 +108,7 @@ fi
 # van aquí: son one-shots lanzados por sus timers (rf-calibra.timer, rf-
 # vigilar-deriva.timer) y se relanzan solos en su horario.
 SERVICIOS=(rf-capturador rf-detector rf-clasificador rf-conciliador \
-           rf-vinculador rf-alarmador rf-photo rf-panel-control rf-live)
+           rf-vinculador rf-alarmador rf-photo rf-panel-control rf-live rf-pipeline)
 
 # Tablas de DATOS (se vacían) vs CONFIG (se conservan)
 TABLAS_DATOS=(personas estancias fotos videos cruces_lineas fichajes \
@@ -106,6 +118,11 @@ TABLAS_DATOS=(personas estancias fotos videos cruces_lineas fichajes \
 RUTAS_BORRAR=(
   "motor/bbdd_reconocimiento/${LOCAL_ID}/face_enc_v2"
   "motor/bbdd_reconocimiento/${LOCAL_ID}/face_enc_v2.lock"
+  # Pipeline en tiempo real (Fase 9): cola duradera, manifiestos de artefactos y
+  # métricas/publicaciones. Los segmentos `.units/` viven bajo motor/videos y se
+  # borran con el resto de vídeos.
+  "motor/jobs"
+  "motor/artifacts"
   # `motor/caras` entero (no solo el local): contiene lotes de crops y metadatos
   # de caras en directorios OCULTOS (.batch_<local>_<cam>_<hash>/, .faces_*.json)
   # que un borrado por-local dejaba atrás. Se recrea `motor/caras/1` después.
@@ -193,6 +210,38 @@ cmd() { # cmd <desc> <comando...>
 [[ -z "${BD_USER}" ]] && die "No se pudo leer RF_DB_USER de ${ENV_FILE} ni del entorno"
 [[ ${EUID} -eq 0 ]] || [[ ${DRY_RUN} -eq 1 ]] || die "Ejecutar como root: sudo bash ${0}"
 
+# Guarda de host: nunca tocar datos de una instancia equivocada.
+if [[ -n "${EXPECT_HOST}" ]]; then
+  ACTUAL_HOST="$(hostname)"
+  if [[ "${ACTUAL_HOST}" != "${EXPECT_HOST}" ]]; then
+    die "host inesperado: ${ACTUAL_HOST} (esperado ${EXPECT_HOST}); abortado sin tocar datos"
+  fi
+  log "host verificado: ${ACTUAL_HOST}"
+fi
+
+# Cliente MySQL (se define antes del fingerprint de configuración).
+MYSQL=(mysql -u"${BD_USER}")
+[[ -n "${BD_PASS}" ]] && MYSQL+=( -p"${BD_PASS}" )
+
+# --- Huella de configuración (debe sobrevivir al reset) ----------------------
+TABLAS_CONFIG=(camaras locales lineas lineas_plano nodos senderos senderos_puntos
+               dispositivos_autologin alarmas_telefonos calibraciones)
+
+config_fingerprint() {
+  local out="" t c ck
+  for t in "${TABLAS_CONFIG[@]}"; do
+    c="$("${MYSQL[@]}" -N -e "SELECT COUNT(*) FROM \`${BD_NAME}\`.\`${t}\`" 2>/dev/null || echo "NA")"
+    out+="${t}=${c};"
+  done
+  ck="$("${MYSQL[@]}" -N -e "CHECKSUM TABLE \`${BD_NAME}\`.camaras" 2>/dev/null \
+        | awk '{print $2}' || echo "NA")"
+  out+="camaras_checksum=${ck:-NA}"
+  printf '%s' "${out}"
+}
+
+CONFIG_FP_BEFORE="$(config_fingerprint)"
+log "huella de configuración previa: ${CONFIG_FP_BEFORE}"
+
 # =============================================================================
 # FASE A — detener servicios
 # =============================================================================
@@ -212,6 +261,7 @@ done
 # proyecto mataba el wrapper ssh y el script moría en FASE A2 sin llegar a B/C/D).
 PATRONES_KILL=(
   "clasificador.py"
+  "pipeline_service.py"
   "procesa_video.py"
   "archiva_video.py"
   "guarda_movimientosV3.py"
@@ -414,8 +464,6 @@ fi
 # FASE B — vaciar BD (tablas de datos)
 # =============================================================================
 log "FASE B: vaciando tablas de datos en BD ${BD_NAME}..."
-MYSQL=(mysql -u"${BD_USER}")
-[[ -n "${BD_PASS}" ]] && MYSQL+=( -p"${BD_PASS}" )
 
 if [[ ${DRY_RUN} -eq 1 ]]; then
   for t in "${TABLAS_DATOS[@]}"; do log "  (dry-run) TRUNCATE ${t}"; done
@@ -455,6 +503,42 @@ else
   log "  verificación: ${verificacion}"
 fi
 
+# -----------------------------------------------------------------------------
+# SuperServer: elimina peticiones y retornos SOLO de esta instancia
+# -----------------------------------------------------------------------------
+limpiar_superserver() {
+  local project="${RF_SUPERSERVER_PROJECT:-}"
+  if [[ -z "${project}" && -f "${ENV_FILE}" ]]; then
+    project="$(grep -E '^RF_SUPERSERVER_PROJECT=' "${ENV_FILE}" 2>/dev/null \
+               | tail -1 | cut -d= -f2- | tr -d ' \t"')"
+  fi
+  if [[ -z "${project}" ]]; then
+    log "  sin RF_SUPERSERVER_PROJECT; no se limpia SuperServer"
+    return 0
+  fi
+  local spool="/var/lib/taildeck/spool"
+  local returns="/var/lib/taildeck/returns/${project}"
+  if [[ ${DRY_RUN} -eq 1 ]]; then
+    log "  (dry-run) limpiaría spool y retornos de '${project}'"
+    return 0
+  fi
+  local n=0 f
+  if [[ -d "${spool}" ]]; then
+    for f in "${spool}"/*.json "${spool}"/*.json.tmp; do
+      [[ -e "$f" ]] || continue
+      if grep -q "\"project\"[[:space:]]*:[[:space:]]*\"${project}\"" "$f" 2>/dev/null; then
+        rm -f "$f"; n=$((n+1))
+      fi
+    done
+  fi
+  if [[ -d "${returns}" ]]; then
+    rm -rf "${returns}"
+    log "  SuperServer: ${n} peticiones y ${returns} eliminados"
+  else
+    log "  SuperServer: ${n} peticiones eliminadas (sin directorio de retornos)"
+  fi
+}
+
 # =============================================================================
 # FASE C — borrar la memoria/caras del motor
 # =============================================================================
@@ -467,7 +551,11 @@ for r in "${RUTAS_BORRAR[@]}"; do
     log "  (no existe) ${r}"
   fi
 done
+# Limpiar peticiones/retornos pendientes de esta instancia en SuperServer.
+limpiar_superserver
+
 # Recrear directorios base que el motor espera como raíz de local
+cmd "Recrear ${PROYECTO}/motor/jobs" mkdir -p "${PROYECTO}/motor/jobs"
 cmd "Recrear ${PROYECTO}/motor/caras/${LOCAL_ID}"  mkdir -p "${PROYECTO}/motor/caras/${LOCAL_ID}"
 cmd "Recrear ${PROYECTO}/motor/videos/${LOCAL_ID}" mkdir -p "${PROYECTO}/motor/videos/${LOCAL_ID}"
 cmd "Recrear ${PROYECTO}/motor/videos_archivo/${LOCAL_ID}" mkdir -p "${PROYECTO}/motor/videos_archivo/${LOCAL_ID}"
@@ -487,12 +575,25 @@ cmd "Permisos ${PROYECTO}/libs/threads_files_aux" chmod 777 "${PROYECTO}/libs/th
 # procesar_*.txt), así que no quedan slot-markers huérfanos que saturarían
 # CONFIG_LIMITE_VIDEOS/CONFIG_LIMITE_ARCHIVA. La recreamos vacía arriba.
 
+# --- Verificación: la configuración debe ser idéntica tras el reset -----------
+if [[ ${DRY_RUN} -eq 0 ]]; then
+  CONFIG_FP_AFTER="$(config_fingerprint)"
+  if [[ "${CONFIG_FP_AFTER}" != "${CONFIG_FP_BEFORE}" ]]; then
+    die "la configuración cambió durante el reset (antes=${CONFIG_FP_BEFORE} despues=${CONFIG_FP_AFTER})"
+  fi
+  log "configuración preservada: ${CONFIG_FP_AFTER}"
+fi
+
 # =============================================================================
 # FASE D — rearrancar servicios y timers (encendido total desde cero)
 # =============================================================================
-log "FASE D: asegurando RF_AUTOENROLL_NEW (guarda anti-trampa)..."
-asegurar_autoenroll
-verificar_autoenroll
+if [[ ${NO_AUTOENROLL_GUARD} -eq 1 ]]; then
+  log "FASE D: guarda RF_AUTOENROLL_NEW omitida (--no-autoenroll-guard)"
+else
+  log "FASE D: asegurando RF_AUTOENROLL_NEW (guarda anti-trampa)..."
+  asegurar_autoenroll
+  verificar_autoenroll
+fi
 
 if [[ ${NO_START} -eq 1 ]]; then
   # --no-start: el purge ya dejó todo parado; NO se reenciende nada. La guarda
