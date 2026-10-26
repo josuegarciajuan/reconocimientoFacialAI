@@ -510,7 +510,7 @@ limpiar_superserver() {
   local project="${RF_SUPERSERVER_PROJECT:-}"
   if [[ -z "${project}" && -f "${ENV_FILE}" ]]; then
     project="$(grep -E '^RF_SUPERSERVER_PROJECT=' "${ENV_FILE}" 2>/dev/null \
-               | tail -1 | cut -d= -f2- | tr -d ' \t"')"
+               | tail -1 | cut -d= -f2- | tr -d ' \t"' || true)"
   fi
   if [[ -z "${project}" ]]; then
     # Igual que project_id(): el proyecto por defecto es el laboral.
