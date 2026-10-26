@@ -66,6 +66,11 @@ run_local() {
   local db; db="$(env_get RF_DB_NAME)"
   [ -n "$db" ] || { echo "ERROR: RF_DB_NAME vacío" >&2; return 1; }
   echo "[start] ojos: db=$db project=$(env_get RF_SUPERSERVER_PROJECT ojos)"
+  if ! systemctl cat rf-pipeline >/dev/null 2>&1; then
+    echo "ERROR: rf-pipeline.service no instalada en este host." >&2
+    echo "       Ejecuta: bash deploy/install_services.sh" >&2
+    return 1
+  fi
   if [ "$DRY_RUN" = 1 ]; then
     echo "[start] (dry-run) systemctl enable --now rf-pipeline"
     echo "[start] (dry-run) systemctl enable --now rf-live"
@@ -96,8 +101,9 @@ run_remote() {
     ssh_cmd=(sshpass -p "$PROD_PASS" "${ssh_base[@]}")
   fi
   local capture=0; [ "$ENABLE_CAPTURE" = 1 ] && capture=1
-  local remote_cmd="set -euo pipefail; cd $(printf '%q' "$PROD_PATH"); "
+  local   remote_cmd="set -euo pipefail; cd $(printf '%q' "$PROD_PATH"); "
   remote_cmd+="git fetch --quiet origin main; git pull --ff-only origin main; "
+  remote_cmd+="systemctl cat rf-pipeline >/dev/null 2>&1 || { echo '[start] ERROR: falta rf-pipeline.service' >&2; exit 7; }; "
   if [ "$DRY_RUN" = 1 ]; then
     remote_cmd+="echo '[start] (dry-run) mail: rf-pipeline + rf-live'; "
     [ "$capture" = 1 ] && remote_cmd+="echo '[start] (dry-run) mail: rf-capturador'; "

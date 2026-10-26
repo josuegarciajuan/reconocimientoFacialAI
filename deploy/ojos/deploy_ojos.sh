@@ -56,6 +56,13 @@ if [ "$FAIL" = 1 ]; then
     exit 3
 fi
 
+# Units systemd: instalarlas si cambiaron (sin arrancarlas; el arranque es
+# controlado con deploy/start_pipeline.sh o rf_power.sh).
+if printf '%s\n' "$CHANGED" | grep -qE '^(deploy/systemd/|deploy/install_services\.sh$)'; then
+    echo "[ojos] units/instalador cambiados -> instalando systemd"
+    bash "$DIR/deploy/install_services.sh" >/dev/null
+fi
+
 # Migraciones SQL nuevas (las históricas ya están en applied_sql.txt).
 set -a; . "$ENV_FILE"; set +a
 DB_NAME="${RF_DB_NAME:?}"
