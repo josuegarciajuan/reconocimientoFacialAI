@@ -139,8 +139,10 @@ run_mail() {
   if [ "$NO_PULL" = 0 ]; then
     remote_cmd+="echo '[reset-all] mail: git pull'; git fetch --quiet origin main; git pull --ff-only origin main; "
   fi
-  # Verificación de instancia remota (no debe ser 'ojos').
-  remote_cmd+="prj=\$(grep -m1 '^RF_SUPERSERVER_PROJECT=' .env | cut -d= -f2- | tr -d ' \\t\"'); "
+  # Verificación de instancia remota (no debe ser 'ojos'). Si el .env no define
+  # el proyecto, se asume el laboral (igual que project_id()).
+  remote_cmd+="prj=\$(grep -m1 '^RF_SUPERSERVER_PROJECT=' .env 2>/dev/null | cut -d= -f2- | tr -d ' \\t\"' || true); "
+  remote_cmd+="prj=\${prj:-reconocimientoFacial}; "
   remote_cmd+="if [ \"\$prj\" = \"ojos\" ]; then echo '[reset-all] ERROR: mail apunta a ojos' >&2; exit 9; fi; "
   remote_cmd+="echo \"[reset-all] mail project=\${prj:-?}\"; "
   remote_cmd+="bash deploy/reset_datos.sh ${remote_args}"

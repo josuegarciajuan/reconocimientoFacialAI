@@ -513,8 +513,9 @@ limpiar_superserver() {
                | tail -1 | cut -d= -f2- | tr -d ' \t"')"
   fi
   if [[ -z "${project}" ]]; then
-    log "  sin RF_SUPERSERVER_PROJECT; no se limpia SuperServer"
-    return 0
+    # Igual que project_id(): el proyecto por defecto es el laboral.
+    project="reconocimientoFacial"
+    log "  RF_SUPERSERVER_PROJECT no definido; se asume '${project}'"
   fi
   local spool="/var/lib/taildeck/spool"
   local returns="/var/lib/taildeck/returns/${project}"
