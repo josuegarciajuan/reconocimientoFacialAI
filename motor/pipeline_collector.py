@@ -35,6 +35,7 @@ class PipelineCollector:
         returns_dir_override: str | None = None,
         ack: bool = True,
         verify_artifacts: bool = False,
+        on_result=None,
     ):
         self.store = job_store
         self.project_root = project_root
@@ -45,6 +46,8 @@ class PipelineCollector:
         # los verifica al moverlos. En un entorno con el sandbox del worker
         # accesible se puede activar esta comprobación.
         self.verify_artifacts = verify_artifacts
+        # Hook opcional tras guardar un resultado (coordinador de sesiones).
+        self.on_result = on_result
 
     def _result_file(self, job_dir: str) -> str | None:
         """Devuelve la ruta del fichero de resultado si existe."""
@@ -131,6 +134,12 @@ class PipelineCollector:
 
         if self.ack:
             escribir_ack(job_id, status="received", source="pipeline_collector")
+
+        if self.on_result is not None:
+            try:
+                self.on_result(result, result_id)
+            except Exception:  # noqa: BLE001 — la recolección no se rompe por un hook
+                pass
 
         return job_id
 

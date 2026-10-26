@@ -195,6 +195,9 @@ def process_unit(unit, ctx) -> UnitResult:
         bodies=collector.bodies,
         candidates=[],
         artifacts={k: v for k, v in artifacts.items() if os.path.exists(v)},
+        event_id=unit.event.event_id,
+        local_id=unit.event.camera.local_id,
+        camera_id=unit.event.camera.camera_id,
         metrics={
             "frames": int(resumen.get("frames", 0)),
             "caras_detect": int(resumen.get("caras_detect", 0)),

@@ -392,6 +392,10 @@ class UnitResult:
     candidates: list[RecognitionCandidate]
     artifacts: dict[str, str]
     metrics: dict[str, float]
+    # Contexto del evento (para agrupar sin depender del nombre del unit_id).
+    event_id: str = ""
+    local_id: int = 0
+    camera_id: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -405,6 +409,9 @@ class UnitResult:
             "candidates": [c.to_dict() for c in self.candidates],
             "artifacts": self.artifacts,
             "metrics": self.metrics,
+            "event_id": self.event_id,
+            "local_id": self.local_id,
+            "camera_id": self.camera_id,
         }
 
     @classmethod
@@ -420,6 +427,9 @@ class UnitResult:
             candidates=[RecognitionCandidate.from_dict(c) for c in d.get("candidates") or []],
             artifacts=dict(d.get("artifacts") or {}),
             metrics=dict(d.get("metrics") or {}),
+            event_id=str(d.get("event_id") or ""),
+            local_id=int(d.get("local_id") or 0),
+            camera_id=str(d.get("camera_id") or ""),
         )
 
 
