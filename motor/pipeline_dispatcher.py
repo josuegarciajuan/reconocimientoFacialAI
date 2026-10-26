@@ -45,6 +45,9 @@ class PipelineDispatcher:
         self.max_sent = max_sent
         self.max_concurrent_by_stage = max_concurrent_by_stage or {}
         self.project_id = project_id(project_root)
+        # Caché TTL de líneas por cámara: evita dos subprocess php por despacho.
+        self._lines_cache: dict[str, tuple[float, list[dict[str, Any]]]] = {}
+        self._lines_ttl = 60.0
 
     def _to_superserver_request(self, job: JobRequest) -> dict[str, Any]:
         """Convierte un ``JobRequest`` al formato esperado por SuperServer.
@@ -116,11 +119,15 @@ class PipelineDispatcher:
         }
 
     def _camera_lines(self, camera_id: str) -> list[dict[str, Any]]:
-        """Líneas de la cámara consultadas en la casa (best-effort)."""
+        """Líneas de la cámara consultadas en la casa (best-effort, con TTL)."""
+        now = time.time()
+        cached = self._lines_cache.get(camera_id)
+        if cached is not None and (now - cached[0]) < self._lines_ttl:
+            return cached[1]
         try:
             from motor.procesa_video import cargar_lineas
 
-            return [
+            lineas = [
                 {
                     "id": ln.line_id,
                     "x1": ln.x1,
@@ -131,7 +138,9 @@ class PipelineDispatcher:
                 for ln in cargar_lineas(camera_id)
             ]
         except Exception:  # noqa: BLE001 — sin líneas, el resto del pipeline sigue
-            return []
+            lineas = []
+        self._lines_cache[camera_id] = (now, lineas)
+        return lineas
 
     def _process_name(self, unit: AnalysisUnit) -> str:  # noqa: ARG002
         """Nombre del proceso SuperServer según el tipo de unidad."""

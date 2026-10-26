@@ -63,7 +63,19 @@ class PipelineCollector:
         return None
 
     def _is_applied_marker(self, job_dir: str) -> bool:
-        return os.path.exists(os.path.join(job_dir, ".aplicado"))
+        # `.aplicado`: efectos ya aplicados en la casa (aplicador).
+        # `.pipeline_collected`: resultado ya ingerido en el JobStore (evita
+        # releer el mismo result.json en cada ciclo del colector).
+        return os.path.exists(os.path.join(job_dir, ".aplicado")) or os.path.exists(
+            os.path.join(job_dir, ".pipeline_collected")
+        )
+
+    def _write_collected_marker(self, job_dir: str) -> None:
+        try:
+            with open(os.path.join(job_dir, ".pipeline_collected"), "w", encoding="utf-8") as fh:
+                fh.write(str(time.time()))
+        except OSError:
+            pass
 
     def _read_result(self, job_dir: str) -> dict[str, Any] | None:
         path = self._result_file(job_dir)
@@ -141,6 +153,7 @@ class PipelineCollector:
             except Exception:  # noqa: BLE001 — la recolección no se rompe por un hook
                 pass
 
+        self._write_collected_marker(job_dir)
         return job_id
 
     def _mark_error(self, job_dir: str, job_id: str, error: str) -> None:

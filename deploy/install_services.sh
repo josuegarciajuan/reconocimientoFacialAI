@@ -8,9 +8,12 @@ SERVICES=(rf-capturador rf-detector rf-clasificador rf-clasificador-serve rf-pan
 TIMERS=(rf-calibra rf-vigilar-deriva rf-reprocesa rf-reten-backups)
 # Unidades oneshot disparadas por timer (se copian pero NO se arrancan con --now).
 ONESHOT_UNITS=(rf-reprocesa rf-reten-backups)
+# Unidades que se instalan pero NO se activan automáticamente (interruptor de
+# seguridad hasta la puesta en marcha controlada).
+DISABLED_UNITS=(rf-pipeline)
 
 echo "==> Copiando unidades systemd desde $DIR/deploy/systemd"
-for s in "${SERVICES[@]}" "${ONESHOT_UNITS[@]}"; do
+for s in "${SERVICES[@]}" "${ONESHOT_UNITS[@]}" "${DISABLED_UNITS[@]}"; do
     if [ ! -f "$DIR/deploy/systemd/$s.service" ]; then
         echo "ERROR: falta $s.service"; exit 1
     fi
@@ -71,6 +74,8 @@ EOF
 set_mem rf-detector "$DET_MB"
 set_mem rf-capturador "$CAP_MB"
 set_mem rf-photo "$PHO_MB"
+# Pipeline: proceso ligero (despacho/recolección/sesiones), tope fijo moderado.
+set_mem rf-pipeline 1024
 systemctl daemon-reload
 
 if [ "${1:-}" = "start" ]; then

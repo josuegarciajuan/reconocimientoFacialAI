@@ -452,6 +452,51 @@ class JobStore:
             rows = conn.execute(sql, params).fetchall()
             return [dict(r) for r in rows]
 
+    def counts_by_status(
+        self,
+        run_generation: str | None = None,
+    ) -> dict[str, int]:
+        """Nº de trabajos por estado en la generación indicada/activa."""
+        gen = run_generation or self.active_generation()
+        counts = {s.value: 0 for s in JobStatus}
+        if not gen:
+            return counts
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT status, COUNT(*) AS c FROM jobs WHERE instance = ? AND run_generation = ? GROUP BY status",
+                (self.instance, gen),
+            ).fetchall()
+            for row in rows:
+                counts[str(row["status"])] = int(row["c"])
+        return counts
+
+    def active_jobs(
+        self,
+        run_generation: str | None = None,
+        limit: int = 10000,
+    ) -> list[dict[str, Any]]:
+        """Trabajos que aún pueden necesitar sus fuentes (no aplicados/cancelados)."""
+        gen = run_generation or self.active_generation()
+        if not gen:
+            return []
+        with self._conn() as conn:
+            rows = conn.execute(
+                """
+                SELECT * FROM jobs
+                WHERE instance = ? AND run_generation = ?
+                  AND status NOT IN (?, ?)
+                ORDER BY submitted_at ASC LIMIT ?
+                """,
+                (
+                    self.instance,
+                    gen,
+                    JobStatus.APLICADO.value,
+                    JobStatus.CANCELADO.value,
+                    limit,
+                ),
+            ).fetchall()
+            return [dict(r) for r in rows]
+
     # ------------------------------------------------------------------
     # Intentos
     # ------------------------------------------------------------------
@@ -502,11 +547,34 @@ class JobStore:
             )
         with self._conn() as conn:
             self._begin(conn)
+            # Idempotencia: recolectar dos veces el mismo job reutiliza su fila.
+            existing = conn.execute(
+                """
+                SELECT id FROM results
+                WHERE instance = ? AND run_generation = ? AND job_id = ?
+                ORDER BY id ASC LIMIT 1
+                """,
+                (ref.instance, ref.run_generation, result.job_id),
+            ).fetchone()
+            if existing is not None:
+                result_id = int(existing["id"])
+                conn.execute(
+                    "UPDATE jobs SET status = ?, result_id = ? WHERE instance = ? AND run_generation = ? AND job_id = ?",
+                    (
+                        JobStatus.RESULTADO_RECIBIDO.value,
+                        result_id,
+                        ref.instance,
+                        ref.run_generation,
+                        result.job_id,
+                    ),
+                )
+                conn.execute("COMMIT")
+                return result_id
+
             cur = conn.execute(
                 """
                 INSERT INTO results(job_id, instance, run_generation, result_json, received_at, status)
                 VALUES (?, ?, ?, ?, ?, ?)
-                ON CONFLICT DO NOTHING
                 """,
                 (
                     result.job_id,

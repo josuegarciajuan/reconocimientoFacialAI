@@ -1,0 +1,35 @@
+[Unit]
+Description=RF Pipeline — despacho, recolección, reconciliación y sesiones
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+WorkingDirectory=/root/reconocimientoFacial
+ExecStart=/root/reconocimientoFacial/motor/venv/bin/python /root/reconocimientoFacial/motor/pipeline_service.py --ruta /root/reconocimientoFacial --publications /root/reconocimientoFacial/motor/logs/pipeline_publications.jsonl
+Restart=always
+RestartSec=5
+User=root
+Nice=5
+# El despacho/recolección son E/S ligera; se separan de los cores de captura
+# en tiempo real (0-1 web/DB, 2-4 captura, 5-9 inferencia).
+CPUAffinity=2-4
+Environment=OMP_NUM_THREADS=1
+Environment=OPENBLAS_NUM_THREADS=1
+Environment=MKL_NUM_THREADS=1
+Environment=RF_PIPELINE_DISPATCH_S=2
+Environment=RF_PIPELINE_COLLECT_S=2
+Environment=RF_PIPELINE_RECONCILE_S=30
+Environment=RF_PIPELINE_SESSIONS_S=10
+Environment=RF_PIPELINE_RETENTION_S=3600
+Environment=RF_PIPELINE_METRICS_S=30
+Environment=RF_PIPELINE_CLOSE_AFTER_S=30
+Environment=RF_PIPELINE_UNITS_MAX_AGE_H=6
+# Interruptor de seguridad: la unit se instala apagada y con el servicio
+# deshabilitado internamente. Activar en la fase de puesta en marcha
+# (cambiar a 1 y `systemctl enable --now rf-pipeline`).
+Environment=RF_PIPELINE_ENABLED=0
+MemoryMax=1G
+
+[Install]
+WantedBy=multi-user.target

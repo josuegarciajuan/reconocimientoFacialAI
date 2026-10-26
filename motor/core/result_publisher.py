@@ -73,6 +73,44 @@ class InMemorySink:
         }
 
 
+class JsonlSink:
+    """Sink operativo que escribe una línea JSON por publicación.
+
+    No sustituye a la galería/BD real; sirve para observar el pipeline,
+    validar en carga y como puente hasta conectar el sink definitivo.
+    """
+
+    def __init__(self, path: str):
+        import os
+        import threading
+
+        self.path = path
+        self._lock = threading.Lock()
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+
+    def upsert(self, *, publication_key, result, candidate, confirmed) -> None:
+        import json
+
+        record = {
+            "ts": time.time(),
+            "publication_key": publication_key,
+            "kind": result.kind.value,
+            "event_id": result.event_id,
+            "camera_id": result.camera_id,
+            "candidate_id": candidate.candidate_id,
+            "person_id": candidate.person_id,
+            "person_label": candidate.person_label,
+            "score": candidate.score,
+            "confirmed": bool(confirmed),
+        }
+        try:
+            with self._lock:
+                with open(self.path, "a", encoding="utf-8") as fh:
+                    fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+        except OSError:
+            pass
+
+
 class ResultPublisher:
     """Publica resultados de forma idempotente."""
 
