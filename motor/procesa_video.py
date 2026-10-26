@@ -309,8 +309,10 @@ def process_video(local_id: str, camara_id: str, fichero: str, ruta: str,
                   efectos: bool = True, eventos: list | None = None,
                   resumen: dict | None = None,
                   frame_ini: int = 0, frame_fin: int | None = None,
-                  collector=None) -> int:
-    video_path = os.path.join(ruta, "motor/videos", local_id, camara_id, fichero)
+                  collector=None, video_path_override: str | None = None) -> int:
+    video_path = video_path_override or os.path.join(
+        ruta, "motor/videos", local_id, camara_id, fichero
+    )
     if not os.path.exists(video_path):
         return 0
     t_ini = time.time()

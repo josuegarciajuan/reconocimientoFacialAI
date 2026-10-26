@@ -13,6 +13,7 @@ from fifo import fifo
 # y genera la miniatura. FTP legacy ya no se usa (el vídeo se queda local).
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from motor.core.video import H264VideoWriter, VideoConfig, write_frame_safe  # noqa: E402
+from motor.core.capture_units import CaptureUnitPublisher, unit_frames_for  # noqa: E402
 from motor.core.env import get, get_int  # noqa: E402
 from motor.core.motion import MotionConfig, MotionDetector  # noqa: E402
 from motor.core.camara_perfil import camera_id_from_url, profile_fps  # noqa: E402
@@ -133,6 +134,76 @@ CRF = get_int(None, "RF_VIDEO_CRF", 20)
 # coste de codificación sin pérdida apreciable (mismo CRF, fichero algo mayor).
 # Esta variable (RF_VIDEO_PRESET) ya estaba documentada en .env.example.
 PRESET = get(None, "RF_VIDEO_PRESET", "medium")
+
+# Fase 5: publicación de unidades durante la grabación (opt-in). Cuando está
+# activo, el clip se escribe en segmentos dentro de `.units/<evento>/` y se
+# emite un descriptor por unidad; al cerrar, los segmentos se concatenan sin
+# recodificar para producir el vídeo completo de archivo.
+def _flag(name: str, default: str = "0") -> bool:
+    return (get(None, name, default) or "").strip().lower() in (
+        "1", "true", "yes", "on", "si", "sí",
+    )
+
+
+USE_UNITS = _flag("RF_CAPTURE_UNITS", "0")
+UNIT_SECS = float(get(None, "RF_CAPTURE_UNIT_SECS", "20") or 20)
+UNIT_SUBMIT = _flag("RF_CAPTURE_UNITS_SUBMIT", "0")
+PROYECTO = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+
+def _on_unit_closed(unit_info):
+    """Callback al cerrar una unidad: registra el trabajo en el JobStore.
+
+    Best-effort: la captura nunca se bloquea ni se rompe por un fallo del
+    registro de trabajos.
+    """
+    if not UNIT_SUBMIT:
+        return
+    try:
+        from motor.core.instance import project_id
+        from motor.core.job_store import JobStore
+        from motor.core.pipeline_contracts import (
+            AnalysisUnit, CameraRef, ConfigRef, FrameRange,
+            InstanceRef, JobRequest, MotionEventRef, new_trace_id,
+        )
+
+        inst = project_id(PROYECTO)
+        # Timeout corto: registrar la unidad nunca debe frenar la captura.
+        store = JobStore(PROYECTO, inst, timeout=2.0)
+        gen = store.active_generation()
+        if not gen:
+            printLog("unidad " + unit_info.unit_id + ": sin generación activa, no se registra")
+            return
+        ref = InstanceRef(inst, gen)
+        cam = CameraRef(ref, int(LOCAL_ID), CAMARA_ID)
+        event = MotionEventRef(cam, unit_info.event_id, unit_info.ts_start)
+        fr = FrameRange(
+            unit_info.frame_start,
+            max(unit_info.frame_start, unit_info.frame_end - 1),
+            unit_info.ts_start,
+            unit_info.ts_end,
+        )
+        cfg = ConfigRef(version="capture", params_hash="", params={"fps": unit_info.fps})
+        au = AnalysisUnit(
+            unit_id=unit_info.unit_id,
+            event=event,
+            frame_range=fr,
+            config=cfg,
+            source_paths={"video": unit_info.segment_path, "segment": unit_info.segment_path},
+            requested_stages=["video_faces"],
+            trace_id=new_trace_id(),
+            created_at=time.time(),
+        )
+        job_id = "cap-" + unit_info.unit_id.replace(":", "-")
+        store.submit_job(JobRequest(
+            job_id=job_id,
+            unit=au,
+            priority=50,
+            submitted_at=time.time(),
+            deadline_at=None,
+        ))
+    except Exception as exc:  # noqa: BLE001
+        printLog("no se pudo registrar unidad " + unit_info.unit_id + ": " + str(exc))
 # Factor de la SUMA de contornos (multicontorno): recupera varias personas
 # pequeñas que juntas mueven área aunque ninguna supere `dontCare`. 0 lo desactiva.
 SUM_FACTOR = float(os.environ.get("RF_MOV_SUM_FACTOR", "2.0") or 2.0)
@@ -193,6 +264,7 @@ count_para=0
 siguegrabando=False
 count_sensibilidad=0
 writer=None   # H264VideoWriter activo (MP4 H.264 directo)
+publisher=None  # CaptureUnitPublisher activo (Fase 5, modo unidades)
 time_inicio=0
 # Tope de seguridad del modo asedio: si el boost se prolongara (evento sostenido),
 # el vídeo continuo se corta igualmente en trozos para no generar ficheros sin fin.
@@ -356,10 +428,33 @@ while(True):
             video_tmp = video_actual + '.tmp'
             # Fase 4c: layout con subdirectorio de cámara (motor/videos/<local>/<cam>/)
             os.makedirs('motor/videos/'+LOCAL_ID+'/'+CAMARA_ID, exist_ok=True)
-            writer = H264VideoWriter('motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/'+video_tmp,
-                                     size, int(FPS), VideoConfig(crf=CRF, fps=int(FPS),
-                                                                 preset=PRESET),
-                                     stderr_path='motor/logs/ffmpeg_'+CAMARA_ID+'.log')
+
+            pre = last_frames.obtenerPila() if not siguegrabando else []
+            if USE_UNITS:
+                # Fase 5: segmentos dentro de `.units/<evento>/` (invisibles al
+                # detector) + descriptor por unidad. El vídeo completo se
+                # concatena al cerrar.
+                event_id = video_actual.rsplit(".", 1)[0]
+                units_dir = os.path.join(
+                    'motor/videos', LOCAL_ID, CAMARA_ID, '.units', event_id
+                )
+                ts_base = time.time() - (len(pre) / float(FPS) if pre else 0.0)
+                publisher = CaptureUnitPublisher(
+                    units_dir, LOCAL_ID, CAMARA_ID, size, int(FPS),
+                    VideoConfig(crf=CRF, fps=int(FPS), preset=PRESET),
+                    unit_frames=unit_frames_for(FPS, UNIT_SECS),
+                    event_id=event_id,
+                    on_unit_closed=_on_unit_closed,
+                    stderr_path='motor/logs/ffmpeg_'+CAMARA_ID+'.log',
+                    ts_base=ts_base,
+                )
+                writer = None
+            else:
+                publisher = None
+                writer = H264VideoWriter('motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/'+video_tmp,
+                                         size, int(FPS), VideoConfig(crf=CRF, fps=int(FPS),
+                                                                     preset=PRESET),
+                                         stderr_path='motor/logs/ffmpeg_'+CAMARA_ID+'.log')
             time_inicio = time.time()
             printLog ("Se empieza a generar el siguiente video:"+video_actual)
 
@@ -368,8 +463,11 @@ while(True):
                 # pre-roll: los frames previos al movimiento se escriben al INICIO del vídeo,
                 # en orden y en este mismo hilo (antes se hacía en un hilo concurrente sobre
                 # el mismo VideoWriter -> condición de carrera / frames corruptos).
-                for f in last_frames.obtenerPila():
-                    writer.write(f)
+                for f in pre:
+                    if publisher is not None:
+                        publisher.write(f)
+                    elif writer is not None:
+                        writer.write(f)
                 last_frames.vaciar()
                 frames_i=0
             else:
@@ -381,7 +479,9 @@ while(True):
             if DEBUG_FRAMES:
                 printLog ("Grabando...")
 
-            if writer is not None:
+            if publisher is not None:
+                publisher.write(frame_original)
+            elif writer is not None:
                 write_frame_safe(writer, frame_original, printLog)
             time_elapsed = time.time() - time_inicio
             # key = cv2.waitKey(500)
@@ -406,6 +506,17 @@ while(True):
             count_para=0   
             parando=False    
             grabando=False
+            if publisher is not None:
+                units = publisher.close()
+                final_path = 'motor/videos/'+LOCAL_ID+'/'+CAMARA_ID+'/'+video_actual
+                ok = publisher.concat(final_path)
+                publisher = None
+                if ok:
+                    printLog("Video concatenado: "+video_actual+" ("+str(len(units))+" unidades)")
+                else:
+                    # Los segmentos quedan disponibles para análisis; el vídeo
+                    # completo no se publica para no exponer un MP4 incompleto.
+                    printLog("concat falló; se conservan "+str(len(units))+" segmentos en .units")
             if writer is not None:
                 peso = writer.close()
                 writer = None

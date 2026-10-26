@@ -141,12 +141,13 @@ def process_unit(unit, ctx) -> UnitResult:
 
     local_id = str(unit.event.camera.local_id)
     camara_id = unit.event.camera.camera_id
-    fichero = unit.source_paths.get("video")
-    if not fichero:
-        # Fallback: buscar por nombre en la ruta convencional.
-        fichero = os.path.basename(unit.source_paths.get("video_path", ""))
-    if not fichero:
+    source = unit.source_paths.get("video") or unit.source_paths.get("segment") or ""
+    if not source:
         raise ValueError("La unidad no referencia ningún vídeo")
+    # Si la ruta es absoluta (segmento de captura), se usa directamente; si es
+    # un nombre, se resuelve en la ruta convencional del proyecto.
+    video_override = source if os.path.isabs(source) else None
+    fichero = os.path.basename(source)
 
     collector = DetectionCollector()
     resumen: dict[str, Any] = {}
@@ -171,6 +172,7 @@ def process_unit(unit, ctx) -> UnitResult:
         frame_ini=unit.frame_range.first_frame_idx,
         frame_fin=unit.frame_range.last_frame_idx + 1,
         collector=collector,
+        video_path_override=video_override,
     )
     dur_s = time.time() - t_ini
 

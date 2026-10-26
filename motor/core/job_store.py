@@ -150,9 +150,10 @@ CREATE TABLE IF NOT EXISTS idempotency_keys (
 class JobStore:
     """Almacén duradero de trabajos, resultados e idempotencia."""
 
-    def __init__(self, project_root: str, instance: str):
+    def __init__(self, project_root: str, instance: str, timeout: float = 30.0):
         self.project_root = project_root
         self.instance = instance
+        self._timeout = float(timeout)
         self._db_dir = os.path.join(project_root, "motor", "jobs")
         self._db_path = os.path.join(self._db_dir, f"{instance}.db")
         self._local = threading.local()
@@ -172,7 +173,7 @@ class JobStore:
         """
         conn = sqlite3.connect(
             self._db_path,
-            timeout=30.0,
+            timeout=self._timeout,
             isolation_level=None,
             check_same_thread=False,
         )

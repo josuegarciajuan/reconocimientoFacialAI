@@ -54,19 +54,29 @@ class PipelineDispatcher:
         """
         unit = job.unit
         event = unit.event
-        config = unit.config.to_dict()
+        source_path = (
+            unit.source_paths.get("video")
+            or unit.source_paths.get("segment")
+            or ""
+        )
         # La casa consulta las líneas (el worker no debe hablar con la BD) y las
         # adjunta a la unidad. Si la consulta falla, se despacha sin cruces.
         lineas = self._camera_lines(event.camera.camera_id)
+        unit_dict = unit.to_dict()
         if lineas:
-            params = dict(config.get("params") or {})
+            cfg = unit_dict.get("config") or {}
+            params = dict(cfg.get("params") or {})
             params.setdefault("lineas", lineas)
-            config = {**config, "params": params}
+            cfg["params"] = params
+            unit_dict["config"] = cfg
         return {
             "id": job.job_id,
             "project": self.project_id,
             "process": self._process_name(unit),
             "params": {
+                # `unit` es lo que reconstruye el worker. Los campos planos se
+                # mantienen para observabilidad y compatibilidad.
+                "unit": unit_dict,
                 "instance": event.camera.instance.instance,
                 "run_generation": event.camera.instance.run_generation,
                 "local_id": event.camera.local_id,
@@ -75,8 +85,25 @@ class PipelineDispatcher:
                 "unit_id": unit.unit_id,
                 "frame_range": unit.frame_range.to_dict(),
                 "source_paths": unit.source_paths,
-                "config": config,
+                "config": unit_dict.get("config"),
                 "requested_stages": unit.requested_stages,
+                "trace_id": unit.trace_id,
+            },
+            # `spec` es el contrato que consume el control plane de SuperServer
+            # (definición del proceso). Se incluye ya para que la integración
+            # final no requiera cambiar el payload.
+            "spec": {
+                "kind": "video_segment",
+                "local": str(event.camera.local_id),
+                "cam": event.camera.camera_id,
+                "fichero": os.path.basename(source_path),
+                "home_path": source_path if os.path.isabs(source_path) else "",
+                "home": event.camera.instance.instance,
+                "lineas": lineas,
+                "unit_id": unit.unit_id,
+                "frame_from": unit.frame_range.first_frame_idx,
+                "frame_to": unit.frame_range.last_frame_idx + 1,
+                "run_generation": event.camera.instance.run_generation,
                 "trace_id": unit.trace_id,
             },
             "externalId": (
