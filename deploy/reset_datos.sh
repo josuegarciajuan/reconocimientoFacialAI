@@ -101,14 +101,25 @@ if [[ -f "${ENV_FILE}" ]]; then
   done < <(grep -E '^RF_DB_' "${ENV_FILE}" || true)
 fi
 
-# Servicios que escriben datos (se detienen durante el reset y se rearrancan).
-# Incluye rf-live (streaming MJPEG): aunque no escribe BD, es un daemon del
-# proyecto y debe rearrancarse para un reset 100% limpio (lección 2026-09-01:
-# quedó corriendo desde antes del reset). rf-calibra y rf-vigilar-deriva NO
-# van aquí: son one-shots lanzados por sus timers (rf-calibra.timer, rf-
-# vigilar-deriva.timer) y se relanzan solos en su horario.
+# Identidad de instancia OBLIGATORIA. Nunca se asume la laboral: un reset en la
+# instancia equivocada borraría la cola/retornos de otro proyecto.
+PROJECT_ID="${RF_SUPERSERVER_PROJECT:-}"
+if [[ -z "${PROJECT_ID}" && -f "${ENV_FILE}" ]]; then
+  PROJECT_ID="$(grep -m1 '^RF_SUPERSERVER_PROJECT=' "${ENV_FILE}" 2>/dev/null \
+                | cut -d= -f2- | tr -d ' \t"' || true)"
+fi
+[[ -n "${PROJECT_ID}" ]] || { printf '[reset] ERROR: RF_SUPERSERVER_PROJECT vacío en %s; abortado sin tocar datos\n' "${ENV_FILE}" >&2; exit 2; }
+MODE_DIR="${RF_MODE_DIR:-/var/lib/taildeck/projects}"
+MODE_FILE="${MODE_DIR}/${PROJECT_ID}.mode"
+PREV_FILE="${MODE_FILE}.rf-prev"
+
+# Servicios que escriben datos (se detienen durante el reset).
+# rf-live NO va aquí: el "En Directo" debe seguir visible durante y después del
+# reset. rf-reprocesa es un oneshot de larga duración: se para aparte.
 SERVICIOS=(rf-capturador rf-detector rf-clasificador rf-conciliador \
-           rf-vinculador rf-alarmador rf-photo rf-panel-control rf-live rf-pipeline)
+           rf-vinculador rf-alarmador rf-photo rf-panel-control rf-pipeline)
+STOP_EXTRA=(rf-reprocesa)
+LIVE_SERVICE=rf-live
 
 # Tablas de DATOS (se vacían) vs CONFIG (se conservan)
 TABLAS_DATOS=(personas estancias fotos videos cruces_lineas fichajes \
@@ -245,8 +256,19 @@ log "huella de configuración previa: ${CONFIG_FP_BEFORE}"
 # =============================================================================
 # FASE A — detener servicios
 # =============================================================================
+# Modo local ANTES de parar: evita que un bridge tardío deje peticiones nuevas.
+if [[ -d "${MODE_DIR}" ]]; then
+  CUR_MODE="$(cat "${MODE_FILE}" 2>/dev/null | tr -d ' \t\r\n' || true)"
+  if [[ -n "${CUR_MODE}" && "${CUR_MODE}" != "local" ]]; then
+    cmd "Guardar modo previo (${CUR_MODE})" sh -c "printf '%s\\n' '${CUR_MODE}' > '${PREV_FILE}'"
+  fi
+  cmd "Poner ${PROJECT_ID} en modo local" sh -c "printf '%s\\n' local > '${MODE_FILE}'"
+else
+  log "  AVISO: no existe ${MODE_DIR}; no se cambia el modo"
+fi
+
 log "FASE A: deteniendo servicios que escriben datos..."
-for svc in "${SERVICIOS[@]}"; do
+for svc in "${SERVICIOS[@]}" "${STOP_EXTRA[@]}"; do
   if systemctl is-active --quiet "${svc}" 2>/dev/null; then
     cmd "Detener ${svc}" systemctl stop "${svc}"
   else
@@ -261,8 +283,15 @@ done
 # proyecto mataba el wrapper ssh y el script moría en FASE A2 sin llegar a B/C/D).
 PATRONES_KILL=(
   "clasificador.py"
+  "clasificador_bridge.py"
   "pipeline_service.py"
+  "pool_bridge.py"
+  "archiva_video_bridge.py"
+  "reprocesar_bridge.py"
+  "photo_worker_pool.py"
+  "video_orchestrator.py"
   "procesa_video.py"
+  "procesa_video_pool.py"
   "archiva_video.py"
   "guarda_movimientosV3.py"
   "pose.py"
@@ -507,22 +536,21 @@ fi
 # SuperServer: elimina peticiones y retornos SOLO de esta instancia
 # -----------------------------------------------------------------------------
 limpiar_superserver() {
-  local project="${RF_SUPERSERVER_PROJECT:-}"
-  if [[ -z "${project}" && -f "${ENV_FILE}" ]]; then
-    project="$(grep -E '^RF_SUPERSERVER_PROJECT=' "${ENV_FILE}" 2>/dev/null \
-               | tail -1 | cut -d= -f2- | tr -d ' \t"' || true)"
-  fi
-  if [[ -z "${project}" ]]; then
-    # Igual que project_id(): el proyecto por defecto es el laboral.
-    project="reconocimientoFacial"
-    log "  RF_SUPERSERVER_PROJECT no definido; se asume '${project}'"
-  fi
-  local spool="/var/lib/taildeck/spool"
+  local project="${PROJECT_ID}"
+  local spool="${RF_SPOOL_DIR:-/var/lib/taildeck/spool}"
   local returns="/var/lib/taildeck/returns/${project}"
-  if [[ ${DRY_RUN} -eq 1 ]]; then
-    log "  (dry-run) limpiaría spool y retornos de '${project}'"
-    return 0
+  local args=(--project "${project}" --purge-returns)
+  [[ ${DRY_RUN} -eq 1 ]] && args+=(--dry-run)
+
+  # 1) Cancelar jobs activos y borrar retornos del proyecto en el control plane.
+  #    El wrapper decide local vs SSH; nunca toca otros proyectos.
+  log "  SuperServer: cancelando jobs y retornos de '${project}'"
+  if ! bash "${PROYECTO}/deploy/td_cancel.sh" "${args[@]}"; then
+    log "  AVISO: no se pudo cancelar/limpiar la cola de '${project}' (se continúa)"
   fi
+  [[ ${DRY_RUN} -eq 1 ]] && return 0
+
+  # 2) Peticiones pendientes en el spool de ESTA casa.
   local n=0 f
   if [[ -d "${spool}" ]]; then
     for f in "${spool}"/*.json "${spool}"/*.json.tmp; do
@@ -532,6 +560,8 @@ limpiar_superserver() {
       fi
     done
   fi
+
+  # 3) Retornos locales de la casa (entrega por SSH del control plane).
   if [[ -d "${returns}" ]]; then
     rm -rf "${returns}"
     log "  SuperServer: ${n} peticiones y ${returns} eliminados"
@@ -597,33 +627,42 @@ else
 fi
 
 if [[ ${NO_START} -eq 1 ]]; then
-  # --no-start: el purge ya dejó todo parado; NO se reenciende nada. La guarda
-  # de RF_AUTOENROLL_NEW se aplicó igual para que al reencender sí enrolle.
-  log "FASE D: --no-start → NO se rearrancan servicios ni timers. Motor APAGADO."
+  # --no-start: el purge ya dejó todo parado; NO se reenciende nada. Se
+  # deshabilitan las units para que un reboot o un deploy no las reactive.
+  log "FASE D: --no-start → motor APAGADO (units deshabilitadas)."
+  for svc in "${SERVICIOS[@]}" "${STOP_EXTRA[@]}"; do
+    cmd "Deshabilitar ${svc}" systemctl disable "${svc}" 2>/dev/null || true
+    cmd "Limpiar fallo ${svc}" systemctl reset-failed "${svc}" 2>/dev/null || true
+  done
+  for t in rf-calibra.timer rf-vigilar-deriva.timer rf-reprocesa.timer; do
+    cmd "Deshabilitar ${t}" systemctl disable "${t}" 2>/dev/null || true
+  done
+  # El "En Directo" debe seguir disponible con el motor apagado.
+  cmd "Asegurar ${LIVE_SERVICE}" systemctl enable --now "${LIVE_SERVICE}" 2>/dev/null || true
   if [[ ${DRY_RUN} -eq 0 ]]; then
-    log "FASE D2: estado de los servicios (deben quedar inactivos):"
-    for svc in "${SERVICIOS[@]}"; do
+    log "FASE D2: estado de los servicios (deben quedar inactivos salvo ${LIVE_SERVICE}):"
+    for svc in "${SERVICIOS[@]}" "${LIVE_SERVICE}"; do
       printf '[reset]   %-20s %s\n' "${svc}" \
         "$(systemctl is-active "${svc}" 2>/dev/null || true)"
     done
   fi
-  log "Reset completado (motor APAGADO). Reencender cuando proceda con: deploy/rf_power.sh on"
+  log "Reset completado (motor APAGADO, ${LIVE_SERVICE} activo). Reencender: deploy/rf_power.sh on"
   [[ ${DRY_RUN} -eq 1 ]] && log "DRY-RUN: nada se ha modificado."
   exit 0
 fi
 
 log "FASE D: rearrancando servicios y timers..."
 for svc in "${SERVICIOS[@]}"; do
+  cmd "Habilitar ${svc}" systemctl enable "${svc}" 2>/dev/null || true
   cmd "Arrancar ${svc}" systemctl restart "${svc}" 2>/dev/null || true
 done
-# Rearmar los timers de one-shots (rf-calibra, rf-vigilar-deriva, rf-reprocesa):
-# se lanzan en su horario; restart del timer lo fuerza a reprogramarse tras el
-# reset limpio. rf-reprocesa también: antes quedaba inactive/dead tras un reset.
+# Rearmar los timers de one-shots (rf-calibra, rf-vigilar-deriva, rf-reprocesa).
 for t in rf-calibra.timer rf-vigilar-deriva.timer rf-reprocesa.timer; do
   if systemctl list-unit-files "${t}" >/dev/null 2>&1; then
     cmd "Rearmar ${t}" systemctl enable --now "${t}" 2>/dev/null || true
   fi
 done
+cmd "Asegurar ${LIVE_SERVICE}" systemctl enable --now "${LIVE_SERVICE}" 2>/dev/null || true
 
 # Evidencia del arranque limpio: PID y hora de arranque de cada servicio.
 if [[ ${DRY_RUN} -eq 0 ]]; then

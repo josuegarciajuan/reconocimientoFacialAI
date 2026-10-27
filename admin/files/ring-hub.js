@@ -200,7 +200,10 @@
     var estado = b.getAttribute("data-estado");
     var target = (estado === "on") ? "off" : "on";
     var verb = (target === "off") ? "apagar" : "encender";
-    if (!win.confirm("¿Seguro que quieres " + verb + " todo el motor de visión? (captura, detector, clasificador, live…)")) {
+    var aviso = (target === "off")
+      ? "¿Seguro que quieres apagar el motor de visión? Se pararán captura, detector, clasificadores, colas y trabajos de ESTA instancia en SuperServer. El directo (live) seguirá activo."
+      : "¿Seguro que quieres encender el motor de visión?";
+    if (!win.confirm(aviso)) {
       return;
     }
     b.disabled = true;

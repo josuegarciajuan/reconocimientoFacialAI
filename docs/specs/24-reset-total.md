@@ -52,6 +52,15 @@ Opciones:
 - `--hold N`: pausa con re-verificación de que nada se autola.
 - `--no-pull`: en `mail`, no hace `git pull` antes del reset.
 
+## Parada y cola (2026-10-27)
+
+- El reset exige `RF_SUPERSERVER_PROJECT` explícito en el `.env` de cada casa
+  (mail: `reconocimientoFacial`; ojos: `ojos`). Si falta, aborta sin tocar nada.
+- Antes de borrar peticiones/retornos, `deploy/td_cancel.sh` cancela en el
+  control plane solo los jobs de ESE proyecto y limpia sus retornos.
+- `--no-start` deshabilita las units del motor y deja **solo `rf-live` activo**.
+- No se toca `taildeck.service`, ni el spool/retornos globales, ni otros proyectos.
+
 ## Garantías
 
 1. **Host verificado**: `ojos` aborta si `hostname` no es `liveyourdre2`; `mail`
