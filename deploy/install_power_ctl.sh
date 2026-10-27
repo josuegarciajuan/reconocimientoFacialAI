@@ -5,9 +5,11 @@ set -euo pipefail
 
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
-echo "==> Haciendo ejecutable $DIR/deploy/rf_power.sh"
-chmod 0750 "$DIR/deploy/rf_power.sh"
-chown root:root "$DIR/deploy/rf_power.sh"
+echo "==> Haciendo ejecutables los scripts de control"
+for f in rf_power.sh rf_stop.sh td_cancel.sh taildeck_cancel.py; do
+    chmod 0750 "$DIR/deploy/$f"
+    chown root:root "$DIR/deploy/$f"
+done
 
 echo "==> Instalando regla sudoers para www-data"
 RULE="/etc/sudoers.d/rf-power"

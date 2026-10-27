@@ -94,11 +94,18 @@ Criterios de aceptación:
 ## Parada
 
 ```bash
-systemctl disable --now rf-pipeline
-systemctl disable --now rf-capturador   # si se había habilitado
-# rf-live puede seguir para el panel; o:
-systemctl stop rf-live
+# Parada segura y project-scoped (mantiene rf-live):
+sudo deploy/rf_power.sh off
+
+# Equivalente directo, con opciones de limpieza:
+sudo deploy/rf_stop.sh --project <id> [--dry-run] [--purge-queues] [--purge-media]
 ```
+
+`rf_power.sh off` pone el proyecto en modo `local`, para servicios/timers,
+mata bridges/ffmpeg huérfanos y cancela en SuperServer los jobs activos de esa
+instancia. `rf_stop.sh` no toca `taildeck.service` ni otros proyectos.
+Cada UI (`/rf` en mail, `/ojos` en liveyourdre2) ejecuta el script de su propio
+checkout y usa su propio `RF_SUPERSERVER_PROJECT`.
 
 ## Limitaciones conocidas
 

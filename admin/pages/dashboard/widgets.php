@@ -386,7 +386,12 @@ function dash_daemons() {
  * (rf-capturador). Es lo que mueve el botón Apagar/Encender el Ojo.
  */
 function dash_power_estado() {
-    return dash_daemon_estado("rf-capturador") === "active" ? "on" : "off";
+    // "Encendido" si CUALQUIER servicio del motor está vivo. Mirar solo el
+    // capturador ocultaba detectores/pipeline huérfanos tras un apagado parcial.
+    foreach (["rf-capturador", "rf-detector", "rf-pipeline", "rf-clasificador", "rf-reprocesa"] as $svc) {
+        if (dash_daemon_estado($svc) === "active") { return "on"; }
+    }
+    return "off";
 }
 
 /* ---------------------------------------------------------------

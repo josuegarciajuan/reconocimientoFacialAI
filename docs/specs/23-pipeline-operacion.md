@@ -94,6 +94,14 @@ limpieza:
 El vídeo completo concatenado (`motor/videos/<local>/<cámara>/<evento>.mp4`) no
 se toca por esta limpieza.
 
+## Parada segura
+
+`rf_power.sh off` delega en `rf_stop.sh`: modo `local`, parada de servicios,
+timers, `rf-pipeline`, `rf-reprocesa` y bridges huérfanos, y cancelación
+project-scoped de la cola de SuperServer. `rf-live` se conserva. La casa remota
+(mail) invoca el control plane por SSH (`RF_SUPERSERVER_CTL_HOST`, por defecto
+`liveyourdre2`); nunca se para taildeck ni se borran colas de otros proyectos.
+
 ## Recuperación
 
 - **Reinicio del servicio**: al arrancar reconcilia trabajos enviados sin
